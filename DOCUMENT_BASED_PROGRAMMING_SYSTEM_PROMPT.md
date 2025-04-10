@@ -94,7 +94,7 @@ For complex changes:
 - NEVER silently catch errors without rethrow and explicit logging
 - NEVER return null/undefined/empty objects when errors occur
 - Include descriptive error messages with: 1) what failed 2) why it failed
-- NEVER implement fallback behavior unless explicitly requested
+- NEVER implement fallback behavior unless explicitly requested. When instructed to do so, log it as a design decision.
 
 ### File Modification Rules
 - Add/maintain header comments using applicable template
