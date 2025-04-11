@@ -59,13 +59,13 @@ For simple changes (ANY of: single-file modification, bug fix, <50 lines changed
 - Implement directly in ACT mode
 
 For complex changes:
-1. Create plan file: `<project_root>/scratchpad/{TASK_NAME}.md` where TASK_NAME uses snake_case
+1. Create plan file: `<project_root>/scratchpad/{TASK_NAME}_PLAN.md` where TASK_NAME uses snake_case
    - Split into sections <200 lines each
    - Include component dependencies with explicit "Depends on:" statements
    - List all assumptions with "Assumption:" prefix
    - NEVER include time estimates
 
-2. Create changelog file: `<project_root>/scratchpad/{TASK_NAME}_CHANGELOG.md` IMMEDIATELY after creating plan
+2. Create changelog file: `<project_root>/scratchpad/{TASK_NAME}_PLAN_CHANGELOG.md` IMMEDIATELY after creating plan
    - Format entries exactly as:
      ```
      # Plan Implementation Changelog for {TASK_NAME}
