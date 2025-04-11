@@ -175,6 +175,7 @@ When updating any documentation file:
 
 4. When detecting new documentation relationships:
    - Update `doc/DOCUMENT_RELATIONSHIPS.md` with the new relationship
+   - NEVER include any `MARKDOWN_CHANGELOG.md` files in relationships as they add no value
    - Format the addition as:
      ```
      ## [Primary Document]
