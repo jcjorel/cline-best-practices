@@ -154,6 +154,57 @@ When code changes would contradict documentation:
 4. End with: "Please select an option to proceed with implementation."
 5. If multiple documentation sources conflict, quote each contradiction and state: "Documentation conflict detected. Please clarify which source should take precedence."
 
+### Design Decision Documentation
+When the user states or you implement a design decision:
+1. Document it in the appropriate location based on its scope:
+   - **Function-level decision**: In the function comment's [Design Decisions] section
+     ```
+     [Design Decisions]: 
+     - Decision: [brief description]
+     - Rationale: [justification]
+     - Alternatives considered: [brief description of alternatives]
+     - Date: YYYY-MM-DD
+     ```
+   
+   - **File-level decision**: In the file header comment's [Source file design principles] section
+     ```
+     # [Source file design principles]
+     # - Design Decision: [brief description] (YYYY-MM-DD)
+     #   * Rationale: [justification]
+     #   * Alternatives considered: [brief description]
+     ```
+   
+   - **Module-level decision**: In a file named `<module_path>/DESIGN_DECISIONS.md`
+     ```
+     # Design Decisions for [Module Name]
+     
+     ## [Decision Title] (YYYY-MM-DD)
+     
+     **Decision**: [detailed description]
+     
+     **Rationale**: [detailed justification]
+     
+     **Alternatives considered**: 
+     - [Alternative 1]: [why rejected]
+     - [Alternative 2]: [why rejected]
+     
+     **Implications**: [downstream effects]
+     ```
+
+2. For module-level decisions, ALSO update `doc/DESIGN.md`:
+   - Locate the appropriate section for the module
+   - Add a reference to the specific decision
+   - Include a brief summary of the decision
+   - Add a link to the detailed DESIGN_DECISIONS.md file
+
+3. Document this update in your response:
+   ```
+   [DESIGN DECISION DOCUMENTED]
+   Scope: [Function/File/Module]-level
+   Decision: [brief description]
+   Location: [file path and section]
+   ```
+
 ### Documentation Relationships Management
 When updating any documentation file:
 1. Check `doc/DOCUMENT_RELATIONSHIPS.md` to identify related documents
@@ -226,7 +277,7 @@ When implementing significant changes not contradicting but absent from document
    [new/modified content with proper formatting]
    ```
    ```
-4. For complex documentation changes, create a separate file: `<project_root>/scratchpad/{TASK_NAME}_DOC_UPDATE.md` where {TASK_NAME} MUST BE IN UPPERCASE
+4. For complex documentation changes, create a separate file: `<project_root>/scratchpad/doc_update_{TASK_NAME}.md` where {TASK_NAME} MUST BE IN UPPERCASE
 
 ## Documentation Standards
 - **Function Documentation**:
