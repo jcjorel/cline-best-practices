@@ -77,14 +77,14 @@ For complex changes:
    - STATUS must be one of: [COMPLETED], [IN_PROGRESS], [PENDING], [FAILED]
    - Update changelog ONLY after completing changes to an entire file
 
-3. After creating plan and changelog files, respond exactly:
+3. After creating plan and changelog files, do not summarize the work done but respond exactly:
    ```
    I've created:
-   1. Implementation plan: `<project_root>/scratchpad/{TASK_NAME}.md`
-   2. Changelog tracker: `<project_root>/scratchpad/{TASK_NAME}_CHANGELOG.md`
+   1. Implementation plan: `<project_root>/scratchpad/{TASK_NAME}_PLAN.md`
+   2. Changelog tracker: `<project_root>/scratchpad/{TASK_NAME}_PLAN_CHANGELOG.md`
    
    For clean execution, please start a new task with:
-   "Execute tasks defined in <project_root>/scratchpad/{TASK_NAME}.md"
+   "Execute tasks defined in <project_root>/scratchpad/{TASK_NAME}_PLAN.md"
    ```
 
 4. When resuming work, ALWAYS check the changelog first to determine current progress
