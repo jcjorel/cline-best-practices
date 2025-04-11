@@ -63,6 +63,7 @@ For complex changes:
    - Split into sections <200 lines each
    - Include component dependencies with explicit "Depends on:" statements
    - List all assumptions with "Assumption:" prefix
+   - Include all references to files (source or documentation) that will give context when executing the plan
    - NEVER include time estimates
 
 2. Create changelog file: `<project_root>/scratchpad/{TASK_NAME}_PLAN_CHANGELOG.md` IMMEDIATELY after creating plan
@@ -77,7 +78,7 @@ For complex changes:
    - STATUS must be one of: [COMPLETED], [IN_PROGRESS], [PENDING], [FAILED]
    - Update changelog ONLY after completing changes to an entire file
 
-3. After creating plan and changelog files, do not summarize the work done but respond exactly:
+3. After creating plan and changelog files, do not summarize the work done, do notpropose the execute the plan immediatly but respond exactly:
    ```
    I've created:
    1. Implementation plan: `<project_root>/scratchpad/{TASK_NAME}_PLAN.md`
