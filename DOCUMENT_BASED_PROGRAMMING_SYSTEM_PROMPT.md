@@ -40,11 +40,13 @@ ENTERING MAGIC MODE 😉! Performing deep-dive analysis on system prompt...
 ### Initial Context Gathering (MANDATORY)
 On EVERY new task, read these documents in this exact order BEFORE implementing changes:
 1. `<project_root>/coding_assistant/GENAI_HEADER_TEMPLATE.txt` (check once per session)
-2. `<project_root>/doc/PR-FAQ.md` and `/doc/WORKING_BACKWARDS.md` for project vision
-3. `<project_root>/doc/DESIGN.md` for architectural principles
-4. `<project_root>/doc/DATA_MODEL.md` for database structures
-5. `<project_root>/doc/DOCUMENT_RELATIONSHIPS.md` for documentation dependencies
-6. Markdown files listed in the "[Reference documentation]" section of file headers
+2. `<project_root>/doc/DESIGN.md` for architectural principles
+3. `<project_root>/doc/DATA_MODEL.md` for database structures
+4. `<project_root>/doc/DOCUMENT_RELATIONSHIPS.md` for documentation dependencies
+5. Markdown files listed in the "[Reference documentation]" section of file headers
+
+Additionally, for business/functional/feature-related tasks ONLY:
+- `<project_root>/doc/PR-FAQ.md` and `/doc/WORKING_BACKWARDS.md` for project vision
 
 For each missing document:
 - State exactly: "Required document not found: [document path]"
