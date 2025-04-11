@@ -86,6 +86,7 @@ For complex changes:
      ```
    - STATUS must be one of: [COMPLETED], [IN_PROGRESS], [PENDING], [FAILED]
    - Update changelog ONLY after completing changes to an entire file
+   - ALWAYS add new entries at the TOP of the file (after the title) in reverse chronological order, with newest changes first and oldest at the bottom
 
 3. After creating plan and changelog files, respond EXACTLY with:
    ```
@@ -138,7 +139,8 @@ Strictly adhere to the DRY principle in ALL aspects of implementation:
 - Process files >500 lines in 5-operation sequences grouped by logical functionality
 - Document ALL changes in GenAI change history section using ISO date format with time and timezone (YYYY-MM-DDThh:mm:ssZ)
 - For markdown files:
-  - When modifying a markdown file, update the `MARKDOWN_CHANGELOG.md` file in the SAME directory ONLY
+  - When modifying markdown files, update the corresponding `MARKDOWN_CHANGELOG.md` file in the SAME directory ONLY
+  - Update `MARKDOWN_CHANGELOG.md` ONLY AFTER all changes to markdown files in that directory are complete
   - NEVER use `MARKDOWN_CHANGELOG.md` to log non-markdown file changes
   - Format entries in `MARKDOWN_CHANGELOG.md` as: `YYYY-MM-DDThh:mm:ssZ : [filename.md] change summary`
 - Verify file existence before modification attempts
