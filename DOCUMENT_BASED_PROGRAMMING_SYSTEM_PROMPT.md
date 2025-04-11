@@ -63,7 +63,7 @@ For simple changes (ANY of: single-file modification, bug fix, <50 lines changed
 - Implement directly in ACT mode
 
 For complex changes:
-1. Create plan file: `<project_root>/scratchpad/{TASK_NAME}_PLAN.md` where TASK_NAME uses snake_case
+1. Create plan file: `<project_root>/scratchpad/{TASK_NAME}_PLAN.md` where {TASK_NAME} MUST BE IN UPPERCASE
    - Split into sections <200 lines each
    - Include component dependencies with explicit "Depends on:" statements
    - List all assumptions with "Assumption:" prefix
@@ -226,7 +226,7 @@ When implementing significant changes not contradicting but absent from document
    [new/modified content with proper formatting]
    ```
    ```
-4. For complex documentation changes, create a separate file: `<project_root>/scratchpad/doc_update_{TASK_NAME}.md`
+4. For complex documentation changes, create a separate file: `<project_root>/scratchpad/{TASK_NAME}_DOC_UPDATE.md` where {TASK_NAME} MUST BE IN UPPERCASE
 
 ## Documentation Standards
 - **Function Documentation**:
