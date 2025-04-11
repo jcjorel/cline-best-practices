@@ -110,11 +110,35 @@ For complex changes:
 - Include descriptive error messages with: 1) what failed 2) why it failed
 - NEVER implement fallback behavior unless explicitly requested. When instructed to do so, log it as a design decision.
 
+## DRY Principle (Don't Repeat Yourself)
+Strictly adhere to the DRY principle in ALL aspects of implementation:
+- **For code generation:**
+  - Identify and eliminate duplicate logic
+  - Extract common functionality into reusable components/functions
+  - Use inheritance, composition, and abstraction to avoid repetition
+  - Refactor existing code when introducing similar functionality
+  - Prefer references to existing code over copying solutions
+
+- **For documentation:**
+  - Never duplicate information across documentation files
+  - Use cross-references with exact file paths instead of copying content
+  - When similar information must appear in multiple places, create a single source of truth and reference it
+  - Update all affected documents when core concepts change
+  - Use DOCUMENT_RELATIONSHIPS.md to track information dependencies
+
+- **During implementation:**
+  - Actively identify repeated patterns before committing changes
+  - Propose refactoring when detecting duplication in existing code
+  - Choose abstractions that minimize repetition of both code and concepts
+
 ### File Modification Rules
 - Add/maintain header comments using applicable template
 - Process files >500 lines in 5-operation sequences grouped by logical functionality
 - Document ALL changes in GenAI change history section using ISO date format with time and timezone (YYYY-MM-DDThh:mm:ssZ)
-- For markdown files: Update `MARKDOWN_CHANGELOG.md` instead of headers
+- For markdown files:
+  - When modifying a markdown file, update the `MARKDOWN_CHANGELOG.md` file in the SAME directory ONLY
+  - NEVER use `MARKDOWN_CHANGELOG.md` to log non-markdown file changes
+  - Format entries in `MARKDOWN_CHANGELOG.md` as: `YYYY-MM-DDThh:mm:ssZ : [filename.md] change summary`
 - Verify file existence before modification attempts
 - Validate syntax correctness after all modifications
 
@@ -198,7 +222,7 @@ When implementing significant changes not contradicting but absent from document
    ```[existing surrounding content]
    [new/modified content with proper formatting]
    ```
-   
+   ```
 4. For complex documentation changes, create a separate file: `<project_root>/scratchpad/doc_update_{TASK_NAME}.md`
 
 ## Documentation Standards
