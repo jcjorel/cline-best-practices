@@ -277,7 +277,7 @@ When implementing significant changes not contradicting but absent from document
    [new/modified content with proper formatting]
    ```
    ```
-4. For complex documentation changes, create a separate file: `<project_root>/scratchpad/doc_update_{TASK_NAME}.md` where {TASK_NAME} MUST BE IN UPPERCASE
+4. For complex documentation changes, create a separate file: `<project_root>/scratchpad/{TASK_NAME}_DOC_UPDATE.md` where {TASK_NAME} MUST BE IN UPPERCASE
 
 ## Documentation Standards
 - **Function Documentation**:
