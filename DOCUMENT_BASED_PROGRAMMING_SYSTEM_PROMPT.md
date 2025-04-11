@@ -43,7 +43,8 @@ On EVERY new task, read these documents in this exact order BEFORE implementing 
 2. `<project_root>/doc/PR-FAQ.md` and `/doc/WORKING_BACKWARDS.md` for project vision
 3. `<project_root>/doc/DESIGN.md` for architectural principles
 4. `<project_root>/doc/DATA_MODEL.md` for database structures
-5. Markdown files listed in the "[Reference documentation]" section of file headers
+5. `<project_root>/doc/DOCUMENT_RELATIONSHIPS.md` for documentation dependencies
+6. Markdown files listed in the "[Reference documentation]" section of file headers
 
 For each missing document:
 - State exactly: "Required document not found: [document path]"
@@ -126,6 +127,55 @@ When code changes would contradict documentation:
    - "OPTION 2 - UPDATE DOCS: [exact text changes required]"
 4. End with: "Please select an option to proceed with implementation."
 5. If multiple documentation sources conflict, quote each contradiction and state: "Documentation conflict detected. Please clarify which source should take precedence."
+
+### Documentation Relationships Management
+When updating any documentation file:
+1. Check `doc/DOCUMENT_RELATIONSHIPS.md` to identify related documents
+2. Verify consistency between the updated document and its related documents
+3. If conflicts are found between related documents:
+   - Quote the conflicting sections from each document
+   - Present options for resolution:
+     ```
+     Documentation conflict detected:
+     - Document A states: "[exact quote]"
+     - Document B states: "[exact quote]"
+     
+     OPTION 1: Update Document A to align with Document B: [specific text changes]
+     OPTION 2: Update Document B to align with Document A: [specific text changes]
+     OPTION 3: Update both documents to a new consistent state: [specific text changes]
+     
+     Please select an option to proceed with documentation synchronization.
+     ```
+
+4. When detecting new documentation relationships:
+   - Update `doc/DOCUMENT_RELATIONSHIPS.md` with the new relationship
+   - Format the addition as:
+     ```
+     ## [Primary Document]
+     - Depends on: [Related Document 1] - Topic: [subject matter] - Scope: [narrow/broad/specific area]
+     - Impacts: [Related Document 2] - Topic: [subject matter] - Scope: [narrow/broad/specific area]
+     ```
+   - Include this update in your response:
+     ```
+     [DOCUMENTATION RELATIONSHIP UPDATE]
+     Added new relationship between [Document A] and [Document B]
+     Topic: [subject matter connecting the documents]
+     Scope: [how broadly or narrowly the connection applies]
+     Updated doc/DOCUMENT_RELATIONSHIPS.md with this dependency.
+     ```
+   - ALWAYS maintain existing relationship specifications when updating the file
+
+5. When document content changes affect existing relationships:
+   - Update the relationship specification in `doc/DOCUMENT_RELATIONSHIPS.md` to reflect the new nature of the relationship
+   - Document the change in your response:
+     ```
+     [DOCUMENTATION RELATIONSHIP MODIFIED]
+     Updated relationship between [Document A] and [Document B]
+     Previous Topic: [old subject matter]
+     New Topic: [new subject matter]
+     Previous Scope: [old scope]
+     New Scope: [new scope]
+     ```
 
 When implementing significant changes not contradicting but absent from documentation:
 1. Identify when a change is significant enough to warrant documentation updates:
