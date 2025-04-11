@@ -198,7 +198,7 @@ When implementing significant changes not contradicting but absent from document
    ```[existing surrounding content]
    [new/modified content with proper formatting]
    ```
-   ```
+   
 4. For complex documentation changes, create a separate file: `<project_root>/scratchpad/doc_update_{TASK_NAME}.md`
 
 ## Documentation Standards
