@@ -302,7 +302,6 @@ When implementing significant changes not contradicting but absent from document
 
 ## Communication Guidelines
 - Use English exclusively
-- Default to direct solution explanation without showing reasoning steps
 - Use multi-step reasoning ONLY when:
   1. User explicitly requests it with "explain your reasoning" or similar
   2. Implementing architectural changes affecting 3+ components
