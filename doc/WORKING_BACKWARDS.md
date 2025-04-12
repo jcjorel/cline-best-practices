@@ -1,172 +1,162 @@
 # Working Backwards: Documentation-based Programming MCP Server (DBP-S)
 
-## Documentation-based Programming: A New Development Paradigm
+## Customer Problem
 
-Documentation-based Programming (DBP) fundamentally shifts how developers approach software creation by establishing documentation as the authoritative source of truth. Unlike traditional development where code is primary and documentation often becomes outdated, DBP inverts this relationship.
+Developers waste precious time repeating project context to AI assistants. This frustration directly impacts productivity and code quality.
 
-In the DBP approach:
+"I just finished explaining our error handling pattern for the third time today," says Maria, a senior developer at a fintech company. "Every time I switch tasks and come back to work with Cline, I have to rebuild its understanding of our codebase from scratch. I'm spending 20% of my day on repetitive context-setting instead of solving actual problems."
 
-1. **Documentation First**: New features begin with documentation changes rather than code implementation
-2. **Single Source of Truth**: Documentation is considered the definitive reference for project intent and architecture
-3. **Automatic Synchronization**: When code changes are made directly, documentation is updated to maintain consistency
-4. **Context Efficiency**: Comprehensive documentation allows AI assistants to understand projects without parsing complex code, saving valuable LLM context window space
-5. **Design-Focused Development**: Emphasis shifts to clearly communicating design intent before implementation begins
+Specific challenges developers face:
 
-This paradigm is particularly effective with AI coding assistants like Cline, which benefit from clear, structured documentation to provide accurate assistance. The DBP-S server makes this approach practical by automatically maintaining the relationship between documentation and code.
+1. **Repetitive Context Explanations**: Developers repeatedly explain project structure, coding standards, and documentation practices to AI assistants
+2. **Inconsistent Recommendations**: Without persistent knowledge of project context, AI assistants suggest solutions that don't match established patterns
+3. **Lost Design Decisions**: Critical design decisions scatter across files and conversations, causing inconsistent implementations
+4. **Documentation-Code Drift**: As projects evolve, documentation and code diverge, resulting in AI recommendations that ignore documentation standards
+5. **Context Window Limitations**: LLMs have limited context capacity, making it impossible to include all relevant files in a single prompt
 
-## 1. Customer Problem
+## Documentation-based Programming: A Solution
 
-Cline users frequently experience the following frustrations when working with the AI assistant:
+Documentation-based Programming (DBP) establishes documentation as the authoritative source of truth. Unlike traditional development where code comes first and documentation lags behind, DBP inverts this relationship.
 
-- **Repetitive Context Setting**: Developers must repeatedly remind the AI assistant about project structure, coding standards, and documentation practices.
+The DBP approach:
 
-- **Inconsistent Recommendations**: Without persistent knowledge of the project context, the AI assistant may suggest solutions that don't align with established patterns.
+1. **Documentation First**: Features begin with documentation updates before code implementation
+2. **Single Source of Truth**: Documentation serves as the definitive reference for project intent
+3. **Automatic Synchronization**: Documentation updates automatically when code changes
+4. **Context Efficiency**: AI assistants understand projects without parsing complex code
+5. **Design-Focused Development**: Developers focus on communicating design intent clearly
 
-- **Design Decision Fragmentation**: Critical design decisions get lost across multiple files and conversations, leading to inconsistent implementation.
+The DBP-S server makes this approach practical by automatically maintaining documentation-code relationships.
 
-- **Documentation-Code Misalignment**: As projects evolve, code and documentation drift apart, causing AI recommendations that don't respect the project's documentation standards.
+## Customer Experience with Solution
 
-- **Delayed Productivity**: Significant time is spent explaining project architecture rather than solving actual coding problems.
+Sarah, a full-stack developer, arrives at work Monday morning. She needs to add multi-factor authentication to her team's application:
 
-- **Context Limitations**: LLMs have limited context windows, making it impossible to include all relevant project files and documentation in a single prompt.
+1. She opens her project. The DBP-S already indexed all changes from Friday's commits, focusing on the documentation standards in her team's system prompt.
 
-A senior developer described their experience: "I spend at least 20% of my interactions with Cline just reminding it about our project structure and coding standards. It's like working with a new team member who keeps forgetting our conventions and doesn't understand the critical design decisions that shaped our architecture."
+2. Without providing any context, she asks Cline: "Update the user authentication flow to support multi-factor authentication."
 
-## 2. Customer Experience with Solution
+3. Cline immediately references the correct authentication files, identifies existing design patterns from file headers, and proposes changes that perfectly align with the project's architecture. It specifically references security standards documented at function, file, and module levels.
 
-After installing the Documentation-based Programming MCP Server (DBP-S):
+4. As Sarah implements the changes, the DBP-S detects and indexes her modifications within 10 seconds, ensuring Cline maintains perfect context awareness throughout the session.
 
-1. Sarah, a full-stack developer, opens her project in the morning. The DBP-S has already indexed her entire codebase overnight after recent changes, specifically focusing on the documentation standards defined in the system prompt.
+5. Sarah completes the feature in 45 minutes instead of the usual 90 minutes. She never needs to correct Cline's understanding of her project or explain architectural decisions. Her implementation maintains complete consistency with documentation.
 
-2. Without providing any additional context, she asks Cline to "update the user authentication flow to support multi-factor authentication."
+6. Before committing her code, Sarah runs a quick documentation scan. The system identifies a missing design decision section in one modified file, allowing her to fix this gap before it affects future work.
 
-3. Cline immediately references the correct files in the authentication module, notes the existing design patterns documented in file headers, and proposes changes that perfectly align with the project's established architecture and documentation standards. Most importantly, it references the design decisions documented at function, file, and module level that apply to authentication security standards.
+"I just saved an hour of development time," says Sarah. "More importantly, I stayed focused on solving the MFA problem instead of teaching Cline about our project structure."
 
-4. When Sarah makes changes to the code, the DBP-S detects and indexes those changes within 10 seconds using its pure in-memory indexing system, ensuring that subsequent interactions with Cline maintain perfect contextual awareness.
+## How Will We Know If Successful?
 
-5. Sarah completes the feature in half the usual time, without having to repeatedly explain project context or correct misaligned suggestions from the AI assistant. The implementation maintains complete consistency between code and documentation, preserving all design decisions.
+We measure success of the Documentation-based Programming MCP Server with these metrics:
 
-6. Before submitting her code, Sarah uses the DBP-S to detect any documentation inconsistencies that may have been introduced during development. The system immediately identifies a missing design decision section in one of the modified files, allowing her to remediate the documentation gap before it affects future development.
-
-## 3. How Will We Know If Successful?
-
-Success metrics for the Documentation-based Programming MCP Server include:
-
-- **Reduction in Context-Setting Prompts**: 70% decrease in prompts where users explain project structure or standards
-
-- **Increased Acceptance Rate**: 40% increase in suggestions accepted without modification
-
-- **Documentation Consistency**: 80% reduction in code changes that contradict documentation
-
+- **Reduced Context-Setting**: 70% decrease in prompts where users explain project structure
+- **Higher Acceptance Rate**: 40% increase in suggestions accepted without modification
+- **Documentation Consistency**: 80% reduction in code changes contradicting documentation
 - **Design Decision Preservation**: 95% adherence to documented design decisions in AI-generated code
+- **Customer Satisfaction**: 60% improvement in contextual accuracy ratings
+- **Time Savings**: 25% reduction in feature implementation time
+- **Fewer Corrections**: 50% decrease in follow-up queries correcting the AI's project understanding
 
-- **Customer Satisfaction**: User satisfaction ratings for contextual accuracy improve by 60%
+## Implementation Tenets
 
-- **Time Savings**: 25% reduction in time spent per feature implementation
+1. **Respond in 10 seconds**. Index all file changes within 10 seconds of modification.
 
-- **Follow-Up Query Reduction**: 50% decrease in follow-up queries where users correct the AI's understanding of the project
+2. **Require zero configuration**. Work immediately out-of-the-box with no setup required.
 
-## 4. Implementation Tenets
+3. **Run invisibly light**. Use minimal system resources with pure in-memory design.
 
-1. **Near Real-Time Indexing**: All changes to project files must be reflected in the metadata index within 10 seconds.
+4. **Focus on documentation standards**. Index only metadata following system prompt standards.
 
-2. **Zero Configuration**: The system must work out-of-the-box without requiring users to configure indexing parameters.
+5. **Preserve all design decisions**. Track design choices at function, file, and module levels.
 
-3. **Resource Efficiency**: Indexing operations must maintain minimal CPU/memory footprint using a pure in-memory approach with no database backend.
+6. **Cover everything relevant**. Index all project metadata that affects development.
 
-4. **Documentation Standards Focused**: Only index metadata that follows the documentation standards described in the system prompt file.
+7. **Keep everything local**. Process and store all data locally for security.
 
-5. **Design Decision Preservation**: Actively track and index all design decisions at function, file, and module levels to ensure implementation consistency.
+## Technical Approach
 
-6. **Complete Coverage**: All relevant project metadata, including file structure, headers, comments, and documentation relationships must be indexed.
-
-7. **Local-Only Processing**: All indexing and metadata storage must occur locally to ensure security and privacy.
-
-## 5. Technical Approach
-
-The Documentation-based Programming MCP Server architecture consists of four primary components:
+The DBP-S architecture consists of four core components:
 
 ### File Monitoring System
-- Uses efficient filesystem watches to detect changes
-- Batches updates during high-activity periods
-- Employs intelligent filtering to ignore non-relevant files
-- Focuses on files that contain documentation following system prompt standards
+- Detects file changes within 10 seconds
+- Batches updates during high activity
+- Filters out irrelevant files automatically
+- Focuses only on files with documentation following system prompt standards
 
 ### Metadata Extraction Engine
-- Single generic parser for all file types based on keywords and simple parsing directives
-- Keywords and parsing directives generated by Anthropic Claude 3.x models on AWS Bedrock
-- Directives generated at startup or when documentation template files change
-- Analyzes DOCUMENT_BASED_PROGRAMMING_SYSTEM_PROMPT.md or custom templates
-- Header and function comment extraction based on identified documentation patterns
-- Documentation relationship mapping
-- Comprehensive design decision extraction at function, file, and module levels
-- Focus on maintaining global consistency between code and documentation
+- Uses a single parser for all file types
+- Generates parsing directives using Claude 3.x models on AWS Bedrock
+- Updates directives when documentation templates change
+- Extracts headers and function comments from any programming language
+- Maps documentation relationships
+- Captures all design decisions at function, file, and module levels
+- Maintains global consistency between code and documentation
 
 ### Metadata Storage
-- Pure in-memory index with no database backend
-- Compressed metadata representation
-- Optimized for fast query access patterns
-- Incremental update support
-- Memory-efficient data structures
+- Runs entirely in memory with no database
+- Compresses metadata representation
+- Optimizes for fast queries
+- Supports incremental updates
+- Uses memory-efficient data structures
 
 ### Query Interface
-- Single-command GraphQL-like API for discretionary data retrieval with powerful capabilities:
-  * **Project Business Context**: Specialized access to PR-FAQ and WORKING_BACKWARDS documents with enhanced prioritization for business context (critical for generating accurate mock data, data models, and UX designs that align with business requirements)
-  * **Technical Context**: Access DESIGN documents and technical specifications
-  * **Document Relationship Graph**: Navigate "depends on:" or "impacts:" relationships as a walkable graph
-  * **Header Section Extraction**: Query specific header sections across individual or multiple files
-  * **Documentation Inconsistency Detection**: Identify incomplete or missing file headers and sections that break the documentation continuum
-  * **Change History Timeline**: Compile all "[GenAI tool change history]" sections and MARKDOWN_CHANGELOG.md files sorted chronologically from newest to oldest
-- All metadata returned includes precise location information (file name, directory path, start/end line numbers)
-- Fast context gathering at the start of or during conversations
-- Context-aware filtering capabilities
-- Design decision retrieval prioritization
-- Documentation consistency verification
-- Relevance scoring for large result sets
+- Provides single-command access to all metadata:
+  * **Business Context**: Direct access to PR-FAQ and WORKING_BACKWARDS documents
+  * **Technical Context**: Access to DESIGN documents and specifications
+  * **Relationship Graph**: Navigate document dependencies
+  * **Header Extraction**: Query specific sections across files
+  * **Inconsistency Detection**: Find documentation gaps
+  * **Change History**: View chronological project changes
+  * **Git Commit Helper**: Generates comprehensive commit messages using code changes
+- Returns exact file locations (name, path, line numbers)
+- Gathers context instantly during conversations
+- Filters results by relevance
+- Prioritizes design decision retrieval
+- Verifies documentation consistency
+- Scores large result sets by relevance
+- Analyzes code changes for Git commit messages using Anthropic Claude on AWS BedRock
 
 ### Out of Scope
-- Code execution or evaluation
-- Security vulnerability scanning
+- Code execution
+- Security scanning
 - Performance profiling
-- External database storage (intentionally in-memory only)
-- Version control integration (planned for future release)
+- External storage
+- Version control integration
 
-## 6. FAQ for Internal Team
+## FAQ for Internal Team
 
 **Q: How will this impact performance on user machines?**
-A: The service is designed to be extremely lightweight as a pure in-memory solution with no database backend. It targets minimal resource usage (<5% CPU, <100MB RAM) and employs intelligent throttling during periods of high system load.
+A: The service runs extremely lightweight with no database. It uses less than 5% CPU and under 100MB RAM, with intelligent throttling during high system load.
 
 **Q: What happens if files change very frequently?**
-A: The system implements batching and debouncing mechanisms to handle rapid file changes efficiently, ensuring system stability even during high-frequency updates. The in-memory design allows for very quick incremental updates without disk I/O bottlenecks.
+A: The system batches and debounces rapid file changes efficiently. The in-memory design enables quick incremental updates without disk I/O bottlenecks.
 
 **Q: How do we handle very large projects?**
-A: For projects exceeding 100,000 files, the system will employ a more selective indexing strategy, prioritizing files that follow the documentation standards in the system prompt, frequently accessed directories, and files mentioned in recent conversations. The memory-efficient design ensures scalability even for large codebases.
+A: For projects with over 100,000 files, we selectively index files that follow documentation standards, frequently accessed directories, and files mentioned in recent conversations. Our memory-efficient design scales effectively for large codebases.
 
-**Q: Can one server instance handle multiple projects?**
-A: Yes, a single DBP-S server can simultaneously index and serve multiple isolated codebases. The server maintains complete separation between projects based on their directory paths while efficiently sharing computational resources. This is particularly valuable for developers working across multiple repositories or for teams that want to share a server instance across related projects.
+**Q: Can one server handle multiple projects?**
+A: Yes. A single server simultaneously indexes and serves multiple isolated codebases based on directory paths. It maintains complete project separation while sharing computational resources efficiently.
 
 **Q: How does this integrate with Cline's existing context management?**
-A: The Documentation-based Programming MCP Server provides a new tool that Cline can use to enrich its context understanding, complementing rather than replacing its existing context management capabilities. It specifically focuses on documentation standards compliance and design decision consistency.
+A: The DBP-S provides a complementary tool that enriches Cline's context understanding. It focuses specifically on documentation standards compliance and design decision consistency.
 
 **Q: How does the system adapt to different documentation formats?**
-A: The DBP-S is flexible in how it handles documentation standards. By default, it uses the format defined in DOCUMENT_BASED_PROGRAMMING_SYSTEM_PROMPT.md, but it will automatically detect and use project-specific formats from `<codebase>/coding_assistant/GENAI_HEADER_TEMPLATE.txt` when available. This flexibility allows each project to maintain its own documentation approach while still benefiting from consistent indexing.
+A: The system defaults to the format in DOCUMENT_BASED_PROGRAMMING_SYSTEM_PROMPT.md, but automatically detects and uses custom formats from `<codebase>/coding_assistant/GENAI_HEADER_TEMPLATE.txt` when available.
 
-**Q: How does the system handle various programming languages?**
-A: The system uses a generic approach that works across programming languages. Rather than implementing specialized parsers for each language, it uses a single parser based on keywords and simple parsing directives. These directives are generated by Anthropic Claude 3.7 Sonnet and 3.5 Haiku models on AWS Bedrock by analyzing the documentation templates. This generation happens at server startup or when template files change, allowing the system to adapt to any programming language without language-specific parsers.
+**Q: How does the system work with different programming languages?**
+A: We use a single generic parser based on keywords and parsing directives generated by Claude models. This approach adapts to any programming language without requiring language-specific parsers.
 
 **Q: What about binary files and non-code assets?**
-A: The system focuses primarily on text-based source files that follow the documentation standards defined in the system prompt, though it will track binary files in the directory structure. Content indexing is limited to text-based sources to optimize memory usage in the in-memory index.
-
-**Q: Who developed this server?**
-A: The Documentation-based Programming MCP Server was developed by Jean-Charles JOREL (jeancharlesjorel@gmail.com) to address the specific challenges of maintaining consistency between code and documentation in projects using Cline's AI assistant.
+A: We track binary files in the directory structure but only index content from text-based source files that follow documentation standards. This optimizes memory usage.
 
 ## About Cline
 
-[Cline](https://github.com/cline/cline) is an open-source, terminal-based AI coding assistant designed to enhance developer productivity through contextually aware code generation, explanation, and modification. The project aims to:
+[Cline](https://github.com/cline/cline) is an open-source, terminal-based AI coding assistant that enhances developer productivity through contextually aware code assistance. The project:
 
-- **Maintain Terminal Workflow**: Operate entirely within the terminal to preserve developer efficiency
-- **Enhance Context Awareness**: Deeply understand project structure and coding patterns
-- **Support Seamless Collaboration**: Function as an AI pair programmer that adapts to developer preferences
-- **Respect Development Practices**: Generate code that aligns with established project standards
+- **Stays in the terminal** to preserve command-line efficiency
+- **Understands project context** deeply and automatically
+- **Collaborates seamlessly** as an adaptive AI pair programmer
+- **Respects established standards** when generating code
 
-As a terminal-first tool, Cline differentiates itself from GUI-based AI assistants by integrating directly into developers' existing command-line workflows, providing powerful AI capabilities without disrupting productivity.
+As a terminal-first tool, Cline integrates directly into existing command-line workflows, providing powerful AI capabilities without disrupting developer productivity.
