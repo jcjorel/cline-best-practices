@@ -165,6 +165,19 @@ Document design decisions at appropriate scope level:
 
 Note: All DESIGN_DECISIONS.md files follow the pattern of adding newest entries at the top. If any design decision contradicts or creates inconsistency with any core documentation file (DESIGN.md, SECURITY.md, DATA_MODEL.md, CONFIGURATION.md), update that file immediately and directly instead of adding to DESIGN_DECISIONS.md.
 
+#### Design Decision Merging Process
+When user requests to merge `<project_root>/doc/DESIGN_DECISIONS.md` into appropriate files:
+1. Process entries from oldest to newest (bottom-up in the file)
+2. Perform deep integration rather than simple copying:
+   * Understand the impact on all reference documents
+   * Naturally integrate the concept into the existing documentation continuum
+3. Discard these sections during the merge process:
+   * "Alternatives considered" 
+   * "Implications"
+   * "Relationship to Other Components" 
+4. Update appropriate core documentation files based on content relevance (DESIGN.md, SECURITY.md, DATA_MODEL.md, CONFIGURATION.md)
+5. Remove merged entries from DESIGN_DECISIONS.md after successful integration
+
 Document with:
 ```
 [DESIGN DECISION DOCUMENTED]
