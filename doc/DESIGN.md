@@ -22,12 +22,37 @@ This document describes the architectural principles, components, and design dec
 
 ## System Components
 
-### 1. Documentation Monitoring
+### 1. Python CLI Client
+
+- **Component Purpose**: Provide a simple command-line interface for interacting with MCP servers
+- **Implementation Strategy**: Lightweight Python CLI tool with minimal dependencies
+- **Key Features**:
+  - Connect to running MCP servers (default port 6231)
+  - Issue requests to MCP servers with formatted parameters
+  - Display formatted responses from MCP servers
+  - Support for interactive and batch modes
+  - Configuration through Cline software settings
+- **Performance Constraints**: <50MB memory footprint, <100ms response time for local operations
+- **Design Decision (2025-04-14)**: Command-based interface pattern for extensibility
+  - **Rationale**: Enables easy addition of new commands without modifying core client logic, supports both interactive and script-based usage, provides consistent user experience across different operations
+  - **Key Implications**: Command handlers can be developed independently, help documentation is auto-generated from command metadata, users benefit from consistent parameter handling
+
+### 2. Documentation Monitoring
 
 - **Component Purpose**: Detect changes in documentation and code files
-- **Implementation Strategy**: Lightweight file system watcher with debounced updates
+- **Implementation Strategy**: Lightweight file system watcher with debounced updates, backed by a persistent SQLite database for metadata storage
 - **Performance Constraints**: <5% CPU and <100MB RAM usage
-- **Response Time**: All changes detected within 10 seconds
+- **Response Time**: Changes detected and processing initiated after 10-second delay (configurable)
+- **Background Processing**:
+  - Uses Anthropic Claude 3.7 Sonnet to extract metadata from each codebase file
+  - Performs extraction only for files missing from SQLite database or with outdated records
+  - Initial scan processes all files to populate metadata database
+  - After initial scan, transitions to event-based monitoring using inotify() or equivalent
+  - Reacts to file change events by re-extracting metadata for modified files
+  - Progress information returned as part of MCP server tool responses
+- **Design Decision (2025-04-13)**: Implement a persistent SQLite database for metadata storage
+  - **Rationale**: Provides persistence across application restarts, reduces repeated metadata extraction, improves performance with incremental updates
+  - **Key Implications**: Faster startup times after initial indexing, reduced CPU usage for large codebases, requires database schema migration strategy
 
 ### 2. Consistency Analysis Engine
 
@@ -98,10 +123,15 @@ This document describes the architectural principles, components, and design dec
 
 ## Security and Data Handling
 
-- **Data Locality**: All processing performed locally, no data leaves the system
-- **Isolation**: Complete separation between indexed projects
-- **Resource Management**: Intelligent throttling during high system load
-- **Persistence**: Pure in-memory operation with no database requirements
+The Documentation-Based Programming system implements comprehensive security measures to protect source code and documentation. Key security features include:
+
+- Local processing with no external data transmission
+- Complete isolation between indexed projects
+- Resource usage limits and intelligent throttling
+- Filesystem permission enforcement
+- SQLite database protected by filesystem permissions
+
+For detailed security information, architecture, and principles, see [SECURITY.md](SECURITY.md).
 
 ## Out of Scope
 
@@ -109,6 +139,34 @@ This document describes the architectural principles, components, and design dec
 - **Security Testing**: No security vulnerability scanning capability
 - **Performance Profiling**: No code performance analysis
 - **External Integration**: No integrations with external systems/APIs
+
+## MCP Server Implementation
+
+### 1. MCP Server Tools
+
+The MCP server provides two essential tools:
+
+- **dbp_general_query**: Used to retrieve various types of codebase metadata
+  - Processes both standardized JSON and natural language requests
+  - Powered by Amazon Bedrock Nova Lite for fast response times
+  - Coordinates parallel execution of internal LLM tools for efficiency
+  - Uses specialized tools for querying file headers, function metadata, changelogs, etc.
+
+- **dbp_commit_message**: Generates comprehensive commit messages
+  - Identifies and summarizes all changes since the last commit
+  - Provides context-aware descriptions of modifications
+  - Includes impact analysis for structural changes
+
+### 2. Implementation Strategy
+
+- **LLM Coordination**: Amazon Nova Lite manages and coordinates requests
+- **Parallel Processing**: Multiple internal tools can execute in parallel for better performance
+- **Model Selection**: Different tasks utilize appropriate models:
+  - Amazon Nova Lite for request coordination and simple queries
+  - Claude 3.x models for more complex analysis tasks
+- **AWS Bedrock Integration**: Initially implemented with placeholder functions
+  - Actual AWS Bedrock model interactions to be implemented separately
+  - Q Developer Chat will be used for implementing AWS Bedrock integration code
 
 ## Relationship to Other Components
 

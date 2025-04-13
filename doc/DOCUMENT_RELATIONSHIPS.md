@@ -14,10 +14,21 @@ This document maps the relationships between documentation files in the project.
 
 ## Core Documentation
 
+## SECURITY.md
+- Depends on: [DESIGN.md](#designmd) - Topic: Security requirements - Scope: System-wide security
+- Depends on: [DATA_MODEL.md](#data_modelmd) - Topic: Data protection - Scope: Database security
+- Depends on: [WORKING_BACKWARDS.md](#working_backwardsmd) - Topic: Resource constraints - Scope: Performance security
+- Impacts: None
+
+## CONFIGURATION.md
+- Depends on: [DESIGN.md](#designmd) - Topic: System components - Scope: Configurable parameters
+- Depends on: [DATA_MODEL.md](#data_modelmd) - Topic: CLI Client model - Scope: Configuration structure
+- Impacts: None
+
 ## DESIGN_DECISIONS.md
 - Depends on: None
-- Impacts: [DESIGN.md](#designmd) - Topic: Design decisions - Scope: Project-wide architectural choices (temporarily empty - decisions merged)
-- Impacts: [DATA_MODEL.md](#data_modelmd) - Topic: Design decisions - Scope: Data handling approaches (temporarily empty - decisions merged)
+- Impacts: [DESIGN.md](#designmd) - Topic: Design decisions - Scope: Project-wide architectural choices
+- Impacts: [DATA_MODEL.md](#data_modelmd) - Topic: Design decisions - Scope: Database implementation and persistence strategy
 
 ## DESIGN.md
 - Depends on: None
@@ -30,6 +41,7 @@ This document maps the relationships between documentation files in the project.
 - Depends on: [DESIGN.md](#designmd) - Topic: Code analysis approach - Scope: Metadata extraction structure
 - Depends on: [DESIGN.md](#designmd) - Topic: Security considerations - Scope: Data protection and access controls
 - Depends on: [DESIGN.md](#designmd) - Topic: Design decisions - Scope: Data handling approaches (moved from DESIGN_DECISIONS.md)
+- Depends on: [DESIGN.md](#designmd) - Topic: Python CLI Client - Scope: Client component design
 - Impacts: None
 
 ## DOCUMENT_RELATIONSHIPS.md
@@ -72,8 +84,11 @@ The documentation relationship graph forms a directed acyclic graph (DAG) with t
 - **DESIGN_DECISIONS.md**: Root node with potential future outgoing edges as new decisions are added
 - **DESIGN.md**: Root node with outgoing edges to DATA_MODEL.md and DOCUMENT_RELATIONSHIPS.md
 - **PR-FAQ.md**: Root node with outgoing edge to WORKING_BACKWARDS.md
+- **CONFIGURATION.md**: Leaf node with incoming edges from DESIGN.md and DATA_MODEL.md
 - **DATA_MODEL.md**: Leaf node with incoming edges from DESIGN.md
 - **DOCUMENT_RELATIONSHIPS.md**: Leaf node with incoming edge from DESIGN.md
 - **WORKING_BACKWARDS.md**: Leaf node with incoming edge from PR-FAQ.md
 
 This graph structure helps the system determine the correct order for propagating updates and ensuring global consistency.
+
+- **SECURITY.md**: Leaf node with incoming edges from DESIGN.md, DATA_MODEL.md, and WORKING_BACKWARDS.md
