@@ -184,8 +184,9 @@ When updating documentation:
    - Depends on: [Related Document 1] - Topic: [subject matter] - Scope: [narrow/broad/specific area]
    - Impacts: [Related Document 2] - Topic: [subject matter] - Scope: [narrow/broad/specific area]
    ```
-5. Document relationship updates in your response
-6. When content changes affect relationships, update specifications accordingly
+5. Update the "Relationship Graph" Mermaid diagram to reflect any new or modified relationships
+6. Document relationship updates in your response
+7. When content changes affect relationships, update specifications accordingly
 
 For significant changes absent from documentation:
 1. Create documentation updates with precise location and content
@@ -213,7 +214,7 @@ For significant changes absent from documentation:
 - **SECURITY.md**: Comprehensive security documentation
 - **CONFIGURATION.md**: Configuration parameters documentation
 - **DATA_MODEL.md**: Database schema and data structures
-- **DOCUMENT_RELATIONSHIPS.md**: Documentation dependencies
+- **DOCUMENT_RELATIONSHIPS.md**: Documentation dependencies with a Mermaid diagram "Relationship Graph" visualizing connections
 - **PR-FAQ.md**: Business intent using Amazon's methodology
 - **WORKING_BACKWARDS.md**: Product vision in Amazon's format
 
