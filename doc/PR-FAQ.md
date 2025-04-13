@@ -69,6 +69,20 @@ A: Previously, Cline had limited visibility into your project structure, requiri
 ## Q: How exactly does the system keep metadata up-to-date?
 A: The system detects file changes within 10 seconds using an efficient file system monitor. When changes occur, it only re-indexes affected files, ensuring minimal resource usage while maintaining accurate metadata. As a pure in-memory indexer with no database, it provides exceptional performance with minimal overhead.
 
+## Q: How does the system help maintain consistency between documentation and code?
+A: The Documentation-Based Programming system includes an automatic consistency checker that:
+
+1. Monitors documentation and code changes in near real-time
+2. Analyzes impacts on both documentation and code
+3. Creates recommendation files in `<project_root>/coding_assistant/dbp/recommendations/` as a FIFO queue
+4. Moves the oldest recommendation to `<project_root>/coding_assistant/dbp/PENDING_RECOMMENDATION.md`
+5. Allows developers to review and decide on recommendations with three options:
+   - ACCEPT: Apply the recommended changes automatically
+   - REJECT: Discard the recommendation
+   - AMEND: Request modifications with specific feedback
+
+Each recommendation includes detailed rationales and affected files, ensuring developers understand the inconsistency and proposed resolution. This automation saves significant time while ensuring documentation remains the single source of truth.
+
 ## Q: Will this slow down my computer?
 A: No. The DBP-S runs as a lightweight background task using less than 5% CPU and under 100MB RAM. It intelligently batches updates during high activity periods and uses incremental indexing to minimize resource impact. For most projects, you won't notice any performance difference.
 
@@ -98,8 +112,10 @@ A: We're actively developing:
 - Code complexity metrics and quality indicators
 - Function and class dependency graphs
 - Semantic understanding of code relationships
-- Design decision impact analysis
-- Documentation consistency verification
+- Enhanced documentation consistency verification
+  - Automated resolution of simple inconsistencies
+  - Prioritization based on inconsistency severity
+  - Conflict resolution strategies for competing recommendations
 - Version control history integration
 - Custom documentation standard plugins
 

@@ -40,9 +40,13 @@ Sarah, a full-stack developer, arrives at work Monday morning. She needs to add 
 
 4. As Sarah implements the changes, the DBP-S detects and indexes her modifications within 10 seconds, ensuring Cline maintains perfect context awareness throughout the session.
 
-5. Sarah completes the feature in 45 minutes instead of the usual 90 minutes. She never needs to correct Cline's understanding of her project or explain architectural decisions. Her implementation maintains complete consistency with documentation.
+5. While working, Sarah notices a new file has appeared: `coding_assistant/dbp/PENDING_RECOMMENDATION.md`. Opening it, she sees the system has detected an inconsistency between her code changes and the API documentation. The recommendation suggests updating the authentication API documentation to mention the new MFA requirement.
 
-6. Before committing her code, Sarah runs a quick documentation scan. The system identifies a missing design decision section in one modified file, allowing her to fix this gap before it affects future work.
+6. Sarah reviews the recommendation and clicks the checkbox for "ACCEPT." Within seconds, the documentation is updated automatically, and the recommendation is removed from her queue.
+
+7. Later that day, another recommendation appears, suggesting a security documentation update. Sarah finds the suggested wording too technical for their user documentation, so she selects "AMEND" and adds comments clarifying the language she prefers. The system processes her feedback and generates an updated recommendation with her preferred wording.
+
+8. Sarah completes the feature in 45 minutes instead of the usual 90 minutes. She never needs to correct Cline's understanding of her project or explain architectural decisions. Her implementation maintains complete consistency with documentation thanks to the automatic recommendation system.
 
 "I just saved an hour of development time," says Sarah. "More importantly, I stayed focused on solving the MFA problem instead of teaching Cline about our project structure."
 
@@ -76,7 +80,7 @@ We measure success of the Documentation-based Programming MCP Server with these 
 
 ## Technical Approach
 
-The DBP-S architecture consists of four core components:
+The DBP-S architecture consists of five core components:
 
 ### File Monitoring System
 - Detects file changes within 10 seconds
@@ -92,6 +96,14 @@ The DBP-S architecture consists of four core components:
 - Maps documentation relationships
 - Captures all design decisions at function, file, and module levels
 - Maintains global consistency between code and documentation
+
+### Consistency Analysis Engine
+- Analyzes relationships between documentation and code
+- Identifies inconsistencies and documentation gaps
+- Creates recommendation files in FIFO queue
+- Categorizes inconsistencies by severity and type
+- Predicts potential impacts of code changes on documentation
+- Generates specific, actionable recommendations
 
 ### Metadata Storage
 - Runs entirely in memory with no database
