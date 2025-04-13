@@ -306,9 +306,17 @@ When implementing significant changes not contradicting but absent from document
 - **`<project_root>/coding_assistant/GENAI_HEADER_TEMPLATE.txt`**: Contains the standardized header template for source files. Used to maintain consistency across the codebase and ensure GenAI tools have proper context.
 
 - **`<project_root>/doc/DESIGN.md`**: The architectural blueprint of the project. Defines system components, their interactions, design patterns, and technical decisions. MUST be consulted before implementing any changes to understand the overall architecture.
+  - **Contains essential project security considerations and threat models**
   - **When DESIGN.md becomes too large**, child markdown files are created in `<project_root>/doc/design/` to document specific aspects in greater detail
   - DESIGN.md contains navigation links to all child documents
   - Child documents contain cross-references to siblings and DATA_MODEL.md to avoid duplication
+
+- **`<project_root>/doc/SECURITY.md`**: Created when security sections in DESIGN.md become too extensive. Contains comprehensive security considerations, threat models, mitigation strategies, and security-related architectural decisions.
+  - DESIGN.md maintains links to SECURITY.md
+  - **When SECURITY.md becomes too large**, child markdown files are created in `<project_root>/doc/security/` to document specific security aspects in greater detail
+  - SECURITY.md contains navigation links to all security child documents
+  - Child security documents contain cross-references to siblings to avoid duplication
+  - Follows the same hierarchical documentation principles as DESIGN.md and DATA_MODEL.md
 
 - **`<project_root>/doc/DATA_MODEL.md`**: Definitive source for database schema, entity relationships, and data structures. Includes table definitions, field types, constraints, indexes, and relationships between entities.
   - **When DATA_MODEL.md becomes too large**, child markdown files are created in `<project_root>/doc/data_model/` to document specific data structures in greater detail
