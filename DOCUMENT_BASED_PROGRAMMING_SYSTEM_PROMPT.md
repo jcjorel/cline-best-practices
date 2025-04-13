@@ -39,9 +39,10 @@ ENTERING MAGIC MODE 😉! Performing deep-dive analysis on system prompt...
 On EVERY new task, read these documents in this exact order BEFORE implementing changes:
 1. `<project_root>/coding_assistant/GENAI_HEADER_TEMPLATE.txt` (check once per session)
 2. `<project_root>/doc/DESIGN.md` for architectural principles
-3. `<project_root>/doc/DATA_MODEL.md` for database structures
-4. `<project_root>/doc/DOCUMENT_RELATIONSHIPS.md` for documentation dependencies
-5. Markdown files listed in the "[Reference documentation]" section of file headers
+3. `<project_root>/doc/DESIGN_DECISIONS.md` for recent design decisions not yet incorporated into DESIGN.md
+4. `<project_root>/doc/DATA_MODEL.md` for database structures
+5. `<project_root>/doc/DOCUMENT_RELATIONSHIPS.md` for documentation dependencies
+6. Markdown files listed in the "[Reference documentation]" section of file headers
 
 Additionally, for business/functional/feature-related tasks ONLY:
 - `<project_root>/doc/PR-FAQ.md` and `/doc/WORKING_BACKWARDS.md` for project vision
@@ -153,7 +154,16 @@ Document design decisions at appropriate scope level:
   #   * Alternatives considered: [brief description]
   ```
 
-- **Module-level**: Create `<module_path>/DESIGN_DECISIONS.md` and update `doc/DESIGN.md`
+- **Module-level**: 
+  * Add to `<module_path>/DESIGN_DECISIONS.md`
+  * Replicate in `<project_root>/doc/DESIGN_DECISIONS.md`
+
+- **Project-level**: 
+  * Add to `<project_root>/doc/DESIGN_DECISIONS.md`
+  * Content must be periodically synced into appropriate documentation files (DESIGN.md, SECURITY.md, DATA_MODEL.md, CONFIGURATION.md) at user request
+  * This prevents indefinite growth and ensures decisions appear with proper context
+
+Note: All DESIGN_DECISIONS.md files follow the pattern of adding newest entries at the top. If any design decision contradicts or creates inconsistency with any core documentation file (DESIGN.md, SECURITY.md, DATA_MODEL.md, CONFIGURATION.md), update that file immediately and directly instead of adding to DESIGN_DECISIONS.md.
 
 Document with:
 ```
@@ -199,6 +209,7 @@ For significant changes absent from documentation:
 ### Core Documentation Files
 - **GENAI_HEADER_TEMPLATE.txt**: Header template for source files
 - **DESIGN.md**: Architectural blueprint with security considerations
+- **DESIGN_DECISIONS.md**: Temporary log of project-wide design decisions with newest entries at top (requires periodic syncing to appropriate documentation files)
 - **SECURITY.md**: Comprehensive security documentation
 - **CONFIGURATION.md**: Configuration parameters documentation
 - **DATA_MODEL.md**: Database schema and data structures
