@@ -16,8 +16,8 @@ This document maps the relationships between documentation files in the project.
 
 ## DESIGN_DECISIONS.md
 - Depends on: None
-- Impacts: [DESIGN.md](#designmd) - Topic: Design decisions - Scope: Project-wide architectural choices
-- Impacts: [DATA_MODEL.md](#data_modelmd) - Topic: Design decisions - Scope: Data handling approaches
+- Impacts: [DESIGN.md](#designmd) - Topic: Design decisions - Scope: Project-wide architectural choices (temporarily empty - decisions merged)
+- Impacts: [DATA_MODEL.md](#data_modelmd) - Topic: Design decisions - Scope: Data handling approaches (temporarily empty - decisions merged)
 
 ## DESIGN.md
 - Depends on: None
@@ -29,7 +29,7 @@ This document maps the relationships between documentation files in the project.
 - Depends on: [DESIGN.md](#designmd) - Topic: System architecture - Scope: Entire system design
 - Depends on: [DESIGN.md](#designmd) - Topic: Code analysis approach - Scope: Metadata extraction structure
 - Depends on: [DESIGN.md](#designmd) - Topic: Security considerations - Scope: Data protection and access controls
-- Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Design decisions - Scope: Data handling approaches
+- Depends on: [DESIGN.md](#designmd) - Topic: Design decisions - Scope: Data handling approaches (moved from DESIGN_DECISIONS.md)
 - Impacts: None
 
 ## DOCUMENT_RELATIONSHIPS.md
@@ -69,10 +69,10 @@ When documentation files are updated:
 
 The documentation relationship graph forms a directed acyclic graph (DAG) with the following characteristics:
 
-- **DESIGN_DECISIONS.md**: Root node with outgoing edges to DESIGN.md and DATA_MODEL.md
-- **DESIGN.md**: Node with incoming edge from DESIGN_DECISIONS.md and outgoing edges to DATA_MODEL.md and DOCUMENT_RELATIONSHIPS.md
+- **DESIGN_DECISIONS.md**: Root node with potential future outgoing edges as new decisions are added
+- **DESIGN.md**: Root node with outgoing edges to DATA_MODEL.md and DOCUMENT_RELATIONSHIPS.md
 - **PR-FAQ.md**: Root node with outgoing edge to WORKING_BACKWARDS.md
-- **DATA_MODEL.md**: Leaf node with incoming edges from DESIGN.md and DESIGN_DECISIONS.md
+- **DATA_MODEL.md**: Leaf node with incoming edges from DESIGN.md
 - **DOCUMENT_RELATIONSHIPS.md**: Leaf node with incoming edge from DESIGN.md
 - **WORKING_BACKWARDS.md**: Leaf node with incoming edge from PR-FAQ.md
 

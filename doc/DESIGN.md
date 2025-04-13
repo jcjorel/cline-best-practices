@@ -38,6 +38,9 @@ This document describes the architectural principles, components, and design dec
   - Documentation-to-code alignment
   - Code-to-documentation impact analysis
 - **Processing Strategy**: Background incremental processing with priority queuing
+- **Design Decision (2025-04-13)**: Process only one codebase file at a time during background tasks
+  - **Rationale**: Ensures consistent and predictable system resource usage, prevents resource spikes, simplifies debugging and error isolation, and allows for cleaner implementation of the processing queue
+  - **Key Implications**: Processing large codebases will take longer, effective prioritization is required, and progress indicators should clearly show queue position
 
 ### 3. Recommendation Generator
 
@@ -48,6 +51,9 @@ This document describes the architectural principles, components, and design dec
   - Code refactoring to align with documentation
   - Inconsistency resolution between documentation files
 - **File Management**: FIFO queue of individual recommendation files
+- **Design Decision**: Implement a First-In-First-Out queue for recommendation processing
+  - **Rationale**: Ensures older recommendations are addressed before newer ones, preventing recommendation buildup and ensuring that fundamental issues are resolved before addressing their downstream effects
+  - **Key Implications**: Developers must process recommendations in the order presented, but can use AMEND to adjust inappropriate recommendations
 
 ### 4. Developer Feedback System
 
@@ -55,6 +61,9 @@ This document describes the architectural principles, components, and design dec
 - **Implementation Strategy**: File-based feedback mechanism with ACCEPT/REJECT/AMEND options
 - **Processing Logic**: Immediate response to feedback file changes
 - **Amendment Handling**: Regeneration of recommendations based on developer guidance
+- **Design Decision**: Use file modifications as the primary feedback mechanism
+  - **Rationale**: File-based approach integrates seamlessly with existing developer workflows and version control systems without requiring additional UI components
+  - **Key Implications**: All recommendation interactions visible in version control history, creating an audit trail of documentation decisions
 
 ## File Structure
 
@@ -100,32 +109,6 @@ This document describes the architectural principles, components, and design dec
 - **Security Testing**: No security vulnerability scanning capability
 - **Performance Profiling**: No code performance analysis
 - **External Integration**: No integrations with external systems/APIs
-
-## Design Decisions
-
-### Decision: FIFO Recommendation Queue
-
-**Decision**: Implement a First-In-First-Out queue for recommendation processing.
-
-**Rationale**: The FIFO approach ensures that older recommendations are addressed before newer ones, preventing recommendation buildup and ensuring that fundamental issues are resolved before addressing their downstream effects.
-
-**Alternatives considered**: 
-- Priority-based queue: Rejected due to complexity in accurately determining recommendation importance.
-- Direct application: Rejected to ensure developer maintains final control over all changes.
-
-**Implications**: Developers must process recommendations in the order presented, but can use AMEND to adjust inappropriate recommendations.
-
-### Decision: File-Based Feedback Mechanism
-
-**Decision**: Use file modifications as the primary feedback mechanism.
-
-**Rationale**: File-based approach integrates seamlessly with existing developer workflows and version control systems without requiring additional UI components.
-
-**Alternatives considered**: 
-- Interactive CLI: Rejected due to disruption of developer workflow.
-- Custom UI: Rejected to maintain terminal-first philosophy of Cline.
-
-**Implications**: All recommendation interactions visible in version control history, creating an audit trail of documentation decisions.
 
 ## Relationship to Other Components
 
