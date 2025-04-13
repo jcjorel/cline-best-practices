@@ -14,14 +14,22 @@ This document maps the relationships between documentation files in the project.
 
 ## Core Documentation
 
+## DESIGN_DECISIONS.md
+- Depends on: None
+- Impacts: [DESIGN.md](#designmd) - Topic: Design decisions - Scope: Project-wide architectural choices
+- Impacts: [DATA_MODEL.md](#data_modelmd) - Topic: Design decisions - Scope: Data handling approaches
+
 ## DESIGN.md
 - Depends on: None
 - Impacts: [DATA_MODEL.md](#data_modelmd) - Topic: System architecture - Scope: Entire system design
+- Impacts: [DATA_MODEL.md](#data_modelmd) - Topic: Security considerations - Scope: Data protection and access controls
 - Impacts: [DOCUMENT_RELATIONSHIPS.md](#document_relationshipsmd) - Topic: Documentation structure - Scope: File structure and workflow
 
 ## DATA_MODEL.md
 - Depends on: [DESIGN.md](#designmd) - Topic: System architecture - Scope: Entire system design
 - Depends on: [DESIGN.md](#designmd) - Topic: Code analysis approach - Scope: Metadata extraction structure
+- Depends on: [DESIGN.md](#designmd) - Topic: Security considerations - Scope: Data protection and access controls
+- Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Design decisions - Scope: Data handling approaches
 - Impacts: None
 
 ## DOCUMENT_RELATIONSHIPS.md
@@ -61,9 +69,10 @@ When documentation files are updated:
 
 The documentation relationship graph forms a directed acyclic graph (DAG) with the following characteristics:
 
-- **DESIGN.md**: Root node with outgoing edges to DATA_MODEL.md and DOCUMENT_RELATIONSHIPS.md
+- **DESIGN_DECISIONS.md**: Root node with outgoing edges to DESIGN.md and DATA_MODEL.md
+- **DESIGN.md**: Node with incoming edge from DESIGN_DECISIONS.md and outgoing edges to DATA_MODEL.md and DOCUMENT_RELATIONSHIPS.md
 - **PR-FAQ.md**: Root node with outgoing edge to WORKING_BACKWARDS.md
-- **DATA_MODEL.md**: Leaf node with incoming edge from DESIGN.md
+- **DATA_MODEL.md**: Leaf node with incoming edges from DESIGN.md and DESIGN_DECISIONS.md
 - **DOCUMENT_RELATIONSHIPS.md**: Leaf node with incoming edge from DESIGN.md
 - **WORKING_BACKWARDS.md**: Leaf node with incoming edge from PR-FAQ.md
 

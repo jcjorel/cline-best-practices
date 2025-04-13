@@ -152,7 +152,11 @@ Choose ONE option:
 - [ ] REJECT - Discard this recommendation
 - [ ] AMEND - Request changes to this recommendation
 
-<!-- Do not modify above this line -->
+## Amendment Comments
+<!-- If choosing AMEND, provide your feedback below this line -->
+
+
+<!-- Do not modify below this line -->
 
 ## Recommendation: [TITLE]
 
@@ -187,12 +191,9 @@ Choose ONE option:
 ### Rationale
 
 [Explanation of why these changes are recommended and how they improve consistency]
-
-<!-- For AMEND option only, add comments below -->
-## Amendment Requests:
-
-[Developer feedback here]
 ```
+
+For a real example of this format, see [Example Recommendation](../coding_assistant/dbp/recommendations/250413-155600-EXAMPLE_RECOMMENDATION.md).
 
 ### PENDING_RECOMMENDATION.md Format
 
@@ -228,6 +229,19 @@ This file is a copy of the oldest recommendation file, automatically renamed whe
    - For ACCEPT: Changes are automatically applied
    - For REJECT: Recommendation is removed from queue
    - For AMEND: New recommendation is generated with feedback
+
+## Security Considerations
+
+The database system is designed with security as a core principle:
+
+- **Data Protection**: All data is processed and stored locally, never transmitted externally
+- **Isolation**: Complete separation between indexed projects ensures no cross-project data leakage
+- **No Persistence**: All data exists in memory only, leaving no data traces after shutdown
+- **Access Control**: Follows existing filesystem permissions for all file operations
+- **No Code Execution**: The system analyzes but never executes code from indexed projects
+- **Resource Limitations**: Memory usage is capped to prevent denial-of-service scenarios
+
+The system operates entirely within the user's environment with no external communication channels, ensuring maximum security of sensitive source code and documentation.
 
 ## Database Implementation
 
