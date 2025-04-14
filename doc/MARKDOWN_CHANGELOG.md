@@ -2,6 +2,16 @@
 
 This file tracks all changes made to documentation markdown files in this directory.
 
+2025-04-14T13:36:36Z : [DOCUMENT_RELATIONSHIPS.md] Added relationships for the new Background Task Scheduler design document
+2025-04-14T13:35:52Z : [DATA_MODEL.md] Updated metadata extraction model to reference Amazon Nova Lite instead of Claude 3.7 Sonnet
+2025-04-14T13:35:05Z : [CONFIGURATION.md] Added configuration parameters for the Background Task Scheduler component
+2025-04-14T13:34:06Z : [DESIGN.md] Enhanced Documentation Monitoring section with Background Task Scheduler information
+2025-04-14T13:32:09Z : [design/BACKGROUND_TASK_SCHEDULER.md] Created new design document for the Background Task Scheduler component
+2025-04-14T13:23:33Z : [DOCUMENT_RELATIONSHIPS.md] Updated relationships for design/ directory documents
+2025-04-14T13:22:45Z : [design/MCP_SERVER_ENHANCED_DATA_MODEL.md] Created new file documenting enhanced MCP server data models
+2025-04-14T13:19:48Z : [design/INTERNAL_LLM_TOOLS.md] Created new file documenting internal LLM tools
+2025-04-14T13:18:11Z : [design/LLM_COORDINATION.md] Created new file documenting LLM coordination architecture
+2025-04-14T12:55:00Z : [DESIGN.md] Updated MCP Server Implementation section with LLM coordination details
 2025-04-14T09:21:30Z : [DESIGN.md] Added Dynamic File Exclusion Strategy section
 2025-04-14T09:06:14Z : [WORKING_BACKWARDS.md] Replaced specific LLM references with generic AI terminology
 2025-04-14T09:03:27Z : [PR-FAQ.md] Replaced specific LLM references with generic AI terminology

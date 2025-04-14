@@ -51,13 +51,24 @@ The Documentation-Based Programming system supports configuration options throug
 
 ## Documentation Monitoring Configuration
 
+### Background Task Scheduler
+
+| Parameter | Description | Default | Valid Values |
+|-----------|-------------|---------|-------------|
+| `scheduler.enabled` | Enable the background scheduler | `true` | `true, false` |
+| `scheduler.delay_seconds` | Debounce delay before processing changes | `10` | `1-60` |
+| `scheduler.max_delay_seconds` | Maximum delay for any file | `120` | `30-600` |
+| `scheduler.worker_threads` | Number of worker threads | `2` | `1-8` |
+| `scheduler.max_queue_size` | Maximum size of change queue | `1000` | `100-10000` |
+| `scheduler.batch_size` | Files processed in one batch | `20` | `1-100` |
+
 ### File System Monitoring
 
 | Parameter | Description | Default | Valid Values |
 |-----------|-------------|---------|-------------|
 | `monitor.enabled` | Enable file system monitoring | `true` | `true, false` |
-| `monitor.delay` | Delay in seconds before processing changed files | `10` | `1-300` |
-| `monitor.batch_size` | Maximum number of files to process in one batch | `20` | `1-100` |
+| `monitor.ignore_patterns` | Additional patterns to ignore beyond .gitignore | `["*.tmp", "*.log"]` | Array of glob patterns |
+| `monitor.recursive` | Monitor subdirectories recursively | `true` | `true, false` |
 
 ### Database Settings
 
@@ -66,6 +77,8 @@ The Documentation-Based Programming system supports configuration options throug
 | `database.path` | Path to SQLite database file | `"~/.dbp/metadata.db"` | Valid file path |
 | `database.max_size_mb` | Maximum database size in megabytes | `500` | `10-10000` |
 | `database.vacuum_threshold` | Threshold for automatic vacuum (% free space) | `20` | `5-50` |
+| `database.connection_timeout` | Database connection timeout in seconds | `5` | `1-30` |
+| `database.max_connections` | Maximum number of concurrent database connections | `4` | `1-16` |
 
 ## Configuration File Format
 

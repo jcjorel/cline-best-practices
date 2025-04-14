@@ -77,18 +77,47 @@ When documentation files are updated:
 3. **Bidirectionality**: Every "Depends on" should have a corresponding "Impacts" in the target document
 4. **Minimalism**: Only record relationships that provide meaningful information for maintaining consistency
 
+## Design Implementation Documents
+
+## design/LLM_COORDINATION.md
+- Depends on: [DESIGN.md](#designmd) - Topic: MCP Server Implementation - Scope: LLM coordination architecture
+- Depends on: [DATA_MODEL.md](#data_modelmd) - Topic: Data structures - Scope: Job tracking and request/response models
+- Depends on: [SECURITY.md](#securitymd) - Topic: Security measures - Scope: Multi-LLM security considerations
+- Impacts: [design/INTERNAL_LLM_TOOLS.md](#designinternal_llm_toolsmd) - Topic: Tool integration - Scope: Coordination architecture
+- Impacts: [design/MCP_SERVER_ENHANCED_DATA_MODEL.md](#designmcp_server_enhanced_data_modelmd) - Topic: Tool data models - Scope: MCP server implementation
+
+## design/INTERNAL_LLM_TOOLS.md
+- Depends on: [design/LLM_COORDINATION.md](#designllm_coordinationmd) - Topic: Tool integration - Scope: Coordination architecture
+- Depends on: [DESIGN.md](#designmd) - Topic: Internal tools - Scope: Tool purposes and capabilities
+- Impacts: None
+
+## design/MCP_SERVER_ENHANCED_DATA_MODEL.md
+- Depends on: [design/LLM_COORDINATION.md](#designllm_coordinationmd) - Topic: MCP-exposed tools - Scope: Implementation details
+- Depends on: [DATA_MODEL.md](#data_modelmd) - Topic: Data structures - Scope: Request/response model enhancement
+- Depends on: [SECURITY.md](#securitymd) - Topic: Security features - Scope: Input/output validation
+- Impacts: None
+
+## design/BACKGROUND_TASK_SCHEDULER.md
+- Depends on: [DESIGN.md](#designmd) - Topic: Documentation Monitoring - Scope: Background processing architecture
+- Depends on: [DATA_MODEL.md](#data_modelmd) - Topic: Metadata Extraction Model - Scope: Metadata structure and storage
+- Depends on: [CONFIGURATION.md](#configurationmd) - Topic: Background Task Scheduler - Scope: Configuration parameters
+- Depends on: [SECURITY.md](#securitymd) - Topic: Security considerations - Scope: Data protection and permissions
+- Impacts: [DESIGN.md](#designmd) - Topic: Documentation Monitoring - Scope: Implementation details
+- Impacts: [CONFIGURATION.md](#configurationmd) - Topic: Background Task Scheduler - Scope: Configuration parameters
+
 ## Relationship Graph
 
 The documentation relationship graph forms a directed acyclic graph (DAG) with the following characteristics:
 
 - **DESIGN_DECISIONS.md**: Root node with potential future outgoing edges as new decisions are added
-- **DESIGN.md**: Root node with outgoing edges to DATA_MODEL.md and DOCUMENT_RELATIONSHIPS.md
+- **DESIGN.md**: Root node with outgoing edges to DATA_MODEL.md, DOCUMENT_RELATIONSHIPS.md, and design/LLM_COORDINATION.md
 - **PR-FAQ.md**: Root node with outgoing edge to WORKING_BACKWARDS.md
+- **design/LLM_COORDINATION.md**: Node with outgoing edge to design/INTERNAL_LLM_TOOLS.md and incoming edge from DESIGN.md
 - **CONFIGURATION.md**: Leaf node with incoming edges from DESIGN.md and DATA_MODEL.md
 - **DATA_MODEL.md**: Leaf node with incoming edges from DESIGN.md
 - **DOCUMENT_RELATIONSHIPS.md**: Leaf node with incoming edge from DESIGN.md
 - **WORKING_BACKWARDS.md**: Leaf node with incoming edge from PR-FAQ.md
+- **design/INTERNAL_LLM_TOOLS.md**: Leaf node with incoming edges from design/LLM_COORDINATION.md and DESIGN.md
+- **SECURITY.md**: Leaf node with incoming edges from DESIGN.md, DATA_MODEL.md, WORKING_BACKWARDS.md, and design/LLM_COORDINATION.md
 
 This graph structure helps the system determine the correct order for propagating updates and ensuring global consistency.
-
-- **SECURITY.md**: Leaf node with incoming edges from DESIGN.md, DATA_MODEL.md, and WORKING_BACKWARDS.md

@@ -40,14 +40,21 @@ This document describes the architectural principles, components, and design dec
 ### 2. Documentation Monitoring
 
 - **Component Purpose**: Detect changes in documentation and code files
-- **Implementation Strategy**: Lightweight file system watcher with debounced updates, backed by a persistent SQLite database for metadata storage
+- **Implementation Strategy**: 
+  - Lightweight file system watcher with debounced updates
+  - Persistent SQLite database for metadata storage
+  - Background Task Scheduler for continuous monitoring and metadata extraction
 - **Performance Constraints**: <5% CPU and <100MB RAM usage
-- **Response Time**: Changes detected and processing initiated after 10-second delay (configurable)
+- **Response Time**: Changes detected in real-time, processing initiated after 10-second delay (configurable)
 - **Background Processing**:
-  - Uses Anthropic Claude 3.7 Sonnet to extract metadata from each codebase file
-  - Performs extraction only for files missing from SQLite database or with outdated records
+  - Uses Amazon Nova Lite to extract metadata from codebase files
+  - Maintains in-memory metadata cache synchronized with SQLite database
+  - Performs extraction only for files missing from database or with changes
   - Initial scan processes all files to populate metadata database
-  - After initial scan, transitions to event-based monitoring using inotify() or equivalent
+  - After initial scan, transitions to event-based monitoring using system-specific APIs:
+    - `inotify()` on Linux/WSL environments
+    - `FSEvents` on macOS
+    - `ReadDirectoryChangesW` on Windows
   - Reacts to file change events by re-extracting metadata for modified files
   - Progress information returned as part of MCP server tool responses
 - **Dynamic File Exclusion Strategy**:
@@ -63,6 +70,10 @@ This document describes the architectural principles, components, and design dec
 - **Design Decision (2025-04-13)**: Implement a persistent SQLite database for metadata storage
   - **Rationale**: Provides persistence across application restarts, reduces repeated metadata extraction, improves performance with incremental updates
   - **Key Implications**: Faster startup times after initial indexing, reduced CPU usage for large codebases, requires database schema migration strategy
+- **Design Decision (2025-04-14)**: Implement a dedicated Background Task Scheduler
+  - **Rationale**: Ensures continuous monitoring with minimal resource usage, provides thread-safe metadata access, and enables efficient metadata extraction
+  - **Key Implications**: Improved responsiveness, better concurrency handling, more efficient resource utilization
+  - **For detailed implementation specifics**: See [Background Task Scheduler](design/BACKGROUND_TASK_SCHEDULER.md)
 
 ### 2. Consistency Analysis Engine
 
@@ -152,31 +163,140 @@ For detailed security information, architecture, and principles, see [SECURITY.m
 
 ## MCP Server Implementation
 
-### 1. MCP Server Tools
+The MCP server provides essential tools through a sophisticated LLM coordination architecture that enables efficient processing of queries and requests.
 
-The MCP server provides two essential tools:
+> **Detailed Design Documentation**: For comprehensive implementation details, see the following design documents:
+> - [LLM Coordination Architecture](design/LLM_COORDINATION.md): Detailed coordination patterns and job management
+> - [Internal LLM Tools](design/INTERNAL_LLM_TOOLS.md): Specialized tools for different context types
+> - [Enhanced Data Models](design/MCP_SERVER_ENHANCED_DATA_MODEL.md): Advanced data models with budget management
 
-- **dbp_general_query**: Used to retrieve various types of codebase metadata
-  - Processes both standardized JSON and natural language requests
-  - Powered by Amazon Bedrock Nova Lite for fast response times
-  - Coordinates parallel execution of internal LLM tools for efficiency
-  - Uses specialized tools for querying file headers, function metadata, changelogs, etc.
+### 1. LLM Coordination Architecture
 
-- **dbp_commit_message**: Generates comprehensive commit messages
-  - Identifies and summarizes all changes since the last commit
-  - Provides context-aware descriptions of modifications
-  - Includes impact analysis for structural changes
+The system implements a hierarchical LLM coordination pattern:
 
-### 2. Implementation Strategy
+1. **Coordinator LLM**: An instance of Amazon Nova Lite with a dedicated system prompt manages incoming requests
+2. **Internal Tool LLMs**: Specialized LLM instances handle specific context types and processing tasks
+3. **Asynchronous Job Management**: Parallel execution of multiple internal tools for improved performance
 
-- **LLM Coordination**: Amazon Nova Lite manages and coordinates requests
-- **Parallel Processing**: Multiple internal tools can execute in parallel for better performance
+#### Request Processing Workflow
+
+1. **Request Ingestion**: The coordinator LLM receives an incoming MCP request
+2. **Context Assembly**: Basic context is assembled including PR-FAQ.md, WORKING_BACKWARDS.md, and codebase file listings
+3. **Tool Orchestration**: 
+   - The coordinator LLM determines which internal tools are required
+   - For each tool, it generates a unique UUID and queues a job internally
+   - Multiple tools can execute in parallel across different LLM instances
+4. **Result Collection**:
+   - The coordinator waits for job completion notifications
+   - Each internal tool reports success/error status along with execution context and results
+5. **Response Formation**: Once all internal jobs complete, the coordinator formats a structured response
+6. **Response Delivery**: The formatted response is sent to the MCP client
+
+#### Internal LLM Tools
+
+The coordinator LLM has access to these specialized internal tools:
+
+1. **coordinator_get_codebase_context**
+   - **Purpose**: Extract relevant file header information based on query context
+   - **Implementation**: Dedicated Amazon Nova Lite instance
+   - **Context Construction**: File headers focusing on "[Source file intent]" and "[Reference documentation]" sections
+   - **Metadata Enrichment**: Includes statistics on header compliance, file counts, and organization
+   - **Typical Queries**: 
+     - "What files are involved in implementing feature X?"
+     - "Where should I implement this new feature?"
+     - "How is the codebase organized?"
+   - **Response Format**: Structured analysis of relevant files with metadata
+
+2. **coordinator_get_codebase_changelog_context**
+   - **Purpose**: Analyze historical code changes across the codebase
+   - **Implementation**: Dedicated Amazon Nova Lite instance
+   - **Context Construction**: All "[GenAI tool change history]" sections from file headers
+   - **Typical Queries**:
+     - "What were the latest codebase changes?"
+     - "What parts of the codebase have been most active recently?"
+   - **Response Format**: Temporal analysis of code changes with relevance rankings
+
+3. **coordinator_get_documentation_context**
+   - **Purpose**: Answer questions about project documentation
+   - **Implementation**: Dedicated Amazon Nova Lite instance
+   - **Context Construction**: Content of all documentation markdown files (excluding MARKDOWN_CHANGELOG.md)
+   - **Typical Queries**:
+     - "If I implement feature X, what document files will be impacted?"
+     - "Where is SQL table Y described?"
+     - "Generate a dependency graph of documentation files"
+     - "Are there inconsistencies in the documentation?"
+   - **Response Format**: Documentation analysis with reference links
+
+4. **coordinator_get_documentation_changelog_context**
+   - **Purpose**: Analyze historical documentation changes
+   - **Implementation**: Dedicated Amazon Nova Lite instance
+   - **Context Construction**: All MARKDOWN_CHANGELOG.md file contents
+   - **Typical Queries**:
+     - "What documentation was recently updated?"
+     - "What documentation changes relate to feature X?"
+   - **Response Format**: Temporal analysis of documentation changes
+
+5. **coordinator_get_expert_architect_advice**
+   - **Purpose**: Provide advanced architectural reasoning and guidance
+   - **Implementation**: Anthropic Claude 3.7 Sonnet with 10,000 token context
+   - **Context Construction**: All sections from all available file headers
+   - **Capabilities**: Uses read_files tool for additional context when needed
+   - **Typical Queries**:
+     - "What's the best approach to implement feature X?"
+     - "How should we modify the architecture to support requirement Y?"
+   - **Response Format**: Detailed architectural analysis with rationale
+
+#### Common Internal Tools
+
+All LLM instances have access to:
+
+- **read_files**: 
+  - **Operation**: Synchronous
+  - **Purpose**: Read file contents from the codebase
+  - **Parameters**: List of files to read
+  - **Returns**: JSON with file metadata and content
+  - **Usage**: Allows LLMs to dynamically retrieve additional context
+
+### 2. MCP-Exposed Tools
+
+The system exposes the following tools to MCP clients:
+
+1. **dbp_general_query**
+   - **Purpose**: Retrieve various types of codebase metadata
+   - **Implementation**: Uses the LLM coordination architecture described above
+   - **Processing**: Coordinator LLM determines which internal tools are required based on query
+   - **Response**: Consolidated results from all executed internal tools
+
+2. **dbp_commit_message**
+   - **Purpose**: Generate comprehensive commit messages
+   - **Identifies and summarizes all changes since the last commit
+   - **Provides context-aware descriptions of modifications
+   - **Includes impact analysis for structural changes
+
+### 3. Budget and Resource Management
+
+To ensure responsible resource utilization:
+
+1. **Per-Tool Cost Budgeting**:
+   - Each internal tool execution has a maximum cost budget
+   - When budget is reached, the LLM is instructed to conclude the task
+   - Responses include "incomplete result" markers with appropriate metadata
+   - Response metadata includes budget utilization information
+
+2. **Timeout Management**:
+   - Each tool execution has a maximum allowed execution time
+   - Timeouts trigger graceful termination of the tool execution
+   - LLM is instructed to provide partial results with timeout indication
+   - Coordination ensures overall system stability despite individual timeouts
+
+### 4. Implementation Strategy
+
 - **Model Selection**: Different tasks utilize appropriate models:
   - Amazon Nova Lite for request coordination and simple queries
   - Claude 3.x models for more complex analysis tasks
 - **AWS Bedrock Integration**: Initially implemented with placeholder functions
   - Actual AWS Bedrock model interactions to be implemented separately
-  - Q Developer Chat will be used for implementing AWS Bedrock integration code
+  - Standardized input and response validation in place (currently as placeholders)
 
 ## Relationship to Other Components
 

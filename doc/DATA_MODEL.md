@@ -4,7 +4,7 @@ This document defines the data structures and relationships for the Documentatio
 
 ## Metadata Extraction Model
 
-The system uses Claude 3.7 Sonnet LLM to extract the following metadata from code files:
+The system uses Amazon Nova Lite LLM to extract the following metadata from code files:
 
 ```
 FileMetadata {
@@ -35,7 +35,7 @@ FileMetadata {
 ```
 
 The extraction process has these key characteristics:
-- Uses Claude 3.7 Sonnet's semantic understanding instead of keyword-based parsing
+- Uses LLM semantic understanding instead of keyword-based parsing
 - Extracts metadata across various programming languages without language-specific parsers
 - Identifies section content based on semantic meaning rather than exact format
 - Preserves hierarchical relationship between file, class, and function metadata
@@ -391,112 +391,24 @@ ScriptEntry {
    - Changes to configuration are saved to disk
    - Server connections are managed according to configuration
 
-## MCP Server Tool Data Model
+## MCP Server Implementation Data Models
 
-The MCP server provides two primary tools with their own data models:
+The MCP server implementation data models are documented in dedicated design documents:
 
-### dbp_general_query Tool
+- **[LLM Coordination Architecture](design/LLM_COORDINATION.md)**: Documents the data models for the LLM coordination system, including:
+  - Coordinator request/response models
+  - Internal tool job management
+  - Asynchronous execution tracking
 
-```python
-DBPGeneralQueryRequest {
-  query: String | Object    // Natural language query or structured JSON object
-  queryType: Enum           // NaturalLanguage, StructuredJSON
-  scope: {                  // Optional scope constraints
-    filePatterns: String[], // File patterns to include in query scope
-    directories: String[],  // Directories to search
-    excludePatterns: String[] // Patterns to exclude
-  }
-  responseFormat: Enum      // Concise, Detailed, JSON, Markdown
-  context: Object           // Additional context for the query
-  timeout: Integer          // Maximum execution time in seconds
-}
+- **[Internal LLM Tools](design/INTERNAL_LLM_TOOLS.md)**: Provides the data models for specialized internal tools, including:
+  - Context models for different query types
+  - Tool helper function interfaces
+  - Common tool interfaces
 
-DBPGeneralQueryResponse {
-  results: Object           // Query results (format depends on request)
-  metadata: {               // Information about the query execution
-    executionTimeMs: Integer, // Time taken to execute the query in milliseconds
-    modelsUsed: String[],   // LLMs utilized for this query
-    filesProcessed: Integer, // Number of files processed
-    tools: {                // Tools used to fulfill the query
-      name: String,         // Tool name
-      executionTimeMs: Integer // Time taken by this tool in milliseconds
-    }[],
-    totalCost: Number,      // Cumulated price cost for all LLM requests
-    backgroundTaskProgress: {  // Information about background task progress
-      status: Enum,         // NotStarted, InProgress, Complete, Error
-      processedFiles: Integer, // Number of files processed so far
-      totalFiles: Integer,  // Total number of files to process
-      percentComplete: Integer, // Percentage of completion (0-100)
-      currentActivity: String, // Description of current background activity
-      estimatedCompletionTimeMs: Integer // Estimated time until completion in milliseconds
-    }
-  }
-  suggestions: String[]     // Related queries that might be useful
-}
-```
-
-### dbp_commit_message Tool
-
-```python
-DBPCommitMessageRequest {
-  sinceDiff: String         // Optional: Git diff output or similar formatted diff
-  sinceCommit: String       // Optional: commit hash to use as starting point
-                            // Note: If neither sinceDiff nor sinceCommit are supplied,
-                            // the MCP server will automatically detect the last Git commit
-  includeImpact: Boolean    // Whether to include impact analysis
-  format: Enum              // Conventional, Detailed, Summary
-  scope: String             // Optional commit scope
-  maxLength: Integer        // Maximum length for commit message
-}
-
-DBPCommitMessageResponse {
-  commitMessage: {          // Generated commit message
-    title: String,          // Commit message title/subject
-    body: String,           // Detailed description
-    footer: String          // Optional footer with references, etc.
-  }
-  impactAnalysis: {         // Present if includeImpact is true
-    severity: Enum,         // None, Minor, Moderate, Major
-    affectedAreas: String[], // Code areas affected
-    suggestedReviewFocus: String[] // Areas that need careful review
-  }
-  changedFiles: {           // Information about changed files
-    path: String,           // File path
-    changeType: Enum,       // Added, Modified, Deleted, Renamed
-    summary: String         // Summary of changes
-  }[]
-  metadata: {
-    executionTimeMs: Integer, // Time taken to execute the request in milliseconds
-    modelsUsed: String[],   // LLMs utilized for this request
-    totalCost: Number,      // Cumulated price cost for all LLM requests
-    backgroundTaskProgress: {  // Information about background task progress
-      status: Enum,         // NotStarted, InProgress, Complete, Error
-      processedFiles: Integer, // Number of files processed so far
-      totalFiles: Integer,  // Total number of files to process
-      percentComplete: Integer, // Percentage of completion (0-100)
-      currentActivity: String, // Description of current background activity
-      estimatedCompletionTimeMs: Integer // Estimated time until completion in milliseconds
-    }
-  }
-}
-```
-
-### Internal Tool Execution Data Model
-
-```python
-InternalToolExecution {
-  toolName: String          // Name of the internal tool
-  toolParameters: Object    // Parameters provided to the tool
-  modelUsed: String         // LLM model used for this tool
-  startTime: Timestamp      // When tool execution started
-  endTime: Timestamp        // When tool execution completed
-  executionTimeMs: Integer  // Execution time in milliseconds
-  result: Object            // Result returned by the tool
-  error: String             // Error message if execution failed
-  dependencies: String[]    // Other tools this tool depends on
-  cost: Number              // Cost of this specific tool execution
-}
-```
+- **[Enhanced MCP Data Models](design/MCP_SERVER_ENHANCED_DATA_MODEL.md)**: Describes enhanced data models for MCP-exposed tools with:
+  - Budget management parameters
+  - Input/output validation
+  - Partial result handling
 
 ## Database Implementation
 
