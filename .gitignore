@@ -3,9 +3,6 @@
 # Exclude logs directory
 coding_assistant/logs/
 
-# Exclude scratchpad directory
-scratchpad/
-
 # Python virtual environment
 venv/
 

@@ -100,7 +100,7 @@ The DBP-S architecture consists of five core components:
 ### Consistency Analysis Engine
 - Analyzes relationships between documentation and code
 - Identifies inconsistencies and documentation gaps
-- Creates recommendation files in FIFO queue
+- Creates a single active recommendation file
 - Categorizes inconsistencies by severity and type
 - Predicts potential impacts of code changes on documentation
 - Generates specific, actionable recommendations

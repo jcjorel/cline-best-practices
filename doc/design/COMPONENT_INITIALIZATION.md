@@ -167,7 +167,7 @@ The system initialization occurs in clearly defined stages, where each stage mus
 
 8. **Recommendation Generator Initialization**
    - Load recommendation templates
-   - Initialize FIFO recommendation queue
+   - Initialize single recommendation system
    - Setup file monitoring for feedback
    - Prepare recommendation file structure
    - Connect to consistency analysis engine

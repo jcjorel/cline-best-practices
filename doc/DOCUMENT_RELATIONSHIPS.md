@@ -33,6 +33,13 @@ This document maps the relationships between documentation files in the project.
 - Impacts: [CONFIGURATION.md](#configurationmd) - Topic: Configuration strategy - Scope: Default values policy
 - Impacts: [SECURITY.md](#securitymd) - Topic: MCP client security - Scope: Credential management
 - Impacts: [DATA_MODEL.md](#data_modelmd) - Topic: Enhanced metadata extraction - Scope: MD5 digest storage
+- Impacts: [DATA_MODEL.md](#data_modelmd) - Topic: LLM-Based Metadata Extraction - Scope: Metadata extraction approach
+- Impacts: [DESIGN.md](#designmd) - Topic: LLM-Based Metadata Extraction - Scope: Implementation principles
+- Impacts: [design/BACKGROUND_TASK_SCHEDULER.md](#designbackground_task_schedulermd) - Topic: LLM-Based Metadata Extraction - Scope: Extraction process
+- Impacts: [design/INTERNAL_LLM_TOOLS.md](#designinternal_llm_toolsmd) - Topic: External Prompt Template Files - Scope: Tool implementation
+- Impacts: [doc/llm/prompts/](#docllmprompts) - Topic: External Prompt Template Files - Scope: Template structure and usage
+- Impacts: [DATA_MODEL.md](#data_modelmd) - Topic: LLM-Based Language Detection - Scope: Language detection approach
+- Impacts: [DESIGN.md](#designmd) - Topic: LLM-Based Language Detection - Scope: Programming language support
 
 ## DESIGN.md
 - Depends on: None
@@ -46,6 +53,8 @@ This document maps the relationships between documentation files in the project.
 - Depends on: [DESIGN.md](#designmd) - Topic: Security considerations - Scope: Data protection and access controls
 - Depends on: [DESIGN.md](#designmd) - Topic: Design decisions - Scope: Data handling approaches (moved from DESIGN_DECISIONS.md)
 - Depends on: [DESIGN.md](#designmd) - Topic: Python CLI Client - Scope: Client component design
+- Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: LLM-Based Metadata Extraction - Scope: Metadata extraction approach
+- Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: LLM-Based Language Detection - Scope: Language detection approach
 - Impacts: None
 
 ## DOCUMENT_RELATIONSHIPS.md
@@ -94,6 +103,7 @@ When documentation files are updated:
 - Depends on: [design/LLM_COORDINATION.md](#designllm_coordinationmd) - Topic: Tool integration - Scope: Coordination architecture
 - Depends on: [DESIGN.md](#designmd) - Topic: Internal tools - Scope: Tool purposes and capabilities
 - Depends on: [doc/llm/prompts/](#docllmprompts) - Topic: Prompt templates - Scope: LLM processing approach
+- Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: External Prompt Template Files - Scope: Tool implementation
 - Impacts: None
 
 ## design/MCP_SERVER_ENHANCED_DATA_MODEL.md
@@ -118,6 +128,7 @@ When documentation files are updated:
 - Depends on: [CONFIGURATION.md](#configurationmd) - Topic: Background Task Scheduler - Scope: Configuration parameters
 - Depends on: [SECURITY.md](#securitymd) - Topic: Security considerations - Scope: Data protection and permissions
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Enhanced metadata extraction - Scope: MD5 digest storage
+- Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: LLM-Based Metadata Extraction - Scope: Extraction process
 - Impacts: [DESIGN.md](#designmd) - Topic: Documentation Monitoring - Scope: Implementation details
 - Impacts: [CONFIGURATION.md](#configurationmd) - Topic: Background Task Scheduler - Scope: Configuration parameters
 - Impacts: [design/COMPONENT_INITIALIZATION.md](#designcomponent_initializationmd) - Topic: Background processing - Scope: Task scheduling
@@ -125,24 +136,25 @@ When documentation files are updated:
 ## doc/llm/prompts/
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Prompt template management - Scope: Template structure and organization
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: LLM processing approach - Scope: Template usage guidance
+- Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: External Prompt Template Files - Scope: Template structure and usage
 - Impacts: [design/INTERNAL_LLM_TOOLS.md](#designinternal_llm_toolsmd) - Topic: Tool integration - Scope: Prompt templates for LLM tools
 
 ## Relationship Graph
 
 The documentation relationship graph forms a directed acyclic graph (DAG) with the following characteristics:
 
-- **DESIGN_DECISIONS.md**: Root node with potential future outgoing edges as new decisions are added
+- **DESIGN_DECISIONS.md**: Root node with outgoing edges to multiple documents as design decisions are added
 - **DESIGN.md**: Root node with outgoing edges to DATA_MODEL.md, DOCUMENT_RELATIONSHIPS.md, and design/LLM_COORDINATION.md
 - **PR-FAQ.md**: Root node with outgoing edge to WORKING_BACKWARDS.md
 - **design/LLM_COORDINATION.md**: Node with outgoing edge to design/INTERNAL_LLM_TOOLS.md and incoming edge from DESIGN.md
 - **CONFIGURATION.md**: Leaf node with incoming edges from DESIGN.md and DATA_MODEL.md
-- **DATA_MODEL.md**: Leaf node with incoming edges from DESIGN.md
+- **DATA_MODEL.md**: Leaf node with incoming edges from DESIGN.md and DESIGN_DECISIONS.md
 - **DOCUMENT_RELATIONSHIPS.md**: Leaf node with incoming edge from DESIGN.md
 - **WORKING_BACKWARDS.md**: Leaf node with incoming edge from PR-FAQ.md
-- **design/INTERNAL_LLM_TOOLS.md**: Leaf node with incoming edges from design/LLM_COORDINATION.md and DESIGN.md
+- **design/INTERNAL_LLM_TOOLS.md**: Node with incoming edges from design/LLM_COORDINATION.md, DESIGN.md, doc/llm/prompts/, and DESIGN_DECISIONS.md
 - **SECURITY.md**: Leaf node with incoming edges from DESIGN.md, DATA_MODEL.md, WORKING_BACKWARDS.md, and design/LLM_COORDINATION.md
 - **doc/llm/prompts/**: Node with incoming edges from DESIGN_DECISIONS.md and outgoing edge to design/INTERNAL_LLM_TOOLS.md
-
-- **design/COMPONENT_INITIALIZATION.md**: Node with incoming edges from DESIGN.md, CONFIGURATION.md, DATA_MODEL.md, SECURITY.md, design/BACKGROUND_TASK_SCHEDULER.md, and design/LLM_COORDINATION.md, and outgoing edges to DESIGN.md and CONFIGURATION.md
+- **design/COMPONENT_INITIALIZATION.md**: Node with multiple incoming edges and outgoing edges to DESIGN.md and CONFIGURATION.md
+- **design/BACKGROUND_TASK_SCHEDULER.md**: Node with incoming edges from DESIGN_DECISIONS.md and outgoing edges to multiple documents
 
 This graph structure helps the system determine the correct order for propagating updates and ensuring global consistency.

@@ -437,7 +437,7 @@ The database schema is organized as a series of related tables:
 1. **DocumentReferences**: All document references indexed by path, including metadata timestamps
 2. **DocumentRelationships**: Bidirectional graph of document relationships
 3. **Inconsistencies**: Active inconsistencies indexed by status
-4. **Recommendations**: FIFO queue of pending recommendations (automatically purged after 7 days)
+4. **Recommendations**: Single active recommendation (automatically purged after 7 days)
 5. **DeveloperDecisions**: Record of all developer decisions (automatically purged after 7 days) 
 6. **FileMetadata**: Tracking data including last known file size and modification time
 

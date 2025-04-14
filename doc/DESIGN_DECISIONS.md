@@ -2,7 +2,31 @@
 
 This document serves as a temporary log of project-wide design decisions that have not yet been incorporated into the appropriate documentation files. Decisions are recorded with newest entries at the top and should be periodically synced to appropriate documentation files (DESIGN.md, SECURITY.md, DATA_MODEL.md, CONFIGURATION.md).
 
-There are currently no pending design decisions to be merged. All previously recorded decisions have been successfully incorporated into the appropriate documentation files:
+## LLM-Based Metadata Extraction
+
+- **Decision**: Metadata extraction from GenAI headers and file headers MUST be performed exclusively by LLM with no programmatic fallback
+- **Rationale**: Leverages LLM's natural language understanding capabilities to interpret documentation semantics rather than relying on rigid parsing logic
+- **Alternatives considered**: Hybrid approach with programmatic parsing fallback, which was rejected to maintain consistent extraction quality
+- **Implications**: Complete dependency on LLM availability for metadata extraction, potential for higher token usage, improved adaptability to varied documentation formats
+- **Date**: 2025-04-15
+
+## External Prompt Template Files
+
+- **Decision**: LLM prompts for internal tools are not hardcoded in the server but read directly from doc/llm/prompts/ with no fallback mechanism
+- **Rationale**: Separates prompt content from code to enable prompt engineering without code changes and maintains prompt version control within documentation
+- **Alternatives considered**: Hardcoded prompts with file-based overrides, which was rejected to enforce documentation-based approach
+- **Implications**: Server will fail if prompt files are missing, ensuring documentation integrity; requires prompt files to be properly maintained
+- **Date**: 2025-04-15
+
+## LLM-Based Language Detection
+
+- **Decision**: No programmatic language detection is needed as the Metadata extraction LLM tool will perform language detection itself
+- **Rationale**: Eliminates need for maintenance of language detection rules and leverages LLM's inherent ability to identify programming languages
+- **Alternatives considered**: Using language-specific file extension mapping or specialized language detection libraries, rejected to reduce dependencies
+- **Implications**: Unified approach to both language detection and metadata extraction, reduced system complexity, dependency on LLM quality for language identification
+- **Date**: 2025-04-15
+
+There are also previously recorded decisions that have been successfully incorporated into the appropriate documentation files:
 
 - Simplified Recommendation System → DESIGN.md, DATA_MODEL.md
 - Database Architecture → DATA_MODEL.md

@@ -120,9 +120,9 @@ This document describes the architectural principles, components, and design dec
   - Documentation updates based on code changes
   - Code refactoring to align with documentation
   - Inconsistency resolution between documentation files
-- **File Management**: FIFO queue of individual recommendation files
-- **Design Decision**: Implement a First-In-First-Out queue for recommendation processing
-  - **Rationale**: Ensures older recommendations are addressed before newer ones, preventing recommendation buildup and ensuring that fundamental issues are resolved before addressing their downstream effects
+- **File Management**: Single active recommendation file
+- **Design Decision**: Implement a single active recommendation approach
+  - **Rationale**: Simplifies the recommendation workflow and focuses developer attention on one consistency issue at a time
   - **Key Implications**: Developers must process recommendations in the order presented, but can use AMEND to adjust inappropriate recommendations
 
 ### 4. Developer Feedback System

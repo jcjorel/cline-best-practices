@@ -74,8 +74,7 @@ A: The Documentation-Based Programming system includes an automatic consistency 
 
 1. Monitors documentation and code changes in near real-time
 2. Analyzes impacts on both documentation and code
-3. Creates recommendation files in `<project_root>/coding_assistant/dbp/recommendations/` as a FIFO queue
-4. Moves the oldest recommendation to `<project_root>/coding_assistant/dbp/PENDING_RECOMMENDATION.md`
+3. Creates a single recommendation file directly at `<project_root>/coding_assistant/dbp/PENDING_RECOMMENDATION.md`
 5. Allows developers to review and decide on recommendations with three options:
    - ACCEPT: Apply the recommended changes automatically
    - REJECT: Discard the recommendation

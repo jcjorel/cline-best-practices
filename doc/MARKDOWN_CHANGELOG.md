@@ -2,6 +2,9 @@
 
 This file tracks all changes made to documentation markdown files in this directory.
 
+2025-04-15T00:59:00Z : [DATA_MODEL.md, DESIGN.md, PR-FAQ.md, WORKING_BACKWARDS.md, design/COMPONENT_INITIALIZATION.md] Removed references to FIFO recommendation management to reflect the simplified recommendation system
+2025-04-15T00:12:03Z : [DOCUMENT_RELATIONSHIPS.md] Updated document relationships to include the new design decisions about LLM-Based Metadata Extraction, External Prompt Template Files, and LLM-Based Language Detection
+2025-04-15T00:08:29Z : [DESIGN_DECISIONS.md] Added three new design decisions: LLM-Based Metadata Extraction, External Prompt Template Files, and LLM-Based Language Detection
 2025-04-14T20:57:00Z : [DESIGN_DECISIONS.md] Cleaned file by removing implemented "Simplified Recommendation System" design decision
 2025-04-14T19:55:41Z : [DESIGN.md] Updated file structure and recommendation workflow sections to implement simplified recommendation system
 2025-04-14T19:55:41Z : [DATA_MODEL.md] Updated recommendation data model and generation process for simplified single-recommendation approach
