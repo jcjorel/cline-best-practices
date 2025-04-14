@@ -17,9 +17,14 @@ Each internal tool follows a common pattern:
 
 ## Internal Tool Components
 
+Each tool uses a standardized prompt template located in the `doc/llm/prompts/` directory. These templates define the exact instructions, input format, and expected output schema for each tool. For implementation details, refer to the specific template files.
+
+**Design Rationale**: Standardized prompt templates were established to centralize LLM instructions and improve maintainability. Each internal LLM tool requires a specific markdown template with placeholders for data/metadata insertion. This approach ensures consistent formatting standards across all templates and simplifies maintenance of LLM instructions.
+
 ### 1. coordinator_get_codebase_context
 
-**Purpose**: Extract relevant file header information based on query context
+**Purpose**: Extract relevant file header information based on query context  
+**Prompt Template**: [coordinator_get_codebase_context.md](../llm/prompts/coordinator_get_codebase_context.md)
 
 **Implementation Details**:
 - **LLM Model**: Dedicated Amazon Nova Lite instance
@@ -38,7 +43,8 @@ Each internal tool follows a common pattern:
 
 ### 2. coordinator_get_codebase_changelog_context
 
-**Purpose**: Analyze historical code changes across the codebase
+**Purpose**: Analyze historical code changes across the codebase  
+**Prompt Template**: [coordinator_get_codebase_changelog_context.md](../llm/prompts/coordinator_get_codebase_changelog_context.md)
 
 **Implementation Details**:
 - **LLM Model**: Dedicated Amazon Nova Lite instance
@@ -55,7 +61,8 @@ Each internal tool follows a common pattern:
 
 ### 3. coordinator_get_documentation_context
 
-**Purpose**: Answer questions about project documentation
+**Purpose**: Answer questions about project documentation  
+**Prompt Template**: [coordinator_get_documentation_context.md](../llm/prompts/coordinator_get_documentation_context.md)
 
 **Implementation Details**:
 - **LLM Model**: Dedicated Amazon Nova Lite instance
@@ -73,7 +80,8 @@ Each internal tool follows a common pattern:
 
 ### 4. coordinator_get_documentation_changelog_context
 
-**Purpose**: Analyze historical documentation changes
+**Purpose**: Analyze historical documentation changes  
+**Prompt Template**: [coordinator_get_documentation_changelog_context.md](../llm/prompts/coordinator_get_documentation_changelog_context.md)
 
 **Implementation Details**:
 - **LLM Model**: Dedicated Amazon Nova Lite instance
@@ -89,7 +97,8 @@ Each internal tool follows a common pattern:
 
 ### 5. coordinator_get_expert_architect_advice
 
-**Purpose**: Provide advanced architectural reasoning and guidance
+**Purpose**: Provide advanced architectural reasoning and guidance  
+**Prompt Template**: [coordinator_get_expert_architect_advice.md](../llm/prompts/coordinator_get_expert_architect_advice.md)
 
 **Implementation Details**:
 - **LLM Model**: Anthropic Claude 3.7 Sonnet with 10,000 token context

@@ -412,10 +412,18 @@ The MCP server implementation data models are documented in dedicated design doc
 
 ## Database Implementation
 
-The Documentation-Based Programming system uses a persistent SQLite database with the following characteristics:
+The Documentation-Based Programming system supports both PostgreSQL and SQLite (with SQLite as the default) databases with the following characteristics:
 
-- **Local Persistence**: Metadata stored in a SQLite database file for persistence across application restarts
-- **Change Detection**: Uses file modification timestamps and file sizes to detect changes in source files
+- **Local Persistence**: Metadata stored in a database for persistence across application restarts
+- **Database Flexibility**: Support for both PostgreSQL (for advanced deployments) and SQLite (zero-dependency default)
+  - **Rationale**: Provides deployment flexibility while ensuring a zero-dependency default option
+  - **Implementation Requirements**: 
+    - SQL queries must be aligned to SQLite capabilities (SQLite types and limitations)
+    - SQLite operational mode must use WAL (Write-Ahead Logging) for maximum safety
+    - Database migrations must be managed through Alembic
+    - All database access must be thread-safe
+- **SQL Compatibility**: All queries aligned to SQLite capabilities to ensure cross-database compatibility
+- **Change Detection**: Uses file modification timestamps, file sizes, and MD5 digests to detect changes in source files
 - **Incremental Updates**: Only re-extracts metadata for changed files, improving performance
 - **Efficient Representation**: Optimized schema design to minimize storage requirements
 - **Fast Access Patterns**: Indexed for quick lookups and relationship traversal
@@ -423,13 +431,13 @@ The Documentation-Based Programming system uses a persistent SQLite database wit
 - **Reduced CPU Usage**: Minimizes computational overhead for large codebases
 - **Faster Startup**: Significant performance improvement after initial indexing
 
-The SQLite database schema is organized as a series of related tables:
+The database schema is organized as a series of related tables:
 
 1. **DocumentReferences**: All document references indexed by path, including metadata timestamps
 2. **DocumentRelationships**: Bidirectional graph of document relationships
 3. **Inconsistencies**: Active inconsistencies indexed by status
-4. **Recommendations**: FIFO queue of pending recommendations
-5. **DeveloperDecisions**: Record of all developer decisions
+4. **Recommendations**: FIFO queue of pending recommendations (automatically purged after 7 days)
+5. **DeveloperDecisions**: Record of all developer decisions (automatically purged after 7 days) 
 6. **FileMetadata**: Tracking data including last known file size and modification time
 
 ### Change Detection Strategy
@@ -438,8 +446,12 @@ The system implements an efficient change detection strategy:
 
 1. On startup, compares file system metadata (modification time, file size) with stored values
 2. During runtime, monitors file system events for changes
-3. Only triggers metadata re-extraction when actual file content changes are detected
-4. Maintains a processing queue for files that need metadata updates
+3. Calculates and stores MD5 digests of files for reliable change detection
+   - **Rationale**: MD5 digests provide more reliable change detection than timestamp/size alone
+   - **Benefits**: Significantly reduces unnecessary metadata re-extraction 
+   - **Implementation**: Digests are stored in the database as part of file metadata
+4. Only triggers metadata re-extraction when actual file content changes are detected
+5. Maintains a processing queue for files that need metadata updates
 
 ### Database Migration Strategy
 
@@ -447,5 +459,33 @@ To support future schema changes:
 
 1. Database includes a version table to track schema version
 2. Application checks schema version on startup
-3. Automatic migration process for schema updates
+3. Automatic migration process for schema updates using Alembic
 4. Fallback to rebuild database from scratch if migration fails
+5. Safe migration path between SQLite and PostgreSQL when needed
+
+### SQLite-Specific Implementation
+
+When using the default SQLite database:
+
+1. **WAL Mode**: Write-Ahead Logging mode is used for maximum safety and concurrency
+2. **Thread Safety**: All database access is thread-safe through connection pooling and proper locking
+3. **Performance Tuning**: Appropriate indexes and optimizations for common query patterns
+4. **Automatic Maintenance**: Periodic VACUUM operations to maintain performance
+
+### PostgreSQL-Specific Implementation
+
+When using PostgreSQL:
+
+1. **Connection Pooling**: Efficient connection management to avoid resource exhaustion
+2. **Thread Safety**: Concurrent access handled through PostgreSQL's transaction system
+3. **Schema Design**: Leverages PostgreSQL capabilities while maintaining SQLite compatibility
+4. **Performance Tuning**: PostgreSQL-specific optimizations while maintaining query compatibility
+
+### Recommendation Lifecycle Management
+
+The system implements automatic recommendation cleanup to prevent database growth:
+
+1. Recommendations and related developer decisions are automatically purged after 7 days
+2. Purge mechanism tracks recommendation age based on creation timestamp
+3. Purged recommendations are removed from both database and filesystem
+4. Purge threshold is configurable through system configuration

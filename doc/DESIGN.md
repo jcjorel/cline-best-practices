@@ -18,7 +18,31 @@ This document describes the architectural principles, components, and design dec
 2. **Automatic Consistency Maintenance**: System actively ensures consistency between documentation and code.
 3. **Global Contextual Awareness**: AI assistants maintain awareness of entire project context.
 4. **Design Decision Preservation**: All significant design decisions are captured and maintained.
-5. **Zero Configuration Operation**: System functions without requiring manual setup or maintenance.
+5. **Reasonable Default Values**: System provides carefully selected default values for all configurable parameters while allowing customization.
+
+## Implementation Principles
+
+1. **Avoid Manual Parsing**: Leverage Python libraries for parsing structured data (dates, times, etc.) rather than implementing custom parsers.
+   - **Rationale**: Reduces maintenance burden and improves adaptability
+   - **Implementation**: Use standard libraries rather than custom parsing logic
+   
+2. **Metadata Normalization via LLM**: Allow LLMs to handle metadata extraction and normalization rather than implementing rigid parsing logic.
+   - **Rationale**: Leverages LLM capabilities for format adaptation rather than rigid parsing
+   - **Implementation**: GenAI header templates are provided as-is in LLM context
+   - **Benefits**: Offers greater flexibility despite potentially using more prompt tokens
+   
+3. **Precise LLM Prompts**: Provide detailed JSON schemas and formats in LLM tool prompts to ensure consistent output.
+   - **Requirement**: LLM tool prompts must specify precise JSON formats and expected content
+   - **Benefits**: Standardizes output despite relying on LLM output quality and consistency
+
+4. **Thread-Safe Database Access**: Ensure all database operations are thread-safe through proper connection management.
+
+5. **Code Size Governance**: Maintain files with maximum 600 lines, breaking down larger files as needed.
+   - **Rationale**: Ensures code maintainability and readability
+   - **Implementation**: Files exceeding limit are broken down into smaller files
+   - **Implications**: May require additional cross-file references and imports
+   
+6. **Explicit Error Handling**: Use "throw on error" for all error cases with descriptive error messages.
 
 ## System Components
 

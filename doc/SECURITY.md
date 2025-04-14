@@ -52,15 +52,24 @@ The recommendation system implements these security controls:
 - **Developer Control**: Multiple decision options (ACCEPT/REJECT/AMEND) for complete control
 - **Limited Scope**: Recommendations cannot affect files outside the project directory
 
-## Security in MCP Server Implementation
+## Security in MCP Client and Server Implementation
 
-The MCP server implementation follows these security principles:
+The MCP implementation follows these security principles:
 
+### MCP Server
 - **Local Server**: Runs locally with no external connections
 - **Limited Scope**: Only provides services within defined tool boundaries
 - **Resource Monitoring**: Implements resource limits and usage monitoring
 - **Command Validation**: All commands validated before execution
 - **Error Containment**: Robust error handling to prevent any system impact
+
+### MCP Client
+- **No External Credentials Required**: Python MCP client does not require AWS credentials
+  - **Rationale**: Client only communicates with MCP server using the MCP protocol, not directly with AWS services
+  - **Implementation**: Credential management remains server-side responsibility only
+- **Protocol Security**: Communicates with MCP server using the MCP protocol only
+- **Credential Separation**: All credential management remains server-side
+- **Clear Scope Boundaries**: Client handles communication but delegates processing to server
 
 This comprehensive security model ensures that the Documentation-Based Programming system maintains the confidentiality and integrity of all project code and documentation while operating with minimal system impact.
 

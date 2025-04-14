@@ -4,12 +4,16 @@ This document describes the configuration parameters available for the Documenta
 
 ## Configuration Overview
 
-The Documentation-Based Programming system supports configuration options through several mechanisms:
+The Documentation-Based Programming system follows a policy of reasonable default values while providing configuration options through several mechanisms:
 
 1. **File-based configuration**: Configuration files in standard formats (JSON, YAML)
 2. **Cline software settings**: Integration with Cline's configuration system
 3. **Environment variables**: For containerized or headless environments
 4. **Command-line parameters**: For one-time overrides
+
+All configuration parameters have carefully selected defaults that work in most environments without requiring manual setup, while still allowing customization for specific needs.
+
+**Design Rationale**: Default values are carefully selected to work in most environments, configuration documentation clearly indicates defaults and valid ranges, and the system remains operational with minimal setup while allowing customization when needed.
 
 ## MCP Python CLI Client Configuration
 
@@ -74,11 +78,23 @@ The Documentation-Based Programming system supports configuration options throug
 
 | Parameter | Description | Default | Valid Values |
 |-----------|-------------|---------|-------------|
-| `database.path` | Path to SQLite database file | `"~/.dbp/metadata.db"` | Valid file path |
-| `database.max_size_mb` | Maximum database size in megabytes | `500` | `10-10000` |
-| `database.vacuum_threshold` | Threshold for automatic vacuum (% free space) | `20` | `5-50` |
+| `database.type` | Database backend to use | `"sqlite"` | `"sqlite", "postgresql"` |
+| `database.path` | Path to SQLite database file (when using SQLite) | `"~/.dbp/metadata.db"` | Valid file path |
+| `database.connection_string` | PostgreSQL connection string (when using PostgreSQL) | `null` | Valid PostgreSQL connection string |
+| `database.max_size_mb` | Maximum database size in megabytes (SQLite only) | `500` | `10-10000` |
+| `database.vacuum_threshold` | Threshold for automatic vacuum (% free space) (SQLite only) | `20` | `5-50` |
 | `database.connection_timeout` | Database connection timeout in seconds | `5` | `1-30` |
 | `database.max_connections` | Maximum number of concurrent database connections | `4` | `1-16` |
+| `database.use_wal_mode` | Use Write-Ahead Logging mode for SQLite | `true` | `true, false` |
+
+### Recommendation Lifecycle Settings
+
+| Parameter | Description | Default | Valid Values |
+|-----------|-------------|---------|-------------|
+| `recommendations.auto_purge_enabled` | Enable automatic purging of old recommendations | `true` | `true, false` |
+| `recommendations.purge_age_days` | Age in days after which recommendations are purged | `7` | `1-365` |
+| `recommendations.purge_decisions_with_recommendations` | Also purge related developer decisions | `true` | `true, false` |
+| `recommendations.max_active_recommendations` | Maximum number of pending recommendations | `100` | `10-1000` |
 
 ## Configuration File Format
 
@@ -115,9 +131,17 @@ Configuration can be specified in JSON format:
     "batch_size": 20
   },
   "database": {
+    "type": "sqlite",
     "path": "~/.dbp/metadata.db",
     "max_size_mb": 500,
-    "vacuum_threshold": 20
+    "vacuum_threshold": 20,
+    "use_wal_mode": true
+  },
+  "recommendations": {
+    "auto_purge_enabled": true,
+    "purge_age_days": 7,
+    "purge_decisions_with_recommendations": true,
+    "max_active_recommendations": 100
   }
 }
 ```
@@ -132,6 +156,8 @@ All configuration parameters can be overridden using environment variables with 
 | `DBP_SERVER_PORT` | `server.port` |
 | `DBP_OUTPUT_FORMAT` | `output.format` |
 | `DBP_MONITOR_DELAY` | `monitor.delay` |
+| `DBP_DATABASE_TYPE` | `database.type` |
+| `DBP_RECOMMENDATIONS_PURGE_AGE_DAYS` | `recommendations.purge_age_days` |
 
 ## Cline Integration
 

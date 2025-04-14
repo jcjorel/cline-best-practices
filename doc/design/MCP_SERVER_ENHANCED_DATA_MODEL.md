@@ -6,6 +6,8 @@ This document provides detailed data models for the MCP server tools with enhanc
 
 The MCP server exposes tools to clients that leverage the LLM coordination architecture described in [LLM_COORDINATION.md](LLM_COORDINATION.md). This document focuses on the specific data models for the MCP-exposed tools, including their enhanced features for resource management and validation.
 
+These MCP-exposed tools utilize the internal LLM tools detailed in [INTERNAL_LLM_TOOLS.md](INTERNAL_LLM_TOOLS.md), which in turn use the standardized prompt templates defined in the `doc/llm/prompts/` directory. While this document focuses on the interface between clients and the MCP server, the actual processing leverages the complete LLM coordination architecture.
+
 ## MCP-Exposed Tool Data Models
 
 ### dbp_general_query Tool

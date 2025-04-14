@@ -9,6 +9,7 @@ The LLM coordination architecture enables efficient processing of queries by orc
 1. **Coordinator LLM**: An instance of Amazon Nova Lite that manages incoming requests and orchestrates internal tools
 2. **Internal Tool LLMs**: Specialized LLM instances for processing specific types of context (code, documentation, etc.)
 3. **Asynchronous Job Management**: UUID-based tracking system for parallel execution of internal tools
+4. **Standardized Prompt Templates**: Structured templates in `doc/llm/prompts/` that define each tool's input/output format
 
 ## Request Processing Workflow
 
@@ -16,7 +17,8 @@ The LLM coordination architecture enables efficient processing of queries by orc
 2. **Context Assembly**: Basic context is assembled including PR-FAQ.md, WORKING_BACKWARDS.md, and codebase file listings
 3. **Tool Orchestration**: 
    - The coordinator LLM determines which internal tools are required
-   - For each tool, it generates a unique UUID and queues a job internally
+   - For each tool, it selects the appropriate prompt template from `doc/llm/prompts/`
+   - It generates a unique UUID and queues a job internally for each tool
    - Multiple tools can execute in parallel across different LLM instances
 4. **Result Collection**:
    - The coordinator waits for job completion notifications
@@ -189,6 +191,8 @@ The LLM coordination architecture implements several security measures:
 - Integrates with the dbp_general_query and dbp_commit_message MCP tools
 - Leverages the SQLite database for retrieving metadata about the codebase
 - Adheres to the security principles defined in SECURITY.md
+- Uses standardized prompt templates from `doc/llm/prompts/` directory
+- Coordinates with internal tools as detailed in [INTERNAL_LLM_TOOLS.md](INTERNAL_LLM_TOOLS.md)
 
 ## Design Decisions
 

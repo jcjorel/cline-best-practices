@@ -2,6 +2,26 @@
 
 This file tracks all changes made to documentation markdown files in this directory.
 
+2025-04-14T19:24:00Z : [design/INTERNAL_LLM_TOOLS.md] Added prompt template management design rationale
+2025-04-14T19:20:00Z : [SECURITY.md] Added MCP client security design rationale
+2025-04-14T19:16:00Z : [CONFIGURATION.md] Added configuration strategy design rationale
+2025-04-14T19:13:00Z : [DESIGN.md] Enhanced implementation principles with design rationales
+2025-04-14T19:10:00Z : [DATA_MODEL.md] Added database architecture decision details and MD5 digest rationale
+2025-04-14T19:05:15Z : [design/MCP_SERVER_ENHANCED_DATA_MODEL.md] Added references to prompt templates and improved connection to LLM architecture
+2025-04-14T19:03:19Z : [design/LLM_COORDINATION.md] Added references to prompt templates and connection to INTERNAL_LLM_TOOLS.md
+2025-04-14T19:02:22Z : [design/INTERNAL_LLM_TOOLS.md] Added links to prompt templates for each tool
+2025-04-14T18:56:26Z : [SECURITY.md] Added MCP client security information
+2025-04-14T18:54:05Z : [CONFIGURATION.md] Updated configuration overview and added database type and recommendation lifecycle settings
+2025-04-14T18:51:03Z : [DESIGN.md] Updated core architecture principles and added implementation principles section
+2025-04-14T18:49:02Z : [DATA_MODEL.md] Updated database implementation for PostgreSQL/SQLite support, MD5 digest storage, and 7-day purge policy
+2025-04-14T18:45:13Z : [DOCUMENT_RELATIONSHIPS.md] Updated relationships to include LLM prompt templates directory
+2025-04-14T18:43:13Z : [llm/prompts/coordinator_get_expert_architect_advice.md] Created expert architect advice prompt template
+2025-04-14T18:40:46Z : [llm/prompts/coordinator_get_documentation_changelog_context.md] Created documentation changelog context prompt template
+2025-04-14T18:39:55Z : [llm/prompts/coordinator_get_codebase_changelog_context.md] Created codebase changelog context prompt template
+2025-04-14T18:39:16Z : [llm/prompts/coordinator_get_documentation_context.md] Created documentation context prompt template
+2025-04-14T18:38:21Z : [llm/prompts/coordinator_get_codebase_context.md] Created codebase context prompt template
+2025-04-14T18:37:41Z : [llm/prompts/README.md] Created readme for LLM prompt templates
+2025-04-14T18:33:40Z : [DESIGN_DECISIONS.md] Added architecture and implementation decisions for database, configuration, recommendations, code structure, LLM processing, prompt templates, metadata extraction, MCP client security, and implementation principles
 2025-04-14T13:36:36Z : [DOCUMENT_RELATIONSHIPS.md] Added relationships for the new Background Task Scheduler design document
 2025-04-14T13:35:52Z : [DATA_MODEL.md] Updated metadata extraction model to reference Amazon Nova Lite instead of Claude 3.7 Sonnet
 2025-04-14T13:35:05Z : [CONFIGURATION.md] Added configuration parameters for the Background Task Scheduler component

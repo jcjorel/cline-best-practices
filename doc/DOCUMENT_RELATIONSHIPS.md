@@ -23,12 +23,16 @@ This document maps the relationships between documentation files in the project.
 ## CONFIGURATION.md
 - Depends on: [DESIGN.md](#designmd) - Topic: System components - Scope: Configurable parameters
 - Depends on: [DATA_MODEL.md](#data_modelmd) - Topic: CLI Client model - Scope: Configuration structure
+- Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Configuration strategy - Scope: Default values policy
 - Impacts: None
 
 ## DESIGN_DECISIONS.md
 - Depends on: None
 - Impacts: [DESIGN.md](#designmd) - Topic: Design decisions - Scope: Project-wide architectural choices
 - Impacts: [DATA_MODEL.md](#data_modelmd) - Topic: Design decisions - Scope: Database implementation and persistence strategy
+- Impacts: [CONFIGURATION.md](#configurationmd) - Topic: Configuration strategy - Scope: Default values policy
+- Impacts: [SECURITY.md](#securitymd) - Topic: MCP client security - Scope: Credential management
+- Impacts: [DATA_MODEL.md](#data_modelmd) - Topic: Enhanced metadata extraction - Scope: MD5 digest storage
 
 ## DESIGN.md
 - Depends on: None
@@ -89,6 +93,7 @@ When documentation files are updated:
 ## design/INTERNAL_LLM_TOOLS.md
 - Depends on: [design/LLM_COORDINATION.md](#designllm_coordinationmd) - Topic: Tool integration - Scope: Coordination architecture
 - Depends on: [DESIGN.md](#designmd) - Topic: Internal tools - Scope: Tool purposes and capabilities
+- Depends on: [doc/llm/prompts/](#docllmprompts) - Topic: Prompt templates - Scope: LLM processing approach
 - Impacts: None
 
 ## design/MCP_SERVER_ENHANCED_DATA_MODEL.md
@@ -102,8 +107,14 @@ When documentation files are updated:
 - Depends on: [DATA_MODEL.md](#data_modelmd) - Topic: Metadata Extraction Model - Scope: Metadata structure and storage
 - Depends on: [CONFIGURATION.md](#configurationmd) - Topic: Background Task Scheduler - Scope: Configuration parameters
 - Depends on: [SECURITY.md](#securitymd) - Topic: Security considerations - Scope: Data protection and permissions
+- Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Enhanced metadata extraction - Scope: MD5 digest storage
 - Impacts: [DESIGN.md](#designmd) - Topic: Documentation Monitoring - Scope: Implementation details
 - Impacts: [CONFIGURATION.md](#configurationmd) - Topic: Background Task Scheduler - Scope: Configuration parameters
+
+## doc/llm/prompts/
+- Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Prompt template management - Scope: Template structure and organization
+- Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: LLM processing approach - Scope: Template usage guidance
+- Impacts: [design/INTERNAL_LLM_TOOLS.md](#designinternal_llm_toolsmd) - Topic: Tool integration - Scope: Prompt templates for LLM tools
 
 ## Relationship Graph
 
@@ -119,5 +130,6 @@ The documentation relationship graph forms a directed acyclic graph (DAG) with t
 - **WORKING_BACKWARDS.md**: Leaf node with incoming edge from PR-FAQ.md
 - **design/INTERNAL_LLM_TOOLS.md**: Leaf node with incoming edges from design/LLM_COORDINATION.md and DESIGN.md
 - **SECURITY.md**: Leaf node with incoming edges from DESIGN.md, DATA_MODEL.md, WORKING_BACKWARDS.md, and design/LLM_COORDINATION.md
+- **doc/llm/prompts/**: Node with incoming edges from DESIGN_DECISIONS.md and outgoing edge to design/INTERNAL_LLM_TOOLS.md
 
 This graph structure helps the system determine the correct order for propagating updates and ensuring global consistency.
