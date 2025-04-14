@@ -70,7 +70,9 @@ For simple changes (single-file modification, bug fix, <50 lines changed):
 - Implement directly in ACT mode
 
 For complex changes:
-1. Create overview implementation document: `<project_root>/scratchpad/{TASK_NAME}_PLAN_OVERVIEW.md` with:
+1. Create a directory for the implementation plan: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/`
+
+2. Create overview implementation document: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_overview.md` with:
    - Organized in logical temporal phases
    - One level down of details
    - List of all detailed implementation plan file names
@@ -78,19 +80,19 @@ For complex changes:
    - Source documentation snippets providing essential context for implementation
    - Names of source documentation files where deeper context can be found if needed
 
-2. Create and maintain side-car progress file: `<project_root>/scratchpad/{TASK_NAME}_PLAN_PROGRESS.md` to track:
+3. Create and maintain side-car progress file: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_progress.md` to track:
    - Both plan creation steps and implementation status
-   - Status for each subtask using these indicators:
-     - Plan not created
-     - Plan creation in progress
-     - Plan created
-     - Implementation in progress
-     - Implementation completed
+   - Status for each subtask always reported with these indicators and icon letters:
+     - ❌ Plan not created
+     - 🔄 Plan creation in progress
+     - ✅ Plan created
+     - 🚧 Implementation in progress
+     - ✨ Implementation completed
    - Each tracked subtask associated with a detailed implementation plan filename
-   - Consistency check status
+   - Consistency check status depicted with ✓ when passed
 
-3. Create all detailed implementation plan markdown files one by one:
-   - File naming: `<project_root>/scratchpad/{TASK_NAME}_PLAN_{SUBTASK_NAME}.md`
+4. Create all detailed implementation plan markdown files one by one:
+   - File naming: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_{subtask_name}.md`
    - Update progress file after each detailed plan creation
    - Maximum 400 lines per file (use multi-step document update if needed)
    - Only extremely complex tasks have dedicated implementation files
@@ -98,23 +100,23 @@ For complex changes:
    - Stop processing gracefully when context window exceeds 75%
      - When stopping, propose to restart tasks in another session
 
-4. Perform consistency check in a clean session:
+5. Perform consistency check in a clean session:
    - Review all generated files and associated source documents
    - Mark progress file to confirm consistency check completion
    - Note that implementation can only proceed after consistency check
 
-5. Respond with implementation instructions:
+6. Respond with implementation instructions:
    ```
    I've created:
-   1. Implementation overview: `<project_root>/scratchpad/{TASK_NAME}_PLAN_OVERVIEW.md`
-   2. Progress tracker: `<project_root>/scratchpad/{TASK_NAME}_PLAN_PROGRESS.md`
+   1. Implementation overview: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_overview.md`
+   2. Progress tracker: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_progress.md`
    3. Detailed implementation files: [list all detailed plan files]
    
    For clean execution, please start a NEW SESSION with:
-   "Execute tasks defined in <project_root>/scratchpad/{TASK_NAME}_PLAN_OVERVIEW.md"
+   "Execute tasks defined in <project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_overview.md"
    ```
 
-6. Implementation MUST be executed from a clean session:
+7. Implementation MUST be executed from a clean session:
    - First review the progress file to see current status
    - Follow tasks in order defined in the overview file
    - Update the progress file after each task completion
@@ -234,7 +236,7 @@ When updating documentation:
 
 For significant changes absent from documentation:
 1. Create documentation updates with precise location and content
-2. For complex changes, create `<project_root>/scratchpad/{TASK_NAME}_DOC_UPDATE.md`
+2. For complex changes, create `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/doc_update.md`
 
 ### Documentation Standards
 - **Function Documentation**: Include Intent, Design Principles, Implementation Details, and Design Decisions
@@ -269,10 +271,10 @@ Large documents (>600 lines) use child documents with navigation links and cross
 
 ### Ephemeral Working Documents
 Files in scratchpad directory are temporary and NOT authoritative:
-- **{TASK_NAME}_PLAN_OVERVIEW.md**: Implementation overview plan
-- **{TASK_NAME}_PLAN_PROGRESS.md**: Implementation and planning progress tracker
-- **{TASK_NAME}_PLAN_{SUBTASK_NAME}.md**: Detailed implementation plans
-- **{TASK_NAME}_DOC_UPDATE.md**: Proposed documentation updates
+- **plan_overview.md**: Implementation overview plan in `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/`
+- **plan_progress.md**: Implementation and planning progress tracker in `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/`
+- **plan_{subtask_name}.md**: Detailed implementation plans in `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/`
+- **doc_update.md**: Proposed documentation updates in `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/`
 
 ### Permanent Documentation
 - **MARKDOWN_CHANGELOG.md**: Tracks documentation changes by directory
