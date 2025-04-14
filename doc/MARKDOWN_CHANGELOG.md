@@ -2,6 +2,11 @@
 
 This file tracks all changes made to documentation markdown files in this directory.
 
+2025-04-14T09:21:30Z : [DESIGN.md] Added Dynamic File Exclusion Strategy section
+2025-04-14T09:06:14Z : [WORKING_BACKWARDS.md] Replaced specific LLM references with generic AI terminology
+2025-04-14T09:03:27Z : [PR-FAQ.md] Replaced specific LLM references with generic AI terminology
+2025-04-14T08:57:05Z : [WORKING_BACKWARDS.md] Updated to reflect SQLite database usage and fixed inconsistencies
+2025-04-14T08:47:38Z : [PR-FAQ.md] Updated programming language analysis description to align with DESIGN.md
 2025-04-14T01:46:50Z : [PR-FAQ.md] Updated documentation to accurately reflect SQLite database usage and added related documentation section
 2025-04-14T01:38:33Z : [DOCUMENT_RELATIONSHIPS.md] Added SECURITY.md to documentation relationships and updated relationship graph
 2025-04-14T01:37:22Z : [DESIGN.md] Updated Security and Data Handling section to reference SECURITY.md

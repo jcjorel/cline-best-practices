@@ -50,6 +50,16 @@ This document describes the architectural principles, components, and design dec
   - After initial scan, transitions to event-based monitoring using inotify() or equivalent
   - Reacts to file change events by re-extracting metadata for modified files
   - Progress information returned as part of MCP server tool responses
+- **Dynamic File Exclusion Strategy**:
+  - System automatically scans for and respects all .gitignore files throughout the codebase
+  - Additionally excludes two mandatory patterns regardless of .gitignore contents:
+    - `<project_root>/scratchpad/` directory and its contents
+    - Any file or directory with "deprecated" in the path
+  - When .gitignore files are modified:
+    - Database is purged of existing metadata records that fall under newly added exclusions
+    - Files in paths that are no longer excluded (removed from .gitignore) are automatically indexed
+  - This approach ensures the indexing scope always remains in sync with Git-committable content
+  - Rationale: Leverages developer-defined exclusions while maintaining database consistency
 - **Design Decision (2025-04-13)**: Implement a persistent SQLite database for metadata storage
   - **Rationale**: Provides persistence across application restarts, reduces repeated metadata extraction, improves performance with incremental updates
   - **Key Implications**: Faster startup times after initial indexing, reduced CPU usage for large codebases, requires database schema migration strategy
