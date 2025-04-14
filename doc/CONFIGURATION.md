@@ -94,7 +94,7 @@ All configuration parameters have carefully selected defaults that work in most 
 | `recommendations.auto_purge_enabled` | Enable automatic purging of old recommendations | `true` | `true, false` |
 | `recommendations.purge_age_days` | Age in days after which recommendations are purged | `7` | `1-365` |
 | `recommendations.purge_decisions_with_recommendations` | Also purge related developer decisions | `true` | `true, false` |
-| `recommendations.max_active_recommendations` | Maximum number of pending recommendations | `100` | `10-1000` |
+| `recommendations.auto_invalidate` | Automatically invalidate recommendation on codebase change | `true` | `true, false` |
 
 ## Configuration File Format
 

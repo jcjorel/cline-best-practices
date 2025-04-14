@@ -142,10 +142,7 @@ This document describes the architectural principles, components, and design dec
 ├── coding_assistant/
 │   ├── GENAI_HEADER_TEMPLATE.txt      # Template for file headers
 │   └── dbp/                           # Documentation-Based Programming artifacts
-│       ├── recommendations/           # Directory for recommendation files
-│       │   ├── YYMMDD-HHmmSS-RECOMMENDATION_NAME.md  # Individual recommendations
-│       │   └── ...
-│       └── PENDING_RECOMMENDATION.md  # Oldest recommendation awaiting review
+│       └── PENDING_RECOMMENDATION.md  # Single active recommendation awaiting review
 └── doc/
     ├── DESIGN.md                     # This file - architectural principles
     ├── DATA_MODEL.md                 # Database structures and relationships
@@ -158,13 +155,13 @@ This document describes the architectural principles, components, and design dec
 
 1. **Detection**: System detects documentation or code changes
 2. **Analysis**: Changes analyzed for consistency impacts
-3. **Generation**: Recommendation file created in `recommendations/` directory
-4. **Prioritization**: Oldest recommendation moved to `PENDING_RECOMMENDATION.md`
-5. **Developer Review**: Developer reviews and sets ACCEPT/REJECT/AMEND
-6. **Processing**: System processes the developer decision:
+3. **Generation**: Single recommendation generated directly as `PENDING_RECOMMENDATION.md`
+4. **Developer Review**: Developer reviews and sets ACCEPT/REJECT/AMEND
+5. **Processing**: System processes the developer decision:
    - ACCEPT: Implements recommendation automatically
-   - REJECT: Removes recommendation from queue
+   - REJECT: Removes recommendation
    - AMEND: Regenerates recommendation with developer feedback
+6. **Invalidation**: Any codebase change automatically invalidates and removes the pending recommendation
 
 ## Security and Data Handling
 

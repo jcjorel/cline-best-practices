@@ -102,7 +102,6 @@ Recommendations are actionable suggestions generated from inconsistencies:
 Recommendation {
   id: UUID                     // Unique identifier
   creationTimestamp: Timestamp // When recommendation was created
-  filename: String             // Generated filename (YYMMDD-HHmmSS-NAME.md)
   title: String                // Human-readable title
   inconsistencies: InconsistencyRecord[]  // Related inconsistencies
   affectedDocuments: DocumentReference[]  // Documents to be modified
@@ -117,8 +116,9 @@ Recommendation {
       }
     ]
   }[]
-  status: Enum                 // Pending, Active, Accepted, Rejected, Amended
+  status: Enum                 // Active, Accepted, Rejected, Amended, Invalidated
   developerFeedback: String    // Feedback for AMEND status
+  lastCodebaseChangeTimestamp: Timestamp // For automatic invalidation
 }
 ```
 
@@ -206,6 +206,7 @@ This file is a copy of the oldest recommendation file, automatically renamed whe
 1. **Change Detection**:
    - File system watcher detects changes in files
    - Changed files are parsed to extract documentation entities
+   - Any existing recommendation is automatically invalidated
 
 2. **Consistency Analysis**:
    - System analyzes changes against existing documentation
@@ -214,21 +215,21 @@ This file is a copy of the oldest recommendation file, automatically renamed whe
 
 3. **Recommendation Creation**:
    - Inconsistencies are grouped by related impact
-   - Recommendation objects are created for each group
-   - Markdown files are generated from recommendation objects
-   - Files are stored in recommendations directory with timestamped names
+   - A single recommendation object is created
+   - The recommendation is written directly to PENDING_RECOMMENDATION.md
+   - Status of recommendation is set to Active
 
-4. **Queue Management**:
-   - System maintains FIFO queue of recommendations
-   - Oldest recommendation is moved to PENDING_RECOMMENDATION.md
-   - Status of recommendation is updated to Active
-
-5. **Feedback Processing**:
+4. **Feedback Processing**:
    - System monitors PENDING_RECOMMENDATION.md for changes
    - Developer decision is extracted and processed
    - For ACCEPT: Changes are automatically applied
-   - For REJECT: Recommendation is removed from queue
+   - For REJECT: Recommendation is removed
    - For AMEND: New recommendation is generated with feedback
+
+5. **Auto-Invalidation**:
+   - Any change in the codebase automatically invalidates the current recommendation
+   - PENDING_RECOMMENDATION.md is removed
+   - System repeats the process from Change Detection to generate a new recommendation
 
 ## Security Considerations
 

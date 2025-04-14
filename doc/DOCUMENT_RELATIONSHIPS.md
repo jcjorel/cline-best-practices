@@ -102,6 +102,16 @@ When documentation files are updated:
 - Depends on: [SECURITY.md](#securitymd) - Topic: Security features - Scope: Input/output validation
 - Impacts: None
 
+## design/COMPONENT_INITIALIZATION.md
+- Depends on: [DESIGN.md](#designmd) - Topic: System components - Scope: Component dependencies and structure
+- Depends on: [DATA_MODEL.md](#data_modelmd) - Topic: Database structures - Scope: Database initialization
+- Depends on: [CONFIGURATION.md](#configurationmd) - Topic: Initialization parameters - Scope: Configuration options
+- Depends on: [SECURITY.md](#securitymd) - Topic: Security considerations - Scope: Secure initialization process
+- Depends on: [design/BACKGROUND_TASK_SCHEDULER.md](#designbackground_task_schedulermd) - Topic: Background processing - Scope: Task scheduling
+- Depends on: [design/LLM_COORDINATION.md](#designllm_coordinationmd) - Topic: LLM services - Scope: Service initialization
+- Impacts: [DESIGN.md](#designmd) - Topic: System startup - Scope: Component initialization sequence
+- Impacts: [CONFIGURATION.md](#configurationmd) - Topic: Initialization parameters - Scope: Configuration structure
+
 ## design/BACKGROUND_TASK_SCHEDULER.md
 - Depends on: [DESIGN.md](#designmd) - Topic: Documentation Monitoring - Scope: Background processing architecture
 - Depends on: [DATA_MODEL.md](#data_modelmd) - Topic: Metadata Extraction Model - Scope: Metadata structure and storage
@@ -110,6 +120,7 @@ When documentation files are updated:
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Enhanced metadata extraction - Scope: MD5 digest storage
 - Impacts: [DESIGN.md](#designmd) - Topic: Documentation Monitoring - Scope: Implementation details
 - Impacts: [CONFIGURATION.md](#configurationmd) - Topic: Background Task Scheduler - Scope: Configuration parameters
+- Impacts: [design/COMPONENT_INITIALIZATION.md](#designcomponent_initializationmd) - Topic: Background processing - Scope: Task scheduling
 
 ## doc/llm/prompts/
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Prompt template management - Scope: Template structure and organization
@@ -131,5 +142,7 @@ The documentation relationship graph forms a directed acyclic graph (DAG) with t
 - **design/INTERNAL_LLM_TOOLS.md**: Leaf node with incoming edges from design/LLM_COORDINATION.md and DESIGN.md
 - **SECURITY.md**: Leaf node with incoming edges from DESIGN.md, DATA_MODEL.md, WORKING_BACKWARDS.md, and design/LLM_COORDINATION.md
 - **doc/llm/prompts/**: Node with incoming edges from DESIGN_DECISIONS.md and outgoing edge to design/INTERNAL_LLM_TOOLS.md
+
+- **design/COMPONENT_INITIALIZATION.md**: Node with incoming edges from DESIGN.md, CONFIGURATION.md, DATA_MODEL.md, SECURITY.md, design/BACKGROUND_TASK_SCHEDULER.md, and design/LLM_COORDINATION.md, and outgoing edges to DESIGN.md and CONFIGURATION.md
 
 This graph structure helps the system determine the correct order for propagating updates and ensuring global consistency.
