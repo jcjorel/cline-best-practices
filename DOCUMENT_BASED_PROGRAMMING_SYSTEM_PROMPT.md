@@ -93,9 +93,9 @@ For complex changes:
 
 4. Create all detailed implementation plan markdown files one by one:
    - File naming: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_{subtask_name}.md`
-   - Update progress file after each detailed plan creation
-   - Maximum 400 lines per file (use multi-step document update if needed)
-   - Only extremely complex tasks have dedicated implementation files
+   - Only ONE plan chapter can be written at once
+   - For plans with multiple chapters, use a multi-step approach (create file first, then append additional chapters) to avoid truncation when writing large plans
+   - Update progress file BEFORE proceeding to process another plan file
    - No task duration estimates
    - Stop processing gracefully when context window exceeds 75%
      - When stopping, propose to restart tasks in another session
