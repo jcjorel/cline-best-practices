@@ -70,43 +70,55 @@ For simple changes (single-file modification, bug fix, <50 lines changed):
 - Implement directly in ACT mode
 
 For complex changes:
-1. Create plan file: `<project_root>/scratchpad/{TASK_NAME}_PLAN.md` with:
-   - Sections <200 lines each
-   - Component dependencies with "Depends on:" statements
-   - Assumptions with "Assumption:" prefix
-   - Comprehensive file references for context
-   - Self-contained tasks with clear success criteria
-   - No time estimates
+1. Create overview implementation document: `<project_root>/scratchpad/{TASK_NAME}_PLAN_OVERVIEW.md` with:
+   - Organized in logical temporal phases
+   - One level down of details
+   - List of all detailed implementation plan file names
+   - Reference to the side-car progress file
+   - Source documentation snippets providing essential context for implementation
+   - Names of source documentation files where deeper context can be found if needed
 
-2. Create changelog file: `<project_root>/scratchpad/{TASK_NAME}_PLAN_CHANGELOG.md` with format:
-   ```
-   # Plan Implementation Changelog for {TASK_NAME}
-   
-   ## [YYYY-MM-DDThh:mm:ssZ] [STATUS] File: relative/path/to/filename.ext
-   - Specific change 1
-   - Specific change 2
-   ```
-   - STATUS must be: [COMPLETED], [IN_PROGRESS], [PENDING], or [FAILED]
-   - Add entries at the TOP in reverse chronological order
-   - Update after completing each file
+2. Create and maintain side-car progress file: `<project_root>/scratchpad/{TASK_NAME}_PLAN_PROGRESS.md` to track:
+   - Both plan creation steps and implementation status
+   - Status for each subtask using these indicators:
+     - Plan not created
+     - Plan creation in progress
+     - Plan created
+     - Implementation in progress
+     - Implementation completed
+   - Each tracked subtask associated with a detailed implementation plan filename
+   - Consistency check status
 
-3. Respond EXACTLY with:
+3. Create all detailed implementation plan markdown files one by one:
+   - File naming: `<project_root>/scratchpad/{TASK_NAME}_PLAN_{SUBTASK_NAME}.md`
+   - Update progress file after each detailed plan creation
+   - Maximum 400 lines per file (use multi-step document update if needed)
+   - Only extremely complex tasks have dedicated implementation files
+   - No task duration estimates
+   - Stop processing gracefully when context window exceeds 75%
+     - When stopping, propose to restart tasks in another session
+
+4. Perform consistency check in a clean session:
+   - Review all generated files and associated source documents
+   - Mark progress file to confirm consistency check completion
+   - Note that implementation can only proceed after consistency check
+
+5. Respond with implementation instructions:
    ```
    I've created:
-   1. Implementation plan: `<project_root>/scratchpad/{TASK_NAME}_PLAN.md`
-   2. Changelog tracker: `<project_root>/scratchpad/{TASK_NAME}_PLAN_CHANGELOG.md`
+   1. Implementation overview: `<project_root>/scratchpad/{TASK_NAME}_PLAN_OVERVIEW.md`
+   2. Progress tracker: `<project_root>/scratchpad/{TASK_NAME}_PLAN_PROGRESS.md`
+   3. Detailed implementation files: [list all detailed plan files]
    
    For clean execution, please start a NEW SESSION with:
-   "Execute tasks defined in <project_root>/scratchpad/{TASK_NAME}_PLAN.md"
+   "Execute tasks defined in <project_root>/scratchpad/{TASK_NAME}_PLAN_OVERVIEW.md"
    ```
 
-4. NEVER implement the plan in the same session; must execute in a fresh session.
-
-5. When executing a plan in a new session:
-   - Check the changelog first for current progress
-   - Follow tasks in order
-   - Update the changelog after each file
-   - Document failures with [FAILED] status
+6. Implementation MUST be executed from a clean session:
+   - First review the progress file to see current status
+   - Follow tasks in order defined in the overview file
+   - Update the progress file after each task completion
+   - Document any implementation failures in the progress file
 
 ### Error Handling Strategy (CRITICAL)
 - Use "throw on error" for ALL error cases
@@ -257,8 +269,9 @@ Large documents (>600 lines) use child documents with navigation links and cross
 
 ### Ephemeral Working Documents
 Files in scratchpad directory are temporary and NOT authoritative:
-- **{TASK_NAME}_PLAN.md**: Implementation plan
-- **{TASK_NAME}_PLAN_CHANGELOG.md**: Implementation progress tracker
+- **{TASK_NAME}_PLAN_OVERVIEW.md**: Implementation overview plan
+- **{TASK_NAME}_PLAN_PROGRESS.md**: Implementation and planning progress tracker
+- **{TASK_NAME}_PLAN_{SUBTASK_NAME}.md**: Detailed implementation plans
 - **{TASK_NAME}_DOC_UPDATE.md**: Proposed documentation updates
 
 ### Permanent Documentation
