@@ -171,8 +171,8 @@ When code changes would contradict documentation:
 #### Design Decision Documentation
 Document design decisions at appropriate scope level:
 
-- **File-level (Default Header Template)**:
-  ```
+- **File-level (Default Header Template, example in Python)**:
+  ```python
   ###############################################################################
   # IMPORTANT: This header comment is designed for GenAI code review and maintenance
   # Any GenAI tool working with this file MUST preserve and update this header
@@ -207,7 +207,7 @@ Document design decisions at appropriate scope level:
   ###############################################################################
   ```
 
-- **Function-level (Example in Python)**:
+- **Function-level (Default template, example in Python)**:
   ```python
   def authenticate_user(credentials, options=None):
       """
