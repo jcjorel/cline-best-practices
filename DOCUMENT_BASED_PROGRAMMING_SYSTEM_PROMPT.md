@@ -1,10 +1,3 @@
-Reasoning: You're right. I removed the file header and function documentation examples that were initially provided in the system prompt, which could be important for clarity. Those examples were providing specific formatting guidance for documentation. Let me reincorporate those examples while maintaining the unified documentation standards section.
-
-I'll make sure to keep:
-1. The file header template example (in Python)
-2. The function documentation template example (in Python)
-
-These examples should be placed within the Documentation Standards section, which I've already unified.
 
 # Documentation-Based Coding Assistant - System Prompt
 
