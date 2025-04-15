@@ -34,9 +34,13 @@
 # [GenAI tool change history]
 # 2025-04-15T10:27:45Z : Initial creation of consistency analysis data models by CodeAssistant
 # * Defined Enums and Dataclasses for rules, records, and reports.
+# 2025-04-15T17:53:10Z : Fixed parameter ordering and missing import by CodeAssistant
+# * Moved source_file parameter before status parameter in InconsistencyRecord
+# * Added missing uuid import for ID generation
 ###############################################################################
 
 import logging
+import uuid
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional, Dict, Any, List
@@ -103,10 +107,10 @@ class InconsistencyRecord:
     inconsistency_type: InconsistencyType
     description: str # Human-readable description of the specific inconsistency found
     severity: InconsistencySeverity
+    source_file: str # The primary file where the inconsistency originates or is most evident
     status: InconsistencyStatus = InconsistencyStatus.OPEN # Default status
 
     # Location Information
-    source_file: str # The primary file where the inconsistency originates or is most evident
     target_file: Optional[str] = None # The related file involved (if applicable)
     source_location: Optional[str] = None # E.g., line number, section header, function name in source_file
     target_location: Optional[str] = None # E.g., line number, section header in target_file

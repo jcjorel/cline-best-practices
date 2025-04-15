@@ -40,7 +40,7 @@
 # * Created all core and supporting models based on plan_database_schema.md.
 ###############################################################################
 
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Table, Text, func, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Table, Text, func, Boolean, Float
 from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
@@ -298,7 +298,7 @@ class DocRelationshipORM(Base):
     relationship_type = Column(String, nullable=False, index=True) # Indexed
     topic = Column(String, nullable=True)
     scope = Column(String, nullable=True)
-    metadata = Column(Text, nullable=True) # Store as JSON string
+    meta_data = Column(Text, nullable=True) # Store as JSON string (renamed from metadata which is reserved)
     created_at = Column(DateTime, default=func.current_timestamp(), nullable=False)
     updated_at = Column(DateTime, default=func.current_timestamp(), onupdate=func.current_timestamp(), nullable=False)
 
@@ -307,7 +307,7 @@ class DocRelationshipORM(Base):
 
 class InconsistencyORM(Base):
     """ORM model for storing detected inconsistency records."""
-    __tablename__ = 'inconsistencies' # Matches table name in plan
+    __tablename__ = 'inconsistency_records' # Renamed to avoid conflict with Inconsistency class
 
     id = Column(Integer, primary_key=True) # Auto-incrementing primary key
     # Link back to documents involved (using paths for simplicity, could use foreign keys to documents table)
@@ -322,11 +322,11 @@ class InconsistencyORM(Base):
     confidence_score = Column(Float, nullable=False, default=1.0)
     detected_at = Column(DateTime, nullable=False, default=func.current_timestamp())
     resolved_at = Column(DateTime, nullable=True)
-    metadata = Column(Text, nullable=True) # Store additional metadata as JSON string
+    meta_data = Column(Text, nullable=True) # Store additional metadata as JSON string (renamed from reserved name)
 
 class RecommendationORM(Base):
     """ORM model for storing generated recommendations."""
-    __tablename__ = 'recommendations' # Matches table name in plan
+    __tablename__ = 'recommendation_records' # Renamed to avoid conflict with Recommendation class
 
     id = Column(Integer, primary_key=True) # Auto-incrementing primary key
     title = Column(String, nullable=False)
@@ -349,5 +349,5 @@ class RecommendationORM(Base):
     updated_at = Column(DateTime, nullable=False, default=func.current_timestamp(), onupdate=func.current_timestamp())
     applied_at = Column(DateTime, nullable=True) # When the recommendation was applied
     # Additional data
-    metadata = Column(Text, nullable=True) # Store extra metadata as JSON string
+    meta_data = Column(Text, nullable=True) # Store extra metadata as JSON string (renamed from reserved name)
     feedback = Column(Text, nullable=True) # Store RecommendationFeedback as JSON string

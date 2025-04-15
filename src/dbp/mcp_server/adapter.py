@@ -38,31 +38,46 @@
 # - src/dbp/core/registry.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-15T16:42:09Z : Updated adapter to use centralized exceptions by CodeAssistant
+# * Modified imports to use ComponentNotFoundError from exceptions module
+# * Removed local ComponentNotFoundError class definition
 # 2025-04-15T10:49:00Z : Initial creation of SystemComponentAdapter by CodeAssistant
 # * Implemented component retrieval logic using InitializationContext.
 ###############################################################################
 
 import logging
-from typing import Optional, Any
+from typing import Optional, Any, Type, TypeVar, cast
 
 # Assuming core components are accessible
 try:
     from ..core.component import Component, InitializationContext
     from ..core.registry import ComponentRegistry # For type hint clarity
+    from .exceptions import ComponentNotFoundError
+    
+    # Import component types for proper type annotations
+    from ..consistency_analysis.component import ConsistencyAnalysisComponent
+    from ..recommendation_generator.component import RecommendationGeneratorComponent
+    from ..doc_relationships.component import DocRelationshipsComponent
+    from ..llm_coordinator.component import LLMCoordinatorComponent
+    from ..metadata_extraction.component import MetadataExtractionComponent
+    from ..memory_cache.component import MemoryCacheComponent
 except ImportError:
     logging.getLogger(__name__).error("Failed to import core component types for SystemComponentAdapter.", exc_info=True)
     # Placeholders
     class Component: pass
     class InitializationContext: pass
     class ComponentRegistry: pass # Placeholder
+    class ComponentNotFoundError(Exception): pass
+    
+    # Placeholder component types
+    class ConsistencyAnalysisComponent(Component): pass
+    class RecommendationGeneratorComponent(Component): pass
+    class DocRelationshipsComponent(Component): pass
+    class LLMCoordinatorComponent(Component): pass
+    class MetadataExtractionComponent(Component): pass
+    class MemoryCacheComponent(Component): pass
 
 logger = logging.getLogger(__name__)
-
-class ComponentNotFoundError(Exception):
-    """Exception raised when a requested component is not found or not initialized."""
-    def __init__(self, component_name: str, message: Optional[str] = None):
-        self.component_name = component_name
-        super().__init__(message or f"Component '{component_name}' not found or not initialized.")
 
 
 class SystemComponentAdapter:
@@ -108,49 +123,49 @@ class SystemComponentAdapter:
             # Double-check initialization status
             if not component or not component.is_initialized:
                  self.logger.error(f"Component '{name}' found but is not initialized.")
-                 raise ComponentNotFoundError(name, f"Component '{name}' is not initialized.")
+                 raise ComponentNotFoundError(component_name=name)
 
             self.logger.debug(f"Successfully retrieved initialized component: '{name}'")
             return component
         except KeyError:
             # get_component already logs and raises KeyError, re-raise as specific error
-            raise ComponentNotFoundError(name) from None # Raise specific error, chain None
+            raise ComponentNotFoundError(component_name=name) from None # Raise specific error, chain None
         except Exception as e:
              # Catch other potential errors during retrieval or is_initialized check
              self.logger.error(f"Unexpected error retrieving component '{name}': {e}", exc_info=True)
-             raise ComponentNotFoundError(name, f"Unexpected error retrieving component '{name}'.") from e
+             raise ComponentNotFoundError(component_name=name) from e
 
     # --- Convenience properties/methods for commonly accessed components ---
     # These can be added to provide typed access and reduce boilerplate in tools/resources
 
     @property
-    def consistency_analysis(self) -> Any: # Replace Any with actual component type
+    def consistency_analysis(self) -> ConsistencyAnalysisComponent:
          """Provides access to the ConsistencyAnalysisComponent."""
-         return self.get_component("consistency_analysis")
+         return cast(ConsistencyAnalysisComponent, self.get_component("consistency_analysis"))
 
     @property
-    def recommendation_generator(self) -> Any: # Replace Any with actual component type
+    def recommendation_generator(self) -> RecommendationGeneratorComponent:
          """Provides access to the RecommendationGeneratorComponent."""
-         return self.get_component("recommendation_generator")
+         return cast(RecommendationGeneratorComponent, self.get_component("recommendation_generator"))
 
     @property
-    def doc_relationships(self) -> Any: # Replace Any with actual component type
+    def doc_relationships(self) -> DocRelationshipsComponent:
          """Provides access to the DocRelationshipsComponent."""
-         return self.get_component("doc_relationships")
+         return cast(DocRelationshipsComponent, self.get_component("doc_relationships"))
 
     @property
-    def llm_coordinator(self) -> Any: # Replace Any with actual component type
+    def llm_coordinator(self) -> LLMCoordinatorComponent:
          """Provides access to the LLMCoordinatorComponent."""
-         return self.get_component("llm_coordinator")
+         return cast(LLMCoordinatorComponent, self.get_component("llm_coordinator"))
 
     @property
-    def metadata_extraction(self) -> Any: # Replace Any with actual component type
+    def metadata_extraction(self) -> MetadataExtractionComponent:
          """Provides access to the MetadataExtractionComponent."""
-         return self.get_component("metadata_extraction")
+         return cast(MetadataExtractionComponent, self.get_component("metadata_extraction"))
 
     @property
-    def memory_cache(self) -> Any: # Replace Any with actual component type
+    def memory_cache(self) -> MemoryCacheComponent:
          """Provides access to the MemoryCacheComponent."""
-         return self.get_component("memory_cache")
+         return cast(MemoryCacheComponent, self.get_component("memory_cache"))
 
     # Add other component accessors as needed

@@ -36,6 +36,10 @@
 # - scratchpad/dbp_implementation_plan/plan_llm_coordinator.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-15T16:25:27Z : Fixed field order in InternalToolJob dataclass by CodeAssistant
+# * Moved required fields 'parent_request_id' and 'tool_name' before optional fields with default values.
+# 2025-04-15T16:24:12Z : Fixed field order in CoordinatorRequest dataclass by CodeAssistant
+# * Moved required 'query' field before optional fields with default values to fix TypeError.
 # 2025-04-15T10:06:00Z : Initial creation of LLM Coordinator data models by CodeAssistant
 # * Defined CoordinatorRequest, CoordinatorResponse, InternalToolJob, InternalToolJobResult.
 ###############################################################################
@@ -48,8 +52,8 @@ import uuid
 @dataclass
 class CoordinatorRequest:
     """Represents a request submitted to the LLM Coordinator."""
-    request_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     query: Union[str, Dict[str, Any]] # The main query or instruction
+    request_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     context: Optional[Dict[str, Any]] = None # Supporting context data
     parameters: Optional[Dict[str, Any]] = None # Specific parameters for the request/tools
     max_execution_time_ms: Optional[int] = None # Optional override for total time budget
@@ -58,9 +62,9 @@ class CoordinatorRequest:
 @dataclass
 class InternalToolJob:
     """Represents a job for a specific internal tool to be executed."""
-    job_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     parent_request_id: str # Links back to the originating CoordinatorRequest
     tool_name: str # Name of the internal tool to execute
+    job_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     parameters: Dict[str, Any] = field(default_factory=dict) # Parameters specific to this tool
     context: Dict[str, Any] = field(default_factory=dict) # Context relevant to this job
     priority: int = 1 # Job priority (lower value means higher priority)

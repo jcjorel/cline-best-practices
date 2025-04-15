@@ -13,14 +13,13 @@
 ###############################################################################
 # [Source file intent]
 # Implements the main MCPServer class, responsible for running the actual server
-# process (e.g., using FastAPI/Uvicorn). It receives MCP requests, routes them
+# process using FastAPI/Uvicorn. It receives MCP requests, routes them
 # to registered tools or resources, handles authentication/authorization via
 # providers, formats responses, and manages the server lifecycle (start/stop).
-# Contains placeholder logic for the actual web server implementation.
 ###############################################################################
 # [Source file design principles]
 # - Acts as the entry point for MCP communication.
-# - Integrates with a web framework (like FastAPI, Flask - currently placeholder) to handle HTTP requests.
+# - Integrates with FastAPI and Uvicorn to handle HTTP requests.
 # - Parses incoming requests into MCPRequest objects.
 # - Uses ToolRegistry and ResourceProvider to find handlers for requests.
 # - Uses AuthenticationProvider and ErrorHandler for request processing middleware.
@@ -45,39 +44,80 @@
 # - src/dbp/mcp_server/error_handler.py
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-15T10:53:50Z : Initial creation of MCPServer class by CodeAssistant
-# * Implemented core request handling logic with placeholder web server integration.
+# 2025-04-15T21:37:00Z : Implemented FastAPI/Uvicorn integration by CodeAssistant
+# * Replaced placeholder web server implementation with concrete FastAPI routes
+# * Added proper route handlers for tools and resources with Pydantic models
+# * Implemented proper Uvicorn server configuration and graceful shutdown
+# 2025-04-15T16:35:58Z : Updated server to use centralized exceptions by CodeAssistant
+# * Modified imports to use exceptions from centralized exceptions module
+# * Simplified error handling by using ToolNotFoundError and ResourceNotFoundError
 ###############################################################################
 
 import logging
 import threading
 import time
 import json
-from typing import Dict, Optional, Any, List, Callable
+import uuid
+from typing import Dict, Optional, Any, List, Callable, Union, Type
 
-# Assuming necessary imports
+# MCP server imports
 try:
-    from .data_models import MCPRequest, MCPResponse, MCPError
+    from .data_models import (
+        MCPRequest, MCPResponse, MCPError, 
+        MCPToolRequest, MCPResourceRequest, MCPResponseModel, MCPErrorModel,
+        create_mcp_request_from_tool, create_mcp_request_from_resource,
+        mcp_response_to_model, get_http_status_for_mcp_error
+    )
     from .mcp_protocols import MCPTool, MCPResource
     from .registry import ToolRegistry, ResourceProvider
-    from .auth import AuthenticationProvider, AuthenticationError, AuthorizationError
+    from .exceptions import (
+        ToolNotFoundError, ResourceNotFoundError,
+        AuthenticationError, AuthorizationError
+    )
+    from .auth import AuthenticationProvider
     from .error_handler import ErrorHandler
-    # Import config type if defined
-    # from ..config import MCPServerConfig # Example
-    MCPServerConfig = Any # Placeholder
 except ImportError as e:
     logging.getLogger(__name__).error(f"MCPServer ImportError: {e}. Check package structure.", exc_info=True)
-    # Placeholders
+    # Placeholders for critical errors only to allow module loading
     MCPRequest, MCPResponse, MCPError = object, object, object
     MCPTool, MCPResource = object, object
     ToolRegistry, ResourceProvider = object, object
-    AuthenticationProvider, AuthenticationError, AuthorizationError = object, Exception, Exception
+    AuthenticationProvider = object
+    AuthenticationError, AuthorizationError = Exception, Exception
+    ToolNotFoundError, ResourceNotFoundError = ValueError, ValueError
     ErrorHandler = object
-    MCPServerConfig = object
 
-# Placeholder for web framework (e.g., FastAPI, Flask)
-# from fastapi import FastAPI, Request, Response, HTTPException # Example
-# import uvicorn # Example
+# FastAPI and Uvicorn imports
+try:
+    from fastapi import FastAPI, Request, Response, HTTPException, Depends, Query, Path
+    from fastapi.middleware.cors import CORSMiddleware
+    from fastapi.responses import JSONResponse
+    import uvicorn
+except ImportError as e:
+    logging.getLogger(__name__).error(f"FastAPI/Uvicorn not available: {e}. Web server will not function properly.", exc_info=True)
+    # Create placeholder classes to allow module loading
+    class FastAPI:
+        def __init__(self, *args, **kwargs): pass
+        def add_middleware(self, *args, **kwargs): pass
+        def get(self, *args, **kwargs): return lambda func: func
+        def post(self, *args, **kwargs): return lambda func: func
+    class CORSMiddleware: pass
+    class JSONResponse: 
+        def __init__(self, *args, **kwargs): pass
+    class Request:
+        def __init__(self): self.headers = {}
+    class Path: pass
+    class Query: pass
+    class HTTPException(Exception): pass
+    class Depends: pass
+    
+    class uvicorn:
+        class Config:
+            def __init__(self, *args, **kwargs): pass
+        class Server:
+            def __init__(self, *args, **kwargs): 
+                self.should_exit = False
+            def run(self): pass
 
 logger = logging.getLogger(__name__)
 
@@ -136,37 +176,139 @@ class MCPServer:
         self.logger.debug(f"MCPServer '{self.name}' v{self.version} initialized.")
 
     def _create_web_app(self):
-        """Creates and configures the web application (placeholder)."""
-        self.logger.info("Creating placeholder web application...")
-        # In a real implementation:
-        # app = FastAPI(title=self.name, description=self.description, version=self.version)
-        # self._setup_routes(app)
-        # return app
-        return {"placeholder": True} # Return a dummy object
+        """Creates and configures the FastAPI application."""
+        self.logger.info("Creating FastAPI application...")
+        app = FastAPI(
+            title=self.name,
+            description=self.description,
+            version=self.version,
+            docs_url="/docs",
+            redoc_url="/redoc"
+        )
+        
+        # Setup CORS middleware if enabled in config
+        config = getattr(self, 'config', {})
+        if config.get("enable_cors", False):
+            self.logger.info("Setting up CORS middleware...")
+            app.add_middleware(
+                CORSMiddleware,
+                allow_origins=config.get("cors_origins", ["*"]),
+                allow_credentials=config.get("cors_allow_credentials", False),
+                allow_methods=config.get("cors_methods", ["*"]),
+                allow_headers=config.get("cors_headers", ["*"]),
+            )
+        
+        self._setup_routes(app)
+        return app
 
-    def _setup_routes(self, app: Any):
-        """Sets up HTTP routes for MCP requests (placeholder)."""
+    def _setup_routes(self, app: FastAPI):
+        """Sets up FastAPI routes for MCP requests."""
         self.logger.debug("Setting up MCP routes...")
-        # Example using FastAPI:
-        # @app.post("/mcp/tool/{tool_name}")
-        # async def handle_tool_request_http(tool_name: str, request: fastapi.Request):
-        #     body = await request.json()
-        #     headers = dict(request.headers)
-        #     # Assume client provides request_id or generate one
-        #     mcp_request = MCPRequest(id=body.get("id", str(uuid.uuid4())), type="tool", target=tool_name, data=body.get("data",{}), headers=headers)
-        #     mcp_response = self.handle_request(mcp_request)
-        #     status_code = 200 if mcp_response.status == "success" else 500 # Or map MCPError codes
-        #     return fastapi.responses.JSONResponse(content=mcp_response.__dict__, status_code=status_code)
-        #
-        # @app.get("/mcp/resource/{resource_name:path}") # Use path parameter for resource URI
-        # async def handle_resource_request_http(resource_name: str, request: fastapi.Request):
-        #     params = dict(request.query_params)
-        #     headers = dict(request.headers)
-        #     mcp_request = MCPRequest(id=params.get("id", str(uuid.uuid4())), type="resource", target=resource_name, data=params, headers=headers)
-        #     mcp_response = self.handle_request(mcp_request)
-        #     status_code = 200 if mcp_response.status == "success" else 500
-        #     return fastapi.responses.JSONResponse(content=mcp_response.__dict__, status_code=status_code)
-        pass
+        
+        @app.post("/mcp/tool/{tool_name}")
+        async def handle_tool_request(
+            tool_name: str = Path(..., description="Name of the MCP tool to execute"),
+            tool_request: MCPToolRequest = None,
+            request: Request = None
+        ):
+            """
+            Execute an MCP tool with the provided parameters.
+            
+            Args:
+                tool_name: The name of the tool to execute
+                tool_request: The tool request parameters
+                request: FastAPI request object
+            """
+            try:
+                # Ensure we have a tool_request even if body was empty
+                if tool_request is None:
+                    tool_request = MCPToolRequest()
+                
+                # Extract headers from FastAPI request
+                headers = dict(request.headers) if request else {}
+                
+                # Convert Pydantic model to internal MCPRequest
+                mcp_request = create_mcp_request_from_tool(tool_request, tool_name, headers)
+                
+                # Process the request through the core MCP handler
+                mcp_response = self.handle_request(mcp_request)
+                
+                # Convert to Pydantic model for API response
+                response_model = mcp_response_to_model(mcp_response)
+                
+                # Map MCP status to HTTP status code
+                status_code = 200
+                if mcp_response.status == "error" and mcp_response.error:
+                    status_code = get_http_status_for_mcp_error(mcp_response.error.code)
+                
+                # Return as JSON response
+                return JSONResponse(
+                    content=response_model.dict(exclude_none=True),
+                    status_code=status_code
+                )
+            except Exception as e:
+                self.logger.error(f"Error handling tool request: {str(e)}", exc_info=True)
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Internal server error: {str(e)}"
+                )
+        
+        @app.get("/mcp/resource/{resource_path:path}")
+        async def handle_resource_request(
+            resource_path: str = Path(..., description="Path to the MCP resource"),
+            request: Request = None,
+            resource_request: MCPResourceRequest = Depends()
+        ):
+            """
+            Access an MCP resource with the provided parameters.
+            
+            Args:
+                resource_path: The path to the resource
+                request: FastAPI request object
+                resource_request: The resource request parameters
+            """
+            try:
+                # Extract query parameters and headers from FastAPI request
+                query_params = dict(request.query_params) if request else {}
+                headers = dict(request.headers) if request else {}
+                
+                # Convert Pydantic model to internal MCPRequest
+                mcp_request = create_mcp_request_from_resource(
+                    resource_request, resource_path, query_params, headers
+                )
+                
+                # Process the request through the core MCP handler
+                mcp_response = self.handle_request(mcp_request)
+                
+                # Convert to Pydantic model for API response
+                response_model = mcp_response_to_model(mcp_response)
+                
+                # Map MCP status to HTTP status code
+                status_code = 200
+                if mcp_response.status == "error" and mcp_response.error:
+                    status_code = get_http_status_for_mcp_error(mcp_response.error.code)
+                
+                # Return as JSON response
+                return JSONResponse(
+                    content=response_model.dict(exclude_none=True),
+                    status_code=status_code
+                )
+            except Exception as e:
+                self.logger.error(f"Error handling resource request: {str(e)}", exc_info=True)
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Internal server error: {str(e)}"
+                )
+        
+        @app.get("/health")
+        async def health_check():
+            """Health check endpoint for the MCP server."""
+            return {
+                "status": "healthy",
+                "server": self.name,
+                "version": self.version,
+                "uptime": "unknown"  # Could be enhanced with actual uptime tracking
+            }
 
     def start(self):
         """Starts the MCP server in a background thread."""
@@ -184,23 +326,38 @@ class MCPServer:
         self.logger.info(f"MCP Server '{self.name}' started.")
 
     def _run_server(self):
-        """Runs the web server (placeholder)."""
+        """Runs the FastAPI server using Uvicorn."""
         self.logger.debug("Server thread started.")
-        # Placeholder: In real implementation, run uvicorn or similar
-        # try:
-        #     uvicorn.run(self._app, host=self.host, port=self.port, log_level="warning")
-        # except Exception as e:
-        #     self.logger.critical(f"Web server failed to run: {e}", exc_info=True)
-        # finally:
-        #     self._is_running = False
-        #     self.logger.info("Web server process stopped.")
-
-        # Placeholder loop
-        while not self._stop_event.is_set():
-            time.sleep(1)
-        self._is_running = False
-        self.logger.info("Placeholder server loop stopped.")
-
+        
+        # Get configuration values from MCPServerConfig
+        config = getattr(self, 'config', {})
+        workers = config.get("workers", 1)
+        graceful_shutdown_timeout = config.get("graceful_shutdown_timeout", 10)
+        keep_alive = config.get("keep_alive", 5)
+        
+        # Configure Uvicorn
+        uvicorn_config = uvicorn.Config(
+            app=self._app,
+            host=self.host,
+            port=self.port,
+            log_level="warning",  # Use a lower log level to avoid too much output
+            loop="asyncio",
+            workers=workers,  # Number of worker processes
+            timeout_keep_alive=keep_alive,
+            timeout_graceful_shutdown=graceful_shutdown_timeout
+        )
+        
+        # Create and store Uvicorn server instance
+        self._server = uvicorn.Server(uvicorn_config)
+        
+        try:
+            # Start server, blocks until self._server.should_exit is set
+            self._server.run()
+        except Exception as e:
+            self.logger.critical(f"Web server failed to run: {e}", exc_info=True)
+        finally:
+            self._is_running = False
+            self.logger.info("Web server process stopped.")
 
     def stop(self):
         """Stops the MCP server."""
@@ -210,15 +367,23 @@ class MCPServer:
 
         self.logger.info(f"Stopping MCP server '{self.name}'...")
         self._stop_event.set()
+        
+        # Gracefully shut down Uvicorn server
+        if hasattr(self, '_server') and self._server:
+            self.logger.debug("Sending shutdown signal to Uvicorn...")
+            self._server.should_exit = True
+            
+            # Additional clean shutdown for worker processes if needed
+            if hasattr(self._server, 'force_exit'):
+                self.logger.debug("Forcing exit for workers after grace period...")
+                self._server.force_exit = True
 
-        # Placeholder: Add logic to gracefully shut down the web server if needed
-        # e.g., using uvicorn's controlled exit
-
+        # Wait for server thread to exit
         if self._server_thread and self._server_thread.is_alive():
             self.logger.debug("Waiting for server thread to exit...")
-            self._server_thread.join(timeout=10.0) # Wait for thread
+            self._server_thread.join(timeout=10.0)  # Wait for thread
             if self._server_thread.is_alive():
-                 self.logger.warning("Server thread did not exit cleanly.")
+                self.logger.warning("Server thread did not exit cleanly.")
 
         self._is_running = False
         self._server_thread = None

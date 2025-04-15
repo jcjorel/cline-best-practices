@@ -39,6 +39,10 @@
 # - src/dbp/mcp_server/adapter.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-15T16:39:48Z : Updated resources to use centralized exceptions by CodeAssistant
+# * Modified imports to use exceptions from centralized exceptions module
+# * Removed local ResourceNotFoundError class definition
+# * Kept ResourceAccessError for specific resource access issues
 # 2025-04-15T10:53:00Z : Initial creation of MCP resource classes by CodeAssistant
 # * Implemented placeholder resources for documentation, code metadata, inconsistencies, recommendations.
 ###############################################################################
@@ -51,7 +55,11 @@ from datetime import datetime
 # Assuming necessary imports
 try:
     from .mcp_protocols import MCPResource
-    from .adapter import SystemComponentAdapter, ComponentNotFoundError
+    from .exceptions import (
+        ComponentNotFoundError, ResourceNotFoundError, 
+        ExecutionError, ConfigurationError, MalformedRequestError
+    )
+    from .adapter import SystemComponentAdapter
     # Import specific component types for type hints if possible
     from ..doc_relationships.component import DocRelationshipsComponent
     from ..metadata_extraction.component import MetadataExtractionComponent # Or Memory Cache?
@@ -65,6 +73,10 @@ except ImportError as e:
         def get(self, resource_id, params, auth_context): return {}
     SystemComponentAdapter = object
     ComponentNotFoundError = Exception
+    ResourceNotFoundError = ValueError
+    ExecutionError = RuntimeError
+    ConfigurationError = ValueError
+    MalformedRequestError = ValueError
     DocRelationshipsComponent = object
     MetadataExtractionComponent = object
     ConsistencyAnalysisComponent = object
@@ -76,10 +88,6 @@ logger = logging.getLogger(__name__)
 # --- Base Exception for Resource Errors ---
 class ResourceAccessError(Exception):
     """Custom exception for errors during resource access."""
-    pass
-
-class ResourceNotFoundError(ValueError):
-    """Custom exception when a specific resource instance is not found."""
     pass
 
 # --- Concrete Resource Implementations ---

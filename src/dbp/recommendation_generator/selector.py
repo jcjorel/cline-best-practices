@@ -40,10 +40,12 @@
 # [GenAI tool change history]
 # 2025-04-15T10:40:20Z : Initial creation of StrategySelector class by CodeAssistant
 # * Implemented strategy registration and selection logic based on inconsistency type.
+# 2025-04-15T18:10:30Z : Fixed missing List import for type annotation by CodeAssistant
+# * Added List to the typing imports to fix NameError in get_registered_strategies method.
 ###############################################################################
 
 import logging
-from typing import Dict, Optional, Any, Type
+from typing import Dict, Optional, Any, Type, List
 
 # Assuming necessary imports
 try:

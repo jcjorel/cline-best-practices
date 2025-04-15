@@ -226,12 +226,26 @@ class ServerCommandHandler(BaseCommandHandler):
                 subprocess.run(cmd, check=True)
                 return 0
             else:
-                # Run in background
-                with open(os.devnull, "w") as devnull:
+                # Create log directory and files for server output
+                logs_dir = Path.home() / ".dbp" / "logs"
+                logs_dir.mkdir(parents=True, exist_ok=True)
+                stdout_log = logs_dir / "mcp_server_stdout.log"
+                stderr_log = logs_dir / "mcp_server_stderr.log"
+                
+                logger.debug(f"Starting server with command: {cmd}")
+                logger.debug(f"Redirecting output to: {stdout_log} and {stderr_log}")
+                
+                # Run in background with output captured to log files
+                with open(stdout_log, "a") as stdout_file, open(stderr_log, "a") as stderr_file:
+                    # Add timestamp to logs
+                    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+                    stdout_file.write(f"\n\n--- SERVER START ATTEMPT AT {timestamp} ---\n\n")
+                    stderr_file.write(f"\n\n--- SERVER START ATTEMPT AT {timestamp} ---\n\n")
+                    
                     process = subprocess.Popen(
                         cmd,
-                        stdout=devnull,
-                        stderr=devnull,
+                        stdout=stdout_file,
+                        stderr=stderr_file,
                         start_new_session=True
                     )
                 
@@ -242,10 +256,30 @@ class ServerCommandHandler(BaseCommandHandler):
                 # Wait briefly and check if process is still running
                 time.sleep(1)
                 if process.poll() is not None:
+                    # Server failed to start, read error logs
                     self.output.error(f"Server failed to start (exit code: {process.returncode})")
+                    
+                    # Try to read recent error logs
+                    try:
+                        with open(stderr_log, "r") as f:
+                            # Read last 20 lines
+                            lines = f.readlines()[-20:]
+                            if lines:
+                                self.output.error("Recent server error log:")
+                                for line in lines:
+                                    self.output.error(f"  {line.strip()}")
+                    except Exception as e:
+                        logger.error(f"Failed to read error log: {e}")
+                    
+                    self.output.info(f"Full server logs available at:")
+                    self.output.info(f"  - Stdout: {stdout_log}")
+                    self.output.info(f"  - Stderr: {stderr_log}")
                     return 1
                 
                 self.output.success(f"MCP server started (PID: {process.pid})")
+                self.output.info(f"Server logs available at:")
+                self.output.info(f"  - Stdout: {stdout_log}")
+                self.output.info(f"  - Stderr: {stderr_log}")
                 self.output.info("Use 'dbp server stop' to stop the server")
                 return 0
         

@@ -338,7 +338,7 @@ class ConfigurationManager:
                 else:
                     d = d.setdefault(part, {})
                     if not isinstance(d, dict):
-                         logger.warning(f"Configuration key conflict: '{'.join(parts[:i+1])}' is both a value and a section.")
+                         logger.warning(f"Configuration key conflict: '{'.'.join(parts[:i+1])}' is both a value and a section.")
                          # Overwrite non-dict intermediate with a dict to proceed
                          d = {}
                          # Need to re-attach d to its parent if overwritten

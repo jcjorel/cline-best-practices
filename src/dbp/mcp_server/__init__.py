@@ -1,4 +1,40 @@
-# src/dbp/mcp_server/__init__.py
+###############################################################################
+# IMPORTANT: This header comment is designed for GenAI code review and maintenance
+# Any GenAI tool working with this file MUST preserve and update this header
+###############################################################################
+# [GenAI coding tool directive]
+# - Maintain this header with all modifications
+# - Update History section with each change
+# - Keep only the 4 most recent records in the history section. Sort from older to newer.
+# - Preserve Intent, Design, and Constraints sections
+# - Use this header as context for code reviews and modifications
+# - Ensure all changes align with the design principles
+# - Respect system prompt directives at all times
+###############################################################################
+# [Source file intent]
+# MCP Server Integration package for the Documentation-Based Programming system.
+# Provides module-level imports and defines the public API for the mcp_server package.
+###############################################################################
+# [Source file design principles]
+# - Exports only the public interfaces needed by other components
+# - Maintains clean import hierarchy to avoid circular dependencies
+# - Uses explicit imports rather than wildcard imports
+# - Organizes imports by logical function groups
+###############################################################################
+# [Source file constraints]
+# - Must avoid circular imports at all costs
+# - Should maintain backward compatibility for public interfaces
+###############################################################################
+# [Reference documentation]
+# - doc/DESIGN.md
+# - doc/design/LLM_COORDINATION.md
+###############################################################################
+# [GenAI tool change history]
+# 2025-04-15T21:53:30Z : Fixed docstring formatting by CodeAssistant
+# * Corrected placement of docstring quotes
+# 2025-04-15T21:52:35Z : Added GenAI header to comply with documentation standards by CodeAssistant
+# * Added complete header template with appropriate sections
+###############################################################################
 
 """
 MCP Server Integration package for the Documentation-Based Programming system.

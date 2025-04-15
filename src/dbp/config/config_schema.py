@@ -352,6 +352,16 @@ class MCPServerConfig(BaseModel):
     server_version: str = Field(default="1.0.0", description="Version of the MCP server implementation.")
     auth_enabled: bool = Field(default=False, description="Enable API key authentication for MCP requests.") # Default to False for easier local dev?
     api_keys: List[APIKeyEntry] = Field(default_factory=list, description="List of valid API keys and their permissions.")
+    
+    # FastAPI/Uvicorn specific settings
+    workers: int = Field(default=1, ge=1, le=8, description="Number of Uvicorn worker processes")
+    enable_cors: bool = Field(default=False, description="Enable CORS middleware")
+    cors_origins: List[str] = Field(default=["*"], description="Allowed origins for CORS")
+    cors_methods: List[str] = Field(default=["*"], description="Allowed HTTP methods for CORS")
+    cors_headers: List[str] = Field(default=["*"], description="Allowed HTTP headers for CORS")
+    cors_allow_credentials: bool = Field(default=False, description="Allow credentials for CORS requests")
+    keep_alive: int = Field(default=5, ge=1, le=30, description="Keep-alive timeout in seconds")
+    graceful_shutdown_timeout: int = Field(default=10, ge=1, le=60, description="Graceful shutdown timeout in seconds")
 
 
 class AppConfig(BaseModel):

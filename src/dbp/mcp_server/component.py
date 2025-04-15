@@ -42,6 +42,9 @@
 # - All other files in src/dbp/mcp_server/
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-15T16:38:29Z : Updated component to use centralized exceptions by CodeAssistant
+# * Modified imports to use exceptions from centralized exceptions module
+# * Removed local ComponentNotInitializedError class definition
 # 2025-04-15T10:54:40Z : Initial creation of MCPServerComponent by CodeAssistant
 # * Implemented Component protocol, initialization, tool/resource registration, and server start/stop.
 ###############################################################################
@@ -63,8 +66,12 @@ except ImportError:
 
 # Imports for internal MCP server services
 try:
-    from .adapter import SystemComponentAdapter, ComponentNotFoundError
-    from .auth import AuthenticationProvider, AuthenticationError, AuthorizationError
+    from .exceptions import (
+        ComponentNotInitializedError, ComponentNotFoundError,
+        AuthenticationError, AuthorizationError
+    )
+    from .adapter import SystemComponentAdapter
+    from .auth import AuthenticationProvider
     from .error_handler import ErrorHandler
     from .registry import ToolRegistry, ResourceProvider
     from .server import MCPServer # The actual server class (placeholder web framework)
@@ -116,10 +123,6 @@ except ImportError as e:
 
 logger = logging.getLogger(__name__)
 
-class ComponentNotInitializedError(Exception):
-    """Exception raised when a component method is called before initialization."""
-    pass
-
 class MCPServerComponent(Component):
     """
     DBP system component responsible for running the MCP server and exposing
@@ -145,7 +148,7 @@ class MCPServerComponent(Component):
             "llm_coordinator",
             "metadata_extraction", # Needed by adapter/resources
             "memory_cache",        # Needed by adapter/resources
-            # Add config_manager_comp if needed directly
+            "config_manager",      # Needed for default configuration values
         ]
 
     def initialize(self, context: InitializationContext):
@@ -176,19 +179,35 @@ class MCPServerComponent(Component):
             tool_registry = ToolRegistry(logger_override=self.logger.getChild("tool_registry"))
             resource_provider = ResourceProvider(logger_override=self.logger.getChild("resource_provider"))
 
-            # Create the MCP server instance (placeholder web framework)
+            # Get configuration values or use config manager for defaults
+            config_manager = context.get_component("config_manager")
+            default_config = config_manager.get_default_config("mcp_server")
+            
+            # Create the MCP server instance with FastAPI/Uvicorn
             self._server = MCPServer(
-                host=mcp_config.get('host', '0.0.0.0'),
-                port=int(mcp_config.get('port', 6231)),
-                name=mcp_config.get('server_name', 'dbp-mcp-server'),
-                description=mcp_config.get('server_description', 'MCP Server for DBP'),
-                version=mcp_config.get('server_version', '1.0.0'),
+                host=mcp_config.get('host', default_config.get('host')),
+                port=int(mcp_config.get('port', default_config.get('port'))),
+                name=mcp_config.get('server_name', default_config.get('server_name')),
+                description=mcp_config.get('server_description', default_config.get('server_description')),
+                version=mcp_config.get('server_version', default_config.get('server_version')),
                 tool_registry=tool_registry,
                 resource_provider=resource_provider,
                 auth_provider=auth_provider,
                 error_handler=error_handler,
                 logger_override=self.logger.getChild("server_instance")
             )
+            
+            # Set the server configuration for FastAPI/Uvicorn settings
+            self._server.config = {
+                "workers": mcp_config.get('workers', default_config.get('workers', 1)),
+                "enable_cors": mcp_config.get('enable_cors', default_config.get('enable_cors', False)),
+                "cors_origins": mcp_config.get('cors_origins', default_config.get('cors_origins', ["*"])),
+                "cors_methods": mcp_config.get('cors_methods', default_config.get('cors_methods', ["*"])),
+                "cors_headers": mcp_config.get('cors_headers', default_config.get('cors_headers', ["*"])),
+                "cors_allow_credentials": mcp_config.get('cors_allow_credentials', default_config.get('cors_allow_credentials', False)),
+                "keep_alive": mcp_config.get('keep_alive', default_config.get('keep_alive', 5)),
+                "graceful_shutdown_timeout": mcp_config.get('graceful_shutdown_timeout', default_config.get('graceful_shutdown_timeout', 10))
+            }
 
             # Register tools and resources
             self._register_tools(tool_registry)

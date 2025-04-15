@@ -40,6 +40,9 @@
 # - src/dbp/mcp_server/adapter.py (Defines ComponentNotFoundError)
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-15T16:36:30Z : Updated error handler to use centralized exceptions by CodeAssistant
+# * Modified imports to use exceptions from centralized exceptions module
+# * Added additional error mappings for new exception types
 # 2025-04-15T10:50:15Z : Initial creation of ErrorHandler class by CodeAssistant
 # * Implemented mapping from Python exceptions to MCPError objects.
 ###############################################################################
@@ -50,11 +53,12 @@ from typing import Optional, Dict, Any
 # Assuming necessary imports
 try:
     from .data_models import MCPError, MCPRequest
-    # Import custom exceptions used in the system
-    from .auth import AuthenticationError, AuthorizationError
-    from .adapter import ComponentNotFoundError
-    # Import other potential custom exceptions
-    # from ..some_module import SpecificToolError # Example
+    # Import custom exceptions from the centralized exceptions module
+    from .exceptions import (
+        AuthenticationError, AuthorizationError, ComponentNotFoundError,
+        ToolNotFoundError, ResourceNotFoundError, MalformedRequestError,
+        ExecutionError, ConfigurationError, MissingDependencyError
+    )
 except ImportError as e:
     logging.getLogger(__name__).error(f"ErrorHandler ImportError: {e}. Check package structure.", exc_info=True)
     # Placeholders
@@ -63,7 +67,12 @@ except ImportError as e:
     AuthenticationError = Exception
     AuthorizationError = Exception
     ComponentNotFoundError = Exception
-    # SpecificToolError = Exception # Example
+    ToolNotFoundError = Exception
+    ResourceNotFoundError = Exception
+    MalformedRequestError = Exception
+    ExecutionError = Exception
+    ConfigurationError = Exception
+    MissingDependencyError = Exception
 
 
 logger = logging.getLogger(__name__)
@@ -115,7 +124,7 @@ class ErrorHandler:
             )
         elif isinstance(error, ComponentNotFoundError):
             return MCPError(
-                code="DEPENDENCY_ERROR", # Or maybe "INTERNAL_ERROR"?
+                code="DEPENDENCY_ERROR",
                 message=f"Required system component '{error.component_name}' not found or not ready.",
                 data={"component_name": error.component_name}
             )
@@ -142,6 +151,45 @@ class ErrorHandler:
                   code="NOT_IMPLEMENTED",
                   message=f"Functionality not implemented: {error}",
                   data=None
+             )
+        elif isinstance(error, ToolNotFoundError):
+             return MCPError(
+                  code="TOOL_NOT_FOUND",
+                  message=str(error),
+                  data=None
+             )
+        elif isinstance(error, ResourceNotFoundError):
+             return MCPError(
+                  code="RESOURCE_NOT_FOUND",
+                  message=str(error),
+                  data=None
+             )
+        elif isinstance(error, MalformedRequestError):
+             return MCPError(
+                  code="MALFORMED_REQUEST",
+                  message=str(error),
+                  data=getattr(error, 'details', None)
+             )
+        elif isinstance(error, ExecutionError):
+             return MCPError(
+                  code="EXECUTION_ERROR",
+                  message=str(error),
+                  data={
+                       "tool_name": getattr(error, 'tool_name', None),
+                       "details": getattr(error, 'details', None)
+                  }
+             )
+        elif isinstance(error, ConfigurationError):
+             return MCPError(
+                  code="CONFIGURATION_ERROR",
+                  message=str(error),
+                  data={"config_key": getattr(error, 'config_key', None)}
+             )
+        elif isinstance(error, MissingDependencyError):
+             return MCPError(
+                  code="MISSING_DEPENDENCY",
+                  message=str(error),
+                  data={"dependency_name": getattr(error, 'dependency_name', None)}
              )
         # Add mappings for other specific custom exceptions from your components
         # elif isinstance(error, SpecificToolError):

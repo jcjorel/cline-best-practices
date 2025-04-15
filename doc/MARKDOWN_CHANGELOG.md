@@ -2,6 +2,8 @@
 
 This file tracks all changes made to documentation markdown files in this directory.
 
+2025-04-15T21:43:00Z : [DOCUMENT_RELATIONSHIPS.md] Updated document relationships to include the new design decision about Default Network Binding
+2025-04-15T21:42:00Z : [DESIGN_DECISIONS.md] Added design decision: Default Network Binding to 127.0.0.1 for security reasons
 2025-04-15T00:59:00Z : [DATA_MODEL.md, DESIGN.md, PR-FAQ.md, WORKING_BACKWARDS.md, design/COMPONENT_INITIALIZATION.md] Removed references to FIFO recommendation management to reflect the simplified recommendation system
 2025-04-15T00:12:03Z : [DOCUMENT_RELATIONSHIPS.md] Updated document relationships to include the new design decisions about LLM-Based Metadata Extraction, External Prompt Template Files, and LLM-Based Language Detection
 2025-04-15T00:08:29Z : [DESIGN_DECISIONS.md] Added three new design decisions: LLM-Based Metadata Extraction, External Prompt Template Files, and LLM-Based Language Detection

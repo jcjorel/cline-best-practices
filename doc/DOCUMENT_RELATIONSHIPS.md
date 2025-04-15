@@ -40,6 +40,8 @@ This document maps the relationships between documentation files in the project.
 - Impacts: [doc/llm/prompts/](#docllmprompts) - Topic: External Prompt Template Files - Scope: Template structure and usage
 - Impacts: [DATA_MODEL.md](#data_modelmd) - Topic: LLM-Based Language Detection - Scope: Language detection approach
 - Impacts: [DESIGN.md](#designmd) - Topic: LLM-Based Language Detection - Scope: Programming language support
+- Impacts: [SECURITY.md](#securitymd) - Topic: Default Network Binding - Scope: Service binding security
+- Impacts: [CONFIGURATION.md](#configurationmd) - Topic: Default Network Binding - Scope: MCP server network configuration
 
 ## DESIGN.md
 - Depends on: None

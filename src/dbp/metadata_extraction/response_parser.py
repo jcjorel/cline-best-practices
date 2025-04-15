@@ -41,12 +41,14 @@
 # [GenAI tool change history]
 # 2025-04-15T09:51:55Z : Initial creation of ResponseParser class by CodeAssistant
 # * Implemented JSON extraction from text and basic validation logic.
+# 2025-04-15T18:04:24Z : Fixed missing import in ResponseParser by CodeAssistant
+# * Added Optional type import from typing module.
 ###############################################################################
 
 import json
 import logging
 import re
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 # Import Pydantic's validation error for potential future use or consistency
 from pydantic import ValidationError

@@ -45,6 +45,9 @@
 # - src/dbp/mcp_server/data_models.py (MCPRequest)
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-15T16:40:59Z : Updated auth to use centralized exceptions by CodeAssistant
+# * Modified imports to use AuthenticationError and AuthorizationError from exceptions module
+# * Removed local exception class definitions
 # 2025-04-15T10:49:30Z : Initial creation of AuthenticationProvider by CodeAssistant
 # * Implemented API key loading, authentication, and authorization logic.
 ###############################################################################
@@ -56,24 +59,17 @@ from typing import Dict, Optional, Any, List
 try:
     from ..config.config_schema import MCPServerConfig, APIKeyEntry
     from .data_models import MCPRequest
+    from .exceptions import AuthenticationError, AuthorizationError
 except ImportError as e:
     logging.getLogger(__name__).error(f"AuthenticationProvider ImportError: {e}. Check package structure.", exc_info=True)
     # Placeholders
     MCPServerConfig = object
     APIKeyEntry = object
     MCPRequest = object
+    AuthenticationError = Exception
+    AuthorizationError = Exception
 
 logger = logging.getLogger(__name__)
-
-class AuthenticationError(Exception):
-    """Raised when authentication fails."""
-    pass
-
-class AuthorizationError(Exception):
-    """Raised when authorization fails."""
-    def __init__(self, message: str, required_permission: Optional[str] = None):
-        super().__init__(message)
-        self.required_permission = required_permission
 
 
 class AuthenticationProvider:
