@@ -228,7 +228,7 @@ Document design decisions at appropriate scope level:
       - Decision: Using stateless JWT instead of server sessions
         * Rationale: Improved scalability and reduced database load
         * Alternatives considered: Redis session store, database sessions
-        * Date: 2023-05-15
+        * Date: <YYYY-MM-DDThh:mm:ssZ>
       
       Args:
           credentials (dict): User login credentials
