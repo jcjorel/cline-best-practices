@@ -97,7 +97,7 @@ For complex changes:
    - Create only ONE plan chapter at a time
    - Use multi-step approach for large plans to avoid truncation
    - Update progress file before proceeding to next plan file
-   - Stop gracefully when context window exceeds 75%
+   - Stop gracefully when context window token usage exceeds 75%
 
 5. Perform consistency check in a clean session:
    - Review all generated files and associated source documents
