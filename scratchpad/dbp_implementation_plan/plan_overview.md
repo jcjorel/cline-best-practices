@@ -1,107 +1,195 @@
-# Documentation-Based Programming System Implementation Plan
+# Documentation-Based Programming MCP Server Implementation Plan
 
-## Overview
+## Documentation Context
 
-This implementation plan outlines the steps to build the Documentation-Based Programming (DBP) system as defined in the project's documentation. The DBP system treats documentation as the single source of truth in a project, ensuring consistency between documentation and code.
+The following documentation files were read during plan preparation:
 
-The system will be implemented in phases with clear milestones to ensure orderly development and integration. Each phase will focus on specific components, building from core infrastructure to user-facing features.
+- [doc/DESIGN.md](../../doc/DESIGN.md) - Core architectural principles and system components
+- [doc/DATA_MODEL.md](../../doc/DATA_MODEL.md) - Data structures and relationships
+- [doc/DESIGN_DECISIONS.md](../../doc/DESIGN_DECISIONS.md) - Key design decisions not yet incorporated
+- [doc/SECURITY.md](../../doc/SECURITY.md) - Security considerations and architecture
+- [doc/DOCUMENT_RELATIONSHIPS.md](../../doc/DOCUMENT_RELATIONSHIPS.md) - Documentation dependencies
+- [doc/CONFIGURATION.md](../../doc/CONFIGURATION.md) - Configuration parameters and management
+- [doc/PR-FAQ.md](../../doc/PR-FAQ.md) - Product overview and frequently asked questions
+- [doc/WORKING_BACKWARDS.md](../../doc/WORKING_BACKWARDS.md) - Product vision and customer experience
+- [doc/design/LLM_COORDINATION.md](../../doc/design/LLM_COORDINATION.md) - LLM coordination architecture
+- [doc/design/INTERNAL_LLM_TOOLS.md](../../doc/design/INTERNAL_LLM_TOOLS.md) - Specialized internal tools
+- [doc/design/BACKGROUND_TASK_SCHEDULER.md](../../doc/design/BACKGROUND_TASK_SCHEDULER.md) - Background processing
+- [doc/design/MCP_SERVER_ENHANCED_DATA_MODEL.md](../../doc/design/MCP_SERVER_ENHANCED_DATA_MODEL.md) - MCP data models
+- [doc/design/COMPONENT_INITIALIZATION.md](../../doc/design/COMPONENT_INITIALIZATION.md) - Initialization sequence
+- [doc/llm/prompts/README.md](../../doc/llm/prompts/README.md) - LLM prompt template structure
+
+⚠️ **CRITICAL: ALL TEAM MEMBERS MUST READ THESE DOCUMENTATION FILES COMPLETELY BEFORE EXECUTING ANY TASKS IN THIS PLAN**
+
+### Documentation Relevance
+
+- **DESIGN.md**: Provides the foundational architecture and component structure that guides our implementation.
+- **DATA_MODEL.md**: Defines the data structures we need to implement for metadata extraction, storage, and analysis.
+- **DESIGN_DECISIONS.md**: Contains recent decisions about LLM-based metadata extraction, prompt templates, and language detection.
+- **SECURITY.md**: Outlines security principles we must adhere to throughout implementation.
+- **DOCUMENT_RELATIONSHIPS.md**: Maps relationships between documentation, essential for consistency analysis.
+- **CONFIGURATION.md**: Defines configuration parameters our implementation must support.
+- **PR-FAQ.md** and **WORKING_BACKWARDS.md**: Provide product vision and user experience goals to guide implementation.
+- **LLM_COORDINATION.md**: Details how multiple LLM instances work together, critical for the core functionality.
+- **INTERNAL_LLM_TOOLS.md**: Describes specialized tools we need to implement for different context types.
+- **BACKGROUND_TASK_SCHEDULER.md**: Outlines background processing essential for file monitoring and metadata extraction.
+- **MCP_SERVER_ENHANCED_DATA_MODEL.md**: Defines the interfaces our MCP server must expose to clients.
+- **COMPONENT_INITIALIZATION.md**: Provides the sequence for starting and configuring system components.
+- **prompts/README.md**: Explains how to structure the prompt templates required by the LLM coordination system.
 
 ## Implementation Phases
 
+The implementation is organized into logical phases that build upon each other:
+
 ### Phase 1: Core Infrastructure
-- Database setup and schema implementation
-- File system monitoring infrastructure
-- Configuration management system
+- Database Schema and ORM Models
+- Configuration Management
+- File System Monitoring
+- Component Initialization Framework
 
-### Phase 2: Metadata Extraction Engine
-- LLM integration for Claude 3.7 Sonnet
-- File header and function extraction implementation
-- Memory cache and persistent storage integration
+### Phase 2: Metadata Processing
+- Metadata Extraction using LLM
+- Memory Cache Implementation
+- Background Task Scheduler
 
-### Phase 3: Consistency Analysis & Recommendation System
-- Document relationship graph implementation
-- Inconsistency detection algorithms
-- Recommendation generation system
-- Developer feedback handling
+### Phase 3: LLM Coordination
+- Coordinator LLM Implementation
+- Internal Tool Implementation
+- Job Management System
 
-### Phase 4: MCP Server Implementation
-- LLM coordination architecture
-- Internal tools implementation
-- MCP exposed tools implementation
+### Phase 4: Consistency Engine
+- Documentation Relationship Graph
+- Consistency Analysis Algorithms
+- Recommendation Generator
 
-### Phase 5: Python CLI Client
-- Command-line interface implementation
-- MCP client integration
-- Configuration and connection management
+### Phase 5: MCP Server Integration
+- Tool and Resource Registration
+- Request/Response Handling
+- Budget Management
 
-### Phase 6: Testing, Documentation, and Refinement
-- Unit and integration testing
-- Documentation completion
-- Performance optimization
-- Security verification
+### Phase 6: Python CLI Client
+- Command Interface
+- MCP Connection Management
+- Response Formatting
 
-## Detailed Implementation Files
+## Detailed Implementation Plans
 
-1. [Database Schema and Structure](plan_database_schema.md)
-2. [File System Monitoring Implementation](plan_filesystem_monitor.md)
-3. [LLM Integration and Metadata Extraction](plan_llm_metadata_extraction.md)
-4. [Consistency Analysis Engine](plan_consistency_analysis.md)
-5. [Recommendation System Implementation](plan_recommendation_system.md)
-6. [LLM Coordination Architecture](plan_llm_coordination.md)
-7. [MCP Server and Tools Implementation](plan_mcp_server.md)
-8. [Python CLI Client Development](plan_python_cli.md)
-9. [Testing and Validation Strategy](plan_testing_strategy.md)
+The following detailed implementation plans are provided:
 
-## Progress Tracking
+- [plan_database_schema.md](plan_database_schema.md) - Database schema design and implementation
+- [plan_config_management.md](plan_config_management.md) - Configuration loading and management
+- [plan_fs_monitoring.md](plan_fs_monitoring.md) - File system monitoring implementation
+- [plan_component_init.md](plan_component_init.md) - Component initialization framework
+- [plan_metadata_extraction.md](plan_metadata_extraction.md) - Metadata extraction with LLM
+- [plan_memory_cache.md](plan_memory_cache.md) - In-memory metadata cache
+- [plan_background_scheduler.md](plan_background_scheduler.md) - Background task scheduler
+- [plan_llm_coordinator.md](plan_llm_coordinator.md) - LLM coordination architecture
+- [plan_internal_tools.md](plan_internal_tools.md) - Internal LLM tools implementation
+- [plan_job_management.md](plan_job_management.md) - Job tracking and management
+- [plan_doc_relationships.md](plan_doc_relationships.md) - Documentation relationship graph
+- [plan_consistency_analysis.md](plan_consistency_analysis.md) - Consistency analysis engine
+- [plan_recommendation_generator.md](plan_recommendation_generator.md) - Recommendation system
+- [plan_mcp_integration.md](plan_mcp_integration.md) - MCP server integration
+- [plan_python_cli.md](plan_python_cli.md) - Python CLI client implementation
+- [plan_testing.md](plan_testing.md) - Comprehensive testing strategy
 
-All implementation progress will be tracked in the [plan_progress.md](plan_progress.md) file, which will be updated after each implementation step with clear status indicators.
+## Implementation Progress
 
-## Essential Context from Documentation
+Implementation progress is tracked in [plan_progress.md](plan_progress.md), which is updated throughout the project. The progress file indicates:
 
-### Core Architectural Principles
+- Which plans have been created
+- Which implementation tasks are in progress
+- Which tasks have been completed
+- Any consistency checks performed
 
-From [DESIGN.md](../doc/DESIGN.md):
+## Implementation Requirements
 
-1. **Documentation as Source of Truth**: Documentation takes precedence over code for understanding project intent.
-2. **Automatic Consistency Maintenance**: System actively ensures consistency between documentation and code.
-3. **Global Contextual Awareness**: AI assistants maintain awareness of entire project context.
-4. **Design Decision Preservation**: All significant design decisions are captured and maintained.
-5. **Reasonable Default Values**: System provides carefully selected default values for all configurable parameters.
+### Language and Framework Requirements
 
-### Key Implementation Principles
+- **Primary Language**: Python 3.10+
+- **Database ORM**: SQLAlchemy 2.0+
+- **Web Framework**: FastAPI for MCP server interface
+- **LLM Integration**: AWS SDK for Python (Boto3) for Bedrock integration
+- **Testing Framework**: pytest for unit and integration testing
 
-From [DESIGN.md](../doc/DESIGN.md) and [DESIGN_DECISIONS.md](../doc/DESIGN_DECISIONS.md):
+### Third-Party Dependencies
 
-1. **Avoid Manual Parsing**: Leverage Python libraries for parsing structured data.
-2. **Metadata Normalization via LLM**: Allow LLMs to handle metadata extraction and normalization.
-3. **Precise LLM Prompts**: Provide detailed JSON schemas and formats in LLM tool prompts.
-4. **Thread-Safe Database Access**: Ensure all database operations are thread-safe.
-5. **Code Size Governance**: Maintain files with maximum 600 lines.
-6. **Explicit Error Handling**: Use "throw on error" for all error cases.
-7. **LLM-Based Metadata Extraction**: Extraction MUST be performed exclusively by LLM with no programmatic fallback.
-8. **External Prompt Template Files**: LLM prompts for internal tools are read directly from doc/llm/prompts/.
-9. **LLM-Based Language Detection**: No programmatic language detection is needed.
+- **SQLite**: For local database storage (default)
+- **PostgreSQL**: For optional advanced database configuration
+- **AWS Bedrock SDK**: For accessing LLM services
+- **inotify/FSEvents/ReadDirectoryChangesW**: For file system monitoring
+- **SQLAlchemy**: For database ORM
+- **FastAPI**: For MCP server interface
+- **uvicorn**: For ASGI server
+- **pydantic**: For data validation and settings management
+- **loguru**: For enhanced logging capabilities
 
-### Critical Requirements
+### Development Environment Setup
 
-From [PR-FAQ.md](../doc/PR-FAQ.md) and [WORKING_BACKWARDS.md](../doc/WORKING_BACKWARDS.md):
+- Python 3.10+ with virtual environment
+- Development tools: pylint, black, mypy, pytest
+- Local SQLite database
+- AWS account with Bedrock access (for testing)
+- Git for version control
 
-1. **Performance**: Indexing project metadata within 10 seconds of any file change.
-2. **Resource Usage**: <5% CPU and <100MB RAM usage.
-3. **Local Processing**: All data processed locally with no external transmission.
-4. **Complete Isolation**: Perfect separation between indexed projects.
-5. **Security**: No code execution, strictly filesystem permission enforcement.
+## Key Architecture Insights
 
-## Deeper Context References
+### LLM-Based Metadata Extraction
 
-For more detailed information about specific components, refer to:
+The system uses Amazon Nova Lite for metadata extraction from code files. This approach:
+- Avoids the need for language-specific parsers
+- Allows extraction of semantic meaning from documentation
+- Provides flexibility in handling various documentation formats
+- Requires careful prompt engineering to ensure consistent results
 
-- [DATA_MODEL.md](../doc/DATA_MODEL.md) for database structures and relationships
-- [CONFIGURATION.md](../doc/CONFIGURATION.md) for configuration parameters
-- [SECURITY.md](../doc/SECURITY.md) for security considerations
-- [DOCUMENT_RELATIONSHIPS.md](../doc/DOCUMENT_RELATIONSHIPS.md) for documentation dependency tracking
-- [design/BACKGROUND_TASK_SCHEDULER.md](../doc/design/BACKGROUND_TASK_SCHEDULER.md) for task scheduling details
-- [design/LLM_COORDINATION.md](../doc/design/LLM_COORDINATION.md) for LLM coordination architecture
-- [design/INTERNAL_LLM_TOOLS.md](../doc/design/INTERNAL_LLM_TOOLS.md) for internal LLM tools
-- [design/MCP_SERVER_ENHANCED_DATA_MODEL.md](../doc/design/MCP_SERVER_ENHANCED_DATA_MODEL.md) for MCP server data models
-- [design/COMPONENT_INITIALIZATION.md](../doc/design/COMPONENT_INITIALIZATION.md) for component initialization sequence
+### Coordinator-Based LLM Architecture
+
+The LLM coordination architecture uses a hierarchical approach:
+- Coordinator LLM manages the workflow and delegates to specialized tools
+- Internal tools handle specific types of queries (codebase, documentation, etc.)
+- Asynchronous job management allows parallel processing
+- Standardized prompts ensure consistent tool behavior
+
+### Documentation-First Approach
+
+The implementation enforces a documentation-first approach:
+- Documentation is the single source of truth
+- Code changes trigger documentation consistency checks
+- Recommendations are generated to maintain consistency
+- Design decisions are preserved throughout the development process
+
+### Security Considerations
+
+The implementation prioritizes security:
+- All processing occurs locally with no data transmission
+- Project isolation prevents cross-project data leakage
+- Resource usage limits prevent system impact
+- File system permissions are strictly enforced
+- No arbitrary code execution occurs
+
+## Source Documentation Context
+
+### Core Architecture Principles (from DESIGN.md)
+
+- Documentation as Source of Truth
+- Automatic Consistency Maintenance
+- Global Contextual Awareness
+- Design Decision Preservation
+- Reasonable Default Values
+
+### Implementation Principles (from DESIGN.md)
+
+- Avoid Manual Parsing
+- Metadata Normalization via LLM
+- Precise LLM Prompts
+- Thread-Safe Database Access
+- Code Size Governance
+- Explicit Error Handling
+
+### Recent Design Decisions (from DESIGN_DECISIONS.md)
+
+- LLM-Based Metadata Extraction
+- External Prompt Template Files
+- LLM-Based Language Detection
+
+These principles and decisions form the foundation of our implementation approach and must be adhered to throughout the development process.
