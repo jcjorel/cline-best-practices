@@ -251,23 +251,22 @@ When code changes would contradict documentation:
   def authenticate_user(credentials, options=None):
       """
       [Function intent]
-      Authenticates a user against the database using credentials and generates 
-      a JWT token upon successful authentication.
+      <Describe the detailed purpose of this function>
       
       [Implementation details]
-      - Validates input credentials for format and required fields
-      - Uses bcrypt to compare password hash with stored value
-      - Generates JWT with expiration based on CONFIGURATION.md settings
+      <List key implementation details>
+      - Design Decision: [brief description] (YYYY-MM-DD)
+         * Rationale: [justification]
+         * Alternatives considered: [brief description]
       
       [Design principles]
-      - Follows zero-trust security model
-      - Implements separation of concerns between auth logic and token generation
+      <List key design principles guiding this implementation>
       
-      [Design decisions]
-      - Decision: Using stateless JWT instead of server sessions
-        * Rationale: Improved scalability and reduced database load
-        * Alternatives considered: Redis session store, database sessions
-        * Date: <YYYY-MM-DDThh:mm:ssZ>
+      [Design decisions] <!-- Design decisions are optional -->
+      - Design Decision: [brief description] (YYYY-MM-DD)
+         * Rationale: [justification]
+         * Alternatives considered: [brief description]
+         * Date: <YYYY-MM-DDThh:mm:ssZ>
       
       Args:
           credentials (dict): User login credentials
