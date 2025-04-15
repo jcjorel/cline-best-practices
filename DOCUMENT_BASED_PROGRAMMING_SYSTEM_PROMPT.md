@@ -135,6 +135,7 @@ Strictly adhere to the DRY principle in all implementations:
 - For markdown files:
   - Update corresponding `MARKDOWN_CHANGELOG.md` in SAME directory
   - Format entries as: `YYYY-MM-DDThh:mm:ssZ : [filename.md] change summary`
+  - All MARKDOWN_CHANGELOG.md files are limited to a hard limit of 20 entries. Oldest entries are evicted when needed
 - Verify file existence and validate syntax after modifications
 
 ### Documentation Management
