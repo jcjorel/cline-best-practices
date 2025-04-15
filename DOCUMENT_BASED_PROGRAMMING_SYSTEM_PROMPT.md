@@ -68,7 +68,7 @@ DO NOT read MARKDOWN_CHANGELOG.md files by default to preserve context window sp
 
 ### Implementation Process
 For simple changes (single-file modification, bug fix, <50 lines changed):
-- Implement directly in ACT mode
+- Implement directly if in ACT mode. If not, ask the user to switch in ACT mode.
 
 For complex changes:
 1. Switch in ACT mode and create a directory for the implementation plan: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/`
