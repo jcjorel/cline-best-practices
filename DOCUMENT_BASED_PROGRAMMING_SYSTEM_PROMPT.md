@@ -148,96 +148,136 @@ When code changes would contradict documentation:
 4. For documentation conflicts, request clarification on precedence
 
 #### Documentation Standards
-- **Code Documentation Standard**: Apply consistent documentation to both files and functions following these principles:
-  
-  1. **Required Sections**:
-     - Intent/Purpose: Clear description of the component's role
-     - Design Principles: Key patterns and approaches used
-     - Implementation Details: Specific technical implementation notes
-     - Reference Documentation: Links to relevant markdown documentation
-     - Design Decisions: Add this section ONLY when explicitly requested by the user
-  
-  2. **Documentation Sources**:
-     - Use `GENAI_HEADER_TEMPLATE.txt` for file-level documentation
-     - Use `GENAI_FUNCTION_TEMPLATE.txt` for function-level documentation
-     - Use language-appropriate formatting (docstrings, JSDoc, etc.)
-  
-  3. **Management Rules**:
-     - Include all required metadata sections
-     - Format documentation appropriately for the specific language/file type
-     - Never duplicate information that exists in documentation files
-     - File headers are mandatory for all non-markdown files
-     - Maintain full change history in the designated history section
-     - Only include design decisions when explicitly requested by the user
 
-- **Markdown File Standards**:
-  - All markdown files MUST use UPPERCASE_SNAKE_CASE format (e.g., DESIGN.md, DATA_MODEL.md)
+#### Code Documentation Standard
 
-- **Example File-level Header (in Python)**:
-  ```python
-  ###############################################################################
-  # IMPORTANT: This header comment is designed for GenAI code review and maintenance
-  # Any GenAI tool working with this file MUST preserve and update this header
-  ###############################################################################
-  # [GenAI coding tool directive]
-  # - Maintain this header with all modifications
-  # - Update History section with each change
-  # - Keep only the 4 most recent records in the history section. Sort from older to newer.
-  # - Preserve Intent, Design, and Constraints sections
-  # - Use this header as context for code reviews and modifications
-  # - Ensure all changes align with the design principles
-  # - Respect system prompt directives at all times
-  ###############################################################################
-  # [Source file intent]
-  # <Describe the detailed purpose of this file>
-  ###############################################################################
-  # [Source file design principles]
-  # <List key design principles guiding this implementation>
-  ###############################################################################
-  # [Source file constraints]
-  # <Document any limitations or requirements for this file>
-  ###############################################################################
-  # [Reference documentation]
-  # <List of markdown files in doc/ that provide broader context for this file>
-  ###############################################################################
-  # [GenAI tool change history]
-  # YYYY-MM-DDThh:mm:ssZ : <summary of change> by CodeAssistant
-  # * <change detail>
-  ###############################################################################
-  ```
+All code must be documented at TWO distinct levels:
 
-- **Example Function-level Documentation (in Python)**:
-  ```python
-  def authenticate_user(credentials, options=None):
-      """
-      [Function intent]
-      <Describe the detailed purpose of this function>
-      
-      [Implementation details]
-      <List key implementation details>
-      
-      [Design principles]
-      <List key design principles guiding the function implementation>
-      
-      Args:
-          credentials (dict): User login credentials
-              - username (str): User's unique identifier
-              - password (str): User's plaintext password
-          options (dict, optional): Optional authentication parameters
-              - remember_me (bool): Whether to extend token validity
-              
-      Returns:
-          dict: Object containing JWT token and user profile
-          
-      Raises:
-          AuthenticationError: When credentials are invalid
-          ValidationError: When credentials format is incorrect
-      """
-      if options is None:
-          options = {}
-      
-      # Implementation...
-  ```
+1. **File-level Documentation**: 
+   - ALWAYS use the template from `GENAI_HEADER_TEMPLATE.txt`
+   - Apply to ALL non-markdown files
+   - Place at the very top of each file
+   
+   **Example File-level Header (in Python)**:
+   ```python
+   ###############################################################################
+   # IMPORTANT: This header comment is designed for GenAI code review and maintenance
+   # Any GenAI tool working with this file MUST preserve and update this header
+   ###############################################################################
+   # [GenAI coding tool directive]
+   # - Maintain this header with all modifications
+   # - Update History section with each change
+   # - Keep only the 4 most recent records in the history section. Sort from older to newer.
+   # - Preserve Intent, Design, and Constraints sections
+   # - Use this header as context for code reviews and modifications
+   # - Ensure all changes align with the design principles
+   # - Respect system prompt directives at all times
+   ###############################################################################
+   # [Source file intent]
+   # <Describe the detailed purpose of this file>
+   ###############################################################################
+   # [Source file design principles]
+   # <List key design principles guiding this implementation>
+   ###############################################################################
+   # [Source file constraints]
+   # <Document any limitations or requirements for this file>
+   ###############################################################################
+   # [Reference documentation]
+   # <List of markdown files in doc/ that provide broader context for this file>
+   ###############################################################################
+   # [GenAI tool change history]
+   # YYYY-MM-DDThh:mm:ssZ : <summary of change> by CodeAssistant
+   # * <change detail>
+   ###############################################################################
+   ```
+
+2. **Function/Class-level Documentation**:
+   - MANDATORY for ALL functions, methods, and classes
+   - MUST include these specific labeled sections in this exact order:
+     a. "[Function/Class intent]" - Purpose and role description
+     b. "[Implementation details]" - Key technical implementation notes
+     c. "[Design principles]" - Patterns and approaches used
+   - Include standard language-appropriate parameter/return documentation
+   - ALWAYS follow the template from `GENAI_FUNCTION_TEMPLATE.txt`
+   - NEVER skip these sections, even for simple functions
+
+   **Python Function Documentation Example**:
+   ```python
+   def authenticate_user(credentials, options=None):
+       """
+       [Function intent]
+       Authenticates a user against the system using provided credentials.
+       
+       [Implementation details]
+       Uses bcrypt for password verification and JWT for token generation.
+       Applies rate limiting based on username to prevent brute force attacks.
+       
+       [Design principles]
+       Follows zero-trust architecture principles with complete validation.
+       Uses stateless authentication with short-lived tokens.
+       
+       Args:
+           credentials (dict): User login credentials
+               - username (str): User's unique identifier
+               - password (str): User's plaintext password
+           options (dict, optional): Optional authentication parameters
+               - remember_me (bool): Whether to extend token validity
+               
+       Returns:
+           dict: Object containing JWT token and user profile
+           
+       Raises:
+           AuthenticationError: When credentials are invalid
+           ValidationError: When credentials format is incorrect
+       """
+       # Implementation...
+   ```
+
+   **JavaScript Class Documentation Example**:
+   ```javascript
+   /**
+    * [Class intent]
+    * Manages user authentication state and processes throughout the application.
+    *
+    * [Implementation details]
+    * Implements the Observer pattern to notify components of auth state changes.
+    * Uses localStorage for persistent login state with encryption.
+    *
+    * [Design principles]
+    * Single responsibility for auth state management.
+    * Clear separation between auth logic and UI components.
+    *
+    * @class AuthManager
+    */
+   class AuthManager {
+     /**
+      * [Function intent]
+      * Creates a new AuthManager instance with initial configuration.
+      *
+      * [Implementation details]
+      * Sets up listeners and initializes from encrypted localStorage if available.
+      *
+      * [Design principles]
+      * Fail-secure initialization with validation of stored credentials.
+      *
+      * @param {Object} config - Configuration options
+      * @param {boolean} config.autoRefresh - Whether to auto-refresh tokens
+      */
+     constructor(config) {
+       // Implementation...
+     }
+     
+     // Additional methods...
+   }
+   ```
+
+IMPORTANT: These documentation sections are MANDATORY for ALL functions, methods and classes, without exception. Always include them, even for simple implementations.
+
+#### Markdown File Standards
+- All markdown files MUST use UPPERCASE_SNAKE_CASE format (e.g., DESIGN.md, DATA_MODEL.md)
+- Each directory containing markdown files must have a corresponding MARKDOWN_CHANGELOG.md
+- Documentation files should avoid duplicating information available in other files
+- Use cross-references between related documentation files
 
 #### Design Decision Documentation
 Document design decisions at appropriate scope level ONLY when explicitly requested by the user:
