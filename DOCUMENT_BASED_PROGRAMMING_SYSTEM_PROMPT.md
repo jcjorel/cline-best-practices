@@ -74,6 +74,10 @@ For complex changes:
 1. Create a directory for the implementation plan: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/`
 
 2. Create overview implementation document: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_overview.md` with:
+   - MANDATORY documentation section at the beginning with:
+     - Complete list of ALL documentation files read during plan preparation with direct links
+     - Strong warning statement: "⚠️ CRITICAL: ALL TEAM MEMBERS MUST READ THESE DOCUMENTATION FILES COMPLETELY BEFORE EXECUTING ANY TASKS IN THIS PLAN"
+     - Brief explanation of why each documentation file is relevant to this implementation
    - Organized in logical temporal phases
    - One level down of details
    - List of all detailed implementation plan file names
@@ -116,6 +120,8 @@ For complex changes:
    1. Implementation overview: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_overview.md`
    2. Progress tracker: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_progress.md`
    3. Detailed implementation files: [list all detailed plan files]
+   
+   ⚠️ CRITICAL: Before execution, all team members MUST thoroughly read ALL documentation files linked in the overview document.
    
    For clean execution, please start a NEW SESSION with:
    "Execute tasks defined in <project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_overview.md"
@@ -340,7 +346,7 @@ For significant changes absent from documentation:
 
 ### Core Documentation Files
 - **GENAI_HEADER_TEMPLATE.txt**: Header template for source files
-- **GENAI_FUNCTION_TEMPLATE.txt**: Function documentation template to be adapted by language
+- **GENAI_FUNCTION_TEMPLATE.txt**: Function documentation templates by language
 - **DESIGN.md**: Architectural blueprint with security considerations
 - **DESIGN_DECISIONS.md**: Temporary log of project-wide design decisions with newest entries at top (requires periodic syncing to appropriate documentation files)
 - **SECURITY.md**: Comprehensive security documentation
