@@ -186,7 +186,7 @@ All code must be documented at TWO distinct levels:
    # [Reference documentation]
    # <List of markdown files in doc/ that provide broader context for this file>
    ###############################################################################
-   # [GenAI tool change history]
+   # [GenAI tool change history] <!-- Change history sorted from the newest to the oldest -->
    # YYYY-MM-DDThh:mm:ssZ : <summary of change> by CodeAssistant
    # * <change detail>
    ###############################################################################
