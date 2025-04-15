@@ -53,9 +53,14 @@ import os # For example apply logic
 
 # Assuming necessary imports
 try:
+    # Import from local data_models
     from .data_models import (
-        Recommendation, InconsistencyRecord, RecommendationFixType,
-        RecommendationSeverity, RecommendationStatus, InconsistencySeverity,
+        Recommendation, RecommendationFixType,
+        RecommendationSeverity, RecommendationStatus
+    )
+    # Import from consistency_analysis data_models
+    from ..consistency_analysis.data_models import (
+        InconsistencyRecord, InconsistencySeverity,
         InconsistencyType
     )
     # Placeholder for LLMIntegration - replace with actual import

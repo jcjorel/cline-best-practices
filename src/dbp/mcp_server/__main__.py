@@ -187,21 +187,36 @@ def main() -> int:
         try:
             component = MCPServerComponent()
             
-            # Create minimal context with config for testing
+            # Use proper component initialization pattern for consistency
+            from ..core.registry import ComponentRegistry
             from ..core.component import InitializationContext
+            from ..config.config_manager import ConfigurationManager
+            from ..config.component import ConfigManagerComponent
+            
+            # Create the registry for component management
+            registry = ComponentRegistry()
+            
+            # Get the ConfigurationManager singleton and initialize it
+            config_manager = ConfigurationManager()
+            config_manager.initialize()  # Initialize with default settings
+            
+            # Set MCP server config values
+            config_manager.set("mcp_server.host", args.host)
+            config_manager.set("mcp_server.port", args.port)
+            config_manager.set("mcp_server.server_name", "dbp-mcp-server")
+            config_manager.set("mcp_server.server_description", "MCP Server for DBP")
+            config_manager.set("mcp_server.server_version", "1.0.0")
+            config_manager.set("mcp_server.auth_enabled", False)
+            
+            # Register the config_manager component
+            registry.register(ConfigManagerComponent(config_manager))
+            
+            # Create the initialization context with proper registry
             context = InitializationContext(
                 logger=logger.getChild("component"),
-                config={
-                    "mcp_server": {
-                        "host": args.host,
-                        "port": args.port,
-                        "server_name": "dbp-mcp-server",
-                        "server_description": "MCP Server for DBP",
-                        "server_version": "1.0.0",
-                        "auth_enabled": False
-                    }
-                },
-                resolver=None  # We don't have a resolver in this simple context
+                config=config_manager.as_dict(),
+                component_registry=registry,
+                resolver=None
             )
             
             # Initialize the component

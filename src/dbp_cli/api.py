@@ -291,8 +291,15 @@ class MCPClientAPI:
          return self.get_resource(resource_uri, params=params)
 
     def get_server_status(self) -> Dict[str, Any]:
-         """Gets the server status (example of a potential resource or tool)."""
-         # Assuming a simple GET endpoint for status
-         return self._make_request("GET", "status") # Example endpoint
+         """Gets the server status via the health check endpoint."""
+         # Use the health endpoint that's implemented in the server
+         self.logger.debug("Calling get_server_status() - Making request to health endpoint")
+         try:
+             result = self._make_request("GET", "health")
+             self.logger.debug(f"get_server_status() success - Result: {result}")
+             return result
+         except Exception as e:
+             self.logger.error(f"get_server_status() failed with exception: {e}", exc_info=True)
+             raise
 
     # Add methods for other tools/resources as needed...

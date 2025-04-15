@@ -165,11 +165,31 @@ class BaseCommandHandler(ABC):
         Returns:
             Result of the function execution
         """
-        try:
-            self.progress.start(message)
+        self.logger.debug(f"with_progress called with message: '{message}', function: {func.__name__}")
+        
+        # Safety check for the progress indicator
+        if self.progress is None:
+            self.logger.error("ProgressIndicator is None - cannot start progress")
             return func(*args, **kwargs)
+            
+        # Start the progress indicator directly instead of using it as a context manager
+        try:
+            self.logger.debug("Starting progress indicator")
+            self.progress.start(message)
+            self.logger.debug("Progress indicator started successfully, executing function")
+            result = func(*args, **kwargs)
+            self.logger.debug("Function execution completed successfully")
+            return result
+        except Exception as e:
+            self.logger.error(f"Error during function execution in with_progress: {e}", exc_info=True)
+            raise
         finally:
-            self.progress.stop()
+            try:
+                self.logger.debug("Stopping progress indicator")
+                self.progress.stop()
+                self.logger.debug("Progress indicator stopped successfully")
+            except Exception as e:
+                self.logger.error(f"Error stopping progress indicator: {e}", exc_info=True)
             
     def handle_api_error(self, error: Exception) -> int:
         """

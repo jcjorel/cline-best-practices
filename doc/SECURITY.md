@@ -19,6 +19,10 @@ The Documentation-Based Programming system is designed with a security-first min
 1. **Local Processing Only**: All data processing occurs entirely on the user's local machine
 2. **Zero External Transmission**: No code or metadata is ever transmitted to external servers
 3. **Network Isolation**: The system operates purely within the local environment with no outbound connections
+4. **Default Network Binding**: By default, the product binds on address 127.0.0.1 (localhost) for enhanced security
+   - **Rationale**: Restricting network binding to localhost prevents external network access, protecting the service from unauthorized access and potential network-based attacks
+   - **Implementation**: All network services default to localhost binding unless explicitly configured otherwise
+   - **Benefits**: Enhanced security posture by default, prevents accidental exposure to wider networks
 4. **User Control**: All recommendations are presented for explicit developer approval
 5. **Resource Monitoring**: The system limits its resource consumption and implements throttling during high system load
 6. **Custom Code Restriction**: The system cannot execute arbitrary code supplied by users or metadata

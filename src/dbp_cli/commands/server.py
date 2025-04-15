@@ -38,6 +38,8 @@
 # [GenAI tool change history]
 # 2025-04-15T14:50:00Z : Initial creation of ServerCommandHandler by CodeAssistant
 # * Implemented command handler for MCP server management
+# 2025-04-15T23:54:09Z : Fixed context manager issue in _check_status method by CodeAssistant
+# * Changed incorrect usage of progress.start() with 'with' statement to using the with_progress helper method
 ###############################################################################
 
 import argparse
@@ -438,8 +440,10 @@ class ServerCommandHandler(BaseCommandHandler):
         # Check if server is responsive
         try:
             self.output.info("Checking server connectivity...")
-            with self.progress.start("Connecting to server"):
-                result = self.mcp_client.get_server_status()
+            result = self.with_progress(
+                "Connecting to server",
+                self.mcp_client.get_server_status
+            )
             
             self.output.success("Server is responsive")
             

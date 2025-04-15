@@ -42,6 +42,8 @@ This document maps the relationships between documentation files in the project.
 - Impacts: [DESIGN.md](#designmd) - Topic: LLM-Based Language Detection - Scope: Programming language support
 - Impacts: [SECURITY.md](#securitymd) - Topic: Default Network Binding - Scope: Service binding security
 - Impacts: [CONFIGURATION.md](#configurationmd) - Topic: Default Network Binding - Scope: MCP server network configuration
+- Impacts: [DESIGN.md](#designmd) - Topic: MCP Server Interface Consistency - Scope: CLI and MCP server integration
+- Impacts: [CONFIGURATION.md](#configurationmd) - Topic: MCP Server Interface Consistency - Scope: Shared configuration handling
 
 ## DESIGN.md
 - Depends on: None
@@ -158,5 +160,74 @@ The documentation relationship graph forms a directed acyclic graph (DAG) with t
 - **doc/llm/prompts/**: Node with incoming edges from DESIGN_DECISIONS.md and outgoing edge to design/INTERNAL_LLM_TOOLS.md
 - **design/COMPONENT_INITIALIZATION.md**: Node with multiple incoming edges and outgoing edges to DESIGN.md and CONFIGURATION.md
 - **design/BACKGROUND_TASK_SCHEDULER.md**: Node with incoming edges from DESIGN_DECISIONS.md and outgoing edges to multiple documents
+
+### Visual Representation
+
+```mermaid
+graph TD
+    %% Core Documentation Nodes
+    DESIGN[DESIGN.md]
+    DESIGN_DECISIONS[DESIGN_DECISIONS.md]
+    DATA_MODEL[DATA_MODEL.md]
+    SECURITY[SECURITY.md]
+    CONFIG[CONFIGURATION.md]
+    DOC_REL[DOCUMENT_RELATIONSHIPS.md]
+    PR_FAQ[PR-FAQ.md]
+    WORKING_BACKWARDS[WORKING_BACKWARDS.md]
+    
+    %% Design Documents
+    LLM_COORD[design/LLM_COORDINATION.md]
+    INTERNAL_TOOLS[design/INTERNAL_LLM_TOOLS.md]
+    COMPONENT_INIT[design/COMPONENT_INITIALIZATION.md]
+    BACKGROUND_TASK[design/BACKGROUND_TASK_SCHEDULER.md]
+    MCP_DATA_MODEL[design/MCP_SERVER_ENHANCED_DATA_MODEL.md]
+    
+    %% Other Resources
+    LLM_PROMPTS[doc/llm/prompts/]
+    
+    %% Style definitions
+    classDef rootNode fill:#f9f,stroke:#333,stroke-width:2px
+    classDef leafNode fill:#bbf,stroke:#333,stroke-width:1px
+    classDef designDoc fill:#fbb,stroke:#333,stroke-width:1px
+    classDef resource fill:#bfb,stroke:#333,stroke-width:1px
+    
+    %% Root Node Relationships
+    DESIGN_DECISIONS --> DESIGN
+    DESIGN_DECISIONS --> DATA_MODEL
+    DESIGN_DECISIONS --> CONFIG
+    DESIGN_DECISIONS --> SECURITY
+    DESIGN_DECISIONS --> LLM_PROMPTS
+    DESIGN_DECISIONS --> INTERNAL_TOOLS
+    DESIGN_DECISIONS --> BACKGROUND_TASK
+    
+    DESIGN --> DATA_MODEL
+    DESIGN --> DOC_REL
+    DESIGN --> LLM_COORD
+    
+    PR_FAQ --> WORKING_BACKWARDS
+    
+    %% Mid-level Node Relationships
+    LLM_COORD --> INTERNAL_TOOLS
+    LLM_COORD --> MCP_DATA_MODEL
+    
+    LLM_PROMPTS --> INTERNAL_TOOLS
+    
+    BACKGROUND_TASK --> DESIGN
+    BACKGROUND_TASK --> CONFIG
+    BACKGROUND_TASK --> COMPONENT_INIT
+    
+    COMPONENT_INIT --> DESIGN
+    COMPONENT_INIT --> CONFIG
+    
+    %% Leaf Node Dependencies
+    DATA_MODEL --> SECURITY
+    WORKING_BACKWARDS --> SECURITY
+    
+    %% Apply styles
+    class DESIGN_DECISIONS,DESIGN,PR_FAQ rootNode
+    class CONFIG,SECURITY,DATA_MODEL,DOC_REL,WORKING_BACKWARDS leafNode
+    class LLM_COORD,INTERNAL_TOOLS,COMPONENT_INIT,BACKGROUND_TASK,MCP_DATA_MODEL designDoc
+    class LLM_PROMPTS resource
+```
 
 This graph structure helps the system determine the correct order for propagating updates and ensuring global consistency.

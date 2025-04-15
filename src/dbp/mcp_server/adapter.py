@@ -137,6 +137,33 @@ class SystemComponentAdapter:
 
     # --- Convenience properties/methods for commonly accessed components ---
     # These can be added to provide typed access and reduce boilerplate in tools/resources
+    
+    @property
+    def database_repositories(self):
+        """
+        Provides access to the database repositories.
+        
+        Returns:
+            A module containing all repository classes:
+            - BaseRepository
+            - DocumentRepository
+            - ProjectRepository
+            - RelationshipRepository
+            - FunctionRepository
+            - ClassRepository
+            - InconsistencyRepository
+            - RecommendationRepository
+            - DeveloperDecisionRepository
+            - DesignDecisionRepository
+            - ChangeRecordRepository
+        """
+        # Import the repositories module directly when needed
+        try:
+            from ..database import repositories
+            return repositories
+        except ImportError as e:
+            self.logger.error(f"Failed to import repositories module: {e}")
+            raise ComponentNotFoundError("database_repositories") from e
 
     @property
     def consistency_analysis(self) -> ConsistencyAnalysisComponent:

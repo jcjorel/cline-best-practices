@@ -32,6 +32,10 @@
 # - scratchpad/dbp_implementation_plan/plan_mcp_integration.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-15T22:56:00Z : Fixed Pydantic v2 compatibility issues by CodeAssistant
+# * Replaced deprecated @root_validator with @model_validator
+# * Updated schema_extra to json_schema_extra
+# * Fixed class reference order issue
 # 2025-04-15T19:32:00Z : Added FastAPI Pydantic models for request/response validation by CodeAssistant
 # * Created Pydantic models MCPToolRequest and MCPResourceRequest for FastAPI
 # * Added FastAPI response models and helper functions
@@ -43,7 +47,7 @@ import logging
 import uuid
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Any, List, Union, Type
-from pydantic import BaseModel, Field, validator, root_validator
+from pydantic import BaseModel, Field, validator, model_validator
 from fastapi import HTTPException, status
 
 logger = logging.getLogger(__name__)
@@ -57,7 +61,7 @@ class MCPToolRequest(BaseModel):
                                  description="Payload containing parameters for the tool")
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id": "req-123456",
                 "data": {
@@ -74,7 +78,7 @@ class MCPResourceRequest(BaseModel):
     # Additional query parameters are handled by FastAPI directly
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id": "req-123456"
             }
@@ -88,7 +92,7 @@ class MCPErrorModel(BaseModel):
     data: Optional[Dict[str, Any]] = Field(default=None, description="Optional additional error details")
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "code": "TOOL_NOT_FOUND",
                 "message": "The requested tool 'analyze_data' was not found.",
@@ -103,22 +107,18 @@ class MCPResponseModel(BaseModel):
     result: Optional[Dict[str, Any]] = Field(default=None, description="Result payload (for success status)")
     error: Optional[MCPErrorModel] = Field(default=None, description="Error details (for error status)")
 
-    @root_validator
-    def validate_status_fields(cls, values):
+    @model_validator(mode='after')
+    def validate_status_fields(self):
         """Validate that the appropriate fields are present for the given status."""
-        status = values.get("status")
-        result = values.get("result")
-        error = values.get("error")
-        
-        if status == "success" and error is not None:
+        if self.status == "success" and self.error is not None:
             logger.warning(f"MCPResponse has status 'success' but also contains an error object.")
-        if status == "error" and error is None:
+        if self.status == "error" and self.error is None:
             logger.warning(f"MCPResponse has status 'error' but is missing the error object.")
         
-        return values
+        return self
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id": "req-123456",
                 "status": "success",
@@ -129,6 +129,49 @@ class MCPResponseModel(BaseModel):
                 "error": None
             }
         }
+
+
+@dataclass
+class MCPError:
+    """Represents an error structure within an MCP response."""
+    code: str # Standardized error code (e.g., "INVALID_REQUEST", "TOOL_NOT_FOUND")
+    message: str # Human-readable error message
+    data: Optional[Dict[str, Any]] = None # Optional additional error details
+
+@dataclass
+class MCPRequest:
+    """
+    Represents an incoming request to the MCP server.
+    This structure might be populated by the web framework handling the HTTP request.
+    """
+    id: str # Unique request identifier (usually provided by the client)
+    type: str # Type of request, typically "tool" or "resource"
+    target: str # The name of the tool or the URI of the resource being targeted
+    data: Dict[str, Any] = field(default_factory=dict) # Payload containing parameters for tools or resources
+    headers: Dict[str, str] = field(default_factory=dict) # Request headers (e.g., for authentication)
+    # Add other potential MCP fields if needed, like 'metadata'
+
+@dataclass
+class MCPResponse:
+    """Represents a response sent back by the MCP server."""
+    id: str # Corresponds to the MCPRequest id
+    status: str # "success" or "error"
+    result: Optional[Dict[str, Any]] = None # Payload containing the result (for success status)
+    error: Optional[MCPError] = None # Error details (for error status)
+    # Add other potential MCP fields if needed, like 'metadata'
+
+    def __post_init__(self):
+        # Basic validation
+        if self.status == "success" and self.error is not None:
+            logger.warning(f"MCPResponse (ID: {self.id}) has status 'success' but also contains an error object.")
+        if self.status == "error" and self.error is None:
+            logger.warning(f"MCPResponse (ID: {self.id}) has status 'error' but is missing the error object.")
+            # Optionally create a default error
+            # self.error = MCPError(code="INTERNAL_ERROR", message="Unknown error occurred.", data=None)
+        if self.status == "success" and self.result is None:
+             # Result can sometimes be legitimately null/empty for success, maybe just debug log
+             logger.debug(f"MCPResponse (ID: {self.id}) has status 'success' but result is None.")
+
 
 # Helper functions for FastAPI integration
 def create_mcp_request_from_tool(tool_request: MCPToolRequest, tool_name: str, headers: Dict[str, str]) -> MCPRequest:
@@ -182,44 +225,3 @@ def get_http_status_for_mcp_error(error_code: str) -> int:
         "INTERNAL_ERROR": status.HTTP_500_INTERNAL_SERVER_ERROR
     }
     return status_map.get(error_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-@dataclass
-class MCPError:
-    """Represents an error structure within an MCP response."""
-    code: str # Standardized error code (e.g., "INVALID_REQUEST", "TOOL_NOT_FOUND")
-    message: str # Human-readable error message
-    data: Optional[Dict[str, Any]] = None # Optional additional error details
-
-@dataclass
-class MCPRequest:
-    """
-    Represents an incoming request to the MCP server.
-    This structure might be populated by the web framework handling the HTTP request.
-    """
-    id: str # Unique request identifier (usually provided by the client)
-    type: str # Type of request, typically "tool" or "resource"
-    target: str # The name of the tool or the URI of the resource being targeted
-    data: Dict[str, Any] = field(default_factory=dict) # Payload containing parameters for tools or resources
-    headers: Dict[str, str] = field(default_factory=dict) # Request headers (e.g., for authentication)
-    # Add other potential MCP fields if needed, like 'metadata'
-
-@dataclass
-class MCPResponse:
-    """Represents a response sent back by the MCP server."""
-    id: str # Corresponds to the MCPRequest id
-    status: str # "success" or "error"
-    result: Optional[Dict[str, Any]] = None # Payload containing the result (for success status)
-    error: Optional[MCPError] = None # Error details (for error status)
-    # Add other potential MCP fields if needed, like 'metadata'
-
-    def __post_init__(self):
-        # Basic validation
-        if self.status == "success" and self.error is not None:
-            logger.warning(f"MCPResponse (ID: {self.id}) has status 'success' but also contains an error object.")
-        if self.status == "error" and self.error is None:
-            logger.warning(f"MCPResponse (ID: {self.id}) has status 'error' but is missing the error object.")
-            # Optionally create a default error
-            # self.error = MCPError(code="INTERNAL_ERROR", message="Unknown error occurred.", data=None)
-        if self.status == "success" and self.result is None:
-             # Result can sometimes be legitimately null/empty for success, maybe just debug log
-             logger.debug(f"MCPResponse (ID: {self.id}) has status 'success' but result is None.")

@@ -47,7 +47,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import List, Protocol, TYPE_CHECKING, Any
+from typing import List, Protocol, TYPE_CHECKING, Any, Optional
 
 # Use TYPE_CHECKING to avoid circular imports at runtime
 if TYPE_CHECKING:
@@ -132,6 +132,7 @@ class InitializationContext:
     config: Config # Provides access to the application configuration
     component_registry: 'ComponentRegistry' # Allows access to other initialized components
     logger: Logger # Provides a logger instance for the component
+    resolver: Optional[Any] = None # Component dependency resolver (optional)
 
     def get_component(self, name: str) -> Component:
         """

@@ -10,7 +10,8 @@ This document describes the architectural principles, components, and design dec
    - Retrieve function lists with associated documentation sections
    - Determine file coding language
 3. **Analysis Method**: Claude's natural language understanding is used to perform semantic analysis of code structures without relying on keyword-based parsing.
-4. **Parsing Prohibition**: Keyword-based parsing will never be used in any part of the application.
+4. **LLM-Based Language Detection**: No programmatic language detection is needed as the LLM performs language detection inherently through its understanding of code structures and patterns.
+5. **Parsing Prohibition**: Keyword-based parsing will never be used in any part of the application.
 
 ## Core Architecture Principles
 
@@ -43,6 +44,16 @@ This document describes the architectural principles, components, and design dec
    - **Implications**: May require additional cross-file references and imports
    
 6. **Explicit Error Handling**: Use "throw on error" for all error cases with descriptive error messages.
+
+7. **Centralized Exception Handling**: All exceptions are defined in a single centralized exceptions.py module to prevent circular imports.
+   - **Rationale**: Ensures consistent error handling across all modules and eliminates the risk of circular import dependencies
+   - **Implementation**: Single exceptions module containing all application exception classes
+   - **Benefits**: Simplified import structure, consistent exception hierarchy, easier maintenance
+
+8. **LLM-Exclusive Metadata Extraction**: Metadata extraction from GenAI headers and file headers MUST be performed exclusively by LLM with no programmatic fallback.
+   - **Rationale**: Leverages LLM's natural language understanding capabilities to interpret documentation semantics rather than relying on rigid parsing logic
+   - **Implementation**: Complete dependency on LLM for metadata extraction operations
+   - **Benefits**: Improved adaptability to varied documentation formats, consistent extraction quality
 
 ## System Components
 
@@ -315,6 +326,14 @@ To ensure responsible resource utilization:
 - **Model Selection**: Different tasks utilize appropriate models:
   - Amazon Nova Lite for request coordination and simple queries
   - Claude 3.x models for more complex analysis tasks
+- **External Prompt Template Files**: LLM prompts for internal tools are not hardcoded in the server but read directly from doc/llm/prompts/ with no fallback mechanism
+  - **Rationale**: Separates prompt content from code to enable prompt engineering without code changes
+  - **Implementation**: Server reads prompt templates from documentation directory at runtime
+  - **Benefits**: Maintains prompt version control within documentation, enables prompt optimization without code changes
+- **MCP Server Interface Consistency**: There must not be a single difference between starting MCP server from command line or from Cline editor MCP client
+  - **Rationale**: Ensures consistent behavior across all client access methods
+  - **Implementation**: Shared initialization code path, unified configuration handling
+  - **Benefits**: Simplifies testing, eliminates potential inconsistencies between environments
 - **AWS Bedrock Integration**: Initially implemented with placeholder functions
   - Actual AWS Bedrock model interactions to be implemented separately
   - Standardized input and response validation in place (currently as placeholders)

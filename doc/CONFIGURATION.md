@@ -22,6 +22,7 @@ All configuration parameters have carefully selected defaults that work in most 
 | Parameter | Description | Default | Valid Values |
 |-----------|-------------|---------|-------------|
 | `server.default` | Default MCP server to connect to | `"local"` | Any configured server name |
+| `server.bind_address` | Network address to bind server to | `"127.0.0.1"` | Valid IP address or hostname |
 | `server.port` | Port to use when connecting to MCP servers | `6231` | `1024-65535` |
 | `server.timeout` | Connection timeout in seconds | `5` | `1-60` |
 | `server.retry_attempts` | Number of connection retry attempts | `3` | `0-10` |
@@ -104,6 +105,7 @@ Configuration can be specified in JSON format:
 {
   "server": {
     "default": "local",
+    "bind_address": "127.0.0.1",
     "port": 6231,
     "timeout": 5,
     "retry_attempts": 3,
@@ -166,6 +168,10 @@ When used within the Cline environment, the following integration points are ava
 1. Shared configuration settings between Cline and DBP components
 2. Automatic detection of project-specific settings
 3. Configuration override through Cline's command interface
+4. **Interface Consistency**: There must not be a single difference between starting MCP server from command line or from Cline editor MCP client
+   - **Rationale**: Ensures consistent behavior across all client access methods
+   - **Implementation**: Shared initialization code path, unified configuration handling
+   - **Benefits**: Simplifies testing, eliminates potential inconsistencies between environments
 
 ## Command-line Parameters
 

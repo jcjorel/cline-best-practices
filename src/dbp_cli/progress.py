@@ -197,7 +197,9 @@ class ProgressIndicator:
         Context manager protocol - implements standard __enter__ method.
         Delegation - reuses the start() method logic.
         """
+        logger.debug("ProgressIndicator.__enter__ called")
         self.start()
+        logger.debug("ProgressIndicator.__enter__ complete, returning self")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -219,4 +221,9 @@ class ProgressIndicator:
             exc_val: Exception value if an exception was raised in the with block, None otherwise
             exc_tb: Exception traceback if an exception was raised in the with block, None otherwise
         """
-        self.stop()
+        logger.debug(f"ProgressIndicator.__exit__ called with exc_type: {exc_type}")
+        try:
+            self.stop()
+            logger.debug("ProgressIndicator.__exit__ successfully stopped progress indicator")
+        except Exception as e:
+            logger.error(f"Error in ProgressIndicator.__exit__: {e}", exc_info=True)

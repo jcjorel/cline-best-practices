@@ -35,10 +35,12 @@ FileMetadata {
 ```
 
 The extraction process has these key characteristics:
-- Uses LLM semantic understanding instead of keyword-based parsing
-- Extracts metadata across various programming languages without language-specific parsers
-- Identifies section content based on semantic meaning rather than exact format
-- Preserves hierarchical relationship between file, class, and function metadata
+- **LLM-Exclusive Processing**: Metadata extraction is performed exclusively by LLM with no programmatic fallback
+- **LLM-Based Language Detection**: Programming language detection is performed inherently by the LLM through analysis of code structures and patterns, without relying on file extensions or language-specific parsers
+- **Semantic Understanding**: Uses LLM's natural language understanding to perform semantic analysis of code structures
+- **Language-Agnostic Approach**: Extracts metadata across various programming languages without language-specific parsers
+- **Content-Based Identification**: Identifies section content based on semantic meaning rather than exact format
+- **Hierarchical Representation**: Preserves hierarchical relationship between file, class, and function metadata
 
 ## Core Data Entities
 
@@ -193,7 +195,7 @@ Choose ONE option:
 [Explanation of why these changes are recommended and how they improve consistency]
 ```
 
-For a real example of this format, see [Example Recommendation](../coding_assistant/dbp/recommendations/250413-155600-EXAMPLE_RECOMMENDATION.md).
+For a real example of this format, see [Pending Recommendation](../coding_assistant/dbp/PENDING_RECOMMENDATION.md).
 
 ### PENDING_RECOMMENDATION.md Format
 
