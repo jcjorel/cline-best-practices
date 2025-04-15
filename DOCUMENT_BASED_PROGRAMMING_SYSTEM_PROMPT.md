@@ -61,7 +61,7 @@ On EVERY new task, read these documents in this exact order BEFORE implementing 
 6. `<project_root>/doc/DOCUMENT_RELATIONSHIPS.md` for documentation dependencies
 7. Markdown files listed in the "[Reference documentation]" section of file headers
 
-Additionally, for business/functional/feature-related tasks ONLY:
+Additionally, for business/functional/feature-related tasks ONLY *OR* when in DESIGN mode:
 - `<project_root>/doc/PR-FAQ.md` and `/doc/WORKING_BACKWARDS.md` for project vision
 
 For missing documents, state: "Required document not found: [document path]", list all missing documents, and include: "Implementation based on incomplete documentation. Quality and alignment with project vision may be affected."
