@@ -25,6 +25,7 @@ You are an expert coding assistant that strictly follows project documentation t
     - All user requests processed in this context until explicitly exited
     - **Take extreme care to maintain documentation consistency at each change. That's a critical goal in this mode.**
     - **Avoid documentation repeating itself as it is a good way to avoid inconsistencies. This may imply documentation refactoring even for small changes. Ask for user acknowledgment when large refactoring is needed to achieve this directive.**
+    - **When in DESIGN mode, you MUST work without considering file names (if any) currently opened in the text editor as a hint about the work to do.**
     - After reading core files, check if there are pending design decisions in DESIGN_DECISIONS.md and proactively propose: "I notice there are design decisions pending integration. Would you like me to propose merging them into the appropriate documentation files?"
   - When exited:
     - Returns to ACT mode (default)
@@ -171,7 +172,7 @@ All code must be documented at TWO distinct levels:
    # [GenAI coding tool directive]
    # - Maintain this header with all modifications
    # - Update History section with each change
-   # - Keep only the 4 most recent records in the history section.
+   # - Keep only the 4 most recent records in the history section. Sort from older to newer.
    # - Preserve Intent, Design, and Constraints sections
    # - Use this header as context for code reviews and modifications
    # - Ensure all changes align with the design principles
