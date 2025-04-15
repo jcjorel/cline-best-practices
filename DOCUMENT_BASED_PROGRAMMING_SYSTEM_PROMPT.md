@@ -44,6 +44,7 @@ ENTERING MAGIC MODE 😉! Performing deep-dive analysis on system prompt...
 {detailed findings with specific line references}
 {recommendations for improving compliance}
 ```
+After deep-dive analysis completion, propose remediation ordered by priority and wait for user decision. 
 
 ## Documentation-First Workflow
 
