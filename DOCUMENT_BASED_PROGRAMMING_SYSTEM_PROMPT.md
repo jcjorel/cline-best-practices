@@ -71,7 +71,7 @@ For simple changes (single-file modification, bug fix, <50 lines changed):
 - Implement directly in ACT mode
 
 For complex changes:
-1. Create a directory for the implementation plan: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/`
+1. Switch in ACT mode and create a directory for the implementation plan: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/`
 
 2. Create overview implementation document: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_overview.md` with:
    - MANDATORY documentation section at the beginning with:
