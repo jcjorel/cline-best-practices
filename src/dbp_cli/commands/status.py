@@ -34,6 +34,9 @@
 # [GenAI tool change history]
 # 2025-04-15T13:13:30Z : Initial creation of StatusCommandHandler by CodeAssistant
 # * Implemented command handler for checking status of DBP system.
+# 2025-04-15T14:47:00Z : Enhanced server connectivity error handling by CodeAssistant
+# * Added detailed troubleshooting suggestions for different connection error types
+# * Improved user guidance for resolving server connection issues
 ###############################################################################
 
 import argparse
@@ -50,10 +53,41 @@ from ..exceptions import CommandError, AuthenticationError, ConnectionError, API
 logger = logging.getLogger(__name__)
 
 class StatusCommandHandler(BaseCommandHandler):
-    """Handles the 'status' command for checking DBP system status."""
+    """
+    [Class intent]
+    Handles the 'status' command for checking the state of the DBP system, providing
+    users with information about server connectivity, authentication status, and 
+    current configuration settings.
+    
+    [Implementation details]
+    Implements various status checks including system information display, server 
+    connectivity testing, authentication verification, and configuration display.
+    Each check can be performed individually or in combination based on command arguments.
+    Troubleshooting guidance is provided for common connection and authentication issues.
+    
+    [Design principles]
+    Informative feedback - provides detailed status information in a readable format.
+    Progressive disclosure - shows basic information by default, more details with verbose flag.
+    Actionable results - includes specific troubleshooting steps for detected issues.
+    User empowerment - provides commands that users can run to resolve common problems.
+    """
     
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
-        """Add status-specific arguments to the parser."""
+        """
+        [Function intent]
+        Add status-specific command line arguments to the argument parser.
+        
+        [Implementation details]
+        Configures the argument parser with options specific to the status command,
+        including server connectivity checks, authentication status, and settings display.
+        
+        [Design principles]
+        Single responsibility principle - focuses only on argument configuration.
+        Progressive enhancement - provides useful defaults when no arguments are specified.
+        
+        Args:
+            parser: The argparse parser to add arguments to
+        """
         parser.add_argument(
             "--check-server", 
             action="store_true", 
@@ -78,7 +112,19 @@ class StatusCommandHandler(BaseCommandHandler):
     
     def execute(self, args: argparse.Namespace) -> int:
         """
-        Execute the status command with the provided arguments.
+        [Function intent]
+        Execute the status command with the provided arguments and display results to the user.
+        
+        [Implementation details]
+        Processes the command arguments and performs the requested status checks.
+        If no specific checks are requested, performs all checks.
+        Shows system information, checks server connectivity, authentication status, 
+        and displays current settings based on the provided arguments.
+        
+        [Design principles]
+        Progressive disclosure - shows only the requested information unless no specific
+        checks are requested, in which case shows all status information.
+        Fail gracefully - tracks overall status and returns appropriate exit code.
         
         Args:
             args: Command-line arguments
@@ -117,7 +163,17 @@ class StatusCommandHandler(BaseCommandHandler):
     
     def _show_system_info(self, verbose: bool = False) -> None:
         """
-        Show system information.
+        [Function intent]
+        Display basic system information to provide context for status checks.
+        
+        [Implementation details]
+        Prints platform information, Python version, current time, and in verbose mode,
+        adds working directory, Python executable path, and relevant environment variables.
+        Masks sensitive environment variables like API keys.
+        
+        [Design principles]
+        Security-first - masks sensitive information like API keys.
+        Progressive disclosure - shows basic information by default, more details in verbose mode.
         
         Args:
             verbose: Whether to show detailed information
@@ -151,7 +207,19 @@ class StatusCommandHandler(BaseCommandHandler):
     
     def _check_server(self, verbose: bool = False) -> bool:
         """
-        Check server connectivity.
+        [Function intent]
+        Check connectivity to the MCP server and display status information.
+        
+        [Implementation details]
+        Retrieves server URL from configuration, displays it, and attempts to connect.
+        On success, shows server version and details if available.
+        On failure, provides specific troubleshooting guidance based on the error type.
+        Uses the progress indicator during connection attempts.
+        
+        [Design principles]
+        User-focused error handling - provides specific troubleshooting guidance for different errors.
+        Helpful feedback - includes server URL and version information when available.
+        Status reporting - returns boolean result for status tracking.
         
         Args:
             verbose: Whether to show detailed information
@@ -197,17 +265,69 @@ class StatusCommandHandler(BaseCommandHandler):
             
         except ConnectionError as e:
             self.output.error(f"Server connection failed: {e}")
+            
+            # Extract the error message to provide more specific guidance
+            error_str = str(e).lower()
+            cause = getattr(e, '__cause__', None)
+            cause_str = str(cause).lower() if cause else ""
+            
+            # Provide specific troubleshooting guidance based on error type
+            if "connection refused" in error_str or "connection refused" in cause_str:
+                self.output.info("\nTroubleshooting suggestions:")
+                self.output.info("1. Check if the MCP server is running at the configured URL")
+                self.output.info("2. To start the MCP server, run: dbp server start")
+                self.output.info("3. Verify the server port is correct (default: 6231)")
+                self.output.info("4. Ensure no firewall is blocking the connection")
+                self.output.info("5. Try configuring a different port with:")
+                self.output.info("   dbp config set mcp_server.url http://localhost:<port>")
+            elif "timed out" in error_str or "timed out" in cause_str:
+                self.output.info("\nTroubleshooting suggestions:")
+                self.output.info("1. The server might be overloaded or unresponsive")
+                self.output.info("2. Try increasing the request timeout:")
+                self.output.info("   dbp config set mcp_server.timeout 60")
+                self.output.info("3. Check if the MCP server is running")
+            elif "name resolution" in error_str or "name resolution" in cause_str:
+                self.output.info("\nTroubleshooting suggestions:")
+                self.output.info("1. Check your internet connection")
+                self.output.info("2. Verify the server hostname is correct")
+                self.output.info("3. If using a custom domain, check DNS settings")
+            else:
+                self.output.info("\nTroubleshooting suggestions:")
+                self.output.info("1. Check if the MCP server is running")
+                self.output.info("2. Verify the server URL is correct")
+                self.output.info("3. Try restarting the MCP server")
+                
         except APIError as e:
             self.output.error(f"Server API error: {e}")
+            self.output.info("\nTroubleshooting suggestions:")
+            self.output.info("1. The server is running but reported an API error")
+            self.output.info("2. Check server logs for more information")
+            self.output.info("3. Try restarting the MCP server")
+            
         except Exception as e:
             self.output.error(f"Error checking server: {e}")
+            self.output.info("\nTroubleshooting suggestions:")
+            self.output.info("1. Check your network connection")
+            self.output.info("2. Verify the server URL configuration")
+            self.output.info("3. See application logs for detailed error information")
             
         self.output.print()
         return False
     
     def _check_auth(self, verbose: bool = False) -> bool:
         """
-        Check authentication status.
+        [Function intent]
+        Check authentication status with the MCP server and display results.
+        
+        [Implementation details]
+        Verifies if an API key is configured. If no key is found, displays guidance.
+        In verbose mode, tests authentication by making an API call to validate the key.
+        Uses the progress indicator during authentication tests.
+        
+        [Design principles]
+        Actionable feedback - provides guidance when authentication is not configured.
+        Progressive verification - simple config check by default, actual test in verbose mode.
+        Status reporting - returns boolean result for status tracking.
         
         Args:
             verbose: Whether to show detailed information
@@ -257,7 +377,18 @@ class StatusCommandHandler(BaseCommandHandler):
     
     def _show_settings(self, verbose: bool = False) -> None:
         """
-        Show current settings.
+        [Function intent]
+        Display current configuration settings to the user.
+        
+        [Implementation details]
+        Shows important settings like server URL, timeout, API key status, output format,
+        and UI preferences. In verbose mode, displays all configuration settings.
+        Masks sensitive values like API keys for security.
+        
+        [Design principles]
+        Security-first - masks sensitive configuration values.
+        Progressive disclosure - shows key settings by default, all settings in verbose mode.
+        Helpful format - organizes settings logically for easy scanning.
         
         Args:
             verbose: Whether to show detailed information

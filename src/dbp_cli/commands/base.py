@@ -53,8 +53,21 @@ logger = logging.getLogger(__name__)
 
 class BaseCommandHandler(ABC):
     """
-    Abstract base class for all CLI command handlers.
-    Each command handler processes a specific CLI command.
+    [Class intent]
+    Abstract base class for all CLI command handlers, providing the foundation
+    for implementing specific command operations in a consistent way.
+    
+    [Implementation details]
+    Defines the core command handler interface with abstract execute() method
+    that command implementations must override. Provides helper methods for
+    common operations like progress indication and error handling that are 
+    shared across all command handlers.
+    
+    [Design principles]
+    Interface standardization - enforces consistent behavior across all command handlers.
+    Abstract base class pattern - defines a clear contract for subclasses.
+    Shared utility methods - centralizes common functionality to avoid duplication.
+    Error classification - provides standardized error handling with specific exit codes.
     """
     
     def __init__(
@@ -64,7 +77,17 @@ class BaseCommandHandler(ABC):
         progress_indicator: ProgressIndicator
     ):
         """
-        Initializes a command handler with necessary dependencies.
+        [Function intent]
+        Initialize a command handler with all required dependencies for command execution.
+        
+        [Implementation details]
+        Sets up instance variables for API client access, output formatting, and progress indication.
+        Creates a child logger specific to the concrete command handler class for proper log hierarchy.
+        
+        [Design principles]
+        Dependency injection - receives all dependencies through constructor for testability.
+        Consistent naming - uses descriptive instance variable names matching parameter names.
+        Hierarchical logging - creates a child logger for each command handler instance.
         
         Args:
             mcp_client: Client for interacting with the MCP server API
@@ -79,7 +102,18 @@ class BaseCommandHandler(ABC):
     @abstractmethod
     def execute(self, args: argparse.Namespace) -> int:
         """
-        Executes the command with the provided arguments.
+        [Function intent]
+        Execute the command with the provided arguments and return an exit code.
+        
+        [Implementation details]
+        This is an abstract method that must be implemented by concrete command handlers.
+        Each implementation should process the command-specific arguments and perform
+        the operations required by that command.
+        
+        [Design principles]
+        Command pattern - each command handler implements specific command logic.
+        Standard exit codes - 0 for success, non-zero for different error types.
+        Clear contract - enforces consistent interface across all command handlers.
         
         Args:
             args: Command-line arguments from argparse
@@ -91,8 +125,16 @@ class BaseCommandHandler(ABC):
     
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         """
-        Adds command-specific arguments to the parser.
-        Override this method to define command-specific arguments.
+        [Function intent]
+        Configure the argument parser with command-specific arguments.
+        
+        [Implementation details]
+        Default implementation is empty. Subclasses should override this method
+        to add their specific command-line arguments to the provided parser.
+        
+        [Design principles]
+        Template method pattern - default implementation that can be overridden.
+        Consistent interface - all command handlers use the same method signature.
         
         Args:
             parser: The argparse parser for this command
@@ -101,7 +143,18 @@ class BaseCommandHandler(ABC):
     
     def with_progress(self, message: str, func, *args, **kwargs):
         """
-        Executes a function with progress indicator.
+        [Function intent]
+        Execute a function while displaying a progress indicator, then return the result.
+        
+        [Implementation details]
+        Starts the progress indicator with the provided message, executes the function
+        with the given arguments, ensures the progress indicator is stopped when complete
+        (even if an exception occurs), then returns the function's result.
+        
+        [Design principles]
+        Resource management - uses try/finally to ensure progress indicator cleanup.
+        Functional transparency - preserves and returns the original function result.
+        Reusable utility - centralizes progress indication logic for all command handlers.
         
         Args:
             message: Message to display during execution
@@ -120,7 +173,22 @@ class BaseCommandHandler(ABC):
             
     def handle_api_error(self, error: Exception) -> int:
         """
-        Handles API-related errors and returns appropriate exit code.
+        [Function intent]
+        Classify and handle API-related errors with appropriate user feedback and exit codes.
+        
+        [Implementation details]
+        Checks the error type against known API error classes and provides specific
+        error messages and exit codes based on the type of error encountered.
+        Maps error types to standardized exit codes:
+        - Authentication errors: 3
+        - Connection errors: 4
+        - API errors: 5
+        - Other errors: 1
+        
+        [Design principles]
+        Standardized error handling - consistent error reporting and exit codes.
+        Error classification - differentiates between different API error types.
+        User-friendly feedback - displays useful error messages for troubleshooting.
         
         Args:
             error: The exception to handle

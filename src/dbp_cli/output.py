@@ -42,6 +42,7 @@
 ###############################################################################
 
 import sys
+import os
 import json
 import logging
 import html
@@ -58,7 +59,24 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 class OutputFormatter:
-    """Formats output data for display in the CLI."""
+    """
+    [Class intent]
+    Formats and displays command output in various formats (text, JSON, Markdown, HTML)
+    with consistent styling and optional color highlighting to provide a user-friendly
+    interface for the CLI application.
+    
+    [Implementation details]
+    Manages multiple output formats with specific formatters for each type.
+    Detects terminal capabilities and respects environment settings for color support.
+    Provides specialized formatting for common data structures returned by API calls.
+    Contains helper methods for different message types (info, warning, error, success).
+    
+    [Design principles]
+    Separation of concerns - isolates output formatting logic from command execution.
+    Format polymorphism - handles different output formats through specialized methods.
+    Progressive disclosure - supports basic and verbose output modes.
+    Security-aware - masks sensitive data and properly escapes output when needed.
+    """
 
     def __init__(self, default_format: str = "text", use_color: bool = True):
         """
@@ -76,13 +94,46 @@ class OutputFormatter:
         logger.debug(f"OutputFormatter initialized (format={self.format}, color={self.use_color}).")
 
     def _should_use_color(self) -> bool:
-        """Determines if color output should be enabled."""
+        """
+        [Function intent]
+        Determine if color output should be enabled based on environment factors.
+        
+        [Implementation details]
+        Checks if stdout is connected to a TTY terminal (vs. redirected to a file).
+        Also checks for the NO_COLOR environment variable which disables color.
+        Returns False if either condition indicates color should be disabled.
+        
+        [Design principles]
+        Environment awareness - respects terminal capabilities and user preferences.
+        Standard compliance - follows the NO_COLOR convention.
+        Conservative approach - disables color when output is redirected to avoid cluttering files.
+        
+        Returns:
+            True if color should be enabled, False otherwise
+        """
         # Basic check: disable color if output is not a TTY (e.g., redirected to file)
         # or if NO_COLOR env var is set.
         return sys.stdout.isatty() and os.environ.get("NO_COLOR") is None
 
     def _get_colors(self) -> Dict[str, str]:
-        """Gets color codes, using ANSI escapes as fallback if colorama is missing."""
+        """
+        [Function intent]
+        Create a dictionary of color/formatting codes based on available libraries.
+        
+        [Implementation details]
+        Uses colorama if available, falls back to standard ANSI escape codes if not.
+        Returns empty strings for all colors if color output is disabled.
+        Includes codes for reset, bold, various colors, and dim text.
+        Uses defaultdict as a fallback mechanism to avoid KeyError if using an undefined color.
+        
+        [Design principles]
+        Graceful degradation - falls back to ANSI codes if colorama is unavailable.
+        Self-contained - includes all necessary color definitions without external dependencies.
+        Complete palette - provides a consistent set of formatting options.
+        
+        Returns:
+            Dictionary mapping color names to their respective codes
+        """
         if not self.use_color:
             # Return empty strings if color is disabled
             return defaultdict(str)
@@ -116,43 +167,165 @@ class OutputFormatter:
             }
 
     def set_format(self, format_type: str):
-        """Sets the desired output format."""
+        """
+        [Function intent]
+        Change the current output format to the specified type.
+        
+        [Implementation details]
+        Converts the format type to lowercase for case-insensitive comparison.
+        Stores the format for use in subsequent output operations.
+        Logs the format change for debugging purposes.
+        
+        [Design principles]
+        Case insensitivity - accepts format strings in any case.
+        Runtime configurability - allows changing format during execution.
+        Audit trail - logs format changes for troubleshooting.
+        
+        Args:
+            format_type: The output format to use ('text', 'json', 'markdown', 'html')
+        """
         self.format = format_type.lower()
         logger.debug(f"Output format set to: {self.format}")
 
     def set_color_enabled(self, enabled: bool):
-        """Enables or disables colored output."""
+        """
+        [Function intent]
+        Enable or disable colored output based on the provided flag.
+        
+        [Implementation details]
+        Updates the use_color flag to the logical AND of the provided value
+        and the result of _should_use_color() to respect environmental constraints.
+        Refreshes the colors dictionary to reflect the new setting.
+        Logs the color setting change for debugging purposes.
+        
+        [Design principles]
+        Environment awareness - still respects terminal capabilities even when enabled.
+        Dynamic reconfiguration - allows toggling color at runtime.
+        State consistency - updates color map immediately when setting changes.
+        
+        Args:
+            enabled: Whether color output should be enabled
+        """
         self.use_color = enabled and self._should_use_color()
         self.colors = self._get_colors() # Update color map
         logger.debug(f"Color output set to: {self.use_color}")
 
     def print(self, message: str = "", end: str = "\n", **kwargs):
-        """Prints a message to stdout."""
+        """
+        [Function intent]
+        Print a message to stdout with specified end character and options.
+        
+        [Implementation details]
+        Centralizes all print operations to allow for future redirection or modification.
+        Passes through all keyword arguments to the underlying print function.
+        
+        [Design principles]
+        Single responsibility - provides a dedicated method for output.
+        Future-proofing - allows for easy redirection or modification of output behavior.
+        Simplicity - thin wrapper around the built-in print function.
+        
+        Args:
+            message: The message to print (defaults to empty string)
+            end: String appended after the message (defaults to newline)
+            **kwargs: Additional keyword arguments passed to print()
+        """
         # Central print function allows easy redirection or modification later
         print(message, end=end, **kwargs)
 
     def error(self, message: str):
-        """Prints an error message to stderr, usually in red."""
+        """
+        [Function intent]
+        Display an error message to stderr with appropriate formatting.
+        
+        [Implementation details]
+        Prefixes the message with "Error:" for clear identification.
+        Uses red color for the entire message if color is enabled.
+        Always outputs to stderr rather than stdout.
+        
+        [Design principles]
+        Visual distinction - uses color and prefix to highlight errors.
+        Proper stream direction - writes errors to stderr instead of stdout.
+        Consistent formatting - provides uniform appearance for all error messages.
+        
+        Args:
+            message: The error message to display
+        """
         print(f"{self.colors.get('red','')}Error: {message}{self.colors.get('reset','')}", file=sys.stderr)
 
     def warning(self, message: str):
-        """Prints a warning message to stderr, usually in yellow."""
+        """
+        [Function intent]
+        Display a warning message to stderr with appropriate formatting.
+        
+        [Implementation details]
+        Prefixes the message with "Warning:" for clear identification.
+        Uses yellow color for the entire message if color is enabled.
+        Always outputs to stderr rather than stdout.
+        
+        [Design principles]
+        Visual distinction - uses color and prefix to highlight warnings.
+        Proper stream direction - writes warnings to stderr instead of stdout.
+        Consistent formatting - provides uniform appearance for all warning messages.
+        
+        Args:
+            message: The warning message to display
+        """
         print(f"{self.colors.get('yellow','')}Warning: {message}{self.colors.get('reset','')}", file=sys.stderr)
 
     def success(self, message: str):
-        """Prints a success message, usually in green."""
+        """
+        [Function intent]
+        Display a success message with appropriate formatting.
+        
+        [Implementation details]
+        Uses green color for the message if color is enabled.
+        Outputs to stdout without any special prefix.
+        
+        [Design principles]
+        Visual distinction - uses color to highlight successful operations.
+        Positive feedback - provides clear indication of successful results.
+        
+        Args:
+            message: The success message to display
+        """
         print(f"{self.colors.get('green','')}{message}{self.colors.get('reset','')}")
 
     def info(self, message: str):
-        """Prints an informational message, usually in blue."""
+        """
+        [Function intent]
+        Display an informational message with appropriate formatting.
+        
+        [Implementation details]
+        Uses blue color for the message if color is enabled.
+        Outputs to stdout without any special prefix.
+        
+        [Design principles]
+        Visual distinction - uses color to highlight informational messages.
+        Information hierarchy - provides differentiation from normal, success, warning and error messages.
+        
+        Args:
+            message: The informational message to display
+        """
         print(f"{self.colors.get('blue','')}{message}{self.colors.get('reset','')}")
 
     def format_output(self, data: Any):
         """
-        Formats and prints the given data based on the configured format.
-
+        [Function intent]
+        Format and print data according to the configured output format.
+        
+        [Implementation details]
+        Determines which formatter to use based on the configured format.
+        Delegates to the appropriate format method (_format_as_json, _format_as_text, etc.).
+        Handles various data types including dictionaries, lists, strings, and primitives.
+        Prints the formatted output to stdout.
+        
+        [Design principles]
+        Format polymorphism - handles different output formats through specialized methods.
+        Data type flexibility - accommodates various data structures.
+        Single responsibility - separates formatting logic from printing.
+        
         Args:
-            data: The data to format and print (e.g., dict, list, string).
+            data: The data to format and print (e.g., dict, list, string)
         """
         if self.format == "json":
             output = self._format_as_json(data)
@@ -168,7 +341,26 @@ class OutputFormatter:
     # --- Private Formatting Methods ---
 
     def _format_as_json(self, data: Any) -> str:
-        """Formats data as a pretty-printed JSON string."""
+        """
+        [Function intent]
+        Convert data to a pretty-printed JSON string representation.
+        
+        [Implementation details]
+        Uses json.dumps with indentation for readable formatting.
+        Handles non-serializable types using str() conversion.
+        Catches and reports serialization errors in a structured way.
+        
+        [Design principles]
+        Error resilience - catches and reports serialization errors without crashing.
+        Human readability - uses indentation for clearer output.
+        Type handling - gracefully handles non-serializable types.
+        
+        Args:
+            data: The data to format as JSON
+            
+        Returns:
+            Pretty-printed JSON string representation of the data
+        """
         try:
             return json.dumps(data, indent=2, default=str) # Use default=str for non-serializable types like datetime
         except TypeError as e:
@@ -176,7 +368,28 @@ class OutputFormatter:
             return json.dumps({"error": "Data could not be serialized to JSON.", "detail": str(e)})
 
     def _format_as_text(self, data: Any) -> str:
-        """Formats data as human-readable plain text."""
+        """
+        [Function intent]
+        Convert data to a human-readable plain text representation.
+        
+        [Implementation details]
+        Handles different data types specifically:
+        - Strings returned as-is
+        - Primitives (int, float, bool, None) converted to string
+        - Special handling for known API response structures (inconsistencies, recommendations, etc.)
+        - Generic dictionary and list formatting for other structures
+        
+        [Design principles]
+        Content awareness - special formatting for known data structures.
+        Type-specific handling - different approaches for different data types.
+        Recursive processing - handles nested structures through helper methods.
+        
+        Args:
+            data: The data to format as text
+            
+        Returns:
+            Human-readable text representation of the data
+        """
         if isinstance(data, str):
             return data
         if isinstance(data, (int, float, bool)) or data is None:
@@ -203,7 +416,29 @@ class OutputFormatter:
             return repr(data)
 
     def _format_as_markdown(self, data: Any) -> str:
-        """Formats data as Markdown."""
+        """
+        [Function intent]
+        Convert data to a Markdown-formatted string representation.
+        
+        [Implementation details]
+        Handles different data types specifically:
+        - Strings assumed to be pre-formatted or raw Markdown
+        - Primitives wrapped in backticks as code
+        - Special handling for known API response structures
+        - Generic dictionary and list formatting for other structures
+        - Unknown types displayed in code blocks
+        
+        [Design principles]
+        Content awareness - special formatting for known data structures.
+        Markdown compatibility - generates valid Markdown syntax.
+        Type-specific handling - different approaches for different data types.
+        
+        Args:
+            data: The data to format as Markdown
+            
+        Returns:
+            Markdown-formatted representation of the data
+        """
         if isinstance(data, str):
             # Basic escaping? Or assume pre-formatted? Assume pre-formatted for now.
             return data
@@ -231,7 +466,28 @@ class OutputFormatter:
             return f"```\n{repr(data)}\n```"
 
     def _format_as_html(self, data: Any) -> str:
-        """Formats data as basic HTML."""
+        """
+        [Function intent]
+        Convert data to a basic HTML-formatted string representation.
+        
+        [Implementation details]
+        Handles different data types with basic HTML formatting:
+        - Strings escaped with line breaks preserved
+        - Primitives wrapped in <code> tags
+        - Complex types converted to JSON and displayed in <pre><code> blocks
+        - Uses HTML escaping to prevent injection vulnerabilities
+        
+        [Design principles]
+        Security first - escapes HTML to prevent injection attacks.
+        Basic formatting - provides minimal but functional HTML representation.
+        Fallback strategy - uses JSON as intermediate format for complex types.
+        
+        Args:
+            data: The data to format as HTML
+            
+        Returns:
+            HTML-formatted representation of the data
+        """
         # Very basic HTML conversion for demonstration
         if isinstance(data, str):
             return html.escape(data).replace('\n', '<br>\n')
@@ -249,11 +505,51 @@ class OutputFormatter:
     # --- Text Formatting Helpers ---
 
     def _c(self, color_name: str, text: Any) -> str:
-        """Applies color if enabled."""
+        """
+        [Function intent]
+        Apply color formatting to text if color output is enabled.
+        
+        [Implementation details]
+        Wraps the provided text with the requested color code and reset code.
+        Returns the text unchanged if color is disabled.
+        Converts the text to string implicitly.
+        
+        [Design principles]
+        Conditional formatting - only applies color when enabled.
+        Helper utility - centralizes color application logic.
+        Convenience - handles non-string input through implicit conversion.
+        
+        Args:
+            color_name: The name of the color to apply
+            text: The text to colorize
+            
+        Returns:
+            Colorized text if color is enabled, otherwise plain text
+        """
         return f"{self.colors.get(color_name,'')}{text}{self.colors.get('reset','')}"
 
     def _severity_color(self, severity: Optional[str]) -> str:
-        """Gets color based on severity string."""
+        """
+        [Function intent]
+        Determine the appropriate color code based on severity level.
+        
+        [Implementation details]
+        Maps common severity levels (high, medium, low) to corresponding colors.
+        Uses red for high severity, yellow for medium, and green for low.
+        Normalizes input to lowercase for case-insensitive comparison.
+        Returns reset color for unknown severity levels.
+        
+        [Design principles]
+        Standardized color coding - consistent color mapping for severity levels.
+        Case insensitivity - handles various capitalization styles.
+        Safe default - returns reset code for unknown values.
+        
+        Args:
+            severity: The severity level string
+            
+        Returns:
+            The corresponding color code string
+        """
         sev_lower = str(severity).lower()
         if sev_lower == "high": return self.colors.get("red", "")
         if sev_lower == "medium": return self.colors.get("yellow", "")

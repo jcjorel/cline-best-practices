@@ -39,6 +39,8 @@
 # [GenAI tool change history]
 # 2025-04-15T13:15:30Z : Initial creation of DocumentationProgrammingCLI by CodeAssistant
 # * Implemented main CLI class with command registration and entry point.
+# 2025-04-15T14:52:30Z : Added ServerCommandHandler to command registry by CodeAssistant
+# * Integrated server management functionality into CLI.
 ###############################################################################
 
 import argparse
@@ -64,12 +66,28 @@ from .commands.apply import ApplyCommandHandler
 from .commands.relationships import RelationshipsCommandHandler
 from .commands.config import ConfigCommandHandler
 from .commands.status import StatusCommandHandler
+from .commands.server import ServerCommandHandler
 
 # Set up logger
 logger = logging.getLogger(__name__)
 
 class DocumentationProgrammingCLI:
-    """Main CLI application for Documentation-Based Programming."""
+    """
+    [Class intent]
+    Main CLI application for Documentation-Based Programming that serves as the primary
+    entry point for all command-line interactions with the system.
+    
+    [Implementation details]
+    Manages the lifecycle of all core components (config, auth, API client, output, progress)
+    and coordinates command registration and execution. Uses argparse for command-line
+    argument parsing with a subcommand pattern for different operations.
+    
+    [Design principles]
+    Command registry pattern - centralizes command handling in a registry.
+    Dependency injection - core services are created and provided to commands.
+    Progressive initialization - components are created only when needed.
+    Consistent error handling - standardized approach for all error conditions.
+    """
     
     def __init__(self):
         """Initialize the CLI application."""
@@ -90,7 +108,21 @@ class DocumentationProgrammingCLI:
         
     def _init_components(self, config_file: Optional[str] = None) -> None:
         """
-        Initialize core components.
+        [Function intent]
+        Initialize all core CLI components required for command execution.
+        
+        [Implementation details]
+        Creates instances of fundamental components in a specific order:
+        1. Configuration manager (loads settings from files/environment)
+        2. Authentication manager (handles API keys and authentication)
+        3. MCP client (for API communication)
+        4. Output formatter (for displaying results)
+        5. Progress indicator (for visual feedback during operations)
+        
+        [Design principles]
+        Dependency chain - initializes components in correct dependency order.
+        Lazy initialization - creates components only when needed.
+        Configuration injection - allows overriding default configuration file.
         
         Args:
             config_file: Optional path to configuration file
@@ -115,7 +147,20 @@ class DocumentationProgrammingCLI:
         self.progress_indicator = ProgressIndicator()
         
     def _init_command_handlers(self) -> None:
-        """Initialize command handlers."""
+        """
+        [Function intent]
+        Create and register all command handler instances for the CLI.
+        
+        [Implementation details]
+        Creates instances of all command handlers and registers them in a
+        dictionary with command names as keys. Each handler is initialized
+        with the core components (MCP client, output formatter, progress indicator).
+        
+        [Design principles]
+        Command registry pattern - stores handlers in a central registry.
+        Component injection - passes required dependencies to all handlers.
+        Extensibility - easy to add new command handlers to the registry.
+        """
         self.logger.debug("Initializing command handlers")
         
         # Register command handlers
@@ -126,14 +171,27 @@ class DocumentationProgrammingCLI:
             "relationships": RelationshipsCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
             "config": ConfigCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
             "status": StatusCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
+            "server": ServerCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
         }
     
     def _create_parser(self) -> argparse.ArgumentParser:
         """
-        Create command-line argument parser.
+        [Function intent]
+        Create and configure the command-line argument parser for the CLI.
+        
+        [Implementation details]
+        Creates the main parser with global options like version, config, verbosity.
+        Sets up subparsers for each registered command.
+        Delegates command-specific arguments to each command handler.
+        
+        [Design principles]
+        Hierarchical parsing - main parser with command subparsers.
+        Delegation - command handlers define their own arguments.
+        Consistent interface - standard global options across all commands.
+        Self-documentation - includes help text for all options and commands.
         
         Returns:
-            Configured argument parser
+            Configured argparse.ArgumentParser ready to parse command-line arguments
         """
         self.logger.debug("Creating command-line parser")
         
@@ -215,10 +273,19 @@ class DocumentationProgrammingCLI:
         
     def _get_version(self) -> str:
         """
-        Get the CLI version.
+        [Function intent]
+        Determine the current version of the CLI application.
+        
+        [Implementation details]
+        Attempts to retrieve version from package metadata using importlib.
+        Falls back to a development version string if metadata is unavailable.
+        
+        [Design principles]
+        Graceful degradation - provides reasonable default when metadata is missing.
+        Single source of truth - uses package metadata for version information.
         
         Returns:
-            Version string
+            Version string in semantic versioning format
         """
         try:
             # Try to get version from package metadata
@@ -229,7 +296,22 @@ class DocumentationProgrammingCLI:
             
     def _configure_logging(self, verbosity: int, quiet: bool) -> None:
         """
-        Configure logging based on verbosity level.
+        [Function intent]
+        Configure the Python logging system based on command-line options.
+        
+        [Implementation details]
+        Sets log level based on verbosity flag count and quiet flag:
+        - quiet=True → ERROR level only
+        - verbosity=0 → WARNING level (default)
+        - verbosity=1 → INFO level
+        - verbosity≥2 → DEBUG level
+        Configures the root logger with appropriate format and level.
+        Sets specific level for dbp_cli package loggers.
+        
+        [Design principles]
+        Progressive verbosity - more verbose output with increasing verbosity level.
+        Quiet override - quiet flag takes precedence over verbosity.
+        Consistent formatting - standardized log format across all components.
         
         Args:
             verbosity: Verbosity level (0=warning, 1=info, 2+=debug)
@@ -255,7 +337,24 @@ class DocumentationProgrammingCLI:
     
     def run(self, args: Optional[List[str]] = None) -> int:
         """
-        Run the CLI application.
+        [Function intent]
+        Execute the CLI application with the provided arguments.
+        
+        [Implementation details]
+        1. Initializes components if not already initialized
+        2. Parses command-line arguments
+        3. Configures logging based on verbosity
+        4. Applies command-line overrides to configuration
+        5. Initializes the MCP client for API access
+        6. Executes the requested command or shows help
+        7. Handles exceptions and returns appropriate exit codes
+        
+        [Design principles]
+        Robust error handling - catches and reports all exceptions appropriately.
+        Context preservation - maintains command context through execution flow.
+        Lazy initialization - creates components only when needed.
+        Command delegation - routes execution to appropriate command handler.
+        Standard exit codes - returns 0 for success, non-zero for errors.
         
         Args:
             args: Command-line arguments (defaults to sys.argv[1:])
@@ -340,7 +439,17 @@ class DocumentationProgrammingCLI:
 
 def main() -> int:
     """
-    Main entry point function.
+    [Function intent]
+    Serve as the main entry point for the CLI application when executed as a script.
+    
+    [Implementation details]
+    Creates an instance of the DocumentationProgrammingCLI class and calls its run method.
+    Returns the exit code from the run method to the operating system.
+    
+    [Design principles]
+    Minimal entry point - delegates all logic to the CLI class.
+    Standard executable pattern - follows conventional CLI entry point pattern.
+    Exit code propagation - passes CLI exit code back to the operating system.
     
     Returns:
         Exit code (0 for success, non-zero for failure)
