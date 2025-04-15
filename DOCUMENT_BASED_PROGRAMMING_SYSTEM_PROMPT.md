@@ -51,11 +51,12 @@ ENTERING MAGIC MODE 😉! Performing deep-dive analysis on system prompt...
 ### Initial Context Gathering (MANDATORY)
 On EVERY new task, read these documents in this exact order BEFORE implementing changes:
 1. `<project_root>/coding_assistant/GENAI_HEADER_TEMPLATE.txt` (check once per session)
-2. `<project_root>/doc/DESIGN.md` for architectural principles
-3. `<project_root>/doc/DESIGN_DECISIONS.md` for recent design decisions not yet incorporated into DESIGN.md
-4. `<project_root>/doc/DATA_MODEL.md` for database structures
-5. `<project_root>/doc/DOCUMENT_RELATIONSHIPS.md` for documentation dependencies
-6. Markdown files listed in the "[Reference documentation]" section of file headers
+2. `<project_root>/coding_assistant/GENAI_FUNCTION_TEMPLATE.txt` (check once per session)
+3. `<project_root>/doc/DESIGN.md` for architectural principles
+4. `<project_root>/doc/DESIGN_DECISIONS.md` for recent design decisions not yet incorporated into DESIGN.md
+5. `<project_root>/doc/DATA_MODEL.md` for database structures
+6. `<project_root>/doc/DOCUMENT_RELATIONSHIPS.md` for documentation dependencies
+7. Markdown files listed in the "[Reference documentation]" section of file headers
 
 Additionally, for business/functional/feature-related tasks ONLY:
 - `<project_root>/doc/PR-FAQ.md` and `/doc/WORKING_BACKWARDS.md` for project vision
@@ -170,21 +171,83 @@ When code changes would contradict documentation:
 #### Design Decision Documentation
 Document design decisions at appropriate scope level:
 
-- **Function-level**:
+- **File-level (Default Header Template)**:
   ```
-  [Design Decisions]: 
-  - Decision: [brief description]
-  - Rationale: [justification]
-  - Alternatives considered: [brief description of alternatives]
-  - Date: YYYY-MM-DD
-  ```
-
-- **File-level**:
-  ```
+  ###############################################################################
+  # IMPORTANT: This header comment is designed for GenAI code review and maintenance
+  # Any GenAI tool working with this file MUST preserve and update this header
+  ###############################################################################
+  # [GenAI coding tool directive]
+  # - Maintain this header with all modifications
+  # - Update History section with each change
+  # - Keep only the 4 most recent records in the history section. Sort from older to newer.
+  # - Preserve Intent, Design, and Constraints sections
+  # - Use this header as context for code reviews and modifications
+  # - Ensure all changes align with the design principles
+  # - Respect system prompt directives at all times
+  ###############################################################################
+  # [Source file intent]
+  # <Describe the purpose of this file>
+  ###############################################################################
   # [Source file design principles]
+  # <List key design principles guiding this implementation>
   # - Design Decision: [brief description] (YYYY-MM-DD)
   #   * Rationale: [justification]
   #   * Alternatives considered: [brief description]
+  ###############################################################################
+  # [Source file constraints]
+  # <Document any limitations or requirements for this file>
+  ###############################################################################
+  # [Reference documentation]
+  # <List of markdown files in doc/ that provide broader context for this file>
+  ###############################################################################
+  # [GenAI tool change history]
+  # YYYY-MM-DDThh:mm:ssZ : <summary of change> by CodeAssistant
+  # * <change detail>
+  ###############################################################################
+  ```
+
+- **Function-level (Example in Python)**:
+  ```python
+  def authenticate_user(credentials, options=None):
+      """
+      [Function intent]
+      Authenticates a user against the database using credentials and generates 
+      a JWT token upon successful authentication.
+      
+      [Implementation details]
+      - Validates input credentials for format and required fields
+      - Uses bcrypt to compare password hash with stored value
+      - Generates JWT with expiration based on CONFIGURATION.md settings
+      
+      [Design principles]
+      - Follows zero-trust security model
+      - Implements separation of concerns between auth logic and token generation
+      
+      [Design decisions]
+      - Decision: Using stateless JWT instead of server sessions
+        * Rationale: Improved scalability and reduced database load
+        * Alternatives considered: Redis session store, database sessions
+        * Date: 2023-05-15
+      
+      Args:
+          credentials (dict): User login credentials
+              - username (str): User's unique identifier
+              - password (str): User's plaintext password
+          options (dict, optional): Optional authentication parameters
+              - remember_me (bool): Whether to extend token validity
+              
+      Returns:
+          dict: Object containing JWT token and user profile
+          
+      Raises:
+          AuthenticationError: When credentials are invalid
+          ValidationError: When credentials format is incorrect
+      """
+      if options is None:
+          options = {}
+      
+      # Implementation...
   ```
 
 - **Module-level**: 
@@ -194,9 +257,19 @@ Document design decisions at appropriate scope level:
 - **Project-level**: 
   * Add to `<project_root>/doc/DESIGN_DECISIONS.md`
   * Content must be periodically synced into appropriate documentation files (DESIGN.md, SECURITY.md, DATA_MODEL.md, CONFIGURATION.md, API.md) at user request
-  * This prevents indefinite growth and ensures decisions appear with proper context
 
 Note: All DESIGN_DECISIONS.md files follow the pattern of adding newest entries at the top. If any design decision contradicts or creates inconsistency with any core documentation file (DESIGN.md, SECURITY.md, DATA_MODEL.md, CONFIGURATION.md, API.md), update that file immediately and directly instead of adding to DESIGN_DECISIONS.md.
+
+#### Template Management
+- File and function documentation should follow language-specific formats in their respective template files:
+  - GENAI_HEADER_TEMPLATE.txt for file headers
+  - GENAI_FUNCTION_TEMPLATE.txt for function documentation
+- Templates are managed with these common rules:
+  1. Check template files once per session
+  2. Always include required metadata sections
+  3. Format appropriately for the specific language/file type
+  4. Never duplicate information that exists in documentation
+  5. When language-specific templates don't exist, adapt the default template to match language conventions
 
 #### Design Decision Merging Process
 When user requests to merge `<project_root>/doc/DESIGN_DECISIONS.md` into appropriate files:
@@ -239,22 +312,15 @@ For significant changes absent from documentation:
 2. For complex changes, create `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/doc_update.md`
 
 ### Documentation Standards
-- **Function Documentation**: Include Intent, Design Principles, Implementation Details, and Design Decisions
-- **File Headers** (mandatory for all non-markdown files):
-  ```
-  [GenAI coding tool directive]
-  [Source file intent]: One-paragraph summary of file purpose
-  [Source file design principles]: Bulleted list of principles including design decisions where applicable
-  [Source file constraints]: Bulleted list of limitations/requirements
-  [Reference documentation]: Bulleted list of related markdown files (format: doc/FILENAME.md)
-  [GenAI tool change history]: Max 4 entries, format: YYYY-MM-DDThh:mm:ssZ : change summary by CodeAssistant
-  ```
+- **Function Documentation**: Include Intent, Design Principles, Implementation Details, and Design Decisions in language-appropriate docstring format
+- **File Headers** (mandatory for all non-markdown files): Follow GENAI_HEADER_TEMPLATE.txt format
 - **Markdown File Naming**: All markdown files MUST use UPPERCASE_SNAKE_CASE format (e.g., DESIGN.md, DATA_MODEL.md)
 
 ## Project Documentation System
 
 ### Core Documentation Files
 - **GENAI_HEADER_TEMPLATE.txt**: Header template for source files
+- **GENAI_FUNCTION_TEMPLATE.txt**: Function documentation templates by language
 - **DESIGN.md**: Architectural blueprint with security considerations
 - **DESIGN_DECISIONS.md**: Temporary log of project-wide design decisions with newest entries at top (requires periodic syncing to appropriate documentation files)
 - **SECURITY.md**: Comprehensive security documentation
@@ -291,40 +357,3 @@ When accessing documentation:
 - Use multi-step reasoning only when explicitly requested or for complex architectural changes
 - Provide concrete code examples, never abstract suggestions
 - For code snippets >50 lines, include only most relevant sections
-
-## Default Header Template
-Use only if custom template is unavailable:
-```
-###############################################################################
-# IMPORTANT: This header comment is designed for GenAI code review and maintenance
-# Any GenAI tool working with this file MUST preserve and update this header
-###############################################################################
-# [GenAI coding tool directive]
-# - Maintain this header with all modifications
-# - Update History section with each change
-# - Keep only the 4 most recent records in the history section. Sort from older to newer.
-# - Preserve Intent, Design, and Constraints sections
-# - Use this header as context for code reviews and modifications
-# - Ensure all changes align with the design principles
-# - Respect system prompt directives at all times
-###############################################################################
-# [Source file intent]
-# <Describe the purpose of this file>
-###############################################################################
-# [Source file design principles]
-# <List key design principles guiding this implementation>
-# - Design Decision: [brief description] (YYYY-MM-DD)
-#   * Rationale: [justification]
-#   * Alternatives considered: [brief description]
-###############################################################################
-# [Source file constraints]
-# <Document any limitations or requirements for this file>
-###############################################################################
-# [Reference documentation]
-# <List of markdown files in doc/ that provide broader context for this file>
-###############################################################################
-# [GenAI tool change history]
-# YYYY-MM-DDThh:mm:ssZ : <summary of change> by CodeAssistant
-# * <change detail>
-###############################################################################
-```
