@@ -187,7 +187,7 @@ Document design decisions at appropriate scope level:
   # - Respect system prompt directives at all times
   ###############################################################################
   # [Source file intent]
-  # <Describe the purpose of this file>
+  # <Describe the detailed purpose of this file>
   ###############################################################################
   # [Source file design principles]
   # <List key design principles guiding this implementation>
