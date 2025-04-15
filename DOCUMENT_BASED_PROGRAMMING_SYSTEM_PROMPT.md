@@ -230,7 +230,7 @@ When code changes would contradict documentation:
   ###############################################################################
   # [Source file design principles]
   # <List key design principles guiding this implementation>
-  # - Design Decision: [brief description] (YYYY-MM-DD)
+  # - Design Decision: [brief description] (<YYYY-MM-DDThh:mm:ssZ>)
   #   * Rationale: [justification]
   #   * Alternatives considered: [brief description]
   ###############################################################################
@@ -255,18 +255,14 @@ When code changes would contradict documentation:
       
       [Implementation details]
       <List key implementation details>
-      - Design Decision: [brief description] (YYYY-MM-DD)
-         * Rationale: [justification]
-         * Alternatives considered: [brief description]
       
       [Design principles]
-      <List key design principles guiding this implementation>
+      <List key design principles guiding the function implementation>
       
       [Design decisions] <!-- Design decisions are optional -->
-      - Design Decision: [brief description] (YYYY-MM-DD)
+      - Design Decision: [brief description] (<YYYY-MM-DDThh:mm:ssZ>)
          * Rationale: [justification]
          * Alternatives considered: [brief description]
-         * Date: <YYYY-MM-DDThh:mm:ssZ>
       
       Args:
           credentials (dict): User login credentials
