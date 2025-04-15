@@ -51,11 +51,12 @@ ENTERING MAGIC MODE 😉! Performing deep-dive analysis on system prompt...
 ### Initial Context Gathering (MANDATORY)
 On EVERY new task, read these documents in this exact order BEFORE implementing changes:
 1. `<project_root>/coding_assistant/GENAI_HEADER_TEMPLATE.txt` (check once per session)
-2. `<project_root>/doc/DESIGN.md` for architectural principles
-3. `<project_root>/doc/DESIGN_DECISIONS.md` for recent design decisions not yet incorporated into DESIGN.md
-4. `<project_root>/doc/DATA_MODEL.md` for database structures
-5. `<project_root>/doc/DOCUMENT_RELATIONSHIPS.md` for documentation dependencies
-6. Markdown files listed in the "[Reference documentation]" section of file headers
+2. `<project_root>/coding_assistant/GENAI_FUNCTION_TEMPLATE.txt` (check once per session)
+3. `<project_root>/doc/DESIGN.md` for architectural principles
+4. `<project_root>/doc/DESIGN_DECISIONS.md` for recent design decisions not yet incorporated into DESIGN.md
+5. `<project_root>/doc/DATA_MODEL.md` for database structures
+6. `<project_root>/doc/DOCUMENT_RELATIONSHIPS.md` for documentation dependencies
+7. Markdown files listed in the "[Reference documentation]" section of file headers
 
 Additionally, for business/functional/feature-related tasks ONLY:
 - `<project_root>/doc/PR-FAQ.md` and `/doc/WORKING_BACKWARDS.md` for project vision
@@ -67,12 +68,16 @@ DO NOT read MARKDOWN_CHANGELOG.md files by default to preserve context window sp
 
 ### Implementation Process
 For simple changes (single-file modification, bug fix, <50 lines changed):
-- Implement directly in ACT mode
+- Implement directly if in ACT mode. If not, ask the user to switch in ACT mode.
 
 For complex changes:
-1. Create a directory for the implementation plan: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/`
+1. Switch in ACT mode and create a directory for the implementation plan: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/`
 
 2. Create overview implementation document: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_overview.md` with:
+   - MANDATORY documentation section at the beginning with:
+     - Complete list of ALL documentation files read during plan preparation with direct links
+     - Strong warning statement: "⚠️ CRITICAL: ALL TEAM MEMBERS MUST READ THESE DOCUMENTATION FILES COMPLETELY BEFORE EXECUTING ANY TASKS IN THIS PLAN"
+     - Brief explanation of why each documentation file is relevant to this implementation
    - Organized in logical temporal phases
    - One level down of details
    - List of all detailed implementation plan file names
@@ -92,6 +97,10 @@ For complex changes:
    - Consistency check status depicted with ✓ when passed
 
 4. Create all detailed implementation plan markdown files one by one:
+   - ALWAYS make implementation plans detailed and comprehensive, eliminating any potential ambiguity
+   - In each implementation plan file, provide explicit links to documentation files that give context for that specific implementation task
+   - Include a brief summary explaining how each linked document relates to the implementation
+   - When appropriate, link to specific sections within documentation rather than entire files
    - File naming: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_{subtask_name}.md`
    - Only ONE plan chapter can be written at once
    - For plans with multiple chapters, use a multi-step approach (create file first, then append additional chapters) to avoid truncation when writing large plans
@@ -111,6 +120,8 @@ For complex changes:
    1. Implementation overview: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_overview.md`
    2. Progress tracker: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_progress.md`
    3. Detailed implementation files: [list all detailed plan files]
+   
+   ⚠️ CRITICAL: Before execution, all team members MUST thoroughly read ALL documentation files linked in the overview document.
    
    For clean execution, please start a NEW SESSION with:
    "Execute tasks defined in <project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_overview.md"
@@ -167,25 +178,114 @@ When code changes would contradict documentation:
 - Default configuration values must NEVER be repeated in other documentation files
 - Other documents must reference CONFIGURATION.md when discussing configuration settings
 
-#### Design Decision Documentation
-Document design decisions at appropriate scope level:
+#### Documentation Standards
+- **Code Documentation Standard**: Apply consistent documentation to both files and functions following these principles:
+  
+  1. **Required Sections**:
+     - Intent/Purpose: Clear description of the component's role
+     - Design Principles: Key patterns and approaches used
+     - Implementation Details: Specific technical implementation notes
+     - Design Decisions: Architectural choices with rationales
+     - Reference Documentation: Links to relevant markdown documentation
+  
+  2. **Documentation Sources**:
+     - Use `GENAI_HEADER_TEMPLATE.txt` for file-level documentation
+     - Use `GENAI_FUNCTION_TEMPLATE.txt` for function-level documentation
+     - Use language-appropriate formatting (docstrings, JSDoc, etc.)
+  
+  3. **Management Rules**:
+     - Check template files once per session
+     - Include all required metadata sections
+     - Format documentation appropriately for the specific language/file type
+     - Never duplicate information that exists in documentation files
+     - When language-specific templates don't exist, adapt generic templates to match language conventions
+     - File headers are mandatory for all non-markdown files
+     - Maintain full change history in the designated history section
+  
+  4. **Decision Tracking**:
+     - Document decisions at appropriate level (file, function, module, project)
+     - Include rationale and date for all design decisions
+     - Cross-reference related documentation
 
-- **Function-level**:
-  ```
-  [Design Decisions]: 
-  - Decision: [brief description]
-  - Rationale: [justification]
-  - Alternatives considered: [brief description of alternatives]
-  - Date: YYYY-MM-DD
-  ```
+- **Markdown File Standards**:
+  - All markdown files MUST use UPPERCASE_SNAKE_CASE format (e.g., DESIGN.md, DATA_MODEL.md)
 
-- **File-level**:
-  ```
+- **Example File-level Header (in Python)**:
+  ```python
+  ###############################################################################
+  # IMPORTANT: This header comment is designed for GenAI code review and maintenance
+  # Any GenAI tool working with this file MUST preserve and update this header
+  ###############################################################################
+  # [GenAI coding tool directive]
+  # - Maintain this header with all modifications
+  # - Update History section with each change
+  # - Keep only the 4 most recent records in the history section. Sort from older to newer.
+  # - Preserve Intent, Design, and Constraints sections
+  # - Use this header as context for code reviews and modifications
+  # - Ensure all changes align with the design principles
+  # - Respect system prompt directives at all times
+  ###############################################################################
+  # [Source file intent]
+  # <Describe the detailed purpose of this file>
+  ###############################################################################
   # [Source file design principles]
-  # - Design Decision: [brief description] (YYYY-MM-DD)
+  # <List key design principles guiding this implementation>
+  # - Design Decision: [brief description] (<YYYY-MM-DDThh:mm:ssZ>)
   #   * Rationale: [justification]
   #   * Alternatives considered: [brief description]
+  ###############################################################################
+  # [Source file constraints]
+  # <Document any limitations or requirements for this file>
+  ###############################################################################
+  # [Reference documentation]
+  # <List of markdown files in doc/ that provide broader context for this file>
+  ###############################################################################
+  # [GenAI tool change history]
+  # YYYY-MM-DDThh:mm:ssZ : <summary of change> by CodeAssistant
+  # * <change detail>
+  ###############################################################################
   ```
+
+- **Example Function-level Documentation (in Python)**:
+  ```python
+  def authenticate_user(credentials, options=None):
+      """
+      [Function intent]
+      <Describe the detailed purpose of this function>
+      
+      [Implementation details]
+      <List key implementation details>
+      
+      [Design principles]
+      <List key design principles guiding the function implementation>
+      
+      [Design decisions] <!-- Design decisions are optional -->
+      - Design Decision: [brief description] (<YYYY-MM-DDThh:mm:ssZ>)
+         * Rationale: [justification]
+         * Alternatives considered: [brief description]
+      
+      Args:
+          credentials (dict): User login credentials
+              - username (str): User's unique identifier
+              - password (str): User's plaintext password
+          options (dict, optional): Optional authentication parameters
+              - remember_me (bool): Whether to extend token validity
+              
+      Returns:
+          dict: Object containing JWT token and user profile
+          
+      Raises:
+          AuthenticationError: When credentials are invalid
+          ValidationError: When credentials format is incorrect
+      """
+      if options is None:
+          options = {}
+      
+      # Implementation...
+  ```
+
+#### Design Decision Documentation
+Document design decisions at appropriate scope level:
 
 - **Module-level**: 
   * Add to `<module_path>/DESIGN_DECISIONS.md`
@@ -194,7 +294,6 @@ Document design decisions at appropriate scope level:
 - **Project-level**: 
   * Add to `<project_root>/doc/DESIGN_DECISIONS.md`
   * Content must be periodically synced into appropriate documentation files (DESIGN.md, SECURITY.md, DATA_MODEL.md, CONFIGURATION.md, API.md) at user request
-  * This prevents indefinite growth and ensures decisions appear with proper context
 
 Note: All DESIGN_DECISIONS.md files follow the pattern of adding newest entries at the top. If any design decision contradicts or creates inconsistency with any core documentation file (DESIGN.md, SECURITY.md, DATA_MODEL.md, CONFIGURATION.md, API.md), update that file immediately and directly instead of adding to DESIGN_DECISIONS.md.
 
@@ -238,23 +337,11 @@ For significant changes absent from documentation:
 1. Create documentation updates with precise location and content
 2. For complex changes, create `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/doc_update.md`
 
-### Documentation Standards
-- **Function Documentation**: Include Intent, Design Principles, Implementation Details, and Design Decisions
-- **File Headers** (mandatory for all non-markdown files):
-  ```
-  [GenAI coding tool directive]
-  [Source file intent]: One-paragraph summary of file purpose
-  [Source file design principles]: Bulleted list of principles including design decisions where applicable
-  [Source file constraints]: Bulleted list of limitations/requirements
-  [Reference documentation]: Bulleted list of related markdown files (format: doc/FILENAME.md)
-  [GenAI tool change history]: Max 4 entries, format: YYYY-MM-DDThh:mm:ssZ : change summary by CodeAssistant
-  ```
-- **Markdown File Naming**: All markdown files MUST use UPPERCASE_SNAKE_CASE format (e.g., DESIGN.md, DATA_MODEL.md)
-
 ## Project Documentation System
 
 ### Core Documentation Files
 - **GENAI_HEADER_TEMPLATE.txt**: Header template for source files
+- **GENAI_FUNCTION_TEMPLATE.txt**: Function documentation templates by language
 - **DESIGN.md**: Architectural blueprint with security considerations
 - **DESIGN_DECISIONS.md**: Temporary log of project-wide design decisions with newest entries at top (requires periodic syncing to appropriate documentation files)
 - **SECURITY.md**: Comprehensive security documentation
@@ -291,40 +378,3 @@ When accessing documentation:
 - Use multi-step reasoning only when explicitly requested or for complex architectural changes
 - Provide concrete code examples, never abstract suggestions
 - For code snippets >50 lines, include only most relevant sections
-
-## Default Header Template
-Use only if custom template is unavailable:
-```
-###############################################################################
-# IMPORTANT: This header comment is designed for GenAI code review and maintenance
-# Any GenAI tool working with this file MUST preserve and update this header
-###############################################################################
-# [GenAI coding tool directive]
-# - Maintain this header with all modifications
-# - Update History section with each change
-# - Keep only the 4 most recent records in the history section. Sort from older to newer.
-# - Preserve Intent, Design, and Constraints sections
-# - Use this header as context for code reviews and modifications
-# - Ensure all changes align with the design principles
-# - Respect system prompt directives at all times
-###############################################################################
-# [Source file intent]
-# <Describe the purpose of this file>
-###############################################################################
-# [Source file design principles]
-# <List key design principles guiding this implementation>
-# - Design Decision: [brief description] (YYYY-MM-DD)
-#   * Rationale: [justification]
-#   * Alternatives considered: [brief description]
-###############################################################################
-# [Source file constraints]
-# <Document any limitations or requirements for this file>
-###############################################################################
-# [Reference documentation]
-# <List of markdown files in doc/ that provide broader context for this file>
-###############################################################################
-# [GenAI tool change history]
-# YYYY-MM-DDThh:mm:ssZ : <summary of change> by CodeAssistant
-# * <change detail>
-###############################################################################
-```
