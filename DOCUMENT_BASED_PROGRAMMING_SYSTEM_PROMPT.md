@@ -87,8 +87,8 @@ For complex changes:
 3. Create a dedicated progress tracking file at: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_progress.md` which must track:
    - Current plan creation and implementation status
    - Status indicators using these exact symbols: ❌ Plan not created, 🔄 In progress, ✅ Plan created, 🚧 Implementation in progress, ✨ Completed
+   - Consistency check status placeholder
    - Each specific subtask with its corresponding implementation plan file
-   - Consistency check status (add ✓ symbol when check is passed)
 
 4. Create detailed implementation plans following these rules:
    - Name each file according to this pattern: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_{subtask_name}.md`
@@ -96,19 +96,17 @@ For complex changes:
    - Create exactly ONE plan chapter at a time before moving to the next
    - Break large plans into multiple steps to prevent context window truncation
    - Update the progress file immediately before starting work on each new plan file
-   - Halt plan creation gracefully when context window token usage reaches 75% capacity
+   - Halt plan creation gracefully when context window token usage reaches 80% capacity
 
-5. Perform a comprehensive consistency check in a new, clean session:
+5. Perform a comprehensive consistency: Ask the user to do it from a new, clean session:
    - Review all generated plan files against their associated source documentation
    - Mark the progress file with the consistency check symbol (✓) to confirm completion
 
-6. Provide implementation instructions to the user following the exact format specified in the template
-
-7. Implement the plan starting from a clean session by:
-   - First reviewing the progress file to determine current implementation status
-   - Following tasks sequentially in the exact order specified in the overview file
-   - Updating the progress file immediately after completing each task
-   - Documenting any implementation failures with specific error details
+6. Implement the plan: Ask user to start from a new, clean session and do following tasks:
+   - Review the progress file to determine current implementation status
+   - Follow implementation tasks sequentially in the exact order specified in the overview file
+   - Update the progress file immediately after completing each task
+   - Document any implementation failures with specific error details
 
 ## Code generation rules
 
