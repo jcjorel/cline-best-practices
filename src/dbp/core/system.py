@@ -34,19 +34,23 @@
 # - doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-16T18:48:43Z : Enhanced logging for component diagnostics by CodeAssistant
-# * Added detailed logging for component registration and dependency validation
-# * Improved error reporting for component initialization failures
-# * Added component class and dependency diagnostics for debugging
-# 2025-04-16T15:46:30Z : Initial creation of ComponentSystem class by CodeAssistant
-# * Implemented ultra-simple component management with KISS principles
+# 2025-04-16T23:32:00Z : Enhanced error logging levels by CodeAssistant
+# * Changed debug logging to error/info for critical initialization steps
+# * Improved visibility of component initialization context information
+# * Fixed logging level for rollback operations
+# 2025-04-16T23:28:00Z : Fixed config provider in initialization context by CodeAssistant
+# * Modified InitializationContext to use config_manager component instead of raw config
+# * Added safety check to ensure config_manager component exists before initialization
+# 2025-04-16T23:18:00Z : Fixed component initialization context by CodeAssistant
+# * Added proper InitializationContext creation in initialize_all method
+# * Fixed logger access in components by passing correct context object
 ###############################################################################
 
 import logging
 from typing import Any, Dict, List, Set, Optional
 import sys
 
-from .component import Component
+from .component import Component, InitializationContext
 
 logger = logging.getLogger(__name__)
 
@@ -258,8 +262,25 @@ class ComponentSystem:
                 if hasattr(component, 'dependencies'):
                     self.logger.debug(f"Component '{name}' dependencies: {component.dependencies}")
                 
-                # Initialize the component
-                component.initialize(self.config)
+                # Create the initialization context
+                # Components expect a config manager with get() method, not the raw config
+                config_manager = self.get_component('config_manager')
+                if not config_manager:
+                    self.logger.error(f"Required config_manager component not found during initialization of '{name}'")
+                    self._rollback()
+                    return False
+                
+                context = InitializationContext(
+                    config=config_manager,
+                    logger=self.logger
+                )
+                
+                # Add logging for initialization context
+                self.logger.info(f"Initializing component '{name}' with context type: {type(context)}")
+                self.logger.info(f"Context attributes: config={type(context.config)}, logger={type(context.logger)}")
+                
+                # Initialize the component with proper context
+                component.initialize(context)
                 
                 # Verify initialization flag with more detailed diagnostics
                 if not component.is_initialized:
@@ -355,7 +376,7 @@ class ComponentSystem:
             None
         """
         if not self._initialized:
-            self.logger.debug("No components to roll back")
+            self.logger.error("No components to roll back")
             return
             
         self.logger.warning(f"Rolling back initialization of {len(self._initialized)} components")

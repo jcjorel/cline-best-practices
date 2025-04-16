@@ -241,7 +241,7 @@ class ConfigCLI:
 
 # Main execution block for standalone testing
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S,%f')
     cli = ConfigCLI()
     exit_code = cli.run()
     sys.exit(exit_code)

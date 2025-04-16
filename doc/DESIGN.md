@@ -20,6 +20,7 @@ This document describes the architectural principles, components, and design dec
 3. **Global Contextual Awareness**: AI assistants maintain awareness of entire project context.
 4. **Design Decision Preservation**: All significant design decisions are captured and maintained.
 5. **Reasonable Default Values**: System provides carefully selected default values for all configurable parameters while allowing customization.
+6. **Simplified Component Management**: System uses a minimalist component lifecycle approach focused on clarity and maintainability.
 
 ## Implementation Principles
 
@@ -145,6 +146,22 @@ This document describes the architectural principles, components, and design dec
 - **Design Decision**: Use file modifications as the primary feedback mechanism
   - **Rationale**: File-based approach integrates seamlessly with existing developer workflows and version control systems without requiring additional UI components
   - **Key Implications**: All recommendation interactions visible in version control history, creating an audit trail of documentation decisions
+
+## Component Initialization System
+
+The system implements a minimalist component management approach with:
+
+1. **Simple Component Interface**: Clear lifecycle methods with explicit initialization and shutdown
+2. **Direct Component Registry**: Dictionary-based registry without complex dependency resolution
+3. **Two-Step Process**: Validation followed by initialization for reliable startup
+4. **Straightforward Error Handling**: Clear error messages with fail-fast behavior
+5. **Explicit Component Dependencies**: Direct declaration of dependencies without complex resolution algorithms
+
+Key principles of this approach:
+- Explicit behavior over implicit mechanisms
+- Direct component access over layers of abstraction
+- Clear error reporting over sophisticated recovery
+- Simplicity over feature-rich complexity
 
 ## File Structure
 
@@ -337,6 +354,27 @@ To ensure responsible resource utilization:
 - **AWS Bedrock Integration**: Initially implemented with placeholder functions
   - Actual AWS Bedrock model interactions to be implemented separately
   - Standardized input and response validation in place (currently as placeholders)
+
+### 5. LLM Client Architecture
+
+The system implements a unified architecture for Bedrock LLM clients that eliminates code duplication while maintaining model-specific behaviors:
+
+1. **Common Code Patterns**: 
+   - `BedrockRequestFormatter` abstract base class encapsulates model-specific request formatting
+   - `BedrockClientMixin` provides reusable methods across all model clients
+   - Common utility functions handle model invocation and response processing
+
+2. **Strategy Pattern Implementation**:
+   - Each model client delegates request formatting to a specialized formatter class
+   - Formatter classes encapsulate model-specific request structures and parameters
+   - Common invocation code remains model-agnostic, improving maintainability
+
+3. **Composition Over Inheritance**:
+   - Model clients inherit from `BedrockModelClientBase` for interface consistency
+   - Common functionality is composed through mixins and utility functions
+   - This approach supports different model behaviors without deep inheritance hierarchies
+
+This architecture achieves approximately 50% reduction in model client implementation code while improving maintainability and making it easier to add support for new models.
 
 ## Relationship to Other Components
 

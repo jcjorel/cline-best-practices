@@ -132,7 +132,7 @@ class LifecycleManager:
         logging.basicConfig(
             level=log_level,
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
+            datefmt='%Y-%m-%d %H:%M:%S,%f'
         )
         
         logger.debug(f"Logging initialized at level {log_level_name}")

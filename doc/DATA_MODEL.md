@@ -458,13 +458,21 @@ The system implements an efficient change detection strategy:
 
 ### Database Migration Strategy
 
-To support future schema changes:
+The system implements Alembic to manage database schema creation, upgrades, and migrations with:
 
-1. Database includes a version table to track schema version
-2. Application checks schema version on startup
-3. Automatic migration process for schema updates using Alembic
-4. Fallback to rebuild database from scratch if migration fails
-5. Safe migration path between SQLite and PostgreSQL when needed
+1. **Structured Migration Files**: Maintained in `src/dbp/database/alembic/versions/`
+2. **Version-Controlled Schema Changes**: All schema modifications are tracked and versioned
+3. **Automatic Migration Generation**: Based on SQLAlchemy model changes
+4. **Bidirectional Migration Support**: Both upgrading and downgrading between versions
+5. **Initial Schema Baseline**: Established with an initial migration
+
+This approach ensures:
+- Consistent database schemas across all environments
+- Safe evolution of data structures over time
+- Clear documentation of schema changes
+- Support for both SQLite and PostgreSQL backends
+- Fallback to rebuild database from scratch if migration fails
+- Safe migration path between SQLite and PostgreSQL when needed
 
 ### SQLite-Specific Implementation
 

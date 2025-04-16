@@ -15,6 +15,22 @@ All configuration parameters have carefully selected defaults that work in most 
 
 **Design Rationale**: Default values are carefully selected to work in most environments, configuration documentation clearly indicates defaults and valid ranges, and the system remains operational with minimal setup while allowing customization when needed.
 
+## Default Configuration Management
+
+The system implements a centralized approach to default configuration values:
+
+1. **Single Source of Truth**: All default values are maintained in `src/dbp/config/default_config.py`
+2. **Organized Structure**: Values are organized in dictionaries corresponding to configuration sections
+3. **Descriptive Documentation**: Each value includes inline documentation explaining its purpose
+4. **Schema Separation**: Clear separation between schema definition and default values
+5. **Configuration Consistency**: Values referenced in schema models are imported from the centralized module
+
+This approach provides several benefits:
+- Simplified maintenance of default values
+- Comprehensive view of all defaults in one place
+- Easier consistency between code and documentation
+- Reduced risk of default value drift between components
+
 ## MCP Python CLI Client Configuration
 
 ### Connection Settings

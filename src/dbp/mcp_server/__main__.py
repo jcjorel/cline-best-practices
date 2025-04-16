@@ -79,6 +79,7 @@ def setup_logging(log_level: str, log_file: Optional[Path] = None) -> None:
     numeric_level = getattr(logging, log_level.upper(), logging.INFO)
     
     log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    datefmt = '%Y-%m-%d %H:%M:%S,%f'
     handlers: List[logging.Handler] = [logging.StreamHandler(sys.stderr)]
     
     if log_file:
@@ -94,6 +95,7 @@ def setup_logging(log_level: str, log_file: Optional[Path] = None) -> None:
     logging.basicConfig(
         level=numeric_level,
         format=log_format,
+        datefmt=datefmt,
         handlers=handlers
     )
     

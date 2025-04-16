@@ -40,6 +40,8 @@
 # [GenAI tool change history]
 # 2025-04-15T09:44:35Z : Initial creation of ChangeDetectionQueue by CodeAssistant
 # * Implemented priority queue, event deduplication, debouncing, and filtering logic.
+# 2025-04-16T23:37:17Z : Added get_queue method to ChangeQueueComponent by CodeAssistant
+# * Fixed component integration to support direct queue access from fs_monitor component.
 ###############################################################################
 
 import threading
@@ -552,3 +554,25 @@ class ChangeQueueComponent(Component):
         if not self._initialized or not self._queue:
             raise RuntimeError("ChangeQueueComponent not initialized")
         self._queue.clear()
+        
+    def get_queue(self) -> ChangeDetectionQueue:
+        """
+        [Function intent]
+        Returns the internal queue instance for direct access by other components.
+        
+        [Implementation details]
+        Simply returns the internal _queue instance after checking initialization.
+        
+        [Design principles]
+        Provides direct access to the queue instance when needed by other components
+        while maintaining component initialization checks.
+        
+        Returns:
+            ChangeDetectionQueue: The internal queue instance
+            
+        Raises:
+            RuntimeError: If accessed before initialization
+        """
+        if not self._initialized or not self._queue:
+            raise RuntimeError("ChangeQueueComponent not initialized")
+        return self._queue

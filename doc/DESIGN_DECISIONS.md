@@ -1,5 +1,55 @@
 # Design Decisions
 
+## 2025-04-16: Centralized Default Configuration Values
+
+**Decision**: Centralize all default configuration values in a single module to serve as the single source of truth.
+
+**Context**: Previously, default configuration values were scattered throughout Pydantic models in `config_schema.py`. This approach had several drawbacks:
+- Default values were duplicated between schema code and documentation
+- Updating defaults required changes in multiple locations
+- It was difficult to get a comprehensive view of all default values in one place
+- Ensuring consistency between code defaults and documentation was challenging
+
+**Solution**: 
+
+1. Create a new module `src/dbp/config/default_config.py` that:
+   - Contains all default values organized in dictionaries corresponding to configuration sections
+   - Includes descriptive comments for each value
+   - Serves as the authoritative source for default configuration
+
+2. Update `config_schema.py` to:
+   - Import default values from the centralized module
+   - Reference these values in all Field definitions
+   - Maintain validation rules, descriptions, and schema structure
+
+3. Key benefits:
+   - Single source of truth for all default values
+   - Easier to maintain consistency between code and documentation
+   - Comprehensive view of all default values in one place
+   - Clearer separation between schema structure and default values
+   - Simplified process for updating default values
+
+**Alternatives Considered**:
+
+1. **Keep defaults in schema models**: Rejected because it mixes structure definition with default values and complicates maintenance.
+
+2. **Store defaults in JSON/YAML file**: Considered but rejected because it would require additional file loading logic and wouldn't have the benefit of inline documentation.
+
+3. **Generate defaults from documentation**: Rejected due to complexity and potential for errors in parsing documentation for programmatic use.
+
+**Relationship to Other Components**:
+
+- **ConfigurationManager**: No changes needed as it still uses the AppConfig model
+- **ConfigManagerComponent**: No changes needed as it accesses configuration through the standardized interfaces
+- **Documentation**: Should be kept in sync with the centralized defaults
+
+**Impact Assessment**:
+
+- **Maintainability**: Improved through clear separation of concerns and single source of truth
+- **Documentation alignment**: Easier to keep documentation in sync with actual default values
+- **Development workflow**: Simplified process for updating default values
+- **Code clarity**: Enhanced by separating schema structure from default values
+
 ## 2025-04-16: Use Alembic for Database Schema Management
 
 **Decision**: Implement Alembic to manage database schema creation, upgrades, and migrations.

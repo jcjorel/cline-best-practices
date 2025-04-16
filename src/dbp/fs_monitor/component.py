@@ -36,6 +36,8 @@
 # [GenAI tool change history]
 # 2025-04-16T20:04:42Z : Initial creation of FileSystemMonitorComponent by CodeAssistant
 # * Implemented Component protocol methods and integration with fs_monitor factory
+# 2025-04-16T23:47:26Z : Fixed component dependencies by CodeAssistant
+# * Added explicit dependency on "change_queue" component to fix initialization order
 ###############################################################################
 
 import logging
@@ -112,7 +114,7 @@ class FileSystemMonitorComponent(Component):
             List[str]: List of component dependencies
         """
         # Depends on config for settings and queue for event delivery
-        return ["config_manager"]
+        return ["config_manager", "change_queue"]
     
     def initialize(self, context: InitializationContext) -> None:
         """
@@ -134,7 +136,23 @@ class FileSystemMonitorComponent(Component):
             self.logger.warning("FileSystemMonitorComponent already initialized")
             return
         
-        self.logger = context.logger.getChild(self.name)
+        # Add robust logger initialization with detailed error handling
+        try:
+            # First try to get logger from context as per API expectation
+            if hasattr(context, 'logger') and context.logger is not None:
+                self.logger = context.logger.getChild(self.name)
+                self.logger.debug(f"Logger obtained from context.logger: {type(context.logger)}")
+            # Fall back to direct access if context doesn't have logger attribute
+            else:
+                self.logger.debug(f"Context doesn't have logger attribute or it's None: {type(context)}")
+                self.logger.debug(f"Context attributes: {dir(context)}")
+                # Keep existing logger initialized in __init__
+        except Exception as e:
+            # Catch any logger initialization issues and log details
+            logger.error(f"Logger initialization failed: {e}, context type: {type(context)}")
+            logger.error(f"Available context attributes: {dir(context)}")
+            # Continue with the existing logger
+            
         self.logger.info(f"Initializing component '{self.name}'...")
         
         try:
@@ -155,16 +173,13 @@ class FileSystemMonitorComponent(Component):
                 self._change_queue = ChangeDetectionQueue(config)
             
             # Get project root from configuration
-            project_root = config.get('project_root')
-            if not project_root:
-                # Try to determine from context if available
-                try:
-                    if hasattr(context, 'app_path'):
-                        project_root = context.app_path
-                    elif hasattr(context.config, 'get_app_path'):
-                        project_root = context.config.get_app_path()
-                except (AttributeError, Exception):
-                    self.logger.warning("Could not determine project root path")
+            project_root = config.get('project_root', ".")  # Default to "." if not specified
+            
+            # Throw fatal error if project_root is None
+            if project_root is None:
+                error_msg = "Project root cannot be None. It must be '.' by default."
+                self.logger.error(error_msg)
+                raise RuntimeError(error_msg)
             
             # Create filesystem monitor using factory
             self.logger.info(f"Creating monitor for platform with project root: {project_root}")

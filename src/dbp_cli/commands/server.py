@@ -174,7 +174,7 @@ class ServerCommandHandler(BaseCommandHandler):
             logger.exception(f"Server {args.action} error", exc_info=True)
             return 1
 
-    def _dump_server_error_logs(self, stderr_log_path: Path, limit: int = 20) -> None:
+    def _dump_server_error_logs(self, stderr_log_path: Path, limit: int = 50) -> None:
         """
         [Function intent]
         Extract and display error logs from the server's stderr log file.
