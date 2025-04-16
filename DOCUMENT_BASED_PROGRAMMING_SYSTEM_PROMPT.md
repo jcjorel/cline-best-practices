@@ -189,7 +189,7 @@ All code must be documented at TWO distinct levels without exception:
    # [Source file constraints]
    # <Document any limitations or requirements for this file>
    ###############################################################################
-   # [Reference documentation]
+   # [Reference documentation] <!-- Never reference documents in <project_root>/scratchpad/ directory -->
    # <List of markdown files in doc/ that provide broader context for this file>
    ###############################################################################
    # [GenAI tool change history] <!-- Change history sorted from the newest to the oldest -->
