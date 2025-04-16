@@ -60,10 +60,10 @@ from .exceptions import CLIError, ConfigurationError, AuthenticationError
 
 # Import command handlers
 from .commands.base import BaseCommandHandler
-from .commands.analyze import AnalyzeCommandHandler
-from .commands.recommend import RecommendCommandHandler
-from .commands.apply import ApplyCommandHandler
-from .commands.relationships import RelationshipsCommandHandler
+# Import only the commands that directly align with MCP tools
+from .commands.query import QueryCommandHandler
+from .commands.commit import CommitCommandHandler
+# Import system commands
 from .commands.config import ConfigCommandHandler
 from .commands.status import StatusCommandHandler
 from .commands.server import ServerCommandHandler
@@ -163,12 +163,12 @@ class DocumentationProgrammingCLI:
         """
         self.logger.debug("Initializing command handlers")
         
-        # Register command handlers
+        # Register command handlers - only those that align with MCP tools or system commands
         self.command_handlers = {
-            "analyze": AnalyzeCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
-            "recommend": RecommendCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
-            "apply": ApplyCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
-            "relationships": RelationshipsCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
+            # Main MCP tool commands
+            "query": QueryCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
+            "commit": CommitCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
+            # System commands
             "config": ConfigCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
             "status": StatusCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
             "server": ServerCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),

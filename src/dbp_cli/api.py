@@ -264,42 +264,141 @@ class MCPClientAPI:
     # --- Convenience methods mapping to specific tools/resources ---
 
     def analyze_consistency(self, code_file_path: str, doc_file_path: str, **kwargs) -> Dict[str, Any]:
-        """Calls the 'analyze_document_consistency' tool."""
-        tool_data = {"code_file_path": code_file_path, "doc_file_path": doc_file_path, **kwargs}
-        return self.call_tool("analyze_document_consistency", tool_data)
+        """
+        Calls the general query tool for consistency analysis.
+        
+        Following the MCP server refactoring, this now routes through the dbp_general_query tool
+        with an operation-specific structure.
+        """
+        tool_data = {
+            "query": {
+                "operation": "consistency_analysis",
+                "code_file_path": code_file_path,
+                "doc_file_path": doc_file_path
+            },
+            "context": kwargs.get("context", {}),
+            "parameters": {k: v for k, v in kwargs.items() if k != "context"}
+        }
+        result = self.call_tool("dbp_general_query", tool_data)
+        # Extract the actual result data from the wrapper response
+        if isinstance(result, dict) and "result" in result:
+            return result["result"]
+        return result
 
     def generate_recommendations(self, inconsistency_ids: List[str], **kwargs) -> Dict[str, Any]:
-        """Calls the 'generate_recommendations' tool."""
-        tool_data = {"inconsistency_ids": inconsistency_ids, **kwargs}
-        return self.call_tool("generate_recommendations", tool_data)
+        """
+        Calls the general query tool for recommendation generation.
+        
+        Following the MCP server refactoring, this now routes through the dbp_general_query tool
+        with an operation-specific structure.
+        """
+        tool_data = {
+            "query": {
+                "operation": "recommendations",
+                "inconsistency_ids": inconsistency_ids
+            },
+            "context": kwargs.get("context", {}),
+            "parameters": {k: v for k, v in kwargs.items() if k != "context"}
+        }
+        result = self.call_tool("dbp_general_query", tool_data)
+        # Extract the actual result data from the wrapper response
+        if isinstance(result, dict) and "result" in result:
+            return result["result"]
+        return result
 
     def apply_recommendation(self, recommendation_id: str, **kwargs) -> Dict[str, Any]:
-        """Calls the 'apply_recommendation' tool."""
-        tool_data = {"recommendation_id": recommendation_id, **kwargs}
-        return self.call_tool("apply_recommendation", tool_data)
+        """
+        Calls the general query tool to apply a recommendation.
+        
+        Following the MCP server refactoring, this now routes through the dbp_general_query tool
+        with an operation-specific structure.
+        """
+        tool_data = {
+            "query": {
+                "operation": "recommendations",
+                "recommendation_id": recommendation_id,
+                "apply": True
+            },
+            "context": kwargs.get("context", {}),
+            "parameters": {k: v for k, v in kwargs.items() if k != "context"}
+        }
+        result = self.call_tool("dbp_general_query", tool_data)
+        # Extract the actual result data from the wrapper response
+        if isinstance(result, dict) and "result" in result:
+            return result["result"]
+        return result
 
     def get_doc_relationships(self, document_path: str) -> Dict[str, Any]:
-         """Gets relationships for a document via the 'documentation' resource."""
-         resource_uri = f"documentation/relationships"
-         params = {"document_path": document_path}
-         return self.get_resource(resource_uri, params=params) # Note: Plan had this as a tool, changed to resource access
+        """
+        Gets relationships for a document via the general query tool.
+        
+        Following the MCP server refactoring, this now routes through the dbp_general_query tool
+        with an operation-specific structure.
+        """
+        tool_data = {
+            "query": {
+                "operation": "document_relationship",
+                "doc_file_path": document_path,
+                "analysis_type": "all"
+            }
+        }
+        result = self.call_tool("dbp_general_query", tool_data)
+        # Extract the actual result data from the wrapper response
+        if isinstance(result, dict) and "result" in result:
+            return result["result"]
+        return result
 
     def get_mermaid_diagram(self, document_paths: Optional[List[str]] = None) -> Dict[str, Any]:
-         """Gets a Mermaid diagram via the 'documentation' resource."""
-         resource_uri = "documentation/mermaid"
-         params = {"document_paths": document_paths} if document_paths else {}
-         return self.get_resource(resource_uri, params=params)
+        """
+        Gets a Mermaid diagram via the general query tool.
+        
+        Following the MCP server refactoring, this now routes through the dbp_general_query tool
+        with an operation-specific structure.
+        """
+        tool_data = {
+            "query": {
+                "operation": "visualization",
+                "diagram_type": "mermaid"
+            }
+        }
+        if document_paths:
+            tool_data["query"]["document_paths"] = document_paths
+            
+        result = self.call_tool("dbp_general_query", tool_data)
+        # Extract the actual result data from the wrapper response
+        if isinstance(result, dict) and "result" in result:
+            return result["result"]
+        return result
+
+    def generate_commit_message(self, since_commit: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+        """
+        Calls the commit message tool to generate a commit message.
+        
+        Args:
+            since_commit: Optional commit hash to use as base reference
+            **kwargs: Additional parameters to control commit message generation
+                - format: Format style ("conventional", "detailed", "simple")
+                - include_scope: Whether to include scope information
+                - max_length: Maximum length for the message
+                - files: List of specific files to include
+                
+        Returns:
+            Dictionary with commit message and additional metadata
+        """
+        tool_data = {k: v for k, v in kwargs.items()}
+        if since_commit:
+            tool_data["since_commit"] = since_commit
+            
+        return self.call_tool("dbp_commit_message", tool_data)
 
     def get_server_status(self) -> Dict[str, Any]:
-         """Gets the server status via the health check endpoint."""
-         # Use the health endpoint that's implemented in the server
-         self.logger.debug("Calling get_server_status() - Making request to health endpoint")
-         try:
-             result = self._make_request("GET", "health")
-             self.logger.debug(f"get_server_status() success - Result: {result}")
-             return result
-         except Exception as e:
-             self.logger.error(f"get_server_status() failed with exception: {e}", exc_info=True)
-             raise
-
-    # Add methods for other tools/resources as needed...
+        """Gets the server status via the health check endpoint."""
+        # Use the health endpoint that's implemented in the server
+        self.logger.debug("Calling get_server_status() - Making request to health endpoint")
+        try:
+            result = self._make_request("GET", "health")
+            self.logger.debug(f"get_server_status() success - Result: {result}")
+            return result
+        except Exception as e:
+            self.logger.error(f"get_server_status() failed with exception: {e}", exc_info=True)
+            raise

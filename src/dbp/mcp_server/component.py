@@ -78,8 +78,7 @@ try:
     from .mcp_protocols import MCPTool, MCPResource # Base classes
     # Import concrete tools and resources
     from .tools import (
-        AnalyzeDocumentConsistencyTool, GenerateRecommendationsTool, ApplyRecommendationTool,
-        GeneralQueryTool # Add others as implemented
+        GeneralQueryTool, CommitMessageTool  # Only the documented tools from DESIGN.md
     )
     from .resources import (
         DocumentationResource, CodeMetadataResource, InconsistencyResource,
@@ -230,32 +229,38 @@ class MCPServerComponent(Component):
             raise RuntimeError(f"Failed to initialize {self.name}") from e
 
     def _register_tools(self, tool_registry: ToolRegistry):
-        """Instantiates and registers all MCP tools."""
+        """
+        [Function intent]
+        Instantiates and registers only the officially documented MCP tools.
+        
+        [Implementation details]
+        Creates instances of the two authorized tool classes (dbp_general_query and dbp_commit_message)
+        and registers them with the MCP tool registry.
+        
+        [Design principles]
+        Documentation as Source of Truth - only tools documented in DESIGN.md are registered.
+        Explicit over implicit - clearly defines which tools are allowed to be registered.
+        """
         if not self._adapter: raise RuntimeError("Adapter not initialized.")
-        self.logger.debug("Registering MCP tools...")
+        self.logger.debug("Registering authorized MCP tools...")
 
+        # Only register the two tools documented in DESIGN.md
         tools_to_register = [
-            AnalyzeDocumentConsistencyTool(self._adapter, self.logger.getChild("tool_analyze_consistency")),
-            GenerateRecommendationsTool(self._adapter, self.logger.getChild("tool_gen_recs")),
-            ApplyRecommendationTool(self._adapter, self.logger.getChild("tool_apply_rec")),
             GeneralQueryTool(self._adapter, self.logger.getChild("tool_general_query")),
-            # Add other tools from plan:
-            # AnalyzeDocumentRelationshipsTool(self._adapter, self.logger.getChild("tool_analyze_rels")),
-            # GenerateMermaidDiagramTool(self._adapter, self.logger.getChild("tool_gen_mermaid")),
-            # ExtractDocumentContextTool(self._adapter, self.logger.getChild("tool_extract_doc")),
-            # ExtractCodebaseContextTool(self._adapter, self.logger.getChild("tool_extract_code")),
+            CommitMessageTool(self._adapter, self.logger.getChild("tool_commit_message")),
         ]
 
         count = 0
         for tool_instance in tools_to_register:
-             try:
-                  tool_registry.register_tool(tool_instance)
-                  count += 1
-             except (ValueError, TypeError) as e:
-                  self.logger.error(f"Failed to register MCP tool '{getattr(tool_instance, 'name', 'unknown')}': {e}")
-             except Exception as e:
-                  self.logger.error(f"Unexpected error registering MCP tool '{getattr(tool_instance, 'name', 'unknown')}': {e}", exc_info=True)
-        self.logger.info(f"Registered {count}/{len(tools_to_register)} MCP tools.")
+            try:
+                tool_registry.register_tool(tool_instance)
+                count += 1
+            except (ValueError, TypeError) as e:
+                self.logger.error(f"Failed to register MCP tool '{getattr(tool_instance, 'name', 'unknown')}': {e}")
+            except Exception as e:
+                self.logger.error(f"Unexpected error registering MCP tool '{getattr(tool_instance, 'name', 'unknown')}': {e}", exc_info=True)
+        
+        self.logger.info(f"Registered {count}/{len(tools_to_register)} documented MCP tools.")
 
 
     def _register_resources(self, resource_provider: ResourceProvider):

@@ -69,23 +69,46 @@ class ToolRegistry:
 
     def register_tool(self, tool: MCPTool):
         """
-        Registers an MCP tool instance.
-
+        [Function intent]
+        Register an MCP tool instance with validation to ensure only documented tools are registered.
+        
+        [Implementation details]
+        Checks if the tool's name is in the list of authorized tool names before
+        registering it. Raises an error if an unauthorized tool is attempted to be registered.
+        
+        [Design principles]
+        Defensive programming - prevents undocumented tools from being registered.
+        Clear error messaging - provides explicit information when violations occur.
+        Documentation as Source of Truth - enforces alignment with DESIGN.md.
+        
         Args:
             tool: An instance of a class implementing the MCPTool interface.
 
         Raises:
-            ValueError: If a tool with the same name is already registered.
+            ValueError: If a tool with the same name is already registered or if the tool name is not authorized.
             TypeError: If the provided object is not a valid MCPTool instance.
         """
+        # List of authorized tool names from DESIGN.md
+        AUTHORIZED_TOOL_NAMES = [
+            "dbp_general_query",
+            "dbp_commit_message"
+        ]
+        
         if not hasattr(tool, 'name') or not isinstance(tool.name, str):
-             raise TypeError("Tool object must have a valid string 'name' attribute.")
+            raise TypeError("Tool object must have a valid string 'name' attribute.")
         if not isinstance(tool, MCPTool): # Check against placeholder if needed
-             # Basic check, might need refinement based on actual MCPTool definition
-             if MCPTool is not object and not getattr(tool, 'execute', None):
-                  raise TypeError(f"Object for tool '{tool.name}' does not appear to be a valid MCPTool.")
+            # Basic check, might need refinement based on actual MCPTool definition
+            if MCPTool is not object and not getattr(tool, 'execute', None):
+                raise TypeError(f"Object for tool '{tool.name}' does not appear to be a valid MCPTool.")
 
         tool_name = tool.name
+        
+        # Validate the tool name against the authorized list
+        if tool_name not in AUTHORIZED_TOOL_NAMES:
+            error_msg = f"Attempted to register unauthorized tool: {tool_name}. Only the following tools are authorized: {', '.join(AUTHORIZED_TOOL_NAMES)}"
+            self.logger.error(error_msg)
+            raise ValueError(error_msg)
+            
         with self._lock:
             if tool_name in self._tools:
                 self.logger.error(f"MCP tool with name '{tool_name}' already registered.")
@@ -95,18 +118,39 @@ class ToolRegistry:
 
     def get_tool(self, name: str) -> Optional[MCPTool]:
         """
-        Retrieves a registered tool by its name.
-
+        [Function intent]
+        Retrieve a registered tool by name, with validation to ensure
+        only documented tools are accessible.
+        
+        [Implementation details]
+        Checks if the requested tool name is authorized before returning it.
+        Returns None for unauthorized tool requests.
+        
+        [Design principles]
+        Defensive programming - prevents access to undocumented tools.
+        Clear logging - records unauthorized access attempts.
+        
         Args:
             name: The name of the tool.
 
         Returns:
-            The MCPTool instance, or None if not found.
+            The MCPTool instance, or None if not found or not authorized.
         """
+        # List of authorized tool names from DESIGN.md
+        AUTHORIZED_TOOL_NAMES = [
+            "dbp_general_query",
+            "dbp_commit_message"
+        ]
+        
+        # Validate the tool name against the authorized list
+        if name not in AUTHORIZED_TOOL_NAMES:
+            self.logger.warning(f"Attempted to access unauthorized tool: {name}")
+            return None
+        
         with self._lock:
             tool = self._tools.get(name)
             if not tool:
-                 self.logger.warning(f"MCP tool '{name}' not found in registry.")
+                self.logger.warning(f"MCP tool '{name}' not found in registry.")
             return tool
 
     def get_all_tools(self) -> List[MCPTool]:
