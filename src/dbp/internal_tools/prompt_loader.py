@@ -34,7 +34,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/design/INTERNAL_LLM_TOOLS.md
-# - scratchpad/dbp_implementation_plan/plan_internal_tools.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:14:45Z : Initial creation of PromptLoader class by CodeAssistant

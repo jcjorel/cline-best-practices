@@ -36,7 +36,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/DATA_MODEL.md
-# - scratchpad/dbp_implementation_plan/plan_metadata_extraction.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:51:55Z : Initial creation of ResponseParser class by CodeAssistant

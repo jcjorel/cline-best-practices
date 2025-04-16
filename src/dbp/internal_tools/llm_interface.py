@@ -35,7 +35,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/design/INTERNAL_LLM_TOOLS.md
-# - scratchpad/dbp_implementation_plan/plan_internal_tools.md
 # - src/dbp/metadata_extraction/bedrock_client.py (Related, but potentially separate instances)
 ###############################################################################
 # [GenAI tool change history]

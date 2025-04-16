@@ -34,7 +34,6 @@
 # - Environment variable names follow a specific prefix (DBP_CLI_).
 ###############################################################################
 # [Reference documentation]
-# - scratchpad/dbp_implementation_plan/plan_python_cli.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:57:10Z : Initial creation of CLI ConfigurationManager by CodeAssistant

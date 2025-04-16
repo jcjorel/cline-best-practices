@@ -31,7 +31,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_mcp_integration.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:51:20Z : Initial creation of MCP protocol base classes by CodeAssistant

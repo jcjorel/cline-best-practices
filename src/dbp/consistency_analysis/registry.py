@@ -33,7 +33,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_consistency_analysis.md
 # - src/dbp/consistency_analysis/analyzer.py (Interface definition)
 ###############################################################################
 # [GenAI tool change history]

@@ -36,7 +36,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/design/LLM_COORDINATION.md
-# - scratchpad/dbp_implementation_plan/plan_llm_coordinator.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:07:25Z : Initial creation of ToolRegistry class by CodeAssistant

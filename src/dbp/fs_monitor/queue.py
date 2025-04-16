@@ -35,7 +35,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/design/BACKGROUND_TASK_SCHEDULER.md
-# - scratchpad/dbp_implementation_plan/plan_fs_monitoring.md
 # - src/dbp/fs_monitor/base.py
 ###############################################################################
 # [GenAI tool change history]
@@ -397,7 +396,7 @@ class ChangeQueueComponent(Component):
             self.logger.warning(f"Component '{self.name}' already initialized.")
             return
         
-        self.logger = logging.getLogger(f"DBP.{self.name}")
+        self.logger = logging.getLogger(f"dbp.{self.name}")
         self.logger.info(f"Initializing component '{self.name}'...")
         
         try:

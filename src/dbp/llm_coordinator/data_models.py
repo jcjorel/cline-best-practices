@@ -33,7 +33,6 @@
 # - doc/DESIGN.md
 # - doc/design/LLM_COORDINATION.md
 # - doc/design/MCP_SERVER_ENHANCED_DATA_MODEL.md
-# - scratchpad/dbp_implementation_plan/plan_llm_coordinator.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T16:25:27Z : Fixed field order in InternalToolJob dataclass by CodeAssistant

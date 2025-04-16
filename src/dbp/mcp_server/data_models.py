@@ -29,7 +29,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/design/MCP_SERVER_ENHANCED_DATA_MODEL.md
-# - scratchpad/dbp_implementation_plan/plan_mcp_integration.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T22:56:00Z : Fixed Pydantic v2 compatibility issues by CodeAssistant

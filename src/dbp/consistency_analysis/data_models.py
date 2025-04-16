@@ -29,7 +29,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_consistency_analysis.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:27:45Z : Initial creation of consistency analysis data models by CodeAssistant

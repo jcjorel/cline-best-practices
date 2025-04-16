@@ -35,7 +35,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_fs_monitoring.md
 # - src/dbp/fs_monitor/base.py
 ###############################################################################
 # [GenAI tool change history]

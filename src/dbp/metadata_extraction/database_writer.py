@@ -38,7 +38,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DATA_MODEL.md
-# - scratchpad/dbp_implementation_plan/plan_metadata_extraction.md
 # - src/dbp/metadata_extraction/data_structures.py
 # - src/dbp/database/repositories.py # Depends on this module
 ###############################################################################

@@ -34,7 +34,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_fs_monitoring.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:45:55Z : Initial creation of FileSystemMonitorFactory by CodeAssistant

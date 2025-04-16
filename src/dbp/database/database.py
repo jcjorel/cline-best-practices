@@ -41,7 +41,6 @@
 # - doc/DATA_MODEL.md
 # - doc/DESIGN.md
 # - doc/CONFIGURATION.md
-# - scratchpad/dbp_implementation_plan/plan_database_schema.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T18:01:22Z : Fixed SQLAlchemy SQL execution by CodeAssistant

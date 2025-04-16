@@ -24,7 +24,6 @@
 # - None beyond standard Python exception handling.
 ###############################################################################
 # [Reference documentation]
-# - scratchpad/dbp_implementation_plan/plan_python_cli.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:56:30Z : Initial creation of CLI exception classes by CodeAssistant

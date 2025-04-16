@@ -34,7 +34,6 @@
 # [Reference documentation]
 # - doc/CONFIGURATION.md
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_config_management.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:37:25Z : Initial creation of ProjectConfigManager class by CodeAssistant

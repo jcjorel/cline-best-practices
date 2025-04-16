@@ -26,7 +26,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/mcp_tools_refactoring_plan/plan_overview.md
 # - src/dbp_cli/commands/base.py
 ###############################################################################
 # [GenAI tool change history]

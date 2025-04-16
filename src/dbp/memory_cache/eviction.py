@@ -35,7 +35,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_memory_cache.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:58:10Z : Initial creation of eviction strategy classes by CodeAssistant

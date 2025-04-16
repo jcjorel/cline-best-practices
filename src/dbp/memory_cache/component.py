@@ -38,7 +38,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/design/COMPONENT_INITIALIZATION.md
-# - scratchpad/dbp_implementation_plan/plan_memory_cache.md
 # - src/dbp/core/component.py
 # - All other files in src/dbp/memory_cache/
 ###############################################################################

@@ -40,7 +40,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/design/LLM_COORDINATION.md
-# - scratchpad/dbp_implementation_plan/plan_llm_coordinator.md
 # - src/dbp/core/component.py
 # - All other files in src/dbp/llm_coordinator/
 ###############################################################################

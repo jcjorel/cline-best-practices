@@ -39,7 +39,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/SECURITY.md
-# - scratchpad/dbp_implementation_plan/plan_metadata_extraction.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:51:20Z : Initial creation of BedrockClient class by CodeAssistant

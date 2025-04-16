@@ -33,7 +33,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_recommendation_generator.md
 # - src/dbp/recommendation_generator/strategy.py
 # - src/dbp/consistency_analysis/data_models.py (InconsistencyType)
 ###############################################################################

@@ -38,7 +38,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/design/LLM_COORDINATION.md
-# - scratchpad/dbp_implementation_plan/plan_llm_coordinator.md
 # - src/dbp/llm_coordinator/data_models.py
 ###############################################################################
 # [GenAI tool change history]

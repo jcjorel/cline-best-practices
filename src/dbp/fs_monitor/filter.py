@@ -14,7 +14,6 @@
 # [Source file intent]
 # Implements the GitIgnoreFilter class, which is responsible for determining
 # whether a given file path should be ignored based on standard .gitignore
-# rules, mandatory system ignores (like scratchpad/), and additional patterns
 # specified in the configuration.
 ###############################################################################
 # [Source file design principles]
@@ -37,7 +36,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md (Dynamic File Exclusion Strategy)
 # - doc/CONFIGURATION.md (monitor.ignore_patterns)
-# - scratchpad/dbp_implementation_plan/plan_fs_monitoring.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:45:10Z : Initial creation of GitIgnoreFilter class by CodeAssistant
@@ -113,7 +111,6 @@ class GitIgnoreFilter:
 
         # Scratchpad directory (relative to project root)
         # Ensure it ends with / to match only directories
-        self._patterns.append(("scratchpad/", False, base))
 
         # Files or directories containing "deprecated" anywhere in their path components
         # This is harder to express perfectly with gitignore patterns alone.
@@ -394,7 +391,7 @@ class FilterComponent(Component):
             self.logger.warning(f"Component '{self.name}' already initialized.")
             return
         
-        self.logger = logging.getLogger(f"DBP.{self.name}")
+        self.logger = logging.getLogger(f"dbp.{self.name}")
         self.logger.info(f"Initializing component '{self.name}'...")
         
         try:

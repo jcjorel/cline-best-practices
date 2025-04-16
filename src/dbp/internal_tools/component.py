@@ -37,7 +37,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/design/INTERNAL_LLM_TOOLS.md
-# - scratchpad/dbp_implementation_plan/plan_internal_tools.md
 # - src/dbp/core/component.py
 # - src/dbp/llm_coordinator/component.py (Dependency)
 # - All other files in src/dbp/internal_tools/

@@ -35,7 +35,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DATA_MODEL.md
-# - scratchpad/dbp_implementation_plan/plan_memory_cache.md
 # - src/dbp/database/repositories.py
 # - src/dbp/database/models.py (Assumed ORM models)
 # - src/dbp/metadata_extraction/data_structures.py (FileMetadata)

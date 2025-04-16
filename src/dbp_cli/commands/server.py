@@ -30,7 +30,6 @@
 # - PID tracking is used to manage server processes.
 ###############################################################################
 # [Reference documentation]
-# - scratchpad/dbp_implementation_plan/plan_python_cli.md
 # - src/dbp_cli/commands/base.py
 # - src/dbp_cli/commands/status.py
 # - src/dbp/mcp_server/server.py

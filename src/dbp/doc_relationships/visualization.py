@@ -36,7 +36,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/DOCUMENT_RELATIONSHIPS.md
-# - scratchpad/dbp_implementation_plan/plan_doc_relationships.md
 # - src/dbp/doc_relationships/graph.py
 ###############################################################################
 # [GenAI tool change history]

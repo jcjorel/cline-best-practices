@@ -34,7 +34,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_consistency_analysis.md
 # - src/dbp/consistency_analysis/registry.py
 # - src/dbp/consistency_analysis/analyzer.py
 # - src/dbp/consistency_analysis/data_models.py

@@ -35,7 +35,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_memory_cache.md
 # - src/dbp/memory_cache/index_manager.py
 # - src/dbp/memory_cache/storage.py
 ###############################################################################

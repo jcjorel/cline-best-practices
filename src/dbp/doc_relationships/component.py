@@ -38,7 +38,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/DOCUMENT_RELATIONSHIPS.md
-# - scratchpad/dbp_implementation_plan/plan_doc_relationships.md
 # - src/dbp/core/component.py
 # - All other files in src/dbp/doc_relationships/
 ###############################################################################

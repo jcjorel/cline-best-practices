@@ -35,7 +35,6 @@
 # - Listing files recursively can be slow on very large directories.
 ###############################################################################
 # [Reference documentation]
-# - scratchpad/dbp_implementation_plan/plan_internal_tools.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:11:30Z : Initial creation of FileAccessService by CodeAssistant

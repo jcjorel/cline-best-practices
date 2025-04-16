@@ -28,7 +28,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/mcp_tools_refactoring_plan/plan_overview.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T09:21:00Z : Created recommendations internal tools by CodeAssistant

@@ -41,7 +41,6 @@
 # [Reference documentation]
 # - doc/CONFIGURATION.md
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_config_management.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T16:20:07Z : Added missing BaseModel import by CodeAssistant

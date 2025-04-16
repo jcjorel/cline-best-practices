@@ -28,7 +28,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/mcp_tools_refactoring_plan/plan_overview.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T08:55:00Z : Created consistency analysis internal tool by CodeAssistant

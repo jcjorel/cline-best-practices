@@ -36,7 +36,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/design/INTERNAL_LLM_TOOLS.md
-# - scratchpad/dbp_implementation_plan/plan_internal_tools.md
 # - src/dbp/internal_tools/file_access.py
 ###############################################################################
 # [GenAI tool change history]

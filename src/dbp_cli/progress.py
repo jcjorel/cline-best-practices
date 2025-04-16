@@ -26,7 +26,6 @@
 # - Animation is basic and might not be suitable for all terminal types.
 ###############################################################################
 # [Reference documentation]
-# - scratchpad/dbp_implementation_plan/plan_python_cli.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T11:00:35Z : Initial creation of ProgressIndicator class by CodeAssistant

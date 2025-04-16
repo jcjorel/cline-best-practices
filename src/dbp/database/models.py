@@ -33,7 +33,6 @@
 # [Reference documentation]
 # - doc/DATA_MODEL.md
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_database_schema.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:31:30Z : Initial creation of database models by CodeAssistant

@@ -32,7 +32,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_mcp_integration.md
 # - src/dbp/mcp_server/mcp_protocols.py (Expected location for MCPTool/MCPResource bases)
 ###############################################################################
 # [GenAI tool change history]

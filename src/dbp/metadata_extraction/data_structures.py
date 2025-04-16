@@ -32,7 +32,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DATA_MODEL.md
-# - scratchpad/dbp_implementation_plan/plan_metadata_extraction.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:50:30Z : Initial creation of metadata data structures by CodeAssistant

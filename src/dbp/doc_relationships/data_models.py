@@ -29,7 +29,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/DOCUMENT_RELATIONSHIPS.md
-# - scratchpad/dbp_implementation_plan/plan_doc_relationships.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:17:40Z : Initial creation of doc relationships data models by CodeAssistant

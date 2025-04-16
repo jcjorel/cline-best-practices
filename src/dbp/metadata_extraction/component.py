@@ -39,7 +39,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/design/COMPONENT_INITIALIZATION.md
-# - scratchpad/dbp_implementation_plan/plan_metadata_extraction.md
 # - src/dbp/core/component.py
 # - All other files in src/dbp/metadata_extraction/
 ###############################################################################

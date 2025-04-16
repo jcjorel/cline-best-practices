@@ -32,7 +32,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_doc_relationships.md
 # - src/dbp/doc_relationships/graph.py
 # - src/dbp/doc_relationships/data_models.py
 ###############################################################################

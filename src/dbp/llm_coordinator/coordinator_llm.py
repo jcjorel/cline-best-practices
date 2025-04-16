@@ -39,7 +39,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/design/LLM_COORDINATION.md
-# - scratchpad/dbp_implementation_plan/plan_llm_coordinator.md
 # - src/dbp/llm_coordinator/data_models.py
 # - src/dbp/llm_coordinator/tool_registry.py
 ###############################################################################

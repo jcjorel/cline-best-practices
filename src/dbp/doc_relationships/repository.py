@@ -30,7 +30,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DATA_MODEL.md
-# - scratchpad/dbp_implementation_plan/plan_doc_relationships.md
 # - src/dbp/database/database.py
 # - src/dbp/database/models.py
 # - src/dbp/doc_relationships/data_models.py

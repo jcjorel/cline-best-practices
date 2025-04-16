@@ -34,7 +34,6 @@
 # [Reference documentation]
 # - doc/CONFIGURATION.md
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_config_management.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:39:30Z : Initial creation of ConfigCLI class by CodeAssistant

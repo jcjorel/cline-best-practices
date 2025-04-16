@@ -29,7 +29,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/DOCUMENT_RELATIONSHIPS.md
-# - scratchpad/mcp_tools_refactoring_plan/plan_overview.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T09:24:00Z : Created visualization internal tool by CodeAssistant

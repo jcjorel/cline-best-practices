@@ -31,7 +31,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_recommendation_generator.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:34:15Z : Initial creation of recommendation data models by CodeAssistant

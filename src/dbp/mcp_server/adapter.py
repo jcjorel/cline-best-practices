@@ -33,7 +33,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_mcp_integration.md
 # - src/dbp/core/component.py
 # - src/dbp/core/system.py
 ###############################################################################

@@ -33,7 +33,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/design/BACKGROUND_TASK_SCHEDULER.md
-# - scratchpad/dbp_implementation_plan/plan_background_scheduler.md
 # - src/dbp/scheduler/queue.py
 # - src/dbp/scheduler/worker.py
 # - src/dbp/scheduler/status.py

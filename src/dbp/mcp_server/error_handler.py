@@ -34,7 +34,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_mcp_integration.md
 # - src/dbp/mcp_server/data_models.py
 # - src/dbp/mcp_server/auth.py (Defines Auth exceptions)
 # - src/dbp/mcp_server/adapter.py (Defines ComponentNotFoundError)

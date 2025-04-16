@@ -34,7 +34,6 @@
 # - Assumes input data is generally serializable or has a reasonable string representation.
 ###############################################################################
 # [Reference documentation]
-# - scratchpad/dbp_implementation_plan/plan_python_cli.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:59:30Z : Initial creation of OutputFormatter class by CodeAssistant

@@ -37,7 +37,6 @@
 # - Error handling maps HTTP/MCP errors to CLI-specific exceptions.
 ###############################################################################
 # [Reference documentation]
-# - scratchpad/dbp_implementation_plan/plan_python_cli.md
 # - src/dbp_cli/auth.py
 # - src/dbp_cli/config.py
 # - src/dbp_cli/exceptions.py

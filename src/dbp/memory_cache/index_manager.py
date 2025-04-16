@@ -34,7 +34,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_memory_cache.md
 # - src/dbp/metadata_extraction/data_structures.py (Defines FileMetadata)
 ###############################################################################
 # [GenAI tool change history]

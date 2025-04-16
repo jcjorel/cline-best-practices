@@ -32,7 +32,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_recommendation_generator.md
 # - src/dbp/recommendation_generator/data_models.py
 ###############################################################################
 # [GenAI tool change history]

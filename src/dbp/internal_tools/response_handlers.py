@@ -34,7 +34,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/design/INTERNAL_LLM_TOOLS.md
-# - scratchpad/dbp_implementation_plan/plan_internal_tools.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T12:14:22Z : Added ResponseValidationError class by CodeAssistant

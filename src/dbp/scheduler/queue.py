@@ -35,7 +35,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/design/BACKGROUND_TASK_SCHEDULER.md
-# - scratchpad/dbp_implementation_plan/plan_background_scheduler.md
 # - src/dbp/fs_monitor/base.py (Similar ChangeEvent structure)
 ###############################################################################
 # [GenAI tool change history]

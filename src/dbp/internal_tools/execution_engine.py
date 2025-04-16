@@ -36,7 +36,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/design/INTERNAL_LLM_TOOLS.md
-# - scratchpad/dbp_implementation_plan/plan_internal_tools.md
 # - All other files in src/dbp/internal_tools/
 # - src/dbp/llm_coordinator/data_models.py (InternalToolJob)
 ###############################################################################

@@ -27,7 +27,6 @@
 # - Authentication checks may trigger authorization-only API calls.
 ###############################################################################
 # [Reference documentation]
-# - scratchpad/dbp_implementation_plan/plan_python_cli.md
 # - src/dbp_cli/commands/base.py
 # - src/dbp_cli/auth.py
 ###############################################################################

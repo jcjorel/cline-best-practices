@@ -34,7 +34,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/API.md
-# - scratchpad/dbp_implementation_plan/plan_mcp_integration.md
 # - src/dbp/mcp_server/mcp_protocols.py
 # - src/dbp/mcp_server/adapter.py
 ###############################################################################

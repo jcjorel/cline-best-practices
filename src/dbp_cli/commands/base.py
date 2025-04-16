@@ -32,7 +32,6 @@
 # - Must have explicit error handling within execute().
 ###############################################################################
 # [Reference documentation]
-# - scratchpad/dbp_implementation_plan/plan_python_cli.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T13:04:40Z : Initial creation of BaseCommandHandler by CodeAssistant

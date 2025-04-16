@@ -40,7 +40,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/SECURITY.md
-# - scratchpad/dbp_implementation_plan/plan_mcp_integration.md
 # - src/dbp/config/config_schema.py (MCPServerConfig, APIKeyEntry)
 # - src/dbp/mcp_server/data_models.py (MCPRequest)
 ###############################################################################

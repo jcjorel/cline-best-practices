@@ -38,7 +38,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_consistency_analysis.md
 # - src/dbp/core/component.py
 # - All other files in src/dbp/consistency_analysis/
 ###############################################################################

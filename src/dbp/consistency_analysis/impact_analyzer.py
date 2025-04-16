@@ -31,7 +31,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/DOCUMENT_RELATIONSHIPS.md
-# - scratchpad/dbp_implementation_plan/plan_consistency_analysis.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T23:14:45Z : Initial implementation of ConsistencyImpactAnalyzer by CodeAssistant

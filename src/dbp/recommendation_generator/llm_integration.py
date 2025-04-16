@@ -36,7 +36,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/design/INTERNAL_LLM_TOOLS.md (Defines LLM capabilities)
-# - scratchpad/dbp_implementation_plan/plan_recommendation_generator.md
 # - src/dbp/llm_coordinator/component.py (Dependency)
 # - src/dbp/consistency_analysis/data_models.py (InconsistencyRecord)
 ###############################################################################

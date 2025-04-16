@@ -36,7 +36,6 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
-# - scratchpad/dbp_implementation_plan/plan_memory_cache.md
 # - All other files in src/dbp/memory_cache/
 ###############################################################################
 # [GenAI tool change history]

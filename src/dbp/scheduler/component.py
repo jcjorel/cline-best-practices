@@ -37,7 +37,6 @@
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/design/BACKGROUND_TASK_SCHEDULER.md
-# - scratchpad/dbp_implementation_plan/plan_background_scheduler.md
 # - src/dbp/core/component.py
 # - All other files in src/dbp/scheduler/
 # - src/dbp/fs_monitor/__init__.py (Dependency)
