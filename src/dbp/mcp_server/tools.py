@@ -41,6 +41,20 @@
 # - src/dbp/mcp_server/adapter.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-16T10:50:00Z : Removed all manual classification code by CodeAssistant
+# * Removed QueryClassifier class and all related code
+# * Removed internal tool initialization, routing and input preparation methods
+# * Simplified imports to only essential modules
+# * Updated GeneralQueryTool class documentation to reflect direct LLM routing
+# 2025-04-16T10:47:00Z : Enforced LLM coordinator processing for all queries by CodeAssistant
+# * Removed manual classification fallback in GeneralQueryTool
+# * Updated GeneralQueryTool to route all queries directly to LLM coordinator
+# * Ensured consistent natural language handling across MCP tools
+# 2025-04-16T10:28:00Z : Modified MCP tools to accept only natural language input by CodeAssistant
+# * Updated GeneralQueryTool's input schema to require string queries
+# * Added validation to reject JSON/object inputs in GeneralQueryTool
+# * Added validation to reject JSON/object inputs in CommitMessageTool
+# * Modified parameter handling to work exclusively with natural language
 # 2025-04-16T09:26:00Z : Refactored to use internal tools by CodeAssistant
 # * Removed directly exposed tools that aren't documented in DESIGN.md
 # * Added placeholder for CommitMessageTool
@@ -54,15 +68,8 @@ import time
 import re
 from typing import Dict, Any, Optional, List, Tuple
 
-# Import internal tools
+# Import required modules
 try:
-    from .internal_tools import (
-        InternalConsistencyAnalysisTool,
-        InternalRecommendationsGeneratorTool,
-        InternalRecommendationApplicatorTool,
-        InternalDocumentRelationshipsTool,
-        InternalMermaidDiagramTool,
-    )
     from .mcp_protocols import MCPTool
     from .adapter import SystemComponentAdapter, ComponentNotFoundError
     from ..llm_coordinator.component import LLMCoordinatorComponent
@@ -79,12 +86,6 @@ except ImportError as e:
     ComponentNotFoundError = Exception
     LLMCoordinatorComponent = object
     CoordinatorRequest = object
-    # Placeholder internal tool classes
-    InternalConsistencyAnalysisTool = object
-    InternalRecommendationsGeneratorTool = object
-    InternalRecommendationApplicatorTool = object
-    InternalDocumentRelationshipsTool = object
-    InternalMermaidDiagramTool = object
 
 
 logger = logging.getLogger(__name__)
@@ -100,127 +101,6 @@ class ValidationError(ValueError):
 
 # --- Documented Public Tool Implementations ---
 
-class QueryClassifier:
-    """
-    [Class intent]
-    Analyzes queries to determine which internal tool should handle them.
-    
-    [Implementation details]
-    Uses a combination of keyword matching, pattern recognition, and context
-    analysis to classify incoming queries.
-    
-    [Design principles]
-    Focused responsibility, extensible classification patterns, transparent
-    decision-making with confidence scores.
-    """
-    
-    # Query types that can be identified
-    CONSISTENCY_ANALYSIS = "consistency_analysis"
-    RECOMMENDATION_GENERATION = "recommendation_generation"
-    RECOMMENDATION_APPLICATION = "recommendation_application"
-    DOCUMENT_RELATIONSHIP = "document_relationship"
-    VISUALIZATION = "visualization"
-    GENERAL_QUERY = "general_query"  # Default fallback
-    
-    def __init__(self, logger=None):
-        """Initialize the query classifier."""
-        self.logger = logger or logging.getLogger(__name__)
-        # Define classification patterns
-        self._patterns = self._build_classification_patterns()
-        
-    def _build_classification_patterns(self):
-        """Build the patterns used for classification."""
-        patterns = {
-            self.CONSISTENCY_ANALYSIS: {
-                "keywords": ["consistency", "analyze", "check", "compare", "alignment"],
-                "context_indicators": ["code", "documentation", "doc", "inconsistency"]
-            },
-            self.RECOMMENDATION_GENERATION: {
-                "keywords": ["recommend", "suggestion", "propose", "generate", "fix"],
-                "context_indicators": ["inconsistency", "issue", "problem"]
-            },
-            self.RECOMMENDATION_APPLICATION: {
-                "keywords": ["apply", "implement", "accept", "execute"],
-                "context_indicators": ["recommendation", "change", "fix"]
-            },
-            self.DOCUMENT_RELATIONSHIP: {
-                "keywords": ["relationship", "relate", "connection", "dependency", "impact"],
-                "context_indicators": ["document", "documentation", "doc", "files"]
-            },
-            self.VISUALIZATION: {
-                "keywords": ["visualize", "diagram", "graph", "mermaid", "chart"],
-                "context_indicators": ["relationship", "structure", "hierarchy"]
-            }
-        }
-        return patterns
-    
-    def classify(self, query_text: str, context: Optional[Dict[str, Any]] = None) -> Tuple[str, float]:
-        """
-        Classify a query to determine which internal tool should handle it.
-        
-        Args:
-            query_text: The query text to classify
-            context: Optional additional context for classification
-            
-        Returns:
-            Tuple of (query_type, confidence_score)
-        """
-        self.logger.debug(f"Classifying query: {query_text[:50]}...")
-        
-        # Initialize scores
-        scores = {query_type: 0.0 for query_type in self._patterns}
-        
-        # Simple classification based on keywords and context
-        query_lower = query_text.lower()
-        
-        for query_type, pattern in self._patterns.items():
-            # Check for keywords
-            keyword_score = self._calculate_keyword_score(query_lower, pattern["keywords"])
-            context_score = self._calculate_keyword_score(query_lower, pattern["context_indicators"])
-            
-            # Calculate final score (weighted combination)
-            scores[query_type] = (keyword_score * 0.7) + (context_score * 0.3)
-            
-        # Check for explicit mentions of tools
-        if "consistency" in query_lower and "analyze" in query_lower:
-            scores[self.CONSISTENCY_ANALYSIS] += 0.3
-            
-        if "generate recommendation" in query_lower:
-            scores[self.RECOMMENDATION_GENERATION] += 0.3
-            
-        if "apply recommendation" in query_lower:
-            scores[self.RECOMMENDATION_APPLICATION] += 0.3
-            
-        # Consider context if provided
-        if context:
-            # If specific file paths are provided, likely consistency analysis
-            if context.get("code_file_path") and context.get("doc_file_path"):
-                scores[self.CONSISTENCY_ANALYSIS] += 0.4
-                
-            # If recommendation IDs are provided, likely recommendation-related
-            if context.get("recommendation_id"):
-                scores[self.RECOMMENDATION_APPLICATION] += 0.5
-                
-            if context.get("inconsistency_ids"):
-                scores[self.RECOMMENDATION_GENERATION] += 0.5
-        
-        # Get the highest scoring query type
-        best_match = max(scores.items(), key=lambda x: x[1])
-        query_type, confidence = best_match
-        
-        # If confidence is too low, fall back to general query
-        if confidence < 0.2:
-            query_type = self.GENERAL_QUERY
-            confidence = 0.1  # Low confidence indicates fallback
-            
-        self.logger.debug(f"Query classified as {query_type} with confidence {confidence:.2f}")
-        return query_type, confidence
-    
-    def _calculate_keyword_score(self, query_text: str, keywords: List[str]) -> float:
-        """Calculate a score based on keyword presence."""
-        matches = sum(1 for keyword in keywords if keyword in query_text)
-        return min(matches / max(len(keywords) / 2, 1), 1.0)
-
 
 class GeneralQueryTool(MCPTool):
     """
@@ -228,11 +108,12 @@ class GeneralQueryTool(MCPTool):
     Public tool for handling all types of queries about the codebase and documentation.
     
     [Implementation details]
-    Uses a query classifier to determine which internal tool should handle the query,
-    then routes the request appropriately. Acts as a facade for all internal tools.
+    Routes all natural language queries to the LLM coordinator without any manual classification.
+    The LLM coordinator is responsible for understanding query intent and invoking the appropriate
+    internal tools.
     
     [Design principles]
-    Single entry point for queries, intelligent routing, uniform response format,
+    Single entry point for queries, consistent natural language interface, uniform response format,
     detailed execution metadata.
     """
     
@@ -243,16 +124,12 @@ class GeneralQueryTool(MCPTool):
             logger_override=logger_override
         )
         self.adapter = adapter
-        self.query_classifier = QueryClassifier(self.logger)
-        
-        # Initialize internal tools (will be created on first use)
-        self._internal_tools = {}
     
     def _get_input_schema(self) -> Dict[str, Any]:
         return {
             "type": "object",
             "properties": {
-                "query": {"type": ["string", "object"], "description": "The natural language query or structured query."},
+                "query": {"type": "string", "description": "The natural language query."},
                 "context": {"type": "object", "description": "Optional additional context."},
                 "parameters": {"type": "object", "description": "Optional parameters."},
                 "max_execution_time_ms": {"type": "integer", "description": "Optional time budget override."},
@@ -290,29 +167,14 @@ class GeneralQueryTool(MCPTool):
         if not query:
             raise ValidationError("Missing required parameter: query.")
         
+        if not isinstance(query, str):
+            raise ValidationError("Query must be a natural language string, not a structured object.")
+        
         context = data.get("context", {})
         parameters = data.get("parameters", {})
-        force_llm = data.get("force_llm_processing", False)
         
         try:
-            # Determine if we should use direct internal tool routing or LLM coordinator
-            if not force_llm:
-                # Check if this is a natural language query or a structured query
-                if isinstance(query, str):
-                    # Natural language query - use classifier
-                    query_type, confidence = self.query_classifier.classify(query, context)
-                    self.logger.info(f"Query classified as {query_type} with confidence {confidence:.2f}")
-                    
-                    # If confidence is high enough, use internal tool
-                    if confidence > 0.4:
-                        return self._route_to_internal_tool(query_type, query, context, parameters, auth_context, start_time)
-                else:
-                    # Structured query - might have explicit tool information
-                    if isinstance(query, dict) and query.get("tool"):
-                        query_type = query.get("tool")
-                        return self._route_to_internal_tool(query_type, query, context, parameters, auth_context, start_time)
-            
-            # Fall back to LLM coordinator for all other cases
+            # All queries must go through the LLM coordinator for classification
             return self._route_to_llm_coordinator(query, context, parameters, data, auth_context, start_time)
                 
         except Exception as e:
@@ -331,159 +193,6 @@ class GeneralQueryTool(MCPTool):
                 }
             }
     
-    def _get_internal_tool(self, tool_type: str) -> Optional[InternalMCPTool]:
-        """Get or create an internal tool instance for the specified type."""
-        if tool_type not in self._internal_tools:
-            self.logger.debug(f"Creating internal tool for type: {tool_type}")
-            
-            # Create tool instance based on type
-            if tool_type == QueryClassifier.CONSISTENCY_ANALYSIS:
-                self._internal_tools[tool_type] = InternalConsistencyAnalysisTool(self.adapter)
-            elif tool_type == QueryClassifier.RECOMMENDATION_GENERATION:
-                self._internal_tools[tool_type] = InternalRecommendationsGeneratorTool(self.adapter)
-            elif tool_type == QueryClassifier.RECOMMENDATION_APPLICATION:
-                self._internal_tools[tool_type] = InternalRecommendationApplicatorTool(self.adapter)
-            elif tool_type == QueryClassifier.DOCUMENT_RELATIONSHIP:
-                self._internal_tools[tool_type] = InternalDocumentRelationshipsTool(self.adapter)
-            elif tool_type == QueryClassifier.VISUALIZATION:
-                self._internal_tools[tool_type] = InternalMermaidDiagramTool(self.adapter)
-                
-        return self._internal_tools.get(tool_type)
-    
-    def _route_to_internal_tool(self, tool_type: str, query: Any, context: Dict[str, Any], 
-                              parameters: Dict[str, Any], auth_context: Optional[Dict[str, Any]],
-                              start_time: float) -> Dict[str, Any]:
-        """Route a query to the appropriate internal tool."""
-        self.logger.info(f"Routing query to internal tool: {tool_type}")
-        
-        internal_tool = self._get_internal_tool(tool_type)
-        if not internal_tool:
-            # No tool available for this type, fall back to LLM coordinator
-            self.logger.info(f"No internal tool implementation for {tool_type}, falling back to LLM coordinator")
-            return self._route_to_llm_coordinator(query, context, parameters, {
-                "query": query,
-                "context": context,
-                "parameters": parameters
-            }, auth_context, start_time)
-        
-        # Prepare input for the internal tool
-        tool_input = self._prepare_internal_tool_input(tool_type, query, context, parameters)
-        
-        # Execute the internal tool
-        try:
-            result = internal_tool.execute(tool_input, auth_context)
-            elapsed_ms = int((time.time() - start_time) * 1000)
-            
-            # Format the result according to our unified schema
-            return {
-                "result": result,
-                "metadata": {
-                    "execution_path": f"internal_tool:{tool_type}",
-                    "confidence": 1.0,  # Internal tool execution is deterministic
-                    "execution_time_ms": elapsed_ms
-                }
-            }
-        except Exception as e:
-            self.logger.error(f"Error in internal tool {tool_type}: {e}", exc_info=True)
-            elapsed_ms = int((time.time() - start_time) * 1000)
-            return {
-                "result": {"error": str(e)},
-                "metadata": {
-                    "execution_path": f"internal_tool:{tool_type}",
-                    "confidence": 1.0,
-                    "execution_time_ms": elapsed_ms,
-                    "error_details": {
-                        "type": type(e).__name__,
-                        "message": str(e)
-                    }
-                }
-            }
-    
-    def _prepare_internal_tool_input(self, tool_type: str, query: Any, context: Dict[str, Any], 
-                                    parameters: Dict[str, Any]) -> Dict[str, Any]:
-        """Prepare input for an internal tool based on tool type."""
-        # Start with context and parameters
-        tool_input = {**context, **parameters}
-        
-        # Add tool-specific parameters based on query content
-        if tool_type == QueryClassifier.CONSISTENCY_ANALYSIS:
-            # Extract or infer code_file_path and doc_file_path
-            if isinstance(query, dict):
-                tool_input["code_file_path"] = query.get("code_file_path") or context.get("code_file_path")
-                tool_input["doc_file_path"] = query.get("doc_file_path") or context.get("doc_file_path")
-            elif isinstance(query, str):
-                # Try to extract file paths from query text
-                code_match = re.search(r'code\s+file[:\s]+([^\s,]+)', query, re.IGNORECASE)
-                if code_match:
-                    tool_input["code_file_path"] = code_match.group(1)
-                    
-                doc_match = re.search(r'doc(?:umentation)?\s+file[:\s]+([^\s,]+)', query, re.IGNORECASE)
-                if doc_match:
-                    tool_input["doc_file_path"] = doc_match.group(1)
-        
-        elif tool_type == QueryClassifier.RECOMMENDATION_GENERATION:
-            # Extract or infer inconsistency_ids
-            if isinstance(query, dict):
-                tool_input["inconsistency_ids"] = query.get("inconsistency_ids", [])
-            elif isinstance(query, str):
-                # Try to extract inconsistency IDs from query text
-                id_matches = re.findall(r'inconsistency\s+ids?[:\s]+([a-zA-Z0-9\-_,\s]+)', query, re.IGNORECASE)
-                if id_matches:
-                    # Parse comma-separated IDs
-                    ids_text = id_matches[0]
-                    tool_input["inconsistency_ids"] = [id.strip() for id in ids_text.split(',')]
-        
-        elif tool_type == QueryClassifier.RECOMMENDATION_APPLICATION:
-            # Extract or infer recommendation_id
-            if isinstance(query, dict):
-                tool_input["recommendation_id"] = query.get("recommendation_id")
-            elif isinstance(query, str):
-                # Try to extract recommendation ID from query text
-                rec_match = re.search(r'recommendation\s+id[:\s]+([a-zA-Z0-9\-_]+)', query, re.IGNORECASE)
-                if rec_match:
-                    tool_input["recommendation_id"] = rec_match.group(1)
-        
-        elif tool_type == QueryClassifier.DOCUMENT_RELATIONSHIP:
-            # Extract or infer doc_file_path or analysis_type
-            if isinstance(query, dict):
-                tool_input["doc_file_path"] = query.get("doc_file_path")
-                tool_input["analysis_type"] = query.get("analysis_type", "all")
-            elif isinstance(query, str):
-                # Try to extract document path from query text
-                doc_match = re.search(r'document[:\s]+([^\s,]+)', query, re.IGNORECASE)
-                if doc_match:
-                    tool_input["doc_file_path"] = doc_match.group(1)
-                
-                # Try to determine analysis type from query text
-                if "dependencies" in query.lower():
-                    tool_input["analysis_type"] = "dependencies"
-                elif "impacts" in query.lower():
-                    tool_input["analysis_type"] = "impacts"
-                else:
-                    tool_input["analysis_type"] = "all"  # Default
-        
-        elif tool_type == QueryClassifier.VISUALIZATION:
-            # Extract or infer diagram_type and related parameters
-            if isinstance(query, dict):
-                tool_input["diagram_type"] = query.get("diagram_type", "relationships")
-                tool_input["doc_file_path"] = query.get("doc_file_path")
-            elif isinstance(query, str):
-                # Try to determine diagram type from query text
-                if "class" in query.lower():
-                    tool_input["diagram_type"] = "class"
-                elif "sequence" in query.lower():
-                    tool_input["diagram_type"] = "sequence"
-                elif "flowchart" in query.lower():
-                    tool_input["diagram_type"] = "flowchart"
-                else:
-                    tool_input["diagram_type"] = "relationships"  # Default
-                
-                # Try to extract document path for relationship diagrams
-                doc_match = re.search(r'document[:\s]+([^\s,]+)', query, re.IGNORECASE)
-                if doc_match:
-                    tool_input["doc_file_path"] = doc_match.group(1)
-        
-        return tool_input
     
     def _route_to_llm_coordinator(self, query: Any, context: Dict[str, Any], parameters: Dict[str, Any], 
                                  data: Dict[str, Any], auth_context: Optional[Dict[str, Any]],
@@ -740,9 +449,18 @@ class CommitMessageTool(MCPTool):
         start_time = time.time()
         
         try:
+            # Validate important parameters to ensure they're strings if provided
+            if "since_commit" in data and not isinstance(data["since_commit"], str):
+                raise ValidationError("Since commit must be a string, not a structured object.")
+                
+            # Validate that any other string parameters are actually strings
+            for param_name in ["format"]:
+                if param_name in data and not isinstance(data[param_name], str):
+                    raise ValidationError(f"Parameter '{param_name}' must be a string, not a structured object.")
+            
             # For now, return a placeholder implementation
             # In a real implementation, we would:
-            # 1. Validate the input against the schema
+            # 1. Further validate the input against the schema
             # 2. Determine the base commit to compare against
             # 3. Analyze the changes
             # 4. Generate the commit message
