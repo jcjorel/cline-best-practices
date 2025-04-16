@@ -309,6 +309,7 @@ All code must be documented at TWO distinct levels without exception:
 IMPORTANT: These three documentation sections ("[Function/Class method/Class intent]", "[Implementation details]", and "[Design principles]") must be included for ALL functions, methods and classes regardless of their complexity or size. No exceptions are permitted.
 
 #### Markdown File Standards
+- Markdown files will heavily use mermaid diagrams to ease understanding by user
 - All markdown files MUST use UPPERCASE_SNAKE_CASE naming format (examples: DESIGN.md, DATA_MODEL.md)
 - Every directory that contains markdown files must include a corresponding MARKDOWN_CHANGELOG.md file
 - Documentation files must avoid duplicating information that already exists in other documentation files
