@@ -136,7 +136,7 @@ Strictly adhere to the DRY (Don't Repeat Yourself) principle in all implementati
 - Add or maintain header comments in every file using the applicable template
 - When modifying files exceeding 500 lines, process them in logical sequences of maximum 5 operations
 - Document all changes in the GenAI history section using precise timestamp format: YYYY-MM-DDThh:mm:ssZ
-- **After updating any codebase file, ALWAYS ensure that function/class comments are consistent with the changes made**
+- **After updating any codebase file, ALWAYS ensure that function/class method/class comments are consistent with the changes made**
 - **ALWAYS update the file header history section with details of the modifications**
 - For markdown file modifications:
   - Always update the corresponding `MARKDOWN_CHANGELOG.md` located in the SAME directory
@@ -202,12 +202,12 @@ All code must be documented at TWO distinct levels without exception:
 2. **Function/Class-level Documentation**:
    - This documentation is MANDATORY for ALL functions, methods, and classes without exception
    - Documentation MUST include these specific labeled sections in this exact order:
-     a. "[Function/Class intent]" - Purpose and role description
+     a. "[Function/Class method/Class intent]" - Purpose and role description
      b. "[Implementation details]" - Key technical implementation notes
      c. "[Design principles]" - Patterns and approaches used
    - Include standard language-appropriate parameter/return documentation according to language conventions
    - ALWAYS follow the exact template provided in `GENAI_FUNCTION_TEMPLATE.txt`
-   - These sections are required for all functions regardless of complexity or size
+   - These sections are required for all functions and class methods regardless of complexity or size
 
    **Python Function Documentation Example**:
    ```python
@@ -259,7 +259,7 @@ All code must be documented at TWO distinct levels without exception:
     */
    class AuthManager {
      /**
-      * [Function intent]
+      * [Class method intent]
       * Creates a new AuthManager instance with initial configuration.
       *
       * [Implementation details]
@@ -279,7 +279,7 @@ All code must be documented at TWO distinct levels without exception:
    }
    ```
 
-IMPORTANT: These three documentation sections ("[Function/Class intent]", "[Implementation details]", and "[Design principles]") must be included for ALL functions, methods and classes regardless of their complexity or size. No exceptions are permitted.
+IMPORTANT: These three documentation sections ("[Function/Class method/Class intent]", "[Implementation details]", and "[Design principles]") must be included for ALL functions, methods and classes regardless of their complexity or size. No exceptions are permitted.
 
 #### Markdown File Standards
 - All markdown files MUST use UPPERCASE_SNAKE_CASE naming format (examples: DESIGN.md, DATA_MODEL.md)
@@ -316,7 +316,7 @@ When the user explicitly requests to merge `<project_root>/doc/DESIGN_DECISIONS.
 After each decision is documented, provide this exact confirmation format:
 ```
 [DESIGN DECISION DOCUMENTED]
-Scope: [Function/File/Module]-level
+Scope: [Function/Class method/Class/File/Module]-level
 Decision: [brief description]
 Location: [file path and section]
 ```
@@ -343,7 +343,7 @@ When significant changes are identified that are not reflected in documentation:
 
 ### Core Documentation Files
 - **GENAI_HEADER_TEMPLATE.txt**: Header template for all source files
-- **GENAI_FUNCTION_TEMPLATE.txt**: Function documentation templates organized by programming language
+- **GENAI_FUNCTION_TEMPLATE.txt**: Function and Class method documentation templates organized by programming language
 - **DESIGN.md**: Architectural blueprint including security considerations
 - **DESIGN_DECISIONS.md**: Temporary log of project-wide design decisions with newest entries at the top
 - **SECURITY.md**: Comprehensive security documentation and requirements
