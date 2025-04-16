@@ -107,6 +107,7 @@ For complex changes:
    - Follow implementation tasks sequentially in the exact order specified in the overview file
    - Update the progress file immediately after completing each task
    - Document any implementation failures with specific error details
+   - Halt plan creation gracefully when context window token usage reaches 80% capacity and propose to restart implementation in a fresh session
 
 ## Code generation rules
 
