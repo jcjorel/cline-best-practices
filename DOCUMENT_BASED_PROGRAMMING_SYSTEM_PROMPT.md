@@ -182,6 +182,8 @@ When proposed code changes would contradict existing documentation:
 
 #### Documentation Standards
 
+**All texts you generate within function/class comments, file headers, or documentation MUST NEVER refer to past implementations.**
+
 #### Code Documentation Standard
 
 All code must be documented at TWO distinct levels without exception:
