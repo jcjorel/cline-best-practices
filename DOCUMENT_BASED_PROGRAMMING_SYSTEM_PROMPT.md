@@ -51,7 +51,8 @@ After completing the deep-dive analysis, present a prioritized list of remediati
 ## Documentation-First Workflow
 
 ### Initial Context Gathering
-On EVERY new task, read these documents in this exact order BEFORE implementing changes:
+
+**CRITICAL**: On EVERY new conversational session, you MUST read these documents in this exact order BEFORE implementing changes:
 1. `<project_root>/coding_assistant/GENAI_HEADER_TEMPLATE.txt` (check once per session)
 2. `<project_root>/coding_assistant/GENAI_FUNCTION_TEMPLATE.txt` (check once per session)
 3. `<project_root>/doc/DESIGN.md` for architectural principles
