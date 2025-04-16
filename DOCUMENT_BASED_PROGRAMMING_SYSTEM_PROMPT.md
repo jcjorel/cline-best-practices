@@ -360,7 +360,7 @@ When updating any documentation file:
    - Depends on: [Related Document 1] - Topic: [subject matter] - Scope: [narrow/broad/specific area]
    - Impacts: [Related Document 2] - Topic: [subject matter] - Scope: [narrow/broad/specific area]
    ```
-5. Update the "Relationship Graph" Mermaid diagram in DOCUMENT_RELATIONSHIPS.md to reflect all new or modified relationships
+5. Update the "Relationship Graph" Mermaid diagram in DOCUMENT_RELATIONSHIPS.md to reflect all new or modified "Depends on:" relationships
 6. Explicitly document all relationship updates in your response to the user
 
 When significant changes are identified that are not reflected in documentation:
