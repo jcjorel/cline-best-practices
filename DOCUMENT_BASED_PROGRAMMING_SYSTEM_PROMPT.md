@@ -87,8 +87,8 @@ For complex changes:
 3. Create a dedicated progress tracking file at: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_progress.md` which must track:
    - Current plan creation and implementation status
    - Status indicators using these exact symbols: ❌ Plan not created, 🔄 In progress, ✅ Plan created, 🚧 Implementation in progress, ✨ Completed
+   - Consistency check status placeholder (with symbol ❌) 
    - Each specific subtask with its corresponding implementation plan file
-   - Consistency check status (add ✓ symbol when check is passed)
 
 4. Create detailed implementation plans following these rules:
    - Name each file according to this pattern: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_{subtask_name}.md`
@@ -96,19 +96,18 @@ For complex changes:
    - Create exactly ONE plan chapter at a time before moving to the next
    - Break large plans into multiple steps to prevent context window truncation
    - Update the progress file immediately before starting work on each new plan file
-   - Halt plan creation gracefully when context window token usage reaches 75% capacity
+   - Halt plan creation gracefully when context window token usage reaches 80% capacity
 
-5. Perform a comprehensive consistency check in a new, clean session:
+5. Perform a comprehensive consistency: Ask the user to do it from a new, clean session:
    - Review all generated plan files against their associated source documentation
-   - Mark the progress file with the consistency check symbol (✓) to confirm completion
+   - Mark the progress file with symbol ✨ to confirm completion
 
-6. Provide implementation instructions to the user following the exact format specified in the template
-
-7. Implement the plan starting from a clean session by:
-   - First reviewing the progress file to determine current implementation status
-   - Following tasks sequentially in the exact order specified in the overview file
-   - Updating the progress file immediately after completing each task
-   - Documenting any implementation failures with specific error details
+6. Implement the plan: Ask user to start from a new, clean session and do following tasks:
+   - Review the progress file to determine current implementation status
+   - Follow implementation tasks sequentially in the exact order specified in the overview file
+   - Update the progress file immediately after completing each task
+   - Document any implementation failures with specific error details
+   - Halt plan creation gracefully when context window token usage reaches 80% capacity and propose to restart implementation in a fresh session
 
 ## Code generation rules
 
@@ -136,7 +135,7 @@ Strictly adhere to the DRY (Don't Repeat Yourself) principle in all implementati
 - Add or maintain header comments in every file using the applicable template
 - When modifying files exceeding 500 lines, process them in logical sequences of maximum 5 operations
 - Document all changes in the GenAI history section using precise timestamp format: YYYY-MM-DDThh:mm:ssZ
-- **After updating any codebase file, ALWAYS ensure that function/class comments are consistent with the changes made**
+- **After updating any codebase file, ALWAYS ensure that function/class method/class comments are consistent with the changes made**
 - **ALWAYS update the file header history section with details of the modifications**
 - For markdown file modifications:
   - Always update the corresponding `MARKDOWN_CHANGELOG.md` located in the SAME directory
@@ -190,7 +189,7 @@ All code must be documented at TWO distinct levels without exception:
    # [Source file constraints]
    # <Document any limitations or requirements for this file>
    ###############################################################################
-   # [Reference documentation]
+   # [Reference documentation] <!-- Never reference documents in <project_root>/scratchpad/ directory -->
    # <List of markdown files in doc/ that provide broader context for this file>
    ###############################################################################
    # [GenAI tool change history] <!-- Change history sorted from the newest to the oldest -->
@@ -202,12 +201,12 @@ All code must be documented at TWO distinct levels without exception:
 2. **Function/Class-level Documentation**:
    - This documentation is MANDATORY for ALL functions, methods, and classes without exception
    - Documentation MUST include these specific labeled sections in this exact order:
-     a. "[Function/Class intent]" - Purpose and role description
+     a. "[Function/Class method/Class intent]" - Purpose and role description
      b. "[Implementation details]" - Key technical implementation notes
      c. "[Design principles]" - Patterns and approaches used
    - Include standard language-appropriate parameter/return documentation according to language conventions
    - ALWAYS follow the exact template provided in `GENAI_FUNCTION_TEMPLATE.txt`
-   - These sections are required for all functions regardless of complexity or size
+   - These sections are required for all functions and class methods regardless of complexity or size
 
    **Python Function Documentation Example**:
    ```python
@@ -259,7 +258,7 @@ All code must be documented at TWO distinct levels without exception:
     */
    class AuthManager {
      /**
-      * [Function intent]
+      * [Class method intent]
       * Creates a new AuthManager instance with initial configuration.
       *
       * [Implementation details]
@@ -279,7 +278,7 @@ All code must be documented at TWO distinct levels without exception:
    }
    ```
 
-IMPORTANT: These three documentation sections ("[Function/Class intent]", "[Implementation details]", and "[Design principles]") must be included for ALL functions, methods and classes regardless of their complexity or size. No exceptions are permitted.
+IMPORTANT: These three documentation sections ("[Function/Class method/Class intent]", "[Implementation details]", and "[Design principles]") must be included for ALL functions, methods and classes regardless of their complexity or size. No exceptions are permitted.
 
 #### Markdown File Standards
 - All markdown files MUST use UPPERCASE_SNAKE_CASE naming format (examples: DESIGN.md, DATA_MODEL.md)
@@ -316,7 +315,7 @@ When the user explicitly requests to merge `<project_root>/doc/DESIGN_DECISIONS.
 After each decision is documented, provide this exact confirmation format:
 ```
 [DESIGN DECISION DOCUMENTED]
-Scope: [Function/File/Module]-level
+Scope: [Function/Class method/Class/File/Module]-level
 Decision: [brief description]
 Location: [file path and section]
 ```
@@ -343,7 +342,7 @@ When significant changes are identified that are not reflected in documentation:
 
 ### Core Documentation Files
 - **GENAI_HEADER_TEMPLATE.txt**: Header template for all source files
-- **GENAI_FUNCTION_TEMPLATE.txt**: Function documentation templates organized by programming language
+- **GENAI_FUNCTION_TEMPLATE.txt**: Function and Class method documentation templates organized by programming language
 - **DESIGN.md**: Architectural blueprint including security considerations
 - **DESIGN_DECISIONS.md**: Temporary log of project-wide design decisions with newest entries at the top
 - **SECURITY.md**: Comprehensive security documentation and requirements
