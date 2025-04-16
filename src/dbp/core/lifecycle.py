@@ -12,307 +12,439 @@
 # - Respect system prompt directives at all times
 ###############################################################################
 # [Source file intent]
-# Implements the LifecycleManager class, which serves as the main entry point
-# and control center for the DBP application's lifecycle. It initializes core
-# services like logging and configuration, registers all system components,
-# and uses the InitializationOrchestrator to manage the startup and shutdown sequences.
+# Implements the simplified LifecycleManager class, which manages the overall
+# application lifecycle (startup, shutdown) using the ultra-simple component system.
+# Serves as the main entry point for the DBP application.
 ###############################################################################
 # [Source file design principles]
-# - Provides a high-level interface (`start`, `shutdown`) for managing the application.
-# - Encapsulates the setup of essential services (logging, config).
-# - Responsible for registering all known system components with the registry.
-# - Delegates the actual initialization/shutdown process to the orchestrator.
-# - Includes basic signal handling for graceful shutdown on termination signals.
-# - Design Decision: Central Lifecycle Manager (2025-04-15)
-#   * Rationale: Creates a single, clear entry point for the application, simplifying deployment and management.
-#   * Alternatives considered: Managing lifecycle directly in the main script (less organized).
+# - Ultra-simple application lifecycle management
+# - Direct component registration rather than through factories
+# - Clear and straightforward startup/shutdown processes
+# - Minimal error handling focused on clear reporting
+# - Single responsibility for application lifecycle
 ###############################################################################
 # [Source file constraints]
-# - Requires access to configuration management (`ConfigurationManager`).
-# - Requires component registry and orchestrator (`ComponentRegistry`, `InitializationOrchestrator`).
-# - Assumes the existence of concrete component classes or factories to register.
-# - Signal handling might behave differently across operating systems.
+# - Must handle basic signal interrupts for graceful shutdown
+# - Uses direct import of components rather than factories
+# - Initialization errors fail fast with clear reporting
+# - Maintains backward compatibility with existing entry points
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md
 # - doc/design/COMPONENT_INITIALIZATION.md
-# - scratchpad/dbp_implementation_plan/plan_component_init.md
-# - src/dbp/core/registry.py
-# - src/dbp/core/orchestrator.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:49:00Z : Initial creation of LifecycleManager class by CodeAssistant
 # * Implemented setup, component registration, start/shutdown methods, and basic signal handling.
+# 2025-04-16T15:48:00Z : Replaced with simplified LifecycleManager implementation by CodeAssistant
+# * Implemented ultra-simple lifecycle management with KISS principles
 ###############################################################################
 
 import logging
 import signal
 import sys
 import threading
-from typing import Optional, List, Type
+from typing import Optional, List
 
-# Assuming core components are accessible
+# Import core components
+from .system import ComponentSystem
+from .component import Component
+
+# Config-related imports
 try:
-    from .registry import ComponentRegistry
-    from .orchestrator import InitializationOrchestrator
-    # Assuming config manager is in a sibling package 'config'
-    from ..config import ConfigurationManager, AppConfig
-    # Import component implementations (or factories) - adjust paths as needed
-    # These imports might need to be more dynamic or centralized if components live elsewhere
-    from ..database.database import DatabaseManager # Example concrete dependency
-    # Add imports for other component classes/factories here
-    # from ..fs_monitor import FileSystemMonitorFactory # Example
-    # ... other component imports
+    from ..config.config_manager import ConfigurationManager
+    from ..config.component import ConfigManagerComponent
 except ImportError as e:
-    logging.basicConfig(level=logging.WARNING) # Basic logging for import errors
-    logger = logging.getLogger(__name__)
-    logger.error(f"LifecycleManager ImportError: {e}. Check package structure and dependencies.", exc_info=True)
-    # Define placeholders if imports fail, to allow class definition
-    ComponentRegistry = object
-    InitializationOrchestrator = object
-    ConfigurationManager = object
-    AppConfig = object
-    DatabaseManager = object # Placeholder
-    # FileSystemMonitorFactory = object # Placeholder
-
+    logging.error(f"Failed to import configuration modules: {e}")
+    ConfigurationManager = None
+    ConfigManagerComponent = None
 
 logger = logging.getLogger(__name__)
-
-# --- Placeholder Component Implementations ---
-# Replace these with actual imports or implementations of your components
-# These need to conform to the Component protocol defined in component.py
-
-class PlaceholderComponent:
-     """ Placeholder for actual system components. """
-     _is_initialized = False
-     def __init__(self, name: str, dependencies: List[str] = None):
-          self._name = name
-          self._dependencies = dependencies or []
-          self.logger = logging.getLogger(f"component.{self._name}")
-
-     @property
-     def name(self) -> str: return self._name
-     @property
-     def dependencies(self) -> List[str]: return self._dependencies
-     def initialize(self, context) -> None:
-          self.logger.info(f"Initializing placeholder component: {self.name}")
-          # Simulate using context
-          _ = context.config
-          _ = context.component_registry
-          if self.dependencies:
-               for dep_name in self.dependencies:
-                    try:
-                         dep_comp = context.get_component(dep_name)
-                         self.logger.debug(f"Accessed dependency '{dep_name}': {type(dep_comp).__name__}")
-                    except KeyError:
-                         self.logger.error(f"Missing dependency '{dep_name}' during initialization of '{self.name}'")
-                         raise RuntimeError(f"Missing dependency: {dep_name}")
-          self._is_initialized = True
-          self.logger.info(f"Placeholder component initialized: {self.name}")
-     def shutdown(self) -> None:
-          self.logger.info(f"Shutting down placeholder component: {self.name}")
-          self._is_initialized = False
-     @property
-     def is_initialized(self) -> bool: return self._is_initialized
-
-# --- End Placeholder Components ---
 
 
 class LifecycleManager:
     """
-    Manages the overall lifecycle (startup, shutdown) of the DBP application,
-    orchestrating the initialization and termination of its components.
+    [Class intent]
+    Manages the overall lifecycle (startup, shutdown) of the DBP application
+    using the ultra-simple component system.
+    
+    [Implementation details]
+    Handles basic setup, component registration, signal handling,
+    and startup/shutdown processes with minimal complexity.
+    
+    [Design principles]
+    Ultra-simple lifecycle management with clear processes.
+    Direct component registration rather than through factories.
+    Minimal error handling focused on clear reporting.
     """
 
     def __init__(self, cli_args: Optional[List[str]] = None):
         """
-        Initializes the LifecycleManager.
-
+        [Function intent]
+        Initializes the LifecycleManager with minimal setup.
+        
+        [Implementation details]
+        Sets up logging, configuration, signals, and the component system.
+        
+        [Design principles]
+        Minimal initialization with clear setup steps.
+        
         Args:
-            cli_args: Optional list of command-line arguments passed to the application.
+            cli_args: Optional list of command-line arguments
         """
+        # Setup basic state tracking
         self._shutdown_event = threading.Event()
         self._lock = threading.RLock()
         self._is_running = False
 
-        # Initialize essential services first
-        self.logger = self._setup_logger() # Setup logging ASAP
+        # Initialize essential services
+        self._setup_logging()
         self.config_manager = self._load_config(cli_args)
-        self.config: AppConfig = self.config_manager._config # Get validated config
+        self.config = self.config_manager._config if self.config_manager else {}
 
-        # Initialize core lifecycle components
-        self.registry = ComponentRegistry()
-        self.orchestrator = InitializationOrchestrator(self.registry, self.config, self.logger)
+        # Create the simplified component system
+        self.system = ComponentSystem(self.config, logger)
 
-        # Register components (factories preferred for lazy loading)
+        # Register components
         self._register_components()
 
         # Setup signal handling for graceful shutdown
         self._setup_signal_handlers()
 
-    def _setup_logger(self) -> logging.Logger:
-        """Sets up and configures the root logger for the application."""
-        # Basic configuration, replace with more robust setup if needed
-        log_level_str = os.environ.get("DBP_LOG_LEVEL", "INFO").upper()
-        log_level = getattr(logging, log_level_str, logging.INFO)
+    def _setup_logging(self) -> None:
+        """
+        [Function intent]
+        Sets up basic logging configuration.
+        
+        [Implementation details]
+        Configures log level based on environment or defaults to INFO.
+        
+        [Design principles]
+        Simple logging setup with minimal configuration.
+        """
+        import os
+        
+        # Get log level from environment or default to INFO
+        log_level_name = os.environ.get("DBP_LOG_LEVEL", "INFO").upper()
+        log_level = getattr(logging, log_level_name, logging.INFO)
+        
+        # Configure logging with basic format
         logging.basicConfig(
             level=log_level,
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S'
         )
-        # Configure specific loggers if necessary
-        # logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
-        return logging.getLogger("DBP_LifecycleManager") # Return a specific logger
+        
+        logger.debug(f"Logging initialized at level {log_level_name}")
 
-    def _load_config(self, cli_args: Optional[List[str]]) -> ConfigurationManager:
-        """Loads application configuration using the ConfigurationManager."""
-        self.logger.info("Loading application configuration...")
+    def _load_config(self, cli_args: Optional[List[str]]) -> Optional[ConfigurationManager]:
+        """
+        [Function intent]
+        Loads application configuration.
+        
+        [Implementation details]
+        Creates and initializes the ConfigurationManager.
+        
+        [Design principles]
+        Simple configuration loading with clear error reporting.
+        
+        Args:
+            cli_args: Optional command-line arguments
+            
+        Returns:
+            ConfigurationManager instance or None if loading fails
+        """
+        if ConfigurationManager is None:
+            logger.error("ConfigurationManager class not available")
+            return None
+            
         try:
-            # Use the singleton instance
+            logger.info("Loading application configuration...")
             config_manager = ConfigurationManager()
-            # Pass CLI args during initialization
-            config_manager.initialize(args=cli_args) # Assuming project_root comes from config or later step
+            config_manager.initialize(args=cli_args)
             return config_manager
         except Exception as e:
-            self.logger.critical(f"Failed to load configuration: {e}. Application cannot start.", exc_info=True)
-            sys.exit(1) # Exit if config fails critically
+            logger.critical(f"Failed to load configuration: {e}", exc_info=True)
+            return None
 
-    def _register_components(self):
-        """Registers all known system components with the ComponentRegistry."""
-        self.logger.info("Registering system components...")
-        try:
-            # Register factories for lazy instantiation
-            # Replace Placeholders with actual component classes/factories
-            self.registry.register_factory("database", lambda: PlaceholderComponent("database"))
-            self.registry.register_factory("config_manager_comp", lambda: PlaceholderComponent("config_manager_comp", dependencies=[])) # Example if config manager itself is a component
-            self.registry.register_factory("fs_monitor", lambda: PlaceholderComponent("fs_monitor", dependencies=["config_manager_comp"]))
-            self.registry.register_factory("change_queue", lambda: PlaceholderComponent("change_queue", dependencies=["config_manager_comp"]))
-            self.registry.register_factory("filter", lambda: PlaceholderComponent("filter", dependencies=["config_manager_comp"]))
-            self.registry.register_factory("background_scheduler", lambda: PlaceholderComponent("background_scheduler", dependencies=["change_queue", "filter"]))
-            self.registry.register_factory("metadata_extraction", lambda: PlaceholderComponent("metadata_extraction", dependencies=["database", "llm_coordinator"])) # Example dependency
-            self.registry.register_factory("memory_cache", lambda: PlaceholderComponent("memory_cache", dependencies=["database"]))
-            self.registry.register_factory("consistency_analyzer", lambda: PlaceholderComponent("consistency_analyzer", dependencies=["database", "memory_cache"]))
-            self.registry.register_factory("recommendation_generator", lambda: PlaceholderComponent("recommendation_generator", dependencies=["consistency_analyzer", "llm_coordinator"]))
-            self.registry.register_factory("llm_coordinator", lambda: PlaceholderComponent("llm_coordinator", dependencies=["config_manager_comp"])) # Example
-            self.registry.register_factory("mcp_server", lambda: PlaceholderComponent("mcp_server", dependencies=["llm_coordinator", "database"])) # Example
-
-            # Add other components as defined in the architecture
-            self.logger.info(f"Registered components: {self.registry.get_all_names()}")
-
-        except Exception as e:
-            self.logger.critical(f"Failed to register components: {e}. Application cannot start.", exc_info=True)
-            sys.exit(1)
-
-    def _setup_signal_handlers(self):
-        """Sets up handlers for termination signals (SIGINT, SIGTERM)."""
-        signals_to_handle = [signal.SIGINT, signal.SIGTERM]
-        for sig in signals_to_handle:
-            try:
-                signal.signal(sig, self._handle_shutdown_signal)
-                self.logger.debug(f"Registered shutdown handler for signal {sig}.")
-            except ValueError:
-                 # May happen if run in an environment where signals can't be set (e.g., some Windows setups)
-                 self.logger.warning(f"Could not register handler for signal {sig}. Graceful shutdown via signals might not work.")
-            except Exception as e:
-                 self.logger.error(f"Error registering signal handler for {sig}: {e}", exc_info=True)
-
-
-    def _handle_shutdown_signal(self, signum, frame):
-        """Signal handler function to initiate graceful shutdown."""
-        signal_name = signal.Signals(signum).name
-        self.logger.warning(f"Received signal {signal_name} ({signum}). Initiating graceful shutdown...")
-        # Use the shutdown event to signal the main loop (if any) or trigger shutdown directly
-        self.shutdown()
-        # Optionally, re-raise the signal if needed for parent processes
-        # signal.signal(signum, signal.SIG_DFL)
-        # os.kill(os.getpid(), signum)
-        sys.exit(0) # Exit after shutdown attempt
-
-
-    def start(self):
+    def _setup_signal_handlers(self) -> None:
         """
-        Starts the application: initializes all components in the correct order.
-        This method blocks if the application runs a main loop, or returns after init.
+        [Function intent]
+        Sets up handlers for termination signals.
+        
+        [Implementation details]
+        Registers handlers for SIGINT and SIGTERM signals.
+        
+        [Design principles]
+        Simple signal handling for graceful shutdown.
+        """
+        try:
+            for sig in [signal.SIGINT, signal.SIGTERM]:
+                signal.signal(sig, self._handle_shutdown_signal)
+                logger.debug(f"Registered handler for signal {sig}")
+        except (ValueError, AttributeError) as e:
+            logger.warning(f"Could not setup signal handlers: {e}")
+
+    def _handle_shutdown_signal(self, signum, frame) -> None:
+        """
+        [Function intent]
+        Handles termination signals by initiating shutdown.
+        
+        [Implementation details]
+        Logs signal information and calls shutdown method.
+        
+        [Design principles]
+        Clean signal handling with explicit shutdown.
+        
+        Args:
+            signum: Signal number received
+            frame: Current stack frame
+        """
+        try:
+            signal_name = signal.Signals(signum).name
+            logger.warning(f"Received signal {signal_name} ({signum}). Shutting down...")
+        except (ValueError, AttributeError):
+            logger.warning(f"Received signal {signum}. Shutting down...")
+            
+        # Initiate shutdown
+        self.shutdown()
+        sys.exit(0)
+
+    def _register_components(self) -> None:
+        """
+        [Function intent]
+        Registers all application components directly with the component system.
+        
+        [Implementation details]
+        Creates and registers component instances directly in code.
+        
+        [Design principles]
+        Direct component registration without factories.
+        Clear error reporting for registration failures.
+        """
+        logger.info("Registering components...")
+        
+        try:
+            # Register config manager component if available
+            if ConfigManagerComponent and self.config_manager:
+                self.system.register(ConfigManagerComponent(self.config_manager))
+                logger.debug("Registered config_manager component")
+                
+            # Register database components
+            try:
+                from ..database.database import DatabaseComponent
+                self.system.register(DatabaseComponent())
+                logger.debug("Registered database component")
+            except ImportError as e:
+                logger.error(f"Failed to register database component: {e}")
+            
+            # Register monitoring components
+            try:
+                from ..fs_monitor.component import FileSystemMonitorComponent
+                self.system.register(FileSystemMonitorComponent())
+                logger.debug("Registered fs_monitor component")
+            except ImportError as e:
+                logger.error(f"Failed to register fs_monitor component: {e}")
+                
+            try:
+                from ..fs_monitor.filter import FilterComponent
+                self.system.register(FilterComponent())
+                logger.debug("Registered filter component")
+            except ImportError as e:
+                logger.error(f"Failed to register filter component: {e}")
+                
+            try:
+                from ..fs_monitor.queue import ChangeQueueComponent
+                self.system.register(ChangeQueueComponent())
+                logger.debug("Registered change_queue component")
+            except ImportError as e:
+                logger.error(f"Failed to register change_queue component: {e}")
+                
+            # Register processing components
+            try:
+                from ..memory_cache.component import MemoryCacheComponent
+                self.system.register(MemoryCacheComponent())
+                logger.debug("Registered memory_cache component")
+            except ImportError as e:
+                logger.error(f"Failed to register memory_cache component: {e}")
+                
+            try:
+                from ..consistency_analysis.component import ConsistencyAnalysisComponent
+                self.system.register(ConsistencyAnalysisComponent())
+                logger.debug("Registered consistency_analysis component")
+            except ImportError as e:
+                logger.error(f"Failed to register consistency_analysis component: {e}")
+                
+            try:
+                from ..doc_relationships.component import DocRelationshipsComponent
+                self.system.register(DocRelationshipsComponent())
+                logger.debug("Registered doc_relationships component")
+            except ImportError as e:
+                logger.error(f"Failed to register doc_relationships component: {e}")
+                
+            try:
+                from ..recommendation_generator.component import RecommendationGeneratorComponent
+                self.system.register(RecommendationGeneratorComponent())
+                logger.debug("Registered recommendation_generator component")
+            except ImportError as e:
+                logger.error(f"Failed to register recommendation_generator component: {e}")
+                
+            try:
+                from ..scheduler.component import SchedulerComponent
+                self.system.register(SchedulerComponent())
+                logger.debug("Registered scheduler component")
+            except ImportError as e:
+                logger.error(f"Failed to register scheduler component: {e}")
+            except Exception as e:
+                logger.error(f"Failed to register scheduler component: {e}")
+                
+            # Register LLM components
+            try:
+                from ..metadata_extraction.component import MetadataExtractionComponent
+                self.system.register(MetadataExtractionComponent())
+                logger.debug("Registered metadata_extraction component")
+            except ImportError as e:
+                logger.error(f"Failed to register metadata_extraction component: {e}")
+                
+            try:
+                from ..llm_coordinator.component import LLMCoordinatorComponent
+                self.system.register(LLMCoordinatorComponent())
+                logger.info("Registered llm_coordinator component - CRITICAL for query processing")
+            except ImportError as e:
+                logger.error(f"Failed to register llm_coordinator component: {e}")
+                
+            # Register API components
+            try:
+                from ..mcp_server.component import MCPServerComponent
+                self.system.register(MCPServerComponent())
+                logger.debug("Registered mcp_server component")
+            except ImportError as e:
+                logger.error(f"Failed to register mcp_server component: {e}")
+                
+        except Exception as e:
+            logger.critical(f"Failed to register components: {e}", exc_info=True)
+            raise
+
+    def start(self) -> bool:
+        """
+        [Function intent]
+        Starts the application by initializing all components.
+        
+        [Implementation details]
+        Acquires lock, initializes components through the component system,
+        and handles initialization failures.
+        
+        [Design principles]
+        Simple startup process with clear status reporting.
+        
+        Returns:
+            bool: True if startup succeeded, False otherwise
         """
         with self._lock:
             if self._is_running:
-                 logger.warning("Application is already running.")
-                 return
-            self._is_running = True
-
+                logger.warning("Application is already running")
+                return True
+                
+            logger.info("Starting Documentation-Based Programming system...")
+            
         try:
-            self.logger.info("Starting Documentation-Based Programming system...")
-            # Initialize components via the orchestrator
-            success = self.orchestrator.initialize_all()
-
+            # Initialize all components via the component system
+            success = self.system.initialize_all()
+            
             if success:
-                self.logger.info("System startup complete. Application is running.")
-                # If this were a long-running server, start the main loop here.
-                # For a CLI or batch tool, startup might be all that's needed.
-                # Example: Keep running until shutdown signal
-                # while not self._shutdown_event.is_set():
-                #     time.sleep(1)
-                # self.logger.info("Shutdown signal received, exiting main loop.")
-
+                with self._lock:
+                    self._is_running = True
+                logger.info("System startup complete. Application is running.")
+                return True
             else:
-                 self.logger.error("System startup failed due to component initialization errors.")
-                 self._is_running = False # Mark as not running on failed start
-                 # Shutdown might have already been called by orchestrator's rollback
-                 # self.shutdown() # Ensure shutdown is called if rollback didn't happen
-                 sys.exit(1) # Exit with error code
+                logger.error("System startup failed due to component initialization errors.")
+                return False
+                
+        except Exception as e:
+            logger.critical(f"A critical error occurred during system startup: {e}", exc_info=True)
+            return False
 
-        except (CircularDependencyError, RuntimeError, Exception) as e:
-            self.logger.critical(f"A critical error occurred during system startup: {e}", exc_info=True)
-            self._is_running = False
-            # Attempt shutdown even on critical error during startup
-            self.shutdown()
-            sys.exit(1)
-        # except KeyboardInterrupt:
-        #      self.logger.warning("Keyboard interrupt received during startup.")
-        #      self.shutdown()
-        #      sys.exit(1)
-
-
-    def shutdown(self):
+    def shutdown(self) -> None:
         """
-        Shuts down the application gracefully by terminating components
-        in the reverse order of initialization.
+        [Function intent]
+        Shuts down the application by stopping all components.
+        
+        [Implementation details]
+        Acquires lock, shuts down components through the component system,
+        and clears running state.
+        
+        [Design principles]
+        Simple shutdown process with clear status reporting.
+        
+        Returns:
+            None
         """
         with self._lock:
-             if not self._is_running and not self.orchestrator._initialized_components:
-                  logger.info("Application not running or no components initialized, shutdown not needed.")
-                  return
-             logger.info("Initiating system shutdown...")
-             self._shutdown_event.set() # Signal any waiting loops
+            if not self._is_running:
+                logger.info("Application not running, shutdown not needed.")
+                return
+                
+            logger.info("Initiating system shutdown...")
+            self._shutdown_event.set()
 
-        # Perform shutdown via the orchestrator
         try:
-            self.orchestrator.shutdown_all()
-            self.logger.info("System shutdown complete.")
+            # Shutdown components via the component system
+            self.system.shutdown_all()
+            logger.info("System shutdown complete.")
+            
         except Exception as e:
-            self.logger.error(f"An error occurred during system shutdown: {e}", exc_info=True)
+            logger.error(f"An error occurred during system shutdown: {e}", exc_info=True)
+            
         finally:
-             self._is_running = False
+            with self._lock:
+                self._is_running = False
 
 
-# Example of how to run the application
-# if __name__ == "__main__":
-#     # Pass command line arguments (excluding script name)
-#     lifecycle_manager = LifecycleManager(cli_args=sys.argv[1:])
-#     try:
-#         lifecycle_manager.start()
-#         # If start() doesn't block, potentially wait here or do other work
-#         # For example, wait indefinitely until shutdown signal
-#         print("Application started. Press Ctrl+C to exit.")
-#         while True:
-#              time.sleep(3600) # Sleep for a long time, waiting for signals
-#     except KeyboardInterrupt:
-#          print("\nCtrl+C detected. Shutting down...")
-#          lifecycle_manager.shutdown()
-#     except Exception as e:
-#          print(f"\nApplication exited due to error: {e}")
-#          # Shutdown might have already been called in start() on error
-#          # lifecycle_manager.shutdown() # Ensure shutdown happens
-#          sys.exit(1)
-#     finally:
-#          print("Application finished.")
+# Example usage:
+def run_application(cli_args: Optional[List[str]] = None) -> int:
+    """
+    [Function intent]
+    Runs the application with the simplified lifecycle management.
+    
+    [Implementation details]
+    Creates lifecycle manager, starts components, waits for shutdown signal.
+    
+    [Design principles]
+    Simple application entry point with clear lifecycle.
+    
+    Args:
+        cli_args: Optional command-line arguments
+        
+    Returns:
+        int: Exit code (0 for success, non-zero for errors)
+    """
+    try:
+        # Create and start the lifecycle manager
+        manager = LifecycleManager(cli_args)
+        
+        if not manager.start():
+            logger.error("Application failed to start")
+            return 1
+            
+        # For interactive applications, wait for shutdown signal
+        # For CLI tools, can return immediately after start
+        
+        # Example: Wait for signal or other shutdown trigger
+        try:
+            # Replace with appropriate wait mechanism for your app type
+            manager._shutdown_event.wait()
+        except KeyboardInterrupt:
+            logger.info("Keyboard interrupt received")
+        
+        # Shutdown gracefully
+        manager.shutdown()
+        return 0
+        
+    except Exception as e:
+        logger.critical(f"Unhandled exception: {e}", exc_info=True)
+        return 1
+
+
+# Entry point
+if __name__ == "__main__":
+    sys.exit(run_application(sys.argv[1:]))

@@ -37,6 +37,14 @@
 # - doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-16T16:12:00Z : Added startup verification and restart functionality by CodeAssistant
+# * Added support for creating startup signal file for reliable startup detection
+# * Added health check capability with timeout for server verification
+# * Improved error logging with rotating file handlers
+# * Fixed code structure and indentation for better readability
+# 2025-04-16T14:30:46Z : Updated tool imports to match DESIGN.md by CodeAssistant
+# * Modified imports to reference only the public tools defined in DESIGN.md (GeneralQueryTool, CommitMessageTool)
+# * Removed imports for internal tools that should be defined in internal_tools directory
 # 2025-04-15T16:37:00Z : Created __main__.py file by CodeAssistant
 # * Implemented entry point for MCP server module with detailed logging
 ###############################################################################
@@ -45,6 +53,7 @@ import argparse
 import logging
 import sys
 import os
+import time
 import traceback
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Tuple
@@ -52,8 +61,17 @@ from typing import Dict, Any, Optional, List, Tuple
 # Configure logging to file for better diagnostics
 def setup_logging(log_level: str, log_file: Optional[Path] = None) -> None:
     """
-    Set up logging configuration with optional file output.
-
+    [Function intent]
+    Set up logging configuration with optional file output and rotation.
+    
+    [Implementation details]
+    Configures both console and file logging with appropriate formatting.
+    Uses RotatingFileHandler to manage log file size and prevent unlimited growth.
+    
+    [Design principles]
+    Centralized logging setup with consistent formatting across handlers.
+    Prevents log files from growing unbounded with rotation mechanism.
+    
     Args:
         log_level: Logging level (debug, info, warning, error)
         log_file: Optional path to log file
@@ -66,7 +84,12 @@ def setup_logging(log_level: str, log_file: Optional[Path] = None) -> None:
     if log_file:
         # Ensure directory exists
         log_file.parent.mkdir(parents=True, exist_ok=True)
-        handlers.append(logging.FileHandler(log_file, mode='a'))
+        
+        # Create a rotating file handler to manage log file size
+        from logging.handlers import RotatingFileHandler
+        handlers.append(RotatingFileHandler(log_file, mode='a', 
+                                           maxBytes=10*1024*1024,  # 10MB
+                                           backupCount=3))
     
     logging.basicConfig(
         level=numeric_level,
@@ -79,7 +102,17 @@ def setup_logging(log_level: str, log_file: Optional[Path] = None) -> None:
     logging.getLogger('dbp.core').setLevel(numeric_level)
 
 def parse_arguments() -> argparse.Namespace:
-    """Parse command-line arguments."""
+    """
+    [Function intent]
+    Parse command-line arguments for the MCP server.
+    
+    [Implementation details]
+    Sets up argument parser with options for host, port, logging, and startup verification.
+    
+    [Design principles]
+    Provides sensible defaults while allowing customization.
+    Includes options for startup verification to ensure server availability.
+    """
     parser = argparse.ArgumentParser(description='MCP Server for Document-Based Programming')
     
     parser.add_argument('--host', type=str, default='localhost',
@@ -91,12 +124,28 @@ def parse_arguments() -> argparse.Namespace:
                         help='Logging level')
     parser.add_argument('--log-file', type=str,
                         help='Path to log file')
+    parser.add_argument('--startup-timeout', type=int, default=30,
+                        help='Timeout in seconds to wait for server startup')
+    parser.add_argument('--startup-check', action='store_true',
+                        help='Perform health check after starting to verify server is responsive')
     
     return parser.parse_args()
 
 def main() -> int:
     """
+    [Function intent]
     Main entry point for the MCP server.
+    
+    [Implementation details]
+    Orchestrates the server startup sequence: parses arguments, sets up logging,
+    initializes components via LifecycleManager, and starts the server.
+    Creates a startup signal file for external process coordination.
+    Optionally performs health checks to verify server responsiveness.
+    
+    [Design principles]
+    Progressive initialization with detailed error reporting at each step.
+    Coordinated startup signaling for external monitoring.
+    Graceful shutdown with proper resource cleanup.
     
     Returns:
         Exit code (0 for success, non-zero for errors)
@@ -112,6 +161,9 @@ def main() -> int:
     
     logger.info(f"Starting MCP server on {args.host}:{args.port}")
     logger.debug(f"Arguments: {args}")
+    
+    # Signal file to be used for startup indication
+    startup_signal_file = Path.home() / '.dbp' / 'mcp_server_started'
     
     try:
         # Import here to avoid circular imports
@@ -158,8 +210,7 @@ def main() -> int:
         try:
             try:
                 from .tools import (
-                    AnalyzeDocumentConsistencyTool, GenerateRecommendationsTool, 
-                    ApplyRecommendationTool, GeneralQueryTool
+                    GeneralQueryTool, CommitMessageTool
                 )
                 logger.debug("Successfully imported tool classes")
             except ImportError as e:
@@ -182,68 +233,105 @@ def main() -> int:
             logger.debug("Import error details:", exc_info=True)
             return 1
         
-        # Create and start the component
-        logger.info("Initializing MCPServerComponent")
+        # Use the LifecycleManager to handle component registration and initialization
+        logger.info("Starting MCP server using LifecycleManager")
         try:
-            component = MCPServerComponent()
-            
-            # Use proper component initialization pattern for consistency
-            from ..core.registry import ComponentRegistry
-            from ..core.component import InitializationContext
             from ..config.config_manager import ConfigurationManager
-            from ..config.component import ConfigManagerComponent
+            from ..core.lifecycle import LifecycleManager
             
-            # Create the registry for component management
-            registry = ComponentRegistry()
-            
-            # Get the ConfigurationManager singleton and initialize it
-            config_manager = ConfigurationManager()
-            config_manager.initialize()  # Initialize with default settings
+            # Create CLI args for the lifecycle manager
+            cli_args = []
             
             # Set MCP server config values
-            config_manager.set("mcp_server.host", args.host)
-            config_manager.set("mcp_server.port", args.port)
-            config_manager.set("mcp_server.server_name", "dbp-mcp-server")
-            config_manager.set("mcp_server.server_description", "MCP Server for DBP")
-            config_manager.set("mcp_server.server_version", "1.0.0")
-            config_manager.set("mcp_server.auth_enabled", False)
+            cli_args.append("--mcp-server.host=" + args.host)
+            cli_args.append("--mcp-server.port=" + str(args.port))
+            cli_args.append("--mcp-server.server-name=dbp-mcp-server")
+            cli_args.append("--mcp-server.server-description=MCP Server for DBP")
+            cli_args.append("--mcp-server.server-version=1.0.0")
+            cli_args.append("--mcp-server.auth-enabled=false")
             
-            # Register the config_manager component
-            registry.register(ConfigManagerComponent(config_manager))
+            # Create and initialize the lifecycle manager
+            lifecycle = LifecycleManager(cli_args)
             
-            # Create the initialization context with proper registry
-            context = InitializationContext(
-                logger=logger.getChild("component"),
-                config=config_manager.as_dict(),
-                component_registry=registry,
-                resolver=None
-            )
+            # Start all components (which will register MCPServerComponent)
+            if not lifecycle.start():
+                logger.critical("Failed to start components")
+                return 1
+                
+            logger.info("All components started successfully")
+                
+            # Access the MCP server component directly to start the server
+            # (since LifecycleManager doesn't do that automatically)
+            # Get the MCP server component from the system
+            component = lifecycle.system.components.get("mcp_server")
+            if not component:
+                logger.critical("MCP server component not found in registry")
+                return 1
             
-            # Initialize the component
-            logger.info("Starting MCPServerComponent")
-            component.initialize(context)
+            if not component.is_initialized:
+                logger.critical("MCP server component was not properly initialized")
+                return 1
             
-            # Run the server (this should block until server exit)
+            # Signal file to indicate successful startup
+            try:
+                with open(startup_signal_file, 'w') as f:
+                    f.write(str(os.getpid()))
+                logger.debug(f"Created startup signal file at {startup_signal_file}")
+            except Exception as e:
+                logger.warning(f"Failed to create startup signal file: {e}")
+
+            # Perform health check if requested
+            if args.startup_check:
+                try:
+                    import requests
+                    from urllib.parse import urljoin
+                    base_url = f"http://{args.host}:{args.port}"
+                    
+                    # Try to connect to the health endpoint
+                    logger.info("Performing server health check...")
+                    start_time = time.time()
+                    while time.time() - start_time < args.startup_timeout:
+                        try:
+                            health_url = urljoin(base_url, "/health")
+                            response = requests.get(health_url, timeout=2)
+                            if response.status_code == 200:
+                                logger.info("Server health check passed")
+                                break
+                        except Exception:
+                            # Wait and retry
+                            time.sleep(1)
+                    else:
+                        logger.warning("Server health check timed out, but continuing...")
+                except Exception as e:
+                    logger.warning(f"Health check setup failed: {e}")
+            
+            # Start the server (this should block until server exit)
             logger.info("Starting MCP server...")
-            component.start_server()  # Method is called start_server, not start
-            
-            # Keep the main thread alive
-            logger.info("Server running. Press Ctrl+C to stop.")
-            import signal
-            
-            def handle_signal(signum, frame):
-                logger.info(f"Received signal {signum}, shutting down...")
-                component.stop_server()
-                component.shutdown()
-                sys.exit(0)
+            try:
+                # Method is called start_server, not start
+                component.start_server()
+            except KeyboardInterrupt:
+                logger.info("Keyboard interrupt received.")
+            except Exception as e:
+                logger.critical(f"Failed during server execution: {e}", exc_info=True)
+                return 1
+            finally:
+                # Clean up startup signal file
+                if startup_signal_file.exists():
+                    try:
+                        startup_signal_file.unlink()
+                        logger.debug("Removed startup signal file")
+                    except Exception as e:
+                        logger.warning(f"Failed to remove startup signal file: {e}")
                 
-            signal.signal(signal.SIGINT, handle_signal)
-            signal.signal(signal.SIGTERM, handle_signal)
-            
-            # Keep process alive
-            while True:
-                signal.pause()
-                
+                # Shutdown gracefully
+                logger.info("Shutting down MCP server...")
+                try:
+                    lifecycle.shutdown()
+                    logger.info("Lifecycle manager shutdown complete")
+                except Exception as e:
+                    logger.error(f"Error during shutdown: {e}")
+        
         except AttributeError as e:
             logger.critical(f"Method not found on component: {e}")
             logger.debug("This suggests the component API doesn't match what __main__.py expects", exc_info=True)

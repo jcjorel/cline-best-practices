@@ -35,9 +35,12 @@
 # - doc/DESIGN.md
 # - scratchpad/dbp_implementation_plan/plan_mcp_integration.md
 # - src/dbp/core/component.py
-# - src/dbp/core/registry.py
+# - src/dbp/core/system.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-16T22:55:41Z : Fixed import path for component registry by CodeAssistant
+# * Updated import from non-existent core.registry to core.system
+# * Updated reference documentation to point to system.py instead of registry.py
 # 2025-04-15T16:42:09Z : Updated adapter to use centralized exceptions by CodeAssistant
 # * Modified imports to use ComponentNotFoundError from exceptions module
 # * Removed local ComponentNotFoundError class definition
@@ -51,7 +54,7 @@ from typing import Optional, Any, Type, TypeVar, cast
 # Assuming core components are accessible
 try:
     from ..core.component import Component, InitializationContext
-    from ..core.registry import ComponentRegistry # For type hint clarity
+    from ..core.system import ComponentSystem  # Component registry is in system.py
     from .exceptions import ComponentNotFoundError
     
     # Import component types for proper type annotations
@@ -66,7 +69,7 @@ except ImportError:
     # Placeholders
     class Component: pass
     class InitializationContext: pass
-    class ComponentRegistry: pass # Placeholder
+    class ComponentSystem: pass # Placeholder
     class ComponentNotFoundError(Exception): pass
     
     # Placeholder component types

@@ -48,6 +48,8 @@ import select
 import struct
 import threading
 import logging
+import time
+from pathlib import Path
 from typing import Dict, Set, Optional
 
 # Try to import inotify library
@@ -57,8 +59,9 @@ try:
     HAS_INOTIFY = True
 except ImportError:
     HAS_INOTIFY = False
-    # Log warning if library is missing but class is instantiated
-    logging.getLogger(__name__).warning("The 'inotify' library is required for LinuxFileSystemMonitor but was not found. Install it using 'pip install inotify'.")
+    # Log error if library is missing
+    logging.getLogger(__name__).error("The 'inotify' library is required for LinuxFileSystemMonitor but was not found. Install it using 'pip install inotify'.")
+    # We're still loading the module, but will raise an error when instantiated
 
 
 # Assuming base.py is accessible
@@ -97,7 +100,9 @@ class LinuxFileSystemMonitor(FileSystemMonitor):
         super().__init__(config, change_queue)
 
         if not HAS_INOTIFY:
-            raise ImportError("The 'inotify' library is required to use LinuxFileSystemMonitor.")
+            error_msg = "The 'inotify' library is required to use LinuxFileSystemMonitor on Linux. Install it using 'pip install inotify'."
+            logger.critical(error_msg)
+            raise ImportError(error_msg)
 
         self._inotify = None
         self._watch_descriptors: Dict[int, str] = {}  # Maps watch descriptors (wd) to paths

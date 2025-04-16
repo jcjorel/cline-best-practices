@@ -224,7 +224,7 @@ class MacOSFileSystemMonitor(FileSystemMonitor):
             # self._watches[path] = stream # Maybe not safe if stream is broken
 
 
-    def _handle_event(self, event: fsevents.Event):
+    def _handle_event(self, event):
         """
         Callback function executed by the fsevents library when an event occurs.
 

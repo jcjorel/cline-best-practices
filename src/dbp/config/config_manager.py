@@ -44,6 +44,8 @@
 # - scratchpad/dbp_implementation_plan/plan_config_management.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-16T16:20:07Z : Added missing BaseModel import by CodeAssistant
+# * Fixed NameError in get() method by adding missing import from pydantic
 # 2025-04-15T09:36:15Z : Initial creation of ConfigurationManager class by CodeAssistant
 # * Implemented singleton structure, loading logic for files/env/cli, merging, and access methods.
 ###############################################################################
@@ -57,7 +59,7 @@ from typing import Any, Dict, List, Optional, Union
 from pathlib import Path
 import threading
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 # Assuming config_schema.py is in the same directory or accessible
 try:

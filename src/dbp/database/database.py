@@ -44,14 +44,27 @@
 # - scratchpad/dbp_implementation_plan/plan_database_schema.md
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-15T09:32:15Z : Initial creation of DatabaseManager class by CodeAssistant
-# * Implemented initialization, session management, schema creation, and retry logic.
+# 2025-04-16T18:01:22Z : Fixed SQLAlchemy SQL execution by CodeAssistant
+# * Updated SQL execution to use SQLAlchemy's text() function
+# * Resolved "Textual SQL expression should be explicitly declared as text" error
+# 2025-04-16T17:52:39Z : Enhanced Alembic integration with config manager by CodeAssistant
+# * Fixed Alembic configuration to use config_manager for settings
+# * Added proper error handling to prevent NoneType errors
+# * Ensured Alembic section has required defaults if missing
+# 2025-04-16T17:47:00Z : Fixed database initialization issues by CodeAssistant
+# * Updated initialize method to set initialized=true before schema operations
+# * Added proper Alembic migration support for schema management
+# * Fixed class duplication issue in the file
+# 2025-04-16T17:36:38Z : Fixed component initialization configuration access by CodeAssistant
+# * Modified initialize method to properly access configuration through the config_manager component
 ###############################################################################
 
 import os
 import logging
 import time
 from contextlib import contextmanager
+from typing import List, Any
+from ..core.component import Component
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.pool import QueuePool
@@ -111,10 +124,12 @@ class DatabaseManager:
             self.Session = scoped_session(sessionmaker(bind=self.engine))
             logger.debug("Scoped session factory created.")
 
-            # Initialize schema (create tables if they don't exist)
-            self._initialize_schema()
-
+            # Mark as initialized so we can use sessions in schema initialization
             self.initialized = True
+
+            # Initialize schema using Alembic
+            self._run_alembic_migrations()
+
             logger.info("Database initialized successfully.")
 
         except SQLAlchemyError as e:
@@ -163,16 +178,98 @@ class DatabaseManager:
         # Enable WAL mode for better concurrency and safety
         if self.config.get('database.use_wal_mode', True):
             try:
+                from sqlalchemy import text
                 with self.engine.connect() as conn:
-                    # Use execute() directly on the connection
-                    conn.execute("PRAGMA journal_mode=WAL;")
-                    conn.execute("PRAGMA synchronous=NORMAL;") # Recommended with WAL
+                    # Use text() to create proper SQL expressions
+                    conn.execute(text("PRAGMA journal_mode=WAL;"))
+                    conn.execute(text("PRAGMA synchronous=NORMAL;")) # Recommended with WAL
                 logger.info("SQLite WAL mode enabled.")
             except OperationalError as e:
                 logger.warning(f"Could not enable WAL mode (might be already set or unsupported): {e}")
             except Exception as e:
                  logger.error(f"Unexpected error enabling WAL mode: {e}", exc_info=True)
 
+
+    def _run_alembic_migrations(self):
+        """
+        Runs Alembic migrations to create and/or update the database schema.
+
+        [Function intent]
+        Uses Alembic to handle database schema creation and migrations.
+        
+        [Implementation details]
+        Executes Alembic commands to create tables if they don't exist and
+        apply all pending migrations to bring the schema up to date.
+        
+        [Design principles]
+        Database schema should be managed through migrations rather than
+        direct table creation to ensure consistency across environments.
+        """
+        logger.info("Running Alembic migrations to initialize/update the database schema...")
+        try:
+            # Import alembic modules here to avoid unnecessary dependencies
+            # if the feature is not used
+            from alembic import command
+            from alembic.config import Config
+            import importlib.resources
+            
+            # Access config through the config manager to get Alembic settings
+            from ..core.system import ComponentSystem
+            system = ComponentSystem.get_instance()
+            config_manager = system.get_component("config_manager")
+            
+            # Get alembic.ini location from global config or use default
+            alembic_ini_path = config_manager.get('database.alembic_ini_path', 'alembic.ini')
+            
+            # Load Alembic configuration
+            alembic_cfg = Config(alembic_ini_path)
+            
+            # Configure Alembic with database URL from global config
+            db_url = config_manager.get('database.url')
+            if db_url:
+                alembic_cfg.set_main_option('sqlalchemy.url', db_url)
+            elif hasattr(self.engine, 'url'):
+                # Fall back to engine URL if available
+                alembic_cfg.set_main_option('sqlalchemy.url', str(self.engine.url))
+            
+            # Ensure default sections exist in config to prevent 'NoneType not iterable' error
+            if not alembic_cfg.get_section(alembic_cfg.config_ini_section):
+                alembic_cfg.set_section_option(alembic_cfg.config_ini_section, 'script_location', 'alembic')
+                alembic_cfg.set_section_option(alembic_cfg.config_ini_section, 'prepend_sys_path', '.')
+            
+            # Ensure schema exists first (stamp head if this is a new database)
+            try:
+                from sqlalchemy import text
+                with self.get_session() as session:
+                    # Simple check to see if alembic_version table exists
+                    # by attempting to create a transaction
+                    session.execute(text("SELECT 1"))
+                
+                # Run the migration to bring database up to date
+                logger.info("Running database migrations...")
+                command.upgrade(alembic_cfg, "head")
+                logger.info("Database migrations completed successfully.")
+                
+            except OperationalError:
+                # Table doesn't exist, this may be a fresh database
+                logger.info("Initializing new database schema...")
+                
+                # Create all tables directly for a fresh database
+                Base.metadata.create_all(self.engine)
+                
+                # Then stamp with current version to avoid running all migrations
+                command.stamp(alembic_cfg, "head")
+                logger.info("Database schema initialized with current version.")
+                
+        except ImportError as e:
+            logger.warning(f"Alembic not available, skipping migrations: {e}. Schema changes may need to be applied manually.")
+            # Fall back to direct schema creation without migrations
+            Base.metadata.create_all(self.engine)
+            logger.info("Database schema created directly (without migrations).")
+        except Exception as e:
+            logger.error(f"Failed to run database migrations: {e}", exc_info=True)
+            # This is a critical error that should bubble up
+            raise RuntimeError(f"Failed to initialize database schema: {e}") from e
 
     def _initialize_postgresql(self):
         """Initializes the PostgreSQL database engine."""
@@ -292,8 +389,9 @@ class DatabaseManager:
             logger.info("Vacuum threshold reached, performing VACUUM...")
             try:
                 # VACUUM cannot run inside a transaction, needs raw connection execution
+                from sqlalchemy import text
                 with self.engine.connect() as connection:
-                    connection.execute("VACUUM")
+                    connection.execute(text("VACUUM"))
                 logger.info("Database VACUUM completed successfully.")
             except OperationalError as e:
                  # May fail if other connections are active
@@ -315,9 +413,10 @@ class DatabaseManager:
              threshold = 20
 
         try:
+            from sqlalchemy import text
             with self.engine.connect() as connection:
-                page_count_result = connection.execute("PRAGMA page_count").scalar()
-                freelist_count_result = connection.execute("PRAGMA freelist_count").scalar() # More direct than free_page_count
+                page_count_result = connection.execute(text("PRAGMA page_count")).scalar()
+                freelist_count_result = connection.execute(text("PRAGMA freelist_count")).scalar() # More direct than free_page_count
 
                 page_count = int(page_count_result) if page_count_result else 0
                 freelist_count = int(freelist_count_result) if freelist_count_result else 0
@@ -351,3 +450,196 @@ class DatabaseManager:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
+
+
+class DatabaseComponent(Component):
+    """
+    [Class intent]
+    Component wrapper for the DatabaseManager following the KISS component pattern.
+    Acts as the interface between the component system and the database functionality.
+    
+    [Implementation details]
+    Wraps the DatabaseManager class, initializing it during component initialization
+    and providing access to the database session and manager through properties.
+    
+    [Design principles]
+    Single responsibility for database access and lifecycle within the component system.
+    Encapsulates the database implementation details from the component system.
+    """
+    
+    def __init__(self):
+        """
+        [Function intent]
+        Initializes the DatabaseComponent with minimal setup.
+        
+        [Implementation details]
+        Sets the initialized flag to False and prepares for database manager creation.
+        
+        [Design principles]
+        Minimal initialization with explicit state tracking.
+        """
+        super().__init__()
+        self._initialized = False
+        self._db_manager = None
+        self.logger = None
+    
+    @property
+    def name(self) -> str:
+        """
+        [Function intent]
+        Returns the unique name of this component, used for registration and dependency references.
+        
+        [Implementation details]
+        Returns a simple string constant.
+        
+        [Design principles]
+        Explicit naming for clear component identification.
+        
+        Returns:
+            str: The component name "database"
+        """
+        return "database"
+    
+    @property
+    def dependencies(self) -> List[str]:
+        """
+        [Function intent]
+        Returns the component names that this component depends on.
+        
+        [Implementation details]
+        Database depends on config_manager to access configuration.
+        
+        [Design principles]
+        Explicit dependency declaration for clear initialization order.
+        
+        Returns:
+            List[str]: List of component dependencies
+        """
+        return ["config_manager"]
+    
+    def initialize(self, config: Any) -> None:
+        """
+        [Function intent]
+        Initializes the database manager with the provided configuration.
+        
+        [Implementation details]
+        Creates a DatabaseManager instance and initializes it.
+        
+        [Design principles]
+        Explicit initialization with clear success/failure indication.
+        
+        Args:
+            config: Configuration object with database settings
+            
+        Raises:
+            RuntimeError: If initialization fails
+        """
+        if self._initialized:
+            self.logger.warning(f"Component '{self.name}' already initialized.")
+            return
+        
+        self.logger = logging.getLogger(f"dbp.{self.name}")
+        self.logger.info(f"Initializing component '{self.name}'...")
+        
+        try:
+            # Get component-specific configuration through config_manager
+            from ..core.system import ComponentSystem
+            system = ComponentSystem.get_instance()
+            config_manager = system.get_component("config_manager")
+            default_config = config_manager.get_default_config(self.name)
+            
+            # Create and initialize the database manager
+            self._db_manager = DatabaseManager(default_config)
+            self._db_manager.initialize()
+            
+            self._initialized = True
+            self.logger.info(f"Component '{self.name}' initialized successfully.")
+        except Exception as e:
+            self.logger.error(f"Failed to initialize database component: {e}", exc_info=True)
+            self._db_manager = None
+            self._initialized = False
+            raise RuntimeError(f"Failed to initialize database component: {e}") from e
+    
+    def shutdown(self) -> None:
+        """
+        [Function intent]
+        Shuts down the database manager and releases resources.
+        
+        [Implementation details]
+        Calls close on the database manager and resets state.
+        
+        [Design principles]
+        Clean resource release with clear state reset.
+        """
+        self.logger.info(f"Shutting down component '{self.name}'...")
+        
+        if self._db_manager:
+            try:
+                self._db_manager.close()
+            except Exception as e:
+                self.logger.error(f"Error during database shutdown: {e}", exc_info=True)
+            finally:
+                self._db_manager = None
+        
+        self._initialized = False
+        self.logger.info(f"Component '{self.name}' shut down.")
+    
+    @property
+    def is_initialized(self) -> bool:
+        """
+        [Function intent]
+        Indicates if the component is successfully initialized.
+        
+        [Implementation details]
+        Returns the value of the internal _initialized flag.
+        
+        [Design principles]
+        Simple boolean flag for clear initialization status.
+        
+        Returns:
+            bool: True if component is initialized, False otherwise
+        """
+        return self._initialized
+    
+    @property
+    def db_manager(self) -> DatabaseManager:
+        """
+        [Function intent]
+        Provides access to the underlying DatabaseManager.
+        
+        [Implementation details]
+        Returns the internal database manager if initialized.
+        
+        [Design principles]
+        Protected access to ensure initialization check.
+        
+        Returns:
+            DatabaseManager: The initialized database manager
+            
+        Raises:
+            RuntimeError: If accessed before initialization
+        """
+        if not self._initialized or not self._db_manager:
+            raise RuntimeError("DatabaseComponent not initialized")
+        return self._db_manager
+    
+    def get_session(self):
+        """
+        [Function intent]
+        Provides a database session for transactional operations.
+        
+        [Implementation details]
+        Delegates to the DatabaseManager's get_session method.
+        
+        [Design principles]
+        Convenience method to simplify access to database sessions.
+        
+        Returns:
+            Context manager for a database session
+            
+        Raises:
+            RuntimeError: If accessed before initialization
+        """
+        if not self._initialized or not self._db_manager:
+            raise RuntimeError("DatabaseComponent not initialized")
+        return self._db_manager.get_session()

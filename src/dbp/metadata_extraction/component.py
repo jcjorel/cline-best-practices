@@ -31,7 +31,8 @@
 ###############################################################################
 # [Source file constraints]
 # - Depends on the core component framework (`Component`, `InitializationContext`).
-# - Depends on all helper classes within the `metadata_extraction` package.
+# - Depends on the centralized LLMPromptManager from src/dbp/llm package.
+# - Depends on helper classes within the `metadata_extraction` package.
 # - Requires dependent components (like 'database') to be registered and initialized first.
 # - Assumes configuration for metadata extraction is available via the InitializationContext.
 ###############################################################################
@@ -43,6 +44,9 @@
 # - All other files in src/dbp/metadata_extraction/
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-16T12:40:00Z : Updated to use centralized LLMPromptManager by Cline
+# * Switched to import LLMPromptManager from dbp.llm instead of local module
+# * Removed dependency on local prompts.py module that was deprecated
 # 2025-04-15T09:55:45Z : Initial creation of MetadataExtractionComponent by CodeAssistant
 # * Implemented Component protocol methods and initialization of internal services.
 ###############################################################################
@@ -65,7 +69,7 @@ except ImportError:
 
 # Imports for internal services
 try:
-    from .prompts import LLMPromptManager
+    from ..llm import LLMPromptManager
     from .bedrock_client import BedrockClient
     from .response_parser import ResponseParser
     from .result_processor import ExtractionResultProcessor

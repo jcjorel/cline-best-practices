@@ -43,6 +43,8 @@
 # [GenAI tool change history]
 # 2025-04-15T10:30:45Z : Initial creation of analyzer classes by CodeAssistant
 # * Implemented ABC and placeholder concrete analyzer classes.
+# 2025-04-16T14:11:30Z : Fixed placeholder classes for import failures by CodeAssistant
+# * Added proper placeholder implementation for enum classes to fix AttributeError
 ###############################################################################
 
 import logging
@@ -64,17 +66,37 @@ try:
 except ImportError as e:
     logging.getLogger(__name__).error(f"ConsistencyAnalyzer ImportError: {e}. Check package structure.", exc_info=True)
     # Placeholders
-    ConsistencyRule = object
-    InconsistencyRecord = object
-    InconsistencyType = object
-    InconsistencySeverity = object
-    InconsistencyStatus = object
+    # Create placeholder classes to ensure code can still be parsed
+    class ConsistencyRule:
+        def __init__(self, rule_id, analysis_type, description):
+            self.rule_id = rule_id
+            self.analysis_type = analysis_type
+            self.description = description
+
+    class InconsistencyRecord:
+        def __init__(self, inconsistency_type, description, severity, source_file, target_file, details):
+            self.inconsistency_type = inconsistency_type
+            self.description = description
+            self.severity = severity
+            self.source_file = source_file
+            self.target_file = target_file
+            self.details = details
+    
+    # Create enum-like classes with required attributes
+    class InconsistencyType:
+        OTHER = "other"
+    
+    class InconsistencySeverity:
+        LOW = "low"
+        MEDIUM = "medium"
+        HIGH = "high"
+    
+    class InconsistencyStatus:
+        OPEN = "open"
+    
     MetadataExtractionComponent = object
     DocRelationshipsComponent = object
     Component = object
-    # Dummy Enum for placeholder
-    class Enum:
-        def __init__(self, value): self.value = value
 
 
 logger = logging.getLogger(__name__)

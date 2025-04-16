@@ -28,6 +28,8 @@
 # - doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-16T20:13:29Z : Updated class name from BackgroundTaskSchedulerComponent to SchedulerComponent by CodeAssistant
+# * Updated all references to reflect the class name change in component.py
 # 2025-04-15T21:58:23Z : Added GenAI header to comply with documentation standards by CodeAssistant
 # * Added complete header template with appropriate sections
 ###############################################################################
@@ -42,7 +44,7 @@ Manages a queue of file change events, debounces them, and uses a worker thread
 pool to process the changes (e.g., trigger metadata extraction) in the background.
 
 Key components:
-- BackgroundTaskSchedulerComponent: The main component conforming to the core framework.
+- SchedulerComponent: The main component conforming to the core framework.
 - ChangeDetectionQueue: Manages debounced file change events.
 - WorkerThreadPool: Manages worker threads for processing changes.
 - StatusReporter: Tracks the status and statistics of processing tasks.
@@ -54,10 +56,10 @@ from .queue import ChangeDetectionQueue, FileChange, ChangeType
 from .worker import WorkerThreadPool # WorkerThread is internal detail
 from .status import StatusReporter
 from .controller import SchedulerController
-from .component import BackgroundTaskSchedulerComponent, ComponentNotInitializedError
+from .component import SchedulerComponent, ComponentNotInitializedError
 
 __all__ = [
-    "BackgroundTaskSchedulerComponent",
+    "SchedulerComponent",
     "ChangeDetectionQueue",
     "FileChange",
     "ChangeType",

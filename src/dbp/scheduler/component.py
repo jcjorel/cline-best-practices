@@ -44,11 +44,17 @@
 # - src/dbp/metadata_extraction/component.py (Dependency)
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-16T18:38:53Z : Changed component name from "background_scheduler" to "scheduler" by CodeAssistant
+# * Updated name property to return "scheduler" to match the system's expected name
+# 2025-04-16T18:33:41Z : Renamed component class from BackgroundTaskSchedulerComponent to SchedulerComponent by CodeAssistant
+# * Updated class name to match the expected name in the component system
+# * Updated all related error messages to use the new name
 # 2025-04-15T10:04:25Z : Initial creation of BackgroundTaskSchedulerComponent by CodeAssistant
 # * Implemented Component protocol methods, initialization of internal parts, and control methods.
 ###############################################################################
 
 import logging
+import time
 from typing import List, Optional, Any, Dict
 
 # Core component imports
@@ -59,7 +65,7 @@ try:
     Config = Any
     SchedulerConfig = Any # Placeholder for specific config model if available
 except ImportError:
-    logging.getLogger(__name__).error("Failed to import core component types for BackgroundTaskSchedulerComponent.", exc_info=True)
+    logging.getLogger(__name__).error("Failed to import core component types for SchedulerComponent.", exc_info=True)
     # Placeholders
     class Component: pass
     class InitializationContext: pass
@@ -76,7 +82,7 @@ try:
     from ..fs_monitor import FileSystemMonitor # Assuming base class or factory import
     from ..metadata_extraction.component import MetadataExtractionComponent
 except ImportError as e:
-    logging.getLogger(__name__).error(f"BackgroundTaskSchedulerComponent ImportError: {e}. Check package structure.", exc_info=True)
+    logging.getLogger(__name__).error(f"SchedulerComponent ImportError: {e}. Check package structure.", exc_info=True)
     # Placeholders
     ChangeDetectionQueue = object
     FileChange = object
@@ -94,7 +100,7 @@ class ComponentNotInitializedError(Exception):
     """Exception raised when a component method is called before initialization."""
     pass
 
-class BackgroundTaskSchedulerComponent(Component):
+class SchedulerComponent(Component):
     """
     DBP system component responsible for scheduling and executing background tasks,
     primarily metadata extraction based on file system changes.
@@ -107,7 +113,7 @@ class BackgroundTaskSchedulerComponent(Component):
     @property
     def name(self) -> str:
         """Returns the unique name of the component."""
-        return "background_scheduler"
+        return "scheduler"
 
     @property
     def dependencies(self) -> List[str]:
@@ -162,16 +168,15 @@ class BackgroundTaskSchedulerComponent(Component):
             )
 
             # --- Connect to File System Monitor ---
-            # TODO: This connection needs refinement based on fs_monitor capabilities.
-            # If fs_monitor uses its own queue, the scheduler should consume from that queue
-            # instead of registering a listener here.
-            # If fs_monitor supports listeners:
-            # if hasattr(fs_monitor_component, 'register_change_listener'):
-            #     fs_monitor_component.register_change_listener(self._on_file_change)
-            #     self.logger.info("Registered change listener with File System Monitor.")
-            # else:
-            #     self.logger.warning("FileSystemMonitor component does not support register_change_listener. Scheduler might not receive events.")
-            self.logger.warning("Integration point with FileSystemMonitor needs review: Scheduler currently uses its own queue, not directly consuming fs_monitor events.")
+            # Register ourselves as a listener for file change events
+            if fs_monitor_component and hasattr(fs_monitor_component, 'register_change_listener'):
+                success = fs_monitor_component.register_change_listener(self._on_file_change)
+                if success:
+                    self.logger.info("Successfully registered change listener with File System Monitor.")
+                else:
+                    self.logger.warning("Failed to register change listener with File System Monitor.")
+            else:
+                self.logger.warning("FileSystemMonitor component does not support register_change_listener or is not available.")
 
 
             self._initialized = True
@@ -241,8 +246,8 @@ class BackgroundTaskSchedulerComponent(Component):
         # Combine status from controller and reporter
         status = {
             "running": self._controller.is_running,
-            "queue_size": self._change_queue.size(),
-            "pending_size": self._change_queue.pending_size(),
+            "queue_size": self._change_queue.get_pending_count() if hasattr(self._change_queue, 'get_pending_count') else 0,
+            "pending_size": self._change_queue.get_pending_count() if hasattr(self._change_queue, 'get_pending_count') else 0,
             "active_workers": self._controller.worker_pool.get_active_worker_count(),
             "processing_files": self._controller.worker_pool.get_processing_files(),
             "stats": self._status_reporter.get_stats()

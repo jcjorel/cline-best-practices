@@ -82,15 +82,15 @@ class ConfigManagerComponent(Component):
         # No dependencies - this should be one of the first components initialized
         return []
 
-    def initialize(self, context: InitializationContext) -> None:
+    def initialize(self, config: Any) -> None:
         """
         Initializes the ConfigManagerComponent.
         If the ConfigurationManager is not already initialized, initializes it.
         
         Args:
-            context: The initialization context.
+            config: Configuration object with application settings
         """
-        self.logger = context.logger.getChild(self.name)
+        self.logger = logging.getLogger(f"dbp.{self.name}")
         self.logger.info(f"Initializing component '{self.name}'...")
         
         if not self._config_manager.initialized_flag:

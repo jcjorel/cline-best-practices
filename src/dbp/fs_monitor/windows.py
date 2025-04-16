@@ -49,7 +49,7 @@ import os
 import threading
 import logging
 import time
-from typing import Dict, Set, Optional
+from typing import Dict, Set, Optional, Any
 from pathlib import Path
 import ctypes
 from ctypes import wintypes

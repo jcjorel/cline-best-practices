@@ -150,27 +150,29 @@ class MCPServerComponent(Component):
             "config_manager",      # Needed for default configuration values
         ]
 
-    def initialize(self, context: InitializationContext):
+    def initialize(self, config: Any) -> None:
         """
         Initializes the MCP Server component, setting up the server instance,
         registries, handlers, and registering tools/resources.
 
         Args:
-            context: The initialization context.
+            config: Configuration object with application settings
         """
         if self._initialized:
             logger.warning(f"Component '{self.name}' already initialized.")
             return
 
-        self.logger = context.logger
+        self.logger = logging.getLogger(f"dbp.{self.name}")
         self.logger.info(f"Initializing component '{self.name}'...")
 
         try:
             # Get component-specific configuration
-            mcp_config = context.config.get(self.name, {}) # Assumes dict-like config
+            mcp_config = config.get(self.name, {}) # Assumes dict-like config
 
             # Create adapter to access other components safely
-            self._adapter = SystemComponentAdapter(context, self.logger.getChild("adapter"))
+            from ..core.system import ComponentSystem
+            system = ComponentSystem.get_instance()
+            self._adapter = SystemComponentAdapter(system, config, self.logger.getChild("adapter"))
 
             # Instantiate MCP sub-components
             auth_provider = AuthenticationProvider(config=mcp_config, logger_override=self.logger.getChild("auth")) if mcp_config.get('auth_enabled') else None
@@ -179,7 +181,9 @@ class MCPServerComponent(Component):
             resource_provider = ResourceProvider(logger_override=self.logger.getChild("resource_provider"))
 
             # Get configuration values or use config manager for defaults
-            config_manager = context.get_component("config_manager")
+            from ..core.system import ComponentSystem
+            system = ComponentSystem.get_instance()
+            config_manager = system.get_component("config_manager")
             default_config = config_manager.get_default_config("mcp_server")
             
             # Create the MCP server instance with FastAPI/Uvicorn

@@ -36,10 +36,14 @@
 # - src/dbp/mcp_server/server.py
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-15T14:50:00Z : Initial creation of ServerCommandHandler by CodeAssistant
-# * Implemented command handler for MCP server management
+# 2025-04-16T16:38:00Z : Added server restart option and improved start reliability by CodeAssistant
+# * Added _dump_server_error_logs method to extract and display error logs
+# * Enhanced restart functionality with better error handling and port verification
+# * Added startup verification with signal file detection from server
 # 2025-04-15T23:54:09Z : Fixed context manager issue in _check_status method by CodeAssistant
 # * Changed incorrect usage of progress.start() with 'with' statement to using the with_progress helper method
+# 2025-04-15T14:50:00Z : Initial creation of ServerCommandHandler by CodeAssistant
+# * Implemented command handler for MCP server management
 ###############################################################################
 
 import argparse
@@ -50,8 +54,9 @@ import socket
 import subprocess
 import sys
 import time
+import requests
 from pathlib import Path
-from typing import Optional, Tuple, Dict, Any
+from typing import Optional, Tuple, Dict, Any, List
 
 from .base import BaseCommandHandler
 from ..exceptions import CommandError, ConnectionError
@@ -169,6 +174,55 @@ class ServerCommandHandler(BaseCommandHandler):
             self.output.error(f"Failed to {args.action} server: {e}")
             logger.exception(f"Server {args.action} error", exc_info=True)
             return 1
+
+    def _dump_server_error_logs(self, stderr_log_path: Path, limit: int = 20) -> None:
+        """
+        [Function intent]
+        Extract and display error logs from the server's stderr log file.
+        
+        [Implementation details]
+        Reads the specified log file and extracts the most recent error messages.
+        Formats and displays these messages to provide context for server failures.
+        Includes file paths for full log access.
+        
+        [Design principles]
+        Actionable feedback - provides detailed error information for troubleshooting.
+        Context preservation - displays enough log lines to understand the failure.
+        
+        Args:
+            stderr_log_path: Path to the server's stderr log file
+            limit: Maximum number of log lines to display
+            
+        Returns:
+            None
+        """
+        try:
+            if not stderr_log_path.exists():
+                self.output.warning(f"Server log file does not exist: {stderr_log_path}")
+                return
+                
+            with open(stderr_log_path, "r") as f:
+                # Read all lines and get the last 'limit' lines
+                lines = f.readlines()
+                if not lines:
+                    self.output.warning("Server log file is empty")
+                    return
+                    
+                # Capture the most recent log entries
+                error_lines = lines[-limit:]
+                
+                # Display them with proper formatting
+                self.output.error("Recent server error log:")
+                for line in error_lines:
+                    line = line.strip()
+                    if "ERROR" in line or "CRITICAL" in line:
+                        self.output.error(f"  {line}")
+                    else:
+                        self.output.info(f"  {line}")
+                        
+                self.output.info(f"Full server logs available at: {stderr_log_path}")
+        except Exception as e:
+            self.output.error(f"Failed to read error log: {e}")
     
     def _start_server(self, args: argparse.Namespace) -> int:
         """
@@ -218,7 +272,8 @@ class ServerCommandHandler(BaseCommandHandler):
             sys.executable, "-m", "dbp.mcp_server",
             "--host", args.host,
             "--port", str(args.port),
-            "--log-level", args.log_level
+            "--log-level", args.log_level,
+            "--startup-check"  # Add startup verification
         ]
         
         try:
@@ -255,28 +310,74 @@ class ServerCommandHandler(BaseCommandHandler):
                 with open(self.PID_FILE, "w") as f:
                     f.write(str(process.pid))
                 
-                # Wait briefly and check if process is still running
-                time.sleep(1)
+                # Process is started, now wait for it to initialize
+                self.output.info("Process started, waiting for server initialization...")
+                
+                # Give the server some time to initialize
+                startup_timeout = 30  # seconds
+                startup_signal_file = Path.home() / '.dbp' / 'mcp_server_started'
+                
+                # Initial check if process is still running
                 if process.poll() is not None:
                     # Server failed to start, read error logs
                     self.output.error(f"Server failed to start (exit code: {process.returncode})")
-                    
-                    # Try to read recent error logs
-                    try:
-                        with open(stderr_log, "r") as f:
-                            # Read last 20 lines
-                            lines = f.readlines()[-20:]
-                            if lines:
-                                self.output.error("Recent server error log:")
-                                for line in lines:
-                                    self.output.error(f"  {line.strip()}")
-                    except Exception as e:
-                        logger.error(f"Failed to read error log: {e}")
-                    
+                    self._dump_server_error_logs(stderr_log)
                     self.output.info(f"Full server logs available at:")
                     self.output.info(f"  - Stdout: {stdout_log}")
                     self.output.info(f"  - Stderr: {stderr_log}")
                     return 1
+                
+                # Wait for startup signal or timeout
+                start_time = time.time()
+                while time.time() - start_time < startup_timeout:
+                    # Check for startup signal file
+                    if startup_signal_file.exists():
+                        self.output.info("Server startup signal detected")
+                        break
+                        
+                    # Check if process is still running
+                    if process.poll() is not None:
+                        self.output.error(f"Server failed during startup (exit code: {process.returncode})")
+                        self._dump_server_error_logs(stderr_log)
+                        self.output.info(f"Full server logs available at:")
+                        self.output.info(f"  - Stdout: {stdout_log}")
+                        self.output.info(f"  - Stderr: {stderr_log}")
+                        return 1
+                        
+                    # Wait a bit before checking again
+                    time.sleep(0.5)
+                
+                # Check server responsiveness
+                self.output.info("Verifying server responsiveness...")
+                
+                # Try to connect to the server API
+                server_url = f"http://{args.host}:{args.port}"
+                connection_timeout = 10  # seconds
+                start_time = time.time()
+                
+                while time.time() - start_time < connection_timeout:
+                    try:
+                        # Use a simple request to the health endpoint
+                        response = requests.get(f"{server_url}/health", timeout=2)
+                        if response.status_code == 200:
+                            self.output.info("Server health check passed")
+                            break
+                    except Exception:
+                        # Check if process died
+                        if process.poll() is not None:
+                            self.output.error(f"Server crashed during startup (exit code: {process.returncode})")
+                            self._dump_server_error_logs(stderr_log)
+                            self.output.info(f"Full server logs available at:")
+                            self.output.info(f"  - Stdout: {stdout_log}")
+                            self.output.info(f"  - Stderr: {stderr_log}")
+                            return 1
+                        
+                        # Wait a bit and retry
+                        time.sleep(1)
+                else:
+                    # Server is running but not responsive
+                    self.output.warning("Server process is running but not yet responding to API requests")
+                    self.output.warning("This may be normal if initialization is still in progress")
                 
                 self.output.success(f"MCP server started (PID: {process.pid})")
                 self.output.info(f"Server logs available at:")
@@ -359,12 +460,14 @@ class ServerCommandHandler(BaseCommandHandler):
         
         [Implementation details]
         Stops any running instance of the server using _stop_server.
-        Waits briefly to ensure complete shutdown and port release.
+        Waits to ensure complete shutdown and port release.
         Starts a new server instance with the provided arguments using _start_server.
+        Verifies successful restart by checking server responsiveness.
         
         [Design principles]
         Composition - reuses _stop_server and _start_server methods.
         Safety delay - waits between stop and start to ensure clean restart.
+        Verification - checks that the server is responsive after restart.
         
         Args:
             args: Command arguments containing host, port, foreground flag, log level, and timeout
@@ -375,12 +478,33 @@ class ServerCommandHandler(BaseCommandHandler):
         self.output.info("Restarting MCP server...")
         
         # Stop the server if it's running
+        self.output.info("Stopping server...")
         stop_args = argparse.Namespace()
         stop_args.timeout = args.timeout
-        self._stop_server(stop_args)
+        stop_result = self._stop_server(stop_args)
         
-        # Give it a moment to fully shut down
-        time.sleep(1)
+        if stop_result != 0 and self._get_server_pid() is not None:
+            self.output.error("Failed to stop server cleanly")
+            return 1
+            
+        # Wait for port to be available
+        self.output.info("Waiting for port release...")
+        port_wait_time = args.timeout if hasattr(args, 'timeout') else 5
+        port_available = False
+        start_time = time.time()
+        
+        while time.time() - start_time < port_wait_time:
+            if self._is_port_available(args.host, args.port):
+                port_available = True
+                break
+            time.sleep(0.5)
+            
+        if not port_available:
+            self.output.error(f"Port {args.port} is still in use after server stop")
+            self.output.info("You may need to manually free the port or use a different one")
+            return 1
+            
+        self.output.info("Starting server with new settings...")
         
         # Start with new settings
         start_args = argparse.Namespace()
@@ -388,7 +512,14 @@ class ServerCommandHandler(BaseCommandHandler):
         start_args.port = args.port
         start_args.foreground = args.foreground
         start_args.log_level = args.log_level
-        return self._start_server(start_args)
+        start_result = self._start_server(start_args)
+        
+        if start_result != 0:
+            self.output.error("Failed to restart server")
+            return 1
+            
+        self.output.success("MCP server restarted successfully")
+        return 0
     
     def _check_status(self, args: argparse.Namespace) -> int:
         """

@@ -49,9 +49,15 @@ from typing import Optional, Any
 # Assuming base, linux, macos, windows, fallback, queue, filter are accessible
 try:
     from .base import FileSystemMonitor
-    from .linux import LinuxFileSystemMonitor, HAS_INOTIFY
-    from .macos import MacOSFileSystemMonitor, HAS_FSEVENTS
-    from .windows import WindowsFileSystemMonitor, HAS_WIN32
+    # Import with separate statements to avoid syntax errors
+    from .linux import LinuxFileSystemMonitor
+    from .linux import HAS_INOTIFY
+    # Import with separate statements to avoid syntax errors
+    from .macos import MacOSFileSystemMonitor
+    from .macos import HAS_FSEVENTS
+    # Import with separate statements to avoid syntax errors
+    from .windows import WindowsFileSystemMonitor
+    from .windows import HAS_WIN32
     from .fallback import FallbackFileSystemMonitor
     from .queue import ChangeDetectionQueue
     from .filter import GitIgnoreFilter
@@ -60,10 +66,16 @@ except ImportError:
     from base import FileSystemMonitor
     try: from linux import LinuxFileSystemMonitor, HAS_INOTIFY
     except ImportError: LinuxFileSystemMonitor, HAS_INOTIFY = None, False
-    try: from macos import MacOSFileSystemMonitor, HAS_FSEVENTS
-    except ImportError: MacOSFileSystemMonitor, HAS_FSEVENTS = None, False
-    try: from windows import WindowsFileSystemMonitor, HAS_WIN32
-    except ImportError: WindowsFileSystemMonitor, HAS_WIN32 = None, False
+    try:
+        from macos import MacOSFileSystemMonitor
+        from macos import HAS_FSEVENTS
+    except ImportError:
+        MacOSFileSystemMonitor, HAS_FSEVENTS = None, False
+    try:
+        from windows import WindowsFileSystemMonitor
+        from windows import HAS_WIN32
+    except ImportError:
+        WindowsFileSystemMonitor, HAS_WIN32 = None, False
     from fallback import FallbackFileSystemMonitor
     from queue import ChangeDetectionQueue
     from filter import GitIgnoreFilter
@@ -124,16 +136,18 @@ class FileSystemMonitorFactory:
         logger.info(f"Detected Operating System: {system}")
 
         if system == 'Linux':
-            if HAS_INOTIFY and LinuxFileSystemMonitor:
-                try:
-                    monitor = LinuxFileSystemMonitor(config, change_queue)
-                    logger.info("Selected LinuxFileSystemMonitor (inotify).")
-                except ImportError:
-                    logger.warning("inotify library import failed despite check, falling back.")
-                except Exception as e:
-                    logger.error(f"Failed to initialize LinuxFileSystemMonitor: {e}. Falling back.", exc_info=True)
-            else:
-                logger.warning("inotify library not available on Linux. Falling back to polling.")
+            if not HAS_INOTIFY or not LinuxFileSystemMonitor:
+                error_msg = "inotify library is required for Linux file system monitoring. Install it using 'pip install inotify'."
+                logger.critical(error_msg)
+                raise ImportError(error_msg)
+                
+            try:
+                monitor = LinuxFileSystemMonitor(config, change_queue)
+                logger.info("Selected LinuxFileSystemMonitor (inotify).")
+            except Exception as e:
+                error_msg = f"Failed to initialize LinuxFileSystemMonitor: {e}"
+                logger.critical(error_msg)
+                raise RuntimeError(error_msg) from e
 
         elif system == 'Darwin': # macOS
             if HAS_FSEVENTS and MacOSFileSystemMonitor:
@@ -159,14 +173,20 @@ class FileSystemMonitorFactory:
             else:
                 logger.warning("pywin32 library not available on Windows. Falling back to polling.")
 
-        # 3. Fallback to polling monitor if no native monitor was created
-        if monitor is None:
+        # 3. If we reached here without a monitor on Linux, it's an error
+        if monitor is None and system == 'Linux':
+            error_msg = "Could not create appropriate file system monitor for Linux. This is a fatal error."
+            logger.critical(error_msg)
+            raise RuntimeError(error_msg)
+            
+        # For other platforms, still allow fallback as necessary
+        elif monitor is None and system != 'Linux':
             logger.warning("Using FallbackFileSystemMonitor (polling). This may be less efficient.")
             try:
                 monitor = FallbackFileSystemMonitor(config, change_queue)
                 logger.info("Selected FallbackFileSystemMonitor (polling).")
             except Exception as e:
-                 logger.critical(f"Failed to initialize even the FallbackFileSystemMonitor: {e}", exc_info=True)
+                 logger.critical(f"Failed to initialize FallbackFileSystemMonitor: {e}", exc_info=True)
                  raise RuntimeError("Unable to create any file system monitor.") from e
 
         return monitor

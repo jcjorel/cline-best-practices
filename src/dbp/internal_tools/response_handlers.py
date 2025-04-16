@@ -37,6 +37,8 @@
 # - scratchpad/dbp_implementation_plan/plan_internal_tools.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-16T12:14:22Z : Added ResponseValidationError class by CodeAssistant
+# * Added missing ResponseValidationError class that was referenced but not implemented
 # 2025-04-15T10:14:10Z : Initial creation of response handler classes by CodeAssistant
 # * Implemented ABCs and concrete placeholder parsers/formatters for each tool.
 ###############################################################################
@@ -52,6 +54,21 @@ logger = logging.getLogger(__name__)
 
 class ResponseParsingError(Exception):
     """Custom exception for errors during internal tool response parsing."""
+    pass
+
+class ResponseValidationError(Exception):
+    """
+    [Function intent]
+    Custom exception for validation errors when processing the parsed response.
+    
+    [Implementation details]
+    Used when parsed response data fails validity checks like schema conformance,
+    required fields presence, or value constraints.
+    
+    [Design principles]
+    Maintains separation between parsing errors (syntax issues) and validation
+    errors (semantic/domain issues) for more precise error handling.
+    """
     pass
 
 # --- Abstract Base Classes ---

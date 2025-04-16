@@ -44,6 +44,15 @@
 # - src/dbp/llm_coordinator/tool_registry.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-16T13:20:00Z : Refactored to use centralized Bedrock client management by Cline
+# * Integrated with the new BedrockClientManager for model access
+# * Updated _invoke_model to use the standardized client interface
+# * Added proper client lifecycle management in shutdown method
+# * Enhanced error handling for model-specific response formats
+# 2025-04-16T12:03:00Z : Integrated LLMPromptManager for prompt loading by Cline
+# * Added usage of LLMPromptManager for template-based prompts
+# * Updated _create_prompt to load from doc/llm/prompts/ directory
+# * Enhanced error handling and structured logging
 # 2025-04-15T10:08:30Z : Initial creation of CoordinatorLLM class by CodeAssistant
 # * Implemented structure, placeholder LLM invocation, and mock response parsing.
 ###############################################################################
@@ -54,6 +63,21 @@ import os
 import uuid
 from datetime import datetime, timezone
 from typing import List, Dict, Optional, Any
+import boto3
+from botocore.config import Config
+
+# Import from llm module - throw on error with logging
+try:
+    from ..llm import (
+        LLMPromptManager, 
+        PromptLoadError, 
+        BedrockClientManager,
+        BedrockClientError
+    )
+except ImportError as e:
+    logging.getLogger(__name__).error(f"Failed to import LLM dependencies: {e}", exc_info=True)
+    # Fail fast on missing dependencies
+    raise ImportError("Required LLM dependencies could not be imported") from e
 
 # Assuming necessary imports
 try:
@@ -86,30 +110,125 @@ class CoordinatorLLM:
     and generates a list of jobs for the JobManager.
     """
 
-    def __init__(self, config: CoordinatorLLMConfig, tool_registry: ToolRegistry, logger_override: Optional[logging.Logger] = None):
+    def __init__(
+        self, 
+        config: CoordinatorLLMConfig, 
+        tool_registry: ToolRegistry, 
+        bedrock_manager: Optional[BedrockClientManager] = None,
+        logger_override: Optional[logging.Logger] = None
+    ):
         """
         Initializes the CoordinatorLLM.
 
         Args:
             config: Configuration specific to this coordinator LLM instance.
             tool_registry: The registry containing available internal tools.
+            bedrock_manager: Optional BedrockClientManager instance for model access.
             logger_override: Optional logger instance.
         """
         self.config = config or {}
         self.tool_registry = tool_registry
         self.logger = logger_override or logger
-        # Placeholder for the actual LLM client (e.g., BedrockClient)
-        self._model_client = self._initialize_model_client()
-        self.logger.debug("CoordinatorLLM initialized.")
+        
+        # Initialize the prompt manager
+        self.prompt_manager = LLMPromptManager(config=self.config, logger_override=self.logger.getChild("prompts"))
+        
+        # Use provided bedrock manager or create a new one
+        self.bedrock_manager = bedrock_manager or self._initialize_bedrock_manager()
+        
+        # Default model name
+        self.model_name = self.config.get("model_name", "nova-lite")
+        
+        # Model client will be retrieved lazily when needed
+        self._model_client = None
+        
+        self.logger.debug({
+            "message": "CoordinatorLLM initialized",
+            "model_name": self.model_name
+        })
 
-    def _initialize_model_client(self):
-        """Initializes the client used to invoke the LLM model."""
-        model_id = self.config.get('model_id', 'amazon.titan-text-lite-v1') # Default model
-        self.logger.info(f"Initializing model client for coordinator LLM: {model_id}")
-        # Placeholder: In a real implementation, instantiate BedrockClient or similar
-        # client = BedrockClient(config=self.config, logger_override=self.logger)
-        # return client
-        return None # Return None for placeholder
+    def _initialize_bedrock_manager(self) -> BedrockClientManager:
+        """
+        Get the singleton Bedrock client manager instance.
+        
+        Returns:
+            BedrockClientManager: The configured manager singleton instance
+        """
+        # Extract Bedrock-specific configuration
+        bedrock_config = self.config.get("bedrock", {})
+        region = bedrock_config.get("region") or os.getenv('AWS_REGION', 'us-east-1')
+        
+        # We'll reuse the coordinator's prompt manager to avoid duplication
+        
+        self.logger.info({
+            "message": "Getting Bedrock client manager instance",
+            "region": region,
+            "component": "CoordinatorLLM"
+        })
+        
+        try:
+            # Get the singleton instance
+            manager = BedrockClientManager.get_instance(
+                config=self.config,
+                default_region=region,
+                prompt_manager=self.prompt_manager,
+                logger_override=self.logger.getChild("bedrock")
+            )
+            
+            # Mark that we didn't create this manager (so we won't shut it down)
+            self._external_bedrock_manager = True
+            
+            self.logger.info({
+                "message": "Bedrock client manager instance retrieved successfully",
+                "component": "CoordinatorLLM"
+            })
+            
+            return manager
+            
+        except Exception as e:
+            self.logger.error({
+                "message": "Failed to get Bedrock client manager instance",
+                "error_type": type(e).__name__,
+                "error_details": str(e),
+                "component": "CoordinatorLLM"
+            })
+            raise CoordinatorError(f"Failed to get Bedrock client manager instance: {str(e)}") from e
+            
+    def _get_model_client(self):
+        """
+        Get the model client, initializing it if necessary.
+        
+        Returns:
+            The initialized model client
+        """
+        if self._model_client:
+            return self._model_client
+            
+        try:
+            # Get the client from the manager
+            self.logger.debug({
+                "message": "Getting model client",
+                "model_name": self.model_name
+            })
+            
+            client = self.bedrock_manager.get_client(self.model_name)
+            self._model_client = client
+            
+            self.logger.info({
+                "message": "Model client retrieved successfully",
+                "model_name": self.model_name
+            })
+            
+            return client
+            
+        except (ValueError, BedrockClientError) as e:
+            self.logger.error({
+                "message": "Failed to get model client",
+                "model_name": self.model_name,
+                "error_type": type(e).__name__,
+                "error_details": str(e)
+            })
+            raise CoordinatorError(f"Failed to get model client for {self.model_name}: {str(e)}") from e
 
     def process_request(self, request: CoordinatorRequest) -> List[InternalToolJob]:
         """
@@ -150,85 +269,190 @@ class CoordinatorLLM:
 
 
     def _create_prompt(self, request: CoordinatorRequest) -> str:
-        """Creates the detailed prompt for the coordinator LLM."""
+        """
+        Creates the detailed prompt for the coordinator LLM.
+        
+        [Function intent]
+        Loads the prompt template for query classification and formats it with
+        the request's data to create a comprehensive prompt for the LLM.
+        
+        [Implementation details]
+        - Uses LLMPromptManager to load the template from doc/llm/prompts/
+        - Formats the query, context, parameters, and available tools
+        - Handles formatting exceptions with appropriate error messages
+        
+        Args:
+            request (CoordinatorRequest): The request to create a prompt for
+            
+        Returns:
+            str: The formatted prompt ready for LLM invocation
+            
+        Raises:
+            CoordinatorError: If prompt loading or formatting fails
+        """
         self.logger.debug(f"Creating coordinator prompt for request: {request.request_id}")
-        # Load the coordinator prompt template from the configured directory
-        template_dir = self.config.get('prompt_templates_dir', 'doc/llm/prompts')
-        template_path = os.path.join(template_dir, "coordinator_main_prompt.txt") # Example filename
 
         try:
-            # TODO: Replace with actual template loading logic (similar to LLMPromptManager)
-            # For now, using a simplified placeholder template structure.
-            prompt_template = """
-INSTRUCTIONS:
-Analyze the user query and context below. Determine which of the available internal tools are needed to fulfill the request.
-Output a JSON list of tool calls, including the 'tool_name' and necessary 'parameters' for each call.
-If no tools are needed, output an empty JSON list [].
-
-USER QUERY:
-{query}
-
-CONTEXT:
-{context}
-
-PARAMETERS PROVIDED:
-{parameters}
-
-AVAILABLE INTERNAL TOOLS:
-{available_tools}
-
-REQUIRED TOOL CALLS (JSON List):
-"""
-            # --- End Placeholder Template ---
-
             # Prepare context and parameters for formatting
             context_str = json.dumps(request.context, indent=2) if request.context else "{}"
             parameters_str = json.dumps(request.parameters, indent=2) if request.parameters else "{}"
             query_str = json.dumps(request.query) if isinstance(request.query, dict) else request.query
             tools_desc = self.tool_registry.get_available_tools_description()
-
-            # Format the prompt
-            prompt = prompt_template.format(
+            
+            # Format the prompt using the prompt manager
+            prompt = self.prompt_manager.format_prompt(
+                "coordinator_general_query_classifier",
                 query=query_str,
                 context=context_str,
                 parameters=parameters_str,
                 available_tools=tools_desc
             )
-            self.logger.debug(f"Coordinator prompt created (length: {len(prompt)}).")
+            
+            self.logger.debug({
+                "message": "Coordinator prompt created",
+                "request_id": request.request_id,
+                "prompt_length": len(prompt)
+            })
+            
             return prompt
 
+        except PromptLoadError as e:
+            self.logger.error({
+                "message": "Failed to load prompt template",
+                "request_id": request.request_id,
+                "error_type": "PromptLoadError",
+                "error_details": str(e)
+            })
+            raise CoordinatorError(f"Failed to load coordinator prompt template: {e}") from e
         except KeyError as e:
-             self.logger.error(f"Missing key in coordinator prompt template formatting: {e}")
-             raise CoordinatorError(f"Prompt template formatting error: Missing key {e}") from e
+            self.logger.error({
+                "message": "Missing key in prompt template formatting",
+                "request_id": request.request_id,
+                "error_type": "KeyError",
+                "error_details": str(e)
+            })
+            raise CoordinatorError(f"Prompt template formatting error: Missing key {e}") from e
         except Exception as e:
-            self.logger.error(f"Failed to load or format coordinator prompt template from {template_path}: {e}", exc_info=True)
+            self.logger.error({
+                "message": "Failed to create coordinator prompt", 
+                "request_id": request.request_id,
+                "error_type": type(e).__name__,
+                "error_details": str(e)
+            }, exc_info=True)
             raise CoordinatorError(f"Failed to create coordinator prompt: {e}") from e
 
     def _invoke_model(self, prompt: str) -> str:
-        """Invokes the configured coordinator LLM (placeholder)."""
-        self.logger.debug(f"Invoking coordinator LLM (Model ID: {self.config.get('model_id', 'N/A')})...")
-        if not self._model_client:
-            self.logger.warning("Coordinator LLM client not initialized. Using mock response.")
-            # --- Mock Response ---
-            # Simulate LLM determining which tools to call based on a query
-            # This should be replaced by actual LLM call and parsing logic
+        """
+        Invoke the coordinator LLM with a prompt.
+        
+        Args:
+            prompt: The prompt to send to the model
+            
+        Returns:
+            str: The model's response text
+            
+        Raises:
+            CoordinatorError: If LLM invocation fails
+        """
+        request_id = str(uuid.uuid4())
+        
+        self.logger.debug({
+            "message": "Invoking coordinator LLM",
+            "request_id": request_id,
+            "model_name": self.model_name,
+            "prompt_length": len(prompt)
+        })
+        
+        # Use mock response if model client not available
+        use_mock = self.config.get("use_mock_response", False)
+        
+        if use_mock:
+            self.logger.warning({
+                "message": "Using mock LLM response (configured via use_mock_response)",
+                "request_id": request_id,
+                "model_name": self.model_name
+            })
+            
+            # Generate mock response - tool calls for specific tasks
             mock_tool_calls = [
-                 {"tool_name": "coordinator_get_codebase_context", "parameters": {"query_focus": "relevant files"}},
-                 {"tool_name": "coordinator_get_documentation_context", "parameters": {"query_focus": "design principles"}}
+                {"tool_name": "coordinator_get_codebase_context", "parameters": {"query_focus": "relevant files"}},
+                {"tool_name": "coordinator_get_documentation_context", "parameters": {"query_focus": "design principles"}}
             ]
             return json.dumps(mock_tool_calls)
-            # --- End Mock Response ---
-
+        
         try:
-            # --- Actual Bedrock Invocation (using placeholder client) ---
-            # response_text = self._model_client.invoke_model(prompt)
-            # return response_text
-            # --- End Actual Invocation ---
-            raise NotImplementedError("Actual Bedrock client invocation is not implemented yet.")
-
+            # Get model client from manager (will initialize if needed)
+            client = self._get_model_client()
+            
+            # Set invocation parameters from config or defaults
+            temperature = self.config.get("temperature", 0.7)
+            max_tokens = self.config.get("max_tokens", 2000)
+            top_p = self.config.get("top_p", 0.9)
+            
+            # Invoke the model
+            response = client.invoke_model(
+                prompt,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                top_p=top_p
+            )
+            
+            # Extract the response text based on the model type
+            response_text = None
+            
+            # Handle Nova Lite response format
+            if self.model_name == "nova-lite":
+                response_text = response.get("output", {}).get("text", "")
+            # Add handling for other model response formats as needed
+            else:
+                # Try some common response formats
+                if "text" in response:
+                    response_text = response["text"]
+                elif "output" in response and "text" in response["output"]:
+                    response_text = response["output"]["text"]
+                elif isinstance(response, str):
+                    response_text = response
+                else:
+                    # Default to string representation of the full response
+                    self.logger.warning({
+                        "message": "Unrecognized response format, using raw response",
+                        "request_id": request_id,
+                        "model_name": self.model_name,
+                        "response_type": type(response).__name__
+                    })
+                    response_text = json.dumps(response)
+            
+            if not response_text:
+                raise CoordinatorError(f"Empty response from model {self.model_name}")
+            
+            self.logger.info({
+                "message": "LLM invocation successful",
+                "request_id": request_id,
+                "model_name": self.model_name,
+                "response_length": len(response_text) if response_text else 0
+            })
+            
+            return response_text
+            
+        except (ValueError, BedrockClientError) as e:
+            self.logger.error({
+                "message": "Failed during LLM invocation",
+                "request_id": request_id,
+                "model_name": self.model_name,
+                "error_type": type(e).__name__,
+                "error_details": str(e)
+            })
+            raise CoordinatorError(f"LLM invocation failed: {str(e)}") from e
+            
         except Exception as e:
-            self.logger.error(f"Failed to invoke coordinator LLM: {e}", exc_info=True)
-            raise CoordinatorError(f"Coordinator LLM invocation failed: {e}") from e
+            self.logger.error({
+                "message": "Unexpected error during LLM invocation",
+                "request_id": request_id,
+                "model_name": self.model_name,
+                "error_type": type(e).__name__,
+                "error_details": str(e)
+            }, exc_info=True)
+            raise CoordinatorError(f"Unexpected error during LLM invocation: {str(e)}") from e
 
     def _parse_llm_response(self, llm_response_text: str, request: CoordinatorRequest) -> List[InternalToolJob]:
         """Parses the LLM response to extract tool calls and create job objects."""
@@ -293,7 +517,34 @@ REQUIRED TOOL CALLS (JSON List):
             raise CoordinatorError(f"Failed to process coordinator LLM response: {e}") from e
 
     def shutdown(self):
-        """Placeholder for any shutdown logic needed by the coordinator LLM client."""
-        self.logger.info("CoordinatorLLM shutdown.")
-        # Add cleanup for the _model_client if necessary
-        pass
+        """
+        Clean up resources and prepare for shutdown.
+        
+        This method cleans up any resources held by the CoordinatorLLM,
+        ensuring proper shutdown of model clients and related components.
+        """
+        self.logger.info({
+            "message": "Shutting down CoordinatorLLM",
+            "model_name": self.model_name
+        })
+        
+        # Release model client reference
+        self._model_client = None
+        
+        # Shutdown the bedrock manager if we created it (not if it was passed in)
+        if self.bedrock_manager and not hasattr(self, '_external_bedrock_manager'):
+            try:
+                self.bedrock_manager.shutdown_all()
+                self.logger.debug({
+                    "message": "Bedrock client manager shutdown successful"
+                })
+            except Exception as e:
+                self.logger.error({
+                    "message": "Error during Bedrock client manager shutdown",
+                    "error_type": type(e).__name__,
+                    "error_details": str(e)
+                })
+        
+        self.logger.info({
+            "message": "CoordinatorLLM shutdown completed"
+        })

@@ -39,17 +39,22 @@
 # - All other files in src/dbp/metadata_extraction/
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-16T12:25:00Z : Updated service to use the new LLMPromptManager by Cline
+# * Changed import to use the centralized LLM prompt manager from src/dbp/llm
+# * Updated extract_and_store to use format_prompt method with the new template
+# * Fixed exception handling to use PromptLoadError instead of TemplateLoadError
 # 2025-04-15T09:53:45Z : Initial creation of MetadataExtractionService by CodeAssistant
 # * Implemented the main extraction workflow coordinating helper classes.
 ###############################################################################
 
 import logging
 import threading
+import os
 from typing import Optional, Any
 
 # Assuming imports from the same package and database writer
 try:
-    from .prompts import LLMPromptManager, TemplateLoadError
+    from ..llm import LLMPromptManager, PromptLoadError
     from .bedrock_client import BedrockClient, BedrockInvocationError, BedrockClientInitializationError
     from .response_parser import ResponseParser, ResponseParsingError, ResponseValidationError
     from .result_processor import ExtractionResultProcessor, ExtractionProcessingError
@@ -68,7 +73,7 @@ except ImportError as e:
     DatabaseWriter = object
     FileMetadata = object
     Config = object
-    TemplateLoadError = Exception
+    PromptLoadError = Exception
     BedrockInvocationError = Exception
     BedrockClientInitializationError = Exception
     ResponseParsingError = Exception
@@ -135,8 +140,14 @@ class MetadataExtractionService:
         with self._lock:
             metadata: Optional[FileMetadata] = None
             try:
-                # 1. Create Prompt
-                prompt = self.prompt_manager.create_extraction_prompt(file_path, file_content)
+                # 1. Create Prompt using the new format_prompt method
+                _, extension = os.path.splitext(file_path)
+                prompt = self.prompt_manager.format_prompt(
+                    "metadata_extraction", 
+                    file_path=file_path,
+                    file_extension=extension,
+                    file_content=file_content
+                )
 
                 # 2. Invoke LLM
                 llm_response = self.bedrock_client.invoke_model(prompt)
@@ -162,7 +173,10 @@ class MetadataExtractionService:
                 return metadata
 
             # Handle specific exceptions from each step
-            except (TemplateLoadError, ValueError) as e: # Prompt creation errors
+            except PromptLoadError as e: # Prompt loading errors
+                self.logger.error(f"Prompt template loading failed for {file_path}: {e}", exc_info=True)
+                return None
+            except ValueError as e: # Other prompt creation errors
                 self.logger.error(f"Prompt creation failed for {file_path}: {e}", exc_info=True)
                 return None
             except BedrockInvocationError as e: # LLM invocation errors

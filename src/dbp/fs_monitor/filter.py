@@ -51,6 +51,7 @@ from typing import List, Set, Dict, Any, Optional, Tuple
 import fnmatch
 from pathlib import Path
 import threading
+from ..core.component import Component
 
 logger = logging.getLogger(__name__)
 
@@ -304,3 +305,226 @@ class GitIgnoreFilter:
         with self._lock:
             self._cached_results = {}
             logger.debug("GitIgnoreFilter cache cleared.")
+
+
+class FilterComponent(Component):
+    """
+    [Class intent]
+    Component wrapper for the GitIgnoreFilter class following the KISS component pattern.
+    Provides path filtering services to determine if files or directories should be ignored.
+    
+    [Implementation details]
+    Wraps the GitIgnoreFilter class, initializing it during component initialization
+    and providing access to the filter functionality through methods.
+    
+    [Design principles]
+    Single responsibility for file path filtering within the component system.
+    Centralizes the filtering logic to ensure consistent rules application.
+    """
+    
+    def __init__(self):
+        """
+        [Function intent]
+        Initializes the FilterComponent with minimal setup.
+        
+        [Implementation details]
+        Sets the initialized flag to False and prepares for filter creation.
+        
+        [Design principles]
+        Minimal initialization with explicit state tracking.
+        """
+        super().__init__()
+        self._initialized = False
+        self._filter = None
+        self.logger = None
+        self.project_root = None
+    
+    @property
+    def name(self) -> str:
+        """
+        [Function intent]
+        Returns the unique name of this component, used for registration and dependency references.
+        
+        [Implementation details]
+        Returns a simple string constant.
+        
+        [Design principles]
+        Explicit naming for clear component identification.
+        
+        Returns:
+            str: The component name "filter"
+        """
+        return "filter"
+    
+    @property
+    def dependencies(self) -> List[str]:
+        """
+        [Function intent]
+        Returns the component names that this component depends on.
+        
+        [Implementation details]
+        Filter depends on config_manager for filter patterns.
+        
+        [Design principles]
+        Explicit dependency declaration for clear initialization order.
+        
+        Returns:
+            List[str]: List of component dependencies
+        """
+        return ["config_manager"]
+    
+    def initialize(self, config: Any) -> None:
+        """
+        [Function intent]
+        Initializes the filter with the provided configuration.
+        
+        [Implementation details]
+        Creates a GitIgnoreFilter instance and initializes it with the project root path.
+        
+        [Design principles]
+        Explicit initialization with clear success/failure indication.
+        
+        Args:
+            config: Configuration object with filter settings
+            
+        Raises:
+            RuntimeError: If initialization fails
+        """
+        if self._initialized:
+            self.logger.warning(f"Component '{self.name}' already initialized.")
+            return
+        
+        self.logger = logging.getLogger(f"DBP.{self.name}")
+        self.logger.info(f"Initializing component '{self.name}'...")
+        
+        try:
+            # Get component-specific configuration through config_manager
+            from ..core.system import ComponentSystem
+            system = ComponentSystem.get_instance()
+            config_manager = system.get_component("config_manager")
+            
+            # Get project root from configuration
+            self.project_root = config_manager.get('project.root_path')
+            
+            # Create and initialize the filter
+            self._filter = GitIgnoreFilter(config_manager, self.project_root)
+            
+            self._initialized = True
+            self.logger.info(f"Component '{self.name}' initialized successfully.")
+        except Exception as e:
+            self.logger.error(f"Failed to initialize filter component: {e}", exc_info=True)
+            self._filter = None
+            self._initialized = False
+            raise RuntimeError(f"Failed to initialize filter component: {e}") from e
+    
+    def shutdown(self) -> None:
+        """
+        [Function intent]
+        Shuts down the filter and releases resources.
+        
+        [Implementation details]
+        Clears the filter's cache and resets state.
+        
+        [Design principles]
+        Clean resource release with clear state reset.
+        """
+        self.logger.info(f"Shutting down component '{self.name}'...")
+        
+        if self._filter:
+            try:
+                self._filter.clear_cache()
+            except Exception as e:
+                self.logger.error(f"Error during filter shutdown: {e}", exc_info=True)
+            finally:
+                self._filter = None
+        
+        self._initialized = False
+        self.logger.info(f"Component '{self.name}' shut down.")
+    
+    @property
+    def is_initialized(self) -> bool:
+        """
+        [Function intent]
+        Indicates if the component is successfully initialized.
+        
+        [Implementation details]
+        Returns the value of the internal _initialized flag.
+        
+        [Design principles]
+        Simple boolean flag for clear initialization status.
+        
+        Returns:
+            bool: True if component is initialized, False otherwise
+        """
+        return self._initialized
+    
+    def should_ignore(self, path: str) -> bool:
+        """
+        [Function intent]
+        Checks if a given path should be ignored based on filter rules.
+        
+        [Implementation details]
+        Delegates to the GitIgnoreFilter's should_ignore method.
+        
+        [Design principles]
+        Convenience method to simplify access to filter functionality.
+        
+        Args:
+            path: File or directory path to check
+            
+        Returns:
+            bool: True if the path should be ignored, False otherwise
+            
+        Raises:
+            RuntimeError: If accessed before initialization
+        """
+        if not self._initialized or not self._filter:
+            raise RuntimeError("FilterComponent not initialized")
+        return self._filter.should_ignore(path)
+    
+    def update_project_root(self, new_root: str) -> None:
+        """
+        [Function intent]
+        Updates the project root path and reinitializes filter patterns.
+        
+        [Implementation details]
+        Delegates to the GitIgnoreFilter's update_project_root method.
+        
+        [Design principles]
+        Provides ability to adapt to project path changes at runtime.
+        
+        Args:
+            new_root: New project root path
+            
+        Raises:
+            RuntimeError: If accessed before initialization
+        """
+        if not self._initialized or not self._filter:
+            raise RuntimeError("FilterComponent not initialized")
+        self.project_root = new_root
+        self._filter.update_project_root(new_root)
+        self.logger.info(f"Updated project root to: {new_root}")
+    
+    def add_gitignore_file(self, gitignore_path: str) -> bool:
+        """
+        [Function intent]
+        Adds patterns from a specified gitignore file.
+        
+        [Implementation details]
+        Delegates to the GitIgnoreFilter's add_gitignore_file method.
+        
+        [Design principles]
+        Allows dynamic addition of ignore patterns at runtime.
+        
+        Args:
+            gitignore_path: Path to the gitignore file to load
+            
+        Returns:
+            bool: True if the file was loaded successfully, False otherwise
+            
+        Raises:
+            RuntimeError: If accessed before initialization
+        """
+        if not self._initialized or not self._filter:
+            raise RuntimeError("FilterComponent not initialized")
+        return self._filter.add_gitignore_file(gitignore_path)

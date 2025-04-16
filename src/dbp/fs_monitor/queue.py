@@ -49,6 +49,7 @@ import logging
 import heapq
 from typing import List, Set, Dict, Any, Optional
 import copy
+from ..core.component import Component
 
 # Assuming base.py and filter.py are accessible
 try:
@@ -307,3 +308,248 @@ class ChangeDetectionQueue:
             self._events = {}
             self._event_available.clear() # Clear signal as queue is now empty
             logger.info("Change detection queue cleared.")
+
+
+class ChangeQueueComponent(Component):
+    """
+    [Class intent]
+    Component wrapper for the ChangeDetectionQueue class following the KISS component pattern.
+    Provides thread-safe queuing of file system change events with debouncing and filtering.
+    
+    [Implementation details]
+    Wraps the ChangeDetectionQueue class, initializing it during component initialization
+    and providing access to the queue functionality through methods.
+    
+    [Design principles]
+    Single responsibility for managing file system change events within the component system.
+    Acts as a buffer between event detection and event processing.
+    """
+    
+    def __init__(self):
+        """
+        [Function intent]
+        Initializes the ChangeQueueComponent with minimal setup.
+        
+        [Implementation details]
+        Sets the initialized flag to False and prepares for queue creation.
+        
+        [Design principles]
+        Minimal initialization with explicit state tracking.
+        """
+        super().__init__()
+        self._initialized = False
+        self._queue = None
+        self.logger = None
+    
+    @property
+    def name(self) -> str:
+        """
+        [Function intent]
+        Returns the unique name of this component, used for registration and dependency references.
+        
+        [Implementation details]
+        Returns a simple string constant.
+        
+        [Design principles]
+        Explicit naming for clear component identification.
+        
+        Returns:
+            str: The component name "change_queue"
+        """
+        return "change_queue"
+    
+    @property
+    def dependencies(self) -> List[str]:
+        """
+        [Function intent]
+        Returns the component names that this component depends on.
+        
+        [Implementation details]
+        Change queue depends on config_manager for queue settings,
+        and optionally filter if it's available.
+        
+        [Design principles]
+        Explicit dependency declaration for clear initialization order.
+        
+        Returns:
+            List[str]: List of component dependencies
+        """
+        return ["config_manager"]
+    
+    def initialize(self, config: Any) -> None:
+        """
+        [Function intent]
+        Initializes the change queue with the provided configuration.
+        
+        [Implementation details]
+        Creates a ChangeDetectionQueue instance and optionally sets up a filter.
+        
+        [Design principles]
+        Explicit initialization with clear success/failure indication.
+        
+        Args:
+            config: Configuration object with queue settings
+            
+        Raises:
+            RuntimeError: If initialization fails
+        """
+        if self._initialized:
+            self.logger.warning(f"Component '{self.name}' already initialized.")
+            return
+        
+        self.logger = logging.getLogger(f"DBP.{self.name}")
+        self.logger.info(f"Initializing component '{self.name}'...")
+        
+        try:
+            # Get component-specific configuration through config_manager
+            from ..core.system import ComponentSystem
+            system = ComponentSystem.get_instance()
+            config_manager = system.get_component("config_manager")
+            
+            # Create and initialize the queue
+            self._queue = ChangeDetectionQueue(config_manager)
+            
+            # Attempt to set up a filter if the filter component is available
+            try:
+                filter_component = system.get_component("filter")
+                if filter_component and filter_component.is_initialized:
+                    self.logger.info("Setting up event filtering with filter component")
+                    # The filter itself has the should_ignore method that the queue expects
+                    self._queue.set_filter(filter_component)
+            except Exception as e:
+                self.logger.warning(f"Could not set up filter for change queue: {e}")
+                # Continue without filtering - it's optional
+            
+            self._initialized = True
+            self.logger.info(f"Component '{self.name}' initialized successfully.")
+        except Exception as e:
+            self.logger.error(f"Failed to initialize change queue component: {e}", exc_info=True)
+            self._queue = None
+            self._initialized = False
+            raise RuntimeError(f"Failed to initialize change queue component: {e}") from e
+    
+    def shutdown(self) -> None:
+        """
+        [Function intent]
+        Shuts down the change queue and releases resources.
+        
+        [Implementation details]
+        Clears the queue and resets state.
+        
+        [Design principles]
+        Clean resource release with clear state reset.
+        """
+        self.logger.info(f"Shutting down component '{self.name}'...")
+        
+        if self._queue:
+            try:
+                self._queue.clear()
+            except Exception as e:
+                self.logger.error(f"Error during queue shutdown: {e}", exc_info=True)
+            finally:
+                self._queue = None
+        
+        self._initialized = False
+        self.logger.info(f"Component '{self.name}' shut down.")
+    
+    @property
+    def is_initialized(self) -> bool:
+        """
+        [Function intent]
+        Indicates if the component is successfully initialized.
+        
+        [Implementation details]
+        Returns the value of the internal _initialized flag.
+        
+        [Design principles]
+        Simple boolean flag for clear initialization status.
+        
+        Returns:
+            bool: True if component is initialized, False otherwise
+        """
+        return self._initialized
+    
+    def add_event(self, event: Any) -> None:
+        """
+        [Function intent]
+        Adds a file system change event to the queue.
+        
+        [Implementation details]
+        Delegates to the ChangeDetectionQueue's add_event method.
+        
+        [Design principles]
+        Convenience method to simplify access to queue functionality.
+        
+        Args:
+            event: The ChangeEvent object to add
+            
+        Raises:
+            RuntimeError: If accessed before initialization
+        """
+        if not self._initialized or not self._queue:
+            raise RuntimeError("ChangeQueueComponent not initialized")
+        self._queue.add_event(event)
+    
+    def get_next_event(self, block: bool = True, timeout: Optional[float] = None) -> Optional[Any]:
+        """
+        [Function intent]
+        Retrieves the next event that is ready for processing.
+        
+        [Implementation details]
+        Delegates to the ChangeDetectionQueue's get_next_event method.
+        
+        [Design principles]
+        Convenience method to simplify access to queue functionality.
+        
+        Args:
+            block: If True, wait for an event to become ready
+            timeout: Maximum time in seconds to block (if block=True)
+            
+        Returns:
+            The next ready ChangeEvent, or None if no event is ready
+            
+        Raises:
+            RuntimeError: If accessed before initialization
+        """
+        if not self._initialized or not self._queue:
+            raise RuntimeError("ChangeQueueComponent not initialized")
+        return self._queue.get_next_event(block, timeout)
+    
+    def get_pending_count(self) -> int:
+        """
+        [Function intent]
+        Returns the number of events currently in the queue.
+        
+        [Implementation details]
+        Delegates to the ChangeDetectionQueue's get_pending_count method.
+        
+        [Design principles]
+        Convenience method to simplify access to queue functionality.
+        
+        Returns:
+            int: The number of pending events
+            
+        Raises:
+            RuntimeError: If accessed before initialization
+        """
+        if not self._initialized or not self._queue:
+            raise RuntimeError("ChangeQueueComponent not initialized")
+        return self._queue.get_pending_count()
+    
+    def clear(self) -> None:
+        """
+        [Function intent]
+        Removes all events from the queue.
+        
+        [Implementation details]
+        Delegates to the ChangeDetectionQueue's clear method.
+        
+        [Design principles]
+        Convenience method to simplify access to queue functionality.
+        
+        Raises:
+            RuntimeError: If accessed before initialization
+        """
+        if not self._initialized or not self._queue:
+            raise RuntimeError("ChangeQueueComponent not initialized")
+        self._queue.clear()

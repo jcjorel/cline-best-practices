@@ -30,6 +30,9 @@
 # [GenAI tool change history]
 # 2025-04-15T21:58:23Z : Added GenAI header to comply with documentation standards by CodeAssistant
 # * Added complete header template with appropriate sections
+# 2025-04-16T14:10:50Z : Fixed import path for LLMPromptManager by CodeAssistant
+# * Changed import from local prompts module to centralized llm.prompt_manager
+# * Added PromptLoadError import with alias to maintain backward compatibility
 ###############################################################################
 
 
@@ -56,7 +59,7 @@ Key components:
 from .data_structures import FileMetadata
 from .service import MetadataExtractionService
 from .component import MetadataExtractionComponent, ComponentNotInitializedError
-from .prompts import LLMPromptManager, TemplateLoadError
+from ..llm.prompt_manager import LLMPromptManager, PromptLoadError as TemplateLoadError
 from .bedrock_client import BedrockClient, BedrockInvocationError, BedrockClientInitializationError
 from .response_parser import ResponseParser, ResponseParsingError, ResponseValidationError
 from .result_processor import ExtractionResultProcessor, ExtractionProcessingError

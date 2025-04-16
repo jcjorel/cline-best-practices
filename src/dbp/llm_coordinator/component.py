@@ -45,6 +45,9 @@
 # - All other files in src/dbp/llm_coordinator/
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-16T17:33:57Z : Fixed component initialization configuration access by CodeAssistant
+# * Modified initialize method to properly access configuration through the config_manager component
+# * Updated configuration passing to sub-components
 # 2025-04-15T10:10:00Z : Initial creation of LLMCoordinatorComponent by CodeAssistant
 # * Implemented Component protocol, initialization of sub-components, tool registration, and process_request method.
 ###############################################################################
@@ -135,40 +138,43 @@ class LLMCoordinatorComponent(Component):
         # need to be run truly in the background managed by the central scheduler.
         # For now, assuming JobManager uses its own threading.
         # Add other dependencies if internal tools require them (e.g., database, memory_cache).
-        return ["config_manager_comp"] # Example dependency on a config component
+        return ["config_manager"] # Using the correct name for the config manager component
 
-    def initialize(self, context: InitializationContext):
+    def initialize(self, config: Any) -> None:
         """
         Initializes the LLM Coordinator component and its sub-components.
 
         Args:
-            context: The initialization context.
+            config: Configuration object with application settings
         """
         if self._initialized:
             logger.warning(f"Component '{self.name}' already initialized.")
             return
 
-        self.logger = context.logger # Use logger from context
+        self.logger = logging.getLogger(f"dbp.{self.name}")
         self.logger.info(f"Initializing component '{self.name}'...")
 
         try:
-            # Get coordinator-specific configuration
-            coordinator_config = context.config.get(self.name, {}) # Assumes dict-like config access
-
+            # Get component-specific configuration through config_manager
+            from ..core.system import ComponentSystem
+            system = ComponentSystem.get_instance()
+            config_manager = system.get_component("config_manager")
+            default_config = config_manager.get_default_config(self.name)
+            
             # Instantiate sub-components
-            self._request_handler = RequestHandler(config=coordinator_config, logger_override=self.logger.getChild("request_handler"))
-            self._tool_registry = ToolRegistry(config=coordinator_config, logger_override=self.logger.getChild("tool_registry"))
+            self._request_handler = RequestHandler(config=default_config, logger_override=self.logger.getChild("request_handler"))
+            self._tool_registry = ToolRegistry(config=default_config, logger_override=self.logger.getChild("tool_registry"))
             # JobManager needs the ToolRegistry to potentially execute tools (though execution engine does it here)
-            self._job_manager = JobManager(config=coordinator_config, tool_registry=self._tool_registry, logger_override=self.logger.getChild("job_manager"))
+            self._job_manager = JobManager(config=default_config, tool_registry=self._tool_registry, logger_override=self.logger.getChild("job_manager"))
             self._response_formatter = ResponseFormatter(logger_override=self.logger.getChild("response_formatter"))
             self._coordinator_llm = CoordinatorLLM(
-                config=coordinator_config.get('coordinator_llm', {}), # Pass specific sub-config
+                config=default_config.get('coordinator_llm', {}),  # Pass specific sub-config
                 tool_registry=self._tool_registry,
                 logger_override=self.logger.getChild("coordinator_llm")
             )
             # Instantiate the execution engine (placeholder)
             self._internal_tool_engine = InternalToolExecutionEngine(
-                 config=coordinator_config,
+                 config=default_config,
                  logger=self.logger.getChild("internal_tool_engine"),
                  job_manager=self._job_manager # Pass job manager if engine needs it
             )

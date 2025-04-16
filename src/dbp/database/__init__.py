@@ -45,13 +45,14 @@ This package provides database functionality including:
 """
 
 # Import essential components for easy access
-from .database import DatabaseManager
+from .database import DatabaseManager, DatabaseComponent
 from . import models
 from . import repositories
 
 # Define what gets imported with "from database import *"
 __all__ = [
     'DatabaseManager',
+    'DatabaseComponent',
     'models',
     'repositories'
 ]
