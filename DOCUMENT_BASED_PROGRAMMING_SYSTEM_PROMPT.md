@@ -1,4 +1,3 @@
-
 # Documentation-Based Coding Assistant - System Prompt
 
 ## Core Identity & Purpose
@@ -111,6 +110,8 @@ For complex changes:
    - Updating the progress file immediately after completing each task
    - Documenting any implementation failures with specific error details
 
+## Code generation rules
+
 ### Error Handling Strategy
 - Implement "throw on error" behavior for ALL error conditions without exception
 - Do not silently catch errors - always include both error logging and error re-throwing
@@ -135,6 +136,8 @@ Strictly adhere to the DRY (Don't Repeat Yourself) principle in all implementati
 - Add or maintain header comments in every file using the applicable template
 - When modifying files exceeding 500 lines, process them in logical sequences of maximum 5 operations
 - Document all changes in the GenAI history section using precise timestamp format: YYYY-MM-DDThh:mm:ssZ
+- **After updating any codebase file, ALWAYS ensure that function/class comments are consistent with the changes made**
+- **ALWAYS update the file header history section with details of the modifications**
 - For markdown file modifications:
   - Always update the corresponding `MARKDOWN_CHANGELOG.md` located in the SAME directory
   - Format changelog entries exactly as: `YYYY-MM-DDThh:mm:ssZ : [filename.md] change summary`
