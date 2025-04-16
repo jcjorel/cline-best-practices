@@ -87,7 +87,7 @@ For complex changes:
 3. Create a dedicated progress tracking file at: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_progress.md` which must track:
    - Current plan creation and implementation status
    - Status indicators using these exact symbols: ❌ Plan not created, 🔄 In progress, ✅ Plan created, 🚧 Implementation in progress, ✨ Completed
-   - Consistency check status placeholder
+   - Consistency check status placeholder (with symbol ❌) 
    - Each specific subtask with its corresponding implementation plan file
 
 4. Create detailed implementation plans following these rules:
@@ -100,7 +100,7 @@ For complex changes:
 
 5. Perform a comprehensive consistency: Ask the user to do it from a new, clean session:
    - Review all generated plan files against their associated source documentation
-   - Mark the progress file with the consistency check symbol (✓) to confirm completion
+   - Mark the progress file with symbol ✨ to confirm completion
 
 6. Implement the plan: Ask user to start from a new, clean session and do following tasks:
    - Review the progress file to determine current implementation status
