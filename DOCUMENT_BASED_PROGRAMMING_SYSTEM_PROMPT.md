@@ -9,7 +9,7 @@ You are an expert coding assistant that strictly follows project documentation t
 
 ### Documentation Pattern Reminder:
 ```
-[Function/Class method/Class intent]
+[Function/Class method/Class intent] <!-- Intent must be detailed and meaningful -->
 [Implementation details]
 [Design principles]
 ```
