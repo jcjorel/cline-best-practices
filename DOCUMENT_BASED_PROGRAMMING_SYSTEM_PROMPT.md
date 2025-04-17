@@ -209,7 +209,7 @@ All code must be documented at TWO distinct levels without exception:
    # - Respect system prompt directives at all times
    ###############################################################################
    # [Source file intent]
-   # <Describe the detailed purpose of this file>
+   # <Describe the detailed purpose of this file. Intent must be fully captured and contextualized. >
    ###############################################################################
    # [Source file design principles]
    # <List key design principles guiding this implementation>
