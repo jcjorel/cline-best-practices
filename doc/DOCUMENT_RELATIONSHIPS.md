@@ -2,17 +2,7 @@
 
 This document maps the relationships between documentation files in the project. It serves as a central registry for tracking dependencies and impacts between documentation files, enabling the system to maintain global consistency.
 
-## Code Analysis Documentation Relationships
-
-- **DESIGN.md** contains the high-level approach to using Claude 3.7 Sonnet for code analysis
-- **DATA_MODEL.md** defines the structure of metadata extracted by Claude 3.7 Sonnet
-
-## Relationship Types
-
-- **Depends on**: Document A depends on information in Document B. Changes to Document B may require updates to Document A.
-- **Impacts**: Document A contains information that may affect Document B. Changes to Document A may require updates to Document B.
-
-### Visual Representation
+## Relationship Graph
 
 ```mermaid
 graph TD
@@ -33,6 +23,16 @@ graph TD
     BACKGROUND_TASK[design/BACKGROUND_TASK_SCHEDULER.md]
     MCP_DATA_MODEL[design/MCP_SERVER_ENHANCED_DATA_MODEL.md]
     
+    %% Code Components
+    SCHEDULER[src/dbp/scheduler]
+    FS_MONITOR[src/dbp/fs_monitor]
+    MCP_SERVER[src/dbp/mcp_server]
+    CONFIG_COMP[src/dbp/config]
+    LLM_COORD_COMP[src/dbp/llm_coordinator]
+    CONSIST_ANALYSIS[src/dbp/consistency_analysis]
+    DOC_REL_COMP[src/dbp/doc_relationships]
+    META_EXTRACT[src/dbp/metadata_extraction]
+    
     %% Other Resources
     LLM_PROMPTS[doc/llm/prompts/]
     
@@ -41,6 +41,7 @@ graph TD
     classDef leafNode fill:#bbf,stroke:#333,stroke-width:1px
     classDef designDoc fill:#fbb,stroke:#333,stroke-width:1px
     classDef resource fill:#bfb,stroke:#333,stroke-width:1px
+    classDef codeComp fill:#fcf,stroke:#333,stroke-width:1px
     
     %% Root Node Relationships
     DESIGN_DECISIONS --> DESIGN
@@ -54,32 +55,59 @@ graph TD
     DESIGN --> DATA_MODEL
     DESIGN --> DOC_REL
     DESIGN --> LLM_COORD
+    DESIGN --> SCHEDULER
+    DESIGN --> FS_MONITOR
+    DESIGN --> MCP_SERVER
+    DESIGN --> CONFIG_COMP
+    DESIGN --> LLM_COORD_COMP
     
     PR_FAQ --> WORKING_BACKWARDS
     
     %% Mid-level Node Relationships
     LLM_COORD --> INTERNAL_TOOLS
     LLM_COORD --> MCP_DATA_MODEL
+    LLM_COORD --> LLM_COORD_COMP
     
     LLM_PROMPTS --> INTERNAL_TOOLS
+    LLM_PROMPTS --> LLM_COORD_COMP
     
     BACKGROUND_TASK --> DESIGN
     BACKGROUND_TASK --> CONFIG
     BACKGROUND_TASK --> COMPONENT_INIT
+    BACKGROUND_TASK --> SCHEDULER
     
     COMPONENT_INIT --> DESIGN
     COMPONENT_INIT --> CONFIG
     
     %% Leaf Node Dependencies
     DATA_MODEL --> SECURITY
+    DATA_MODEL --> META_EXTRACT
     WORKING_BACKWARDS --> SECURITY
+    
+    %% Code Component Relationships
+    SCHEDULER --> FS_MONITOR
+    MCP_SERVER --> LLM_COORD_COMP
+    CONFIG_COMP --> MCP_SERVER
+    DOC_REL_COMP --> CONSIST_ANALYSIS
+    META_EXTRACT --> LLM_COORD_COMP
     
     %% Apply styles
     class DESIGN_DECISIONS,DESIGN,PR_FAQ rootNode
     class CONFIG,SECURITY,DATA_MODEL,DOC_REL,WORKING_BACKWARDS leafNode
     class LLM_COORD,INTERNAL_TOOLS,COMPONENT_INIT,BACKGROUND_TASK,MCP_DATA_MODEL designDoc
     class LLM_PROMPTS resource
+    class SCHEDULER,FS_MONITOR,MCP_SERVER,CONFIG_COMP,LLM_COORD_COMP,CONSIST_ANALYSIS,DOC_REL_COMP,META_EXTRACT codeComp
 ```
+
+## Code Analysis Documentation Relationships
+
+- **DESIGN.md** contains the high-level approach to using Claude 3.7 Sonnet for code analysis
+- **DATA_MODEL.md** defines the structure of metadata extracted by Claude 3.7 Sonnet
+
+## Relationship Types
+
+- **Depends on**: Document A depends on information in Document B. Changes to Document B may require updates to Document A.
+- **Impacts**: Document A contains information that may affect Document B. Changes to Document A may require updates to Document B.
 
 This graph structure helps the system determine the correct order for propagating updates and ensuring global consistency.
 
@@ -89,14 +117,15 @@ This graph structure helps the system determine the correct order for propagatin
 - Depends on: [DESIGN.md](#designmd) - Topic: Security requirements - Scope: System-wide security
 - Depends on: [DATA_MODEL.md](#data_modelmd) - Topic: Data protection - Scope: Database security
 - Depends on: [WORKING_BACKWARDS.md](#working_backwardsmd) - Topic: Resource constraints - Scope: Performance security
-- Impacts: None
+- Impacts: [src/dbp/mcp_server/auth.py] - Topic: Implementation - Scope: Security enforcement
 
 ## CONFIGURATION.md
 - Depends on: [DESIGN.md](#designmd) - Topic: System components - Scope: Configurable parameters
 - Depends on: [DATA_MODEL.md](#data_modelmd) - Topic: CLI Client model - Scope: Configuration structure
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Configuration strategy - Scope: Default values policy
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Centralized Default Configuration Values - Scope: Configuration management
-- Impacts: None
+- Impacts: [src/dbp/config/default_config.py] - Topic: Implementation - Scope: Configuration defaults
+- Impacts: [src/dbp/config/config_schema.py] - Topic: Implementation - Scope: Configuration schema
 
 ## DESIGN_DECISIONS.md
 - Depends on: None
@@ -125,6 +154,8 @@ This graph structure helps the system determine the correct order for propagatin
 - Impacts: [DATA_MODEL.md](#data_modelmd) - Topic: System architecture - Scope: Entire system design
 - Impacts: [DATA_MODEL.md](#data_modelmd) - Topic: Security considerations - Scope: Data protection and access controls
 - Impacts: [DOCUMENT_RELATIONSHIPS.md](#document_relationshipsmd) - Topic: Documentation structure - Scope: File structure and workflow
+- Impacts: [src/dbp/core/system.py] - Topic: Implementation - Scope: System architecture
+- Impacts: [src/dbp/core/lifecycle.py] - Topic: Implementation - Scope: Component lifecycle
 
 ## DATA_MODEL.md
 - Depends on: [DESIGN.md](#designmd) - Topic: System architecture - Scope: Entire system design
@@ -135,11 +166,13 @@ This graph structure helps the system determine the correct order for propagatin
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: LLM-Based Metadata Extraction - Scope: Metadata extraction approach
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: LLM-Based Language Detection - Scope: Language detection approach
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Use Alembic for Database Schema Management - Scope: Database migration strategy
-- Impacts: None
+- Impacts: [src/dbp/database/models.py] - Topic: Implementation - Scope: Database schema
+- Impacts: [src/dbp/metadata_extraction/data_structures.py] - Topic: Implementation - Scope: Metadata structures
 
 ## DOCUMENT_RELATIONSHIPS.md
 - Depends on: [DESIGN.md](#designmd) - Topic: Documentation structure - Scope: File structure and workflow
-- Impacts: None
+- Impacts: [src/dbp/doc_relationships/graph.py] - Topic: Implementation - Scope: Relationship graph generation
+- Impacts: [src/dbp/doc_relationships/data_models.py] - Topic: Implementation - Scope: Relationship data structures
 
 ## PR-FAQ.md
 - Depends on: None
@@ -147,13 +180,13 @@ This graph structure helps the system determine the correct order for propagatin
 
 ## WORKING_BACKWARDS.md
 - Depends on: [PR-FAQ.md](#pr-faqmd) - Topic: Product vision - Scope: High-level product concepts
-- Impacts: None
+- Impacts: [src/dbp_cli/README.md] - Topic: User interfaces - Scope: CLI design principles
 
 ## Recommendation Templates
 
 ## Recommendation Files
 - Depends on: [DATA_MODEL.md](#data_modelmd) - Topic: Recommendation structure - Scope: File format and data fields
-- Impacts: None
+- Impacts: [src/dbp/recommendation_generator/data_models.py] - Topic: Implementation - Scope: Recommendation structures
 
 ## Update Workflow
 
@@ -178,19 +211,21 @@ When documentation files are updated:
 - Depends on: [SECURITY.md](#securitymd) - Topic: Security measures - Scope: Multi-LLM security considerations
 - Impacts: [design/INTERNAL_LLM_TOOLS.md](#designinternal_llm_toolsmd) - Topic: Tool integration - Scope: Coordination architecture
 - Impacts: [design/MCP_SERVER_ENHANCED_DATA_MODEL.md](#designmcp_server_enhanced_data_modelmd) - Topic: Tool data models - Scope: MCP server implementation
+- Impacts: [src/dbp/llm_coordinator/component.py] - Topic: Implementation - Scope: LLM coordinator component
 
 ## design/INTERNAL_LLM_TOOLS.md
 - Depends on: [design/LLM_COORDINATION.md](#designllm_coordinationmd) - Topic: Tool integration - Scope: Coordination architecture
 - Depends on: [DESIGN.md](#designmd) - Topic: Internal tools - Scope: Tool purposes and capabilities
 - Depends on: [doc/llm/prompts/](#docllmprompts) - Topic: Prompt templates - Scope: LLM processing approach
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: External Prompt Template Files - Scope: Tool implementation
-- Impacts: None
+- Impacts: [src/dbp/internal_tools/component.py] - Topic: Implementation - Scope: Internal LLM tool component
 
 ## design/MCP_SERVER_ENHANCED_DATA_MODEL.md
 - Depends on: [design/LLM_COORDINATION.md](#designllm_coordinationmd) - Topic: MCP-exposed tools - Scope: Implementation details
 - Depends on: [DATA_MODEL.md](#data_modelmd) - Topic: Data structures - Scope: Request/response model enhancement
 - Depends on: [SECURITY.md](#securitymd) - Topic: Security features - Scope: Input/output validation
-- Impacts: None
+- Impacts: [src/dbp/mcp_server/component.py] - Topic: Implementation - Scope: MCP server data models
+- Impacts: [src/dbp/mcp_server/data_models.py] - Topic: Implementation - Scope: MCP server data structures
 
 ## design/COMPONENT_INITIALIZATION.md
 - Depends on: [DESIGN.md](#designmd) - Topic: System components - Scope: Component dependencies and structure
@@ -201,6 +236,7 @@ When documentation files are updated:
 - Depends on: [design/LLM_COORDINATION.md](#designllm_coordinationmd) - Topic: LLM services - Scope: Service initialization
 - Impacts: [DESIGN.md](#designmd) - Topic: System startup - Scope: Component initialization sequence
 - Impacts: [CONFIGURATION.md](#configurationmd) - Topic: Initialization parameters - Scope: Configuration structure
+- Impacts: [src/dbp/core/component.py] - Topic: Implementation - Scope: Component base class
 
 ## design/BACKGROUND_TASK_SCHEDULER.md
 - Depends on: [DESIGN.md](#designmd) - Topic: Documentation Monitoring - Scope: Background processing architecture
@@ -212,28 +248,44 @@ When documentation files are updated:
 - Impacts: [DESIGN.md](#designmd) - Topic: Documentation Monitoring - Scope: Implementation details
 - Impacts: [CONFIGURATION.md](#configurationmd) - Topic: Background Task Scheduler - Scope: Configuration parameters
 - Impacts: [design/COMPONENT_INITIALIZATION.md](#designcomponent_initializationmd) - Topic: Background processing - Scope: Task scheduling
+- Impacts: [src/dbp/scheduler/component.py] - Topic: Implementation - Scope: Task scheduler component
 
 ## doc/llm/prompts/
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Prompt template management - Scope: Template structure and organization
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: LLM processing approach - Scope: Template usage guidance
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: External Prompt Template Files - Scope: Template structure and usage
 - Impacts: [design/INTERNAL_LLM_TOOLS.md](#designinternal_llm_toolsmd) - Topic: Tool integration - Scope: Prompt templates for LLM tools
+- Impacts: [src/dbp/llm_coordinator/coordinator_llm.py] - Topic: Implementation - Scope: LLM prompt handling
+
+## Code Component Relationships
+
+## src/dbp/scheduler
+- Depends on: [design/BACKGROUND_TASK_SCHEDULER.md](#designbackground_task_schedulermd) - Topic: Implementation - Scope: Task scheduler architecture
+- Depends on: [src/dbp/fs_monitor] - Topic: Implementation - Scope: Filesystem event handling
+- Impacts: None
+
+## src/dbp/fs_monitor
+- Depends on: [DESIGN.md](#designmd) - Topic: Implementation - Scope: Filesystem monitoring strategy
+- Impacts: [src/dbp/scheduler] - Topic: Implementation - Scope: Event-based task scheduling
+
+## src/dbp/mcp_server
+- Depends on: [design/MCP_SERVER_ENHANCED_DATA_MODEL.md](#designmcp_server_enhanced_data_modelmd) - Topic: Implementation - Scope: Server data model
+- Depends on: [SECURITY.md](#securitymd) - Topic: Implementation - Scope: Authentication and authorization
+- Depends on: [src/dbp/llm_coordinator] - Topic: Implementation - Scope: LLM service coordination
+- Impacts: None
+
+## src/dbp/config
+- Depends on: [CONFIGURATION.md](#configurationmd) - Topic: Implementation - Scope: Configuration management
+- Impacts: [src/dbp/mcp_server] - Topic: Implementation - Scope: Server configuration
 
 ## Relationship Graph
 
 The documentation relationship graph forms a directed acyclic graph (DAG) with the following characteristics:
 
 - **DESIGN_DECISIONS.md**: Root node with outgoing edges to multiple documents as design decisions are added
-- **DESIGN.md**: Root node with outgoing edges to DATA_MODEL.md, DOCUMENT_RELATIONSHIPS.md, and design/LLM_COORDINATION.md
+- **DESIGN.md**: Root node with outgoing edges to multiple documents and components
 - **PR-FAQ.md**: Root node with outgoing edge to WORKING_BACKWARDS.md
-- **design/LLM_COORDINATION.md**: Node with outgoing edge to design/INTERNAL_LLM_TOOLS.md and incoming edge from DESIGN.md
-- **CONFIGURATION.md**: Leaf node with incoming edges from DESIGN.md and DATA_MODEL.md
-- **DATA_MODEL.md**: Leaf node with incoming edges from DESIGN.md and DESIGN_DECISIONS.md
-- **DOCUMENT_RELATIONSHIPS.md**: Leaf node with incoming edge from DESIGN.md
-- **WORKING_BACKWARDS.md**: Leaf node with incoming edge from PR-FAQ.md
-- **design/INTERNAL_LLM_TOOLS.md**: Node with incoming edges from design/LLM_COORDINATION.md, DESIGN.md, doc/llm/prompts/, and DESIGN_DECISIONS.md
-- **SECURITY.md**: Leaf node with incoming edges from DESIGN.md, DATA_MODEL.md, WORKING_BACKWARDS.md, and design/LLM_COORDINATION.md
-- **doc/llm/prompts/**: Node with incoming edges from DESIGN_DECISIONS.md and outgoing edge to design/INTERNAL_LLM_TOOLS.md
-- **design/COMPONENT_INITIALIZATION.md**: Node with multiple incoming edges and outgoing edges to DESIGN.md and CONFIGURATION.md
-- **design/BACKGROUND_TASK_SCHEDULER.md**: Node with incoming edges from DESIGN_DECISIONS.md and outgoing edges to multiple documents
-
+- **design/LLM_COORDINATION.md**: Node with outgoing edges to multiple documents and components
+- **Code components**: Represent implementation of design concepts documented in design documents
+- **design/COMPONENT_INITIALIZATION.md**: Node with multiple incoming edges and outgoing edges to documents and components
+- **design/BACKGROUND_TASK_SCHEDULER.md**: Node with incoming edges from design documents and outgoing edges to implementation components
