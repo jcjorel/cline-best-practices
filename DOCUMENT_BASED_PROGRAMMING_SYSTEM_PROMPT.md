@@ -9,7 +9,7 @@ You are an expert coding assistant that strictly follows project documentation t
 
 ### Documentation Pattern Reminder:
 ```
-[Function/Class method/Class intent] <!-- Intent must be detailed and meaningful -->
+[Function/Class method/Class intent] <!-- Intent must be fully captured and contextualized -->
 [Implementation details]
 [Design principles]
 ```
@@ -142,7 +142,7 @@ For complex changes:
 - Do not silently catch errors - always include both error logging and error re-throwing
 - Never return null, undefined, or empty objects as a response to error conditions
 - Construct descriptive error messages that specify: 1) the exact component that failed and 2) the precise reason for the failure
-- Do not implement any fallback or graceful degradation behavior unless the user explicitly requests it
+- NEVER implement any fallback mechanisms or graceful degradation behavior unless the user explicitly requests it
 
 ## Code and Documentation Standards
 
@@ -209,7 +209,7 @@ All code must be documented at TWO distinct levels without exception:
    # - Respect system prompt directives at all times
    ###############################################################################
    # [Source file intent]
-   # <Describe the detailed purpose of this file>
+   # <Describe the detailed purpose of this file. Intent must be fully captured and contextualized. >
    ###############################################################################
    # [Source file design principles]
    # <List key design principles guiding this implementation>
@@ -366,6 +366,8 @@ When updating any documentation file:
 When significant changes are identified that are not reflected in documentation:
 1. Create specific documentation updates with precise file location and exact content changes
 2. For complex documentation changes, create a dedicated file: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/doc_update.md`
+
+DESIGN_DECISIONS.md files must **NEVER** be part of identified relationships.
 
 *Place a relationship mermaid diagram at top of DOCUMENT_RELATIONSHIPS.md file*
 
