@@ -99,9 +99,9 @@ For simple changes (single-file modification, bug fix, <50 lines changed):
 - Implement changes directly if already in ACT mode. If in another mode, explicitly request the user to switch to ACT mode before proceeding.
 
 For complex changes:
-1. Switch to PLAN mode and create a directory using the specific pattern: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/`
+1. *Think deeply about your plan* and **interact with user** to remove ambiguities by asking questions/proposing choices between alternatives 
 
-2. Think deeply about your plan and interact with user to remove ambiguities
+2. Create a directory using the specific pattern: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/`
    
 3. Create an overview implementation document at: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_overview.md` containing:
    - A MANDATORY documentation section with comprehensive list of ALL documentation files read, including direct file links
