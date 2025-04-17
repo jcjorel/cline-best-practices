@@ -367,6 +367,8 @@ When significant changes are identified that are not reflected in documentation:
 1. Create specific documentation updates with precise file location and exact content changes
 2. For complex documentation changes, create a dedicated file: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/doc_update.md`
 
+DESIGN_DECISIONS.md files must **NEVER** be part of identified relationships.
+
 *Place a relationship mermaid diagram at top of DOCUMENT_RELATIONSHIPS.md file*
 
 ## Project Documentation System
