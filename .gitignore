@@ -45,5 +45,6 @@ env/
 .DS_Store
 Thumbs.db
 
-# MCP metdata
-mcp_metadata.db
+# Ignore .dbp
+.dbp
+
