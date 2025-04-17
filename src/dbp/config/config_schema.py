@@ -40,6 +40,10 @@
 # - doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-17T18:57:30Z : Removed duplicate AppConfig class definitions by CodeAssistant
+# * Removed two duplicate incomplete AppConfig class definitions
+# * Kept only the final complete AppConfig class definition
+# * Fixed potential confusion and errors when modifying configuration schema
 # 2025-04-17T16:46:00Z : Renamed MonitorConfig to FSMonitorConfig for component name consistency by CodeAssistant
 # * Renamed MonitorConfig class to FSMonitorConfig to match fs_monitor component name
 # * Updated AppConfig to use fs_monitor field instead of monitor
@@ -50,11 +54,6 @@
 # * Fixed "Configuration key 'database.alembic_ini_path' not found" error
 # * Enabled successful execution of database migrations during server startup
 # 2025-04-17T16:04:00Z : Added GeneralConfig class and fixed missing configuration by CodeAssistant
-# * Added new GeneralConfig class to expose general.base_dir configuration setting
-# * Added general field to main AppConfig class to make it accessible
-# * Fixed "Configuration key 'general.base_dir' not found" errors during server startup
-# * Fixed database and MCP server component access to configuration values
-# 2025-04-17T15:29:00Z : Updated imports and references to match renamed config keys by CodeAssistant
 # * Changed imports to use CLI_SERVER_CONNECTION_DEFAULTS instead of SERVER_DEFAULTS
 # * Changed imports to use CLI_OUTPUT_DEFAULTS instead of OUTPUT_DEFAULTS
 # * Changed imports to use CLI_HISTORY_DEFAULTS instead of HISTORY_DEFAULTS
@@ -347,22 +346,6 @@ class ConsistencyAnalysisConfig(BaseModel):
     background_check_interval_minutes: int = Field(default=CONSISTENCY_ANALYSIS_DEFAULTS["background_check_interval_minutes"], ge=5, le=1440, description="Interval in minutes for periodic background consistency checks.")
     max_inconsistencies_per_report: int = Field(default=CONSISTENCY_ANALYSIS_DEFAULTS["max_inconsistencies_per_report"], ge=10, le=10000, description="Maximum number of inconsistencies to include in a single report.")
 
-
-class AppConfig(BaseModel):
-    """Root configuration model for the DBP application."""
-    server: ServerConfig = Field(default_factory=ServerConfig, description="Server connection settings")
-    output: OutputConfig = Field(default_factory=OutputConfig, description="Output formatting settings")
-    history: HistoryConfig = Field(default_factory=HistoryConfig, description="Command history settings")
-    script: ScriptConfig = Field(default_factory=ScriptConfig, description="Script settings")
-    scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig, description="Background task scheduler settings")
-    fs_monitor: FSMonitorConfig = Field(default_factory=FSMonitorConfig, description="File system monitoring settings")
-    database: DatabaseConfig = Field(default_factory=DatabaseConfig, description="Database settings")
-    recommendations: RecommendationConfig = Field(default_factory=RecommendationConfig, description="Recommendation settings")
-    initialization: InitializationConfig = Field(default_factory=InitializationConfig, description="Initialization settings")
-    llm_coordinator: LLMCoordinatorConfig = Field(default_factory=LLMCoordinatorConfig, description="LLM Coordinator settings")
-    internal_tools: InternalToolsConfig = Field(default_factory=InternalToolsConfig, description="Internal LLM Tools settings")
-    consistency_analysis: ConsistencyAnalysisConfig = Field(default_factory=ConsistencyAnalysisConfig, description="Consistency Analysis settings")
-
 # --- Recommendation Generator Configuration ---
 
 class RecommendationGeneratorConfig(BaseModel):
@@ -372,23 +355,6 @@ class RecommendationGeneratorConfig(BaseModel):
     auto_apply_recommendations: bool = Field(default=RECOMMENDATION_GENERATOR_DEFAULTS["auto_apply_recommendations"], description="If true, automatically apply generated recommendations without user confirmation (Use with caution!).")
     max_recommendations_per_batch: int = Field(default=RECOMMENDATION_GENERATOR_DEFAULTS["max_recommendations_per_batch"], ge=1, le=1000, description="Maximum number of recommendations to generate in a single batch.")
     # Add strategy-specific configs if needed, e.g., nested models
-
-
-class AppConfig(BaseModel):
-    """Root configuration model for the DBP application."""
-    server: ServerConfig = Field(default_factory=ServerConfig, description="Server connection settings")
-    output: OutputConfig = Field(default_factory=OutputConfig, description="Output formatting settings")
-    history: HistoryConfig = Field(default_factory=HistoryConfig, description="Command history settings")
-    script: ScriptConfig = Field(default_factory=ScriptConfig, description="Script settings")
-    scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig, description="Background task scheduler settings")
-    fs_monitor: FSMonitorConfig = Field(default_factory=FSMonitorConfig, description="File system monitoring settings")
-    database: DatabaseConfig = Field(default_factory=DatabaseConfig, description="Database settings")
-    recommendations: RecommendationConfig = Field(default_factory=RecommendationConfig, description="Recommendation settings") # Renamed from plan for consistency
-    initialization: InitializationConfig = Field(default_factory=InitializationConfig, description="Initialization settings")
-    llm_coordinator: LLMCoordinatorConfig = Field(default_factory=LLMCoordinatorConfig, description="LLM Coordinator settings")
-    internal_tools: InternalToolsConfig = Field(default_factory=InternalToolsConfig, description="Internal LLM Tools settings")
-    consistency_analysis: ConsistencyAnalysisConfig = Field(default_factory=ConsistencyAnalysisConfig, description="Consistency Analysis settings")
-    recommendation_generator: RecommendationGeneratorConfig = Field(default_factory=RecommendationGeneratorConfig, description="Recommendation Generator settings")
 
 # --- MCP Server Integration Configuration ---
 

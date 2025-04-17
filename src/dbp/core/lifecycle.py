@@ -313,7 +313,7 @@ class LifecycleManager:
         try:
             from ..llm_coordinator.component import LLMCoordinatorComponent
             self.system.register(LLMCoordinatorComponent())
-            logger.info("Registered llm_coordinator component - CRITICAL for query processing")
+            logger.info("Registered llm_coordinator component - Manage query processing")
         except ImportError as e:
             logger.error(f"Failed to register llm_coordinator component: {e}")
             

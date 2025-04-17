@@ -1,3 +1,73 @@
+# Strict Configuration Access for Component Initialization
+
+## Decision Date: 2025-04-17
+
+## Decision Makers
+
+CodeAssistant in collaboration with system stakeholders
+
+## Context
+
+The DBP system uses Pydantic models for configuration, but some components were incorrectly attempting to access configuration values using dictionary-style access patterns (e.g., `config.get('key', 'default')`) which failed with the error: `'FSMonitorConfig' object has no attribute 'get'`. This was causing component initialization failures, particularly in the `FileSystemMonitorComponent`.
+
+## Decision
+
+1. Update component code to use direct attribute access for Pydantic models
+2. Implement strict validation with no fallback mechanisms
+3. Require all configuration values to be present and valid or fail explicitly
+4. Throw clear error messages when configuration is missing or invalid
+
+## Rationale
+
+- **Type Safety**: Direct attribute access on Pydantic models maintains the type checking benefits they provide
+- **Clarity**: Makes it clear what configuration values are expected and required
+- **Fail-Fast**: Missing or invalid configuration fails immediately with clear errors
+- **No Hidden Behavior**: All component behavior is explicitly tied to configuration
+
+## Alternatives Considered
+
+1. **Converting Pydantic models to dictionaries**: Rejected as it would lose type safety benefits
+2. **Adding a `.get()` method to Pydantic models**: Rejected as it would muddle the clear distinction between model and dictionary access patterns
+3. **Implementing fallback mechanisms**: Rejected as it could mask configuration issues and create inconsistent behavior
+
+## Implementation Details
+
+For components that need to access configuration:
+
+1. Access Pydantic models directly via attribute notation (`config.attribute_name`)
+2. Explicitly check for missing configuration sections or values and fail fast
+3. Verify all required dependencies exist before proceeding
+4. Throw clear error messages that identify exactly what is missing
+
+Example implementation pattern:
+```python
+# Get configuration - strict approach
+config = context.config.get(self.name)
+if not config:
+    error_msg = f"Missing configuration section for '{self.name}'"
+    self.logger.error(error_msg)
+    raise RuntimeError(error_msg)
+
+# Access attribute directly - no fallback
+if not hasattr(config, 'required_attribute'):
+    error_msg = f"Required configuration '{self.name}.required_attribute' is missing"
+    self.logger.error(error_msg)
+    raise RuntimeError(error_msg)
+```
+
+## Implications
+
+- Components will fail explicitly rather than operate with default values
+- Configuration errors are surfaced immediately during initialization
+- All required configuration must be properly defined and validated
+- System administrators must ensure complete and valid configuration
+
+## Related Decisions
+
+- Configuration schema implementation using Pydantic models
+- Component initialization and configuration passing
+- Error handling strategy for initialization
+
 # Configuration Key Reorganization for Clarity
 
 ## Decision Date: 2025-04-17

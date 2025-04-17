@@ -156,28 +156,27 @@ class FileSystemMonitorComponent(Component):
         self.logger.info(f"Initializing component '{self.name}'...")
         
         try:
-            # Get monitor configuration
-            config = context.config.get(self.name, {})
+            # Get monitor configuration - strict approach, no fallbacks
+            config = context.config.get(self.name)
+            if not config:
+                error_msg = f"Missing configuration section for '{self.name}'"
+                self.logger.error(error_msg)
+                raise RuntimeError(error_msg)
             
-            # Get or create change queue
-            try:
-                queue_component = context.get_component("change_queue")
-                if hasattr(queue_component, 'get_queue'):
-                    self._change_queue = queue_component.get_queue()
-                    self.logger.info("Using queue from change_queue component")
-                else:
-                    raise AttributeError("Queue component has no get_queue method")
-            except (KeyError, AttributeError) as e:
-                self.logger.warning(f"Could not get change_queue component: {e}, creating internal queue")
-                from .queue import ChangeDetectionQueue
-                self._change_queue = ChangeDetectionQueue(config)
+            # Get change queue component - strict approach
+            queue_component = context.get_component("change_queue")
+            if not queue_component or not hasattr(queue_component, 'get_queue'):
+                error_msg = "Queue component not found or missing get_queue method"
+                self.logger.error(error_msg)
+                raise RuntimeError(error_msg)
+                
+            self._change_queue = queue_component.get_queue()
+            self.logger.info("Using queue from change_queue component")
             
-            # Get project root from configuration
-            project_root = config.get('project_root', ".")  # Default to "." if not specified
-            
-            # Throw fatal error if project_root is None
+            # Get project root from configuration with no fallbacks
+            project_root = context.config.get('project.root_path')
             if project_root is None:
-                error_msg = "Project root cannot be None. It must be '.' by default."
+                error_msg = "Project root path not found in configuration"
                 self.logger.error(error_msg)
                 raise RuntimeError(error_msg)
             
@@ -188,12 +187,10 @@ class FileSystemMonitorComponent(Component):
                 project_root=project_root
             )
             
-            # Start monitoring if enabled
-            if config.get('enabled', True):
-                self._monitor.start()
-                self.logger.info(f"File system monitoring started")
-            else:
-                self.logger.info(f"File system monitoring disabled in configuration")
+            # Start monitoring - strict approach with no conditional checks
+            # We assume monitoring should always be enabled
+            self._monitor.start()
+            self.logger.info("File system monitoring started")
             
             self._initialized = True
             self.logger.info(f"Component '{self.name}' initialized successfully")

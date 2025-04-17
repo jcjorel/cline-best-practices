@@ -58,3 +58,36 @@ Warning: Could not get database configuration from component system: 'ComponentS
 --- SERVER START ATTEMPT AT 2025-04-17 18:28:16 ---
 
 Warning: Could not get database configuration from component system: 'ComponentSystem' object has no attribute 'is_initialized'
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 18:34:38 ---
+
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 18:44:45 ---
+
+Warning: Could not get database configuration from component system: 'ComponentSystem' object has no attribute 'is_initialized'
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 18:46:29 ---
+
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 18:47:03 ---
+
+Warning: Could not get database configuration from component system: 'ComponentSystem' object has no attribute 'is_initialized'
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 18:49:21 ---
+
+Warning: Could not get database configuration from component system: 'ComponentSystem' object has no attribute 'is_initialized'
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 18:50:13 ---
+
+Warning: Could not get database configuration from component system: 'ComponentSystem' object has no attribute 'is_initialized'
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 18:50:41 ---
+
+Warning: Could not get database configuration from component system: 'ComponentSystem' object has no attribute 'is_initialized'

@@ -2,6 +2,8 @@
 
 This file tracks all changes made to documentation markdown files in this directory.
 
+2025-04-17T18:58:46Z : [CONFIGURATION.md] Removed duplicate AppConfig definitions in config schema
+2025-04-17T18:44:00Z : [DESIGN_DECISIONS.md] Added strict configuration access design decision
 2025-04-17T17:37:50Z : [DESIGN_DECISIONS.md] Added standardized log format design decision
 2025-04-17T15:18:00Z : [CONFIGURATION.md] Updated CLI configuration parameter names to match renamed configuration keys
 2025-04-17T12:34:25Z : [DESIGN_DECISIONS.md] Added design decision: Git Root-relative Path Resolution for Configuration
