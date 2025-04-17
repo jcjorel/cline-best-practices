@@ -1,0 +1,756 @@
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 15:37:17 ---
+
+2025-04-17 15:37:19,271 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-17 15:37:19,271 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-17 15:37:19,271 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-17 15:37:19,271 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-17 15:37:19,271 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-17 15:37:19,272 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-17 15:37:19,272 - dbp.config.config_manager - INFO - Initializing configuration...
+2025-04-17 15:37:19,273 - dbp.config.config_manager - INFO - Configuration initialized successfully.
+2025-04-17 15:37:19,273 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-17 15:37:19,273 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-17 15:37:19,273 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-17 15:37:19,280 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-17 15:37:19,282 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-17 15:37:19,283 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-17 15:37:19,283 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-17 15:37:19,283 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-17 15:37:19,283 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-17 15:37:19,283 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-17 15:37:19,283 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-17 15:37:19,283 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-17 15:37:19,286 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-17 15:37:19,286 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-17 15:37:19,286 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-17 15:37:19,286 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - CRITICAL for query processing
+2025-04-17 15:37:19,286 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-17 15:37:19,286 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-17 15:37:19,286 - dbp.core.lifecycle - INFO - Initializing 13 components
+2025-04-17 15:37:19,286 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-17 15:37:19,286 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, database, metadata_extraction, doc_relationships, memory_cache, llm_coordinator, consistency_analysis, recommendation_generator, mcp_server, change_queue, fs_monitor, scheduler, filter
+2025-04-17 15:37:19,286 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-17 15:37:19,286 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 15:37:19,286 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 15:37:19,286 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-17 15:37:19,288 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-17 15:37:19,289 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-17 15:37:19,289 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-17 15:37:19,289 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-17 15:37:19,289 - dbp.core.lifecycle - INFO - Initializing component 'database'...
+2025-04-17 15:37:19,289 - dbp.core.lifecycle - INFO - Initializing component 'database' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 15:37:19,289 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 15:37:19,289 - dbp.database - INFO - Initializing component 'database'...
+2025-04-17 15:37:19,289 - dbp.database.database - INFO - Initializing database with type: sqlite
+2025-04-17 15:37:19,289 - dbp.config.config_manager - ERROR - Configuration key 'general.base_dir' not found
+2025-04-17 15:37:19,289 - dbp.config.config_manager - WARNING - Template variable '${general.base_dir}' not found in configuration
+2025-04-17 15:37:19,289 - dbp.config.config_manager - ERROR - Configuration key 'general.base_dir' not found
+2025-04-17 15:37:19,290 - dbp.config.config_manager - WARNING - Template variable '${general.base_dir}' not found in configuration
+2025-04-17 15:37:19,290 - dbp.database.database - INFO - Initializing SQLite database at: ${general.base_dir}/database.sqlite
+2025-04-17 15:37:19,290 - dbp.database.database - INFO - SQLite configuration: pool_size=4, timeout=5
+2025-04-17 15:37:19,290 - dbp.database.database - INFO - SQLite path: absolute=/home/jcjorel/cline-best-practices/${general.base_dir}/database.sqlite, normalized=${general.base_dir}/database.sqlite
+2025-04-17 15:37:19,305 - dbp.database.database - INFO - Enabling SQLite WAL mode...
+2025-04-17 15:37:19,306 - dbp.database.database - INFO - SQLite WAL mode enabled. Current journal mode: wal
+2025-04-17 15:37:19,307 - dbp.database.database - INFO - Running Alembic migrations to initialize/update the database schema...
+2025-04-17 15:37:19,539 - dbp.config.config_manager - ERROR - Configuration key 'database.alembic_ini_path' not found
+2025-04-17 15:37:19,540 - dbp.database.database - ERROR - Failed to run database migrations: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:37:19,540 - dbp.database.database - ERROR - Error type: ValueError
+2025-04-17 15:37:19,546 - dbp.database.database - ERROR - Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+    value = getattr(value, part)
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'DatabaseConfig' object has no attribute 'alembic_ini_path'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 667, in _run_alembic_migrations
+    alembic_ini_path = config_manager.get('database.alembic_ini_path')
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+    return self._config_manager.get(key, resolve_templates)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+    raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+ValueError: Configuration key 'database.alembic_ini_path' not found in configuration
+
+2025-04-17 15:37:19,546 - dbp.database.database - ERROR - Unexpected error during database initialization: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:37:19,546 - dbp.database.database - ERROR - Error type: RuntimeError
+2025-04-17 15:37:19,552 - dbp.database.database - ERROR - Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+    value = getattr(value, part)
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'DatabaseConfig' object has no attribute 'alembic_ini_path'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 667, in _run_alembic_migrations
+    alembic_ini_path = config_manager.get('database.alembic_ini_path')
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+    return self._config_manager.get(key, resolve_templates)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+    raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+ValueError: Configuration key 'database.alembic_ini_path' not found in configuration
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 384, in initialize
+    self._run_alembic_migrations()
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 796, in _run_alembic_migrations
+    raise RuntimeError(f"Failed to initialize database schema: {e}") from e
+RuntimeError: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+
+2025-04-17 15:37:19,552 - dbp.database - ERROR - Failed to initialize database component: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+    value = getattr(value, part)
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'DatabaseConfig' object has no attribute 'alembic_ini_path'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 667, in _run_alembic_migrations
+    alembic_ini_path = config_manager.get('database.alembic_ini_path')
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+    return self._config_manager.get(key, resolve_templates)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+    raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+ValueError: Configuration key 'database.alembic_ini_path' not found in configuration
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 208, in initialize
+    self._db_manager.initialize()
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 384, in initialize
+    self._run_alembic_migrations()
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 796, in _run_alembic_migrations
+    raise RuntimeError(f"Failed to initialize database schema: {e}") from e
+RuntimeError: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:37:19,559 - dbp.core.lifecycle - ERROR - Failed to initialize component 'database': Database component initialization failed: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:37:19,559 - dbp.core.lifecycle - ERROR - Exception type: RuntimeError
+2025-04-17 15:37:19,563 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 15:37:19,563 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+2025-04-17 15:37:19,563 - dbp.core.lifecycle - ERROR -       value = getattr(value, part)
+2025-04-17 15:37:19,563 - dbp.core.lifecycle - ERROR -               ^^^^^^^^^^^^^^^^^^^^
+2025-04-17 15:37:19,563 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+2025-04-17 15:37:19,563 - dbp.core.lifecycle - ERROR -       raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+2025-04-17 15:37:19,563 - dbp.core.lifecycle - ERROR -   AttributeError: 'DatabaseConfig' object has no attribute 'alembic_ini_path'
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -   The above exception was the direct cause of the following exception:
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 667, in _run_alembic_migrations
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -       alembic_ini_path = config_manager.get('database.alembic_ini_path')
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -       return self._config_manager.get(key, resolve_templates)
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -       raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -   ValueError: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -   The above exception was the direct cause of the following exception:
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 208, in initialize
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -       self._db_manager.initialize()
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 384, in initialize
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -       self._run_alembic_migrations()
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 796, in _run_alembic_migrations
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -       raise RuntimeError(f"Failed to initialize database schema: {e}") from e
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -   RuntimeError: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -   The above exception was the direct cause of the following exception:
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/core/system.py", line 288, in initialize_all
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -       component.initialize(context)
+2025-04-17 15:37:19,564 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 217, in initialize
+2025-04-17 15:37:19,565 - dbp.core.lifecycle - ERROR -       raise RuntimeError(f"Database component initialization failed: {e}") from e
+2025-04-17 15:37:19,565 - dbp.core.lifecycle - ERROR -   RuntimeError: Database component initialization failed: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:37:19,565 - dbp.core.lifecycle - ERROR - Component 'database' debug info: {'class_name': 'DatabaseComponent', 'module': 'dbp.database.database', 'initialized': False, 'dependencies': ['config_manager'], 'has_logger': True, 'initialization_error': {'error_type': 'RuntimeError', 'error_message': "Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration"}}
+2025-04-17 15:37:19,565 - dbp.core.lifecycle - ERROR - Dependency 'config_manager' initialized: True
+2025-04-17 15:37:19,566 - dbp.core.lifecycle - WARNING - Rolling back initialization of 1 components
+2025-04-17 15:37:19,566 - dbp.core.lifecycle - INFO - Rolling back component 'config_manager'...
+2025-04-17 15:37:19,567 - dbp.config_manager - INFO - Shutting down component 'config_manager'...
+2025-04-17 15:37:19,567 - dbp.config_manager - INFO - Component 'config_manager' shut down.
+2025-04-17 15:37:19,567 - dbp.core.lifecycle - ERROR - System startup failed due to component initialization errors.
+2025-04-17 15:37:19,568 - dbp.mcp_server.__main__ - CRITICAL - Failed to start components
+2025-04-17 15:37:19,568 - dbp.mcp_server.__main__ - ERROR - Error collecting diagnostic information: 'ConfigManagerComponent' object has no attribute '_initialized'
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 15:38:10 ---
+
+2025-04-17 15:38:11,912 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-17 15:38:11,913 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-17 15:38:11,913 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-17 15:38:11,913 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-17 15:38:11,913 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-17 15:38:11,913 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-17 15:38:11,914 - dbp.config.config_manager - INFO - Initializing configuration...
+2025-04-17 15:38:11,914 - dbp.config.config_manager - INFO - Configuration initialized successfully.
+2025-04-17 15:38:11,914 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-17 15:38:11,915 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-17 15:38:11,915 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-17 15:38:11,922 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-17 15:38:11,923 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-17 15:38:11,924 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-17 15:38:11,924 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-17 15:38:11,924 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-17 15:38:11,924 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-17 15:38:11,925 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-17 15:38:11,925 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-17 15:38:11,925 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-17 15:38:11,929 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-17 15:38:11,930 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-17 15:38:11,930 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-17 15:38:11,930 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - CRITICAL for query processing
+2025-04-17 15:38:11,930 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-17 15:38:11,931 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-17 15:38:11,931 - dbp.core.lifecycle - INFO - Initializing 13 components
+2025-04-17 15:38:11,931 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-17 15:38:11,932 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, database, metadata_extraction, filter, memory_cache, change_queue, fs_monitor, scheduler, doc_relationships, consistency_analysis, llm_coordinator, recommendation_generator, mcp_server
+2025-04-17 15:38:11,932 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-17 15:38:11,932 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 15:38:11,932 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 15:38:11,933 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-17 15:38:11,937 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-17 15:38:11,937 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-17 15:38:11,937 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-17 15:38:11,937 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-17 15:38:11,937 - dbp.core.lifecycle - INFO - Initializing component 'database'...
+2025-04-17 15:38:11,938 - dbp.core.lifecycle - INFO - Initializing component 'database' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 15:38:11,938 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 15:38:11,938 - dbp.database - INFO - Initializing component 'database'...
+2025-04-17 15:38:11,938 - dbp.database.database - INFO - Initializing database with type: sqlite
+2025-04-17 15:38:11,938 - dbp.config.config_manager - ERROR - Configuration key 'general.base_dir' not found
+2025-04-17 15:38:11,938 - dbp.config.config_manager - WARNING - Template variable '${general.base_dir}' not found in configuration
+2025-04-17 15:38:11,938 - dbp.config.config_manager - ERROR - Configuration key 'general.base_dir' not found
+2025-04-17 15:38:11,938 - dbp.config.config_manager - WARNING - Template variable '${general.base_dir}' not found in configuration
+2025-04-17 15:38:11,938 - dbp.database.database - INFO - Initializing SQLite database at: ${general.base_dir}/database.sqlite
+2025-04-17 15:38:11,938 - dbp.database.database - INFO - SQLite configuration: pool_size=4, timeout=5
+2025-04-17 15:38:11,938 - dbp.database.database - INFO - SQLite path: absolute=/home/jcjorel/cline-best-practices/${general.base_dir}/database.sqlite, normalized=${general.base_dir}/database.sqlite
+2025-04-17 15:38:11,950 - dbp.database.database - INFO - Enabling SQLite WAL mode...
+2025-04-17 15:38:11,951 - dbp.database.database - INFO - SQLite WAL mode enabled. Current journal mode: wal
+2025-04-17 15:38:11,952 - dbp.database.database - INFO - Running Alembic migrations to initialize/update the database schema...
+2025-04-17 15:38:12,143 - dbp.config.config_manager - ERROR - Configuration key 'database.alembic_ini_path' not found
+2025-04-17 15:38:12,144 - dbp.database.database - ERROR - Failed to run database migrations: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:38:12,144 - dbp.database.database - ERROR - Error type: ValueError
+2025-04-17 15:38:12,152 - dbp.database.database - ERROR - Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+    value = getattr(value, part)
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'DatabaseConfig' object has no attribute 'alembic_ini_path'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 667, in _run_alembic_migrations
+    alembic_ini_path = config_manager.get('database.alembic_ini_path')
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+    return self._config_manager.get(key, resolve_templates)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+    raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+ValueError: Configuration key 'database.alembic_ini_path' not found in configuration
+
+2025-04-17 15:38:12,153 - dbp.database.database - ERROR - Unexpected error during database initialization: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:38:12,153 - dbp.database.database - ERROR - Error type: RuntimeError
+2025-04-17 15:38:12,161 - dbp.database.database - ERROR - Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+    value = getattr(value, part)
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'DatabaseConfig' object has no attribute 'alembic_ini_path'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 667, in _run_alembic_migrations
+    alembic_ini_path = config_manager.get('database.alembic_ini_path')
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+    return self._config_manager.get(key, resolve_templates)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+    raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+ValueError: Configuration key 'database.alembic_ini_path' not found in configuration
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 384, in initialize
+    self._run_alembic_migrations()
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 796, in _run_alembic_migrations
+    raise RuntimeError(f"Failed to initialize database schema: {e}") from e
+RuntimeError: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+
+2025-04-17 15:38:12,162 - dbp.database - ERROR - Failed to initialize database component: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+    value = getattr(value, part)
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'DatabaseConfig' object has no attribute 'alembic_ini_path'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 667, in _run_alembic_migrations
+    alembic_ini_path = config_manager.get('database.alembic_ini_path')
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+    return self._config_manager.get(key, resolve_templates)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+    raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+ValueError: Configuration key 'database.alembic_ini_path' not found in configuration
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 208, in initialize
+    self._db_manager.initialize()
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 384, in initialize
+    self._run_alembic_migrations()
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 796, in _run_alembic_migrations
+    raise RuntimeError(f"Failed to initialize database schema: {e}") from e
+RuntimeError: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:38:12,167 - dbp.core.lifecycle - ERROR - Failed to initialize component 'database': Database component initialization failed: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:38:12,167 - dbp.core.lifecycle - ERROR - Exception type: RuntimeError
+2025-04-17 15:38:12,171 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 15:38:12,171 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+2025-04-17 15:38:12,171 - dbp.core.lifecycle - ERROR -       value = getattr(value, part)
+2025-04-17 15:38:12,171 - dbp.core.lifecycle - ERROR -               ^^^^^^^^^^^^^^^^^^^^
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -       raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -   AttributeError: 'DatabaseConfig' object has no attribute 'alembic_ini_path'
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -   The above exception was the direct cause of the following exception:
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 667, in _run_alembic_migrations
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -       alembic_ini_path = config_manager.get('database.alembic_ini_path')
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -       return self._config_manager.get(key, resolve_templates)
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -       raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -   ValueError: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -   The above exception was the direct cause of the following exception:
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 208, in initialize
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -       self._db_manager.initialize()
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 384, in initialize
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -       self._run_alembic_migrations()
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 796, in _run_alembic_migrations
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -       raise RuntimeError(f"Failed to initialize database schema: {e}") from e
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -   RuntimeError: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -   The above exception was the direct cause of the following exception:
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/core/system.py", line 288, in initialize_all
+2025-04-17 15:38:12,172 - dbp.core.lifecycle - ERROR -       component.initialize(context)
+2025-04-17 15:38:12,173 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 217, in initialize
+2025-04-17 15:38:12,173 - dbp.core.lifecycle - ERROR -       raise RuntimeError(f"Database component initialization failed: {e}") from e
+2025-04-17 15:38:12,173 - dbp.core.lifecycle - ERROR -   RuntimeError: Database component initialization failed: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:38:12,173 - dbp.core.lifecycle - ERROR - Component 'database' debug info: {'class_name': 'DatabaseComponent', 'module': 'dbp.database.database', 'initialized': False, 'dependencies': ['config_manager'], 'has_logger': True, 'initialization_error': {'error_type': 'RuntimeError', 'error_message': "Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration"}}
+2025-04-17 15:38:12,173 - dbp.core.lifecycle - ERROR - Dependency 'config_manager' initialized: True
+2025-04-17 15:38:12,173 - dbp.core.lifecycle - WARNING - Rolling back initialization of 1 components
+2025-04-17 15:38:12,173 - dbp.core.lifecycle - INFO - Rolling back component 'config_manager'...
+2025-04-17 15:38:12,173 - dbp.config_manager - INFO - Shutting down component 'config_manager'...
+2025-04-17 15:38:12,173 - dbp.config_manager - INFO - Component 'config_manager' shut down.
+2025-04-17 15:38:12,173 - dbp.core.lifecycle - ERROR - System startup failed due to component initialization errors.
+2025-04-17 15:38:12,173 - dbp.mcp_server.__main__ - CRITICAL - Failed to start components
+2025-04-17 15:38:12,173 - dbp.mcp_server.__main__ - ERROR - Error collecting diagnostic information: 'ConfigManagerComponent' object has no attribute '_initialized'
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 15:51:42 ---
+
+2025-04-17 15:51:43,820 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-17 15:51:43,820 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-17 15:51:43,821 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-17 15:51:43,821 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-17 15:51:43,821 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-17 15:51:43,821 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-17 15:51:43,821 - dbp.config.config_manager - INFO - Initializing configuration...
+2025-04-17 15:51:43,822 - dbp.config.config_manager - INFO - Configuration initialized successfully.
+2025-04-17 15:51:43,822 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-17 15:51:43,822 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-17 15:51:43,822 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-17 15:51:43,832 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-17 15:51:43,833 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-17 15:51:43,834 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-17 15:51:43,834 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-17 15:51:43,834 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-17 15:51:43,834 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-17 15:51:43,834 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-17 15:51:43,835 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-17 15:51:43,835 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-17 15:51:43,837 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-17 15:51:43,837 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-17 15:51:43,838 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-17 15:51:43,838 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - CRITICAL for query processing
+2025-04-17 15:51:43,838 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-17 15:51:43,838 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-17 15:51:43,838 - dbp.core.lifecycle - INFO - Initializing 13 components
+2025-04-17 15:51:43,838 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-17 15:51:43,838 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, database, metadata_extraction, change_queue, fs_monitor, doc_relationships, memory_cache, filter, llm_coordinator, consistency_analysis, recommendation_generator, mcp_server, scheduler
+2025-04-17 15:51:43,838 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-17 15:51:43,839 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 15:51:43,839 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 15:51:43,839 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-17 15:51:43,841 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-17 15:51:43,842 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-17 15:51:43,842 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-17 15:51:43,842 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-17 15:51:43,842 - dbp.core.lifecycle - INFO - Initializing component 'database'...
+2025-04-17 15:51:43,842 - dbp.core.lifecycle - INFO - Initializing component 'database' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 15:51:43,842 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 15:51:43,842 - dbp.database - INFO - Initializing component 'database'...
+2025-04-17 15:51:43,842 - dbp.database.database - INFO - Initializing database with type: sqlite
+2025-04-17 15:51:43,843 - dbp.config.config_manager - ERROR - Configuration key 'general.base_dir' not found
+2025-04-17 15:51:43,843 - dbp.config.config_manager - WARNING - Template variable '${general.base_dir}' not found in configuration
+2025-04-17 15:51:43,843 - dbp.config.config_manager - ERROR - Configuration key 'general.base_dir' not found
+2025-04-17 15:51:43,843 - dbp.config.config_manager - WARNING - Template variable '${general.base_dir}' not found in configuration
+2025-04-17 15:51:43,843 - dbp.database.database - INFO - Initializing SQLite database at: ${general.base_dir}/database.sqlite
+2025-04-17 15:51:43,843 - dbp.database.database - INFO - SQLite configuration: pool_size=4, timeout=5
+2025-04-17 15:51:43,843 - dbp.database.database - INFO - SQLite path: absolute=/home/jcjorel/cline-best-practices/${general.base_dir}/database.sqlite, normalized=${general.base_dir}/database.sqlite
+2025-04-17 15:51:43,855 - dbp.database.database - INFO - Enabling SQLite WAL mode...
+2025-04-17 15:51:43,856 - dbp.database.database - INFO - SQLite WAL mode enabled. Current journal mode: wal
+2025-04-17 15:51:43,857 - dbp.database.database - INFO - Running Alembic migrations to initialize/update the database schema...
+2025-04-17 15:51:44,049 - dbp.config.config_manager - ERROR - Configuration key 'database.alembic_ini_path' not found
+2025-04-17 15:51:44,049 - dbp.database.database - ERROR - Failed to run database migrations: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:51:44,050 - dbp.database.database - ERROR - Error type: ValueError
+2025-04-17 15:51:44,058 - dbp.database.database - ERROR - Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+    value = getattr(value, part)
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'DatabaseConfig' object has no attribute 'alembic_ini_path'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 667, in _run_alembic_migrations
+    alembic_ini_path = config_manager.get('database.alembic_ini_path')
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+    return self._config_manager.get(key, resolve_templates)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+    raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+ValueError: Configuration key 'database.alembic_ini_path' not found in configuration
+
+2025-04-17 15:51:44,058 - dbp.database.database - ERROR - Unexpected error during database initialization: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:51:44,058 - dbp.database.database - ERROR - Error type: RuntimeError
+2025-04-17 15:51:44,066 - dbp.database.database - ERROR - Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+    value = getattr(value, part)
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'DatabaseConfig' object has no attribute 'alembic_ini_path'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 667, in _run_alembic_migrations
+    alembic_ini_path = config_manager.get('database.alembic_ini_path')
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+    return self._config_manager.get(key, resolve_templates)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+    raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+ValueError: Configuration key 'database.alembic_ini_path' not found in configuration
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 384, in initialize
+    self._run_alembic_migrations()
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 796, in _run_alembic_migrations
+    raise RuntimeError(f"Failed to initialize database schema: {e}") from e
+RuntimeError: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+
+2025-04-17 15:51:44,067 - dbp.database - ERROR - Failed to initialize database component: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+    value = getattr(value, part)
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'DatabaseConfig' object has no attribute 'alembic_ini_path'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 667, in _run_alembic_migrations
+    alembic_ini_path = config_manager.get('database.alembic_ini_path')
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+    return self._config_manager.get(key, resolve_templates)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+    raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+ValueError: Configuration key 'database.alembic_ini_path' not found in configuration
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 208, in initialize
+    self._db_manager.initialize()
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 384, in initialize
+    self._run_alembic_migrations()
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 796, in _run_alembic_migrations
+    raise RuntimeError(f"Failed to initialize database schema: {e}") from e
+RuntimeError: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:51:44,090 - dbp.core.lifecycle - ERROR - Failed to initialize component 'database': Database component initialization failed: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:51:44,090 - dbp.core.lifecycle - ERROR - Exception type: RuntimeError
+2025-04-17 15:51:44,108 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 15:51:44,108 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+2025-04-17 15:51:44,108 - dbp.core.lifecycle - ERROR -       value = getattr(value, part)
+2025-04-17 15:51:44,108 - dbp.core.lifecycle - ERROR -               ^^^^^^^^^^^^^^^^^^^^
+2025-04-17 15:51:44,108 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+2025-04-17 15:51:44,108 - dbp.core.lifecycle - ERROR -       raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+2025-04-17 15:51:44,108 - dbp.core.lifecycle - ERROR -   AttributeError: 'DatabaseConfig' object has no attribute 'alembic_ini_path'
+2025-04-17 15:51:44,108 - dbp.core.lifecycle - ERROR -   The above exception was the direct cause of the following exception:
+2025-04-17 15:51:44,108 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 15:51:44,108 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 667, in _run_alembic_migrations
+2025-04-17 15:51:44,109 - dbp.core.lifecycle - ERROR -       alembic_ini_path = config_manager.get('database.alembic_ini_path')
+2025-04-17 15:51:44,109 - dbp.core.lifecycle - ERROR -                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-04-17 15:51:44,109 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+2025-04-17 15:51:44,109 - dbp.core.lifecycle - ERROR -       return self._config_manager.get(key, resolve_templates)
+2025-04-17 15:51:44,109 - dbp.core.lifecycle - ERROR -              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-04-17 15:51:44,109 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+2025-04-17 15:51:44,109 - dbp.core.lifecycle - ERROR -       raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+2025-04-17 15:51:44,109 - dbp.core.lifecycle - ERROR -   ValueError: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:51:44,109 - dbp.core.lifecycle - ERROR -   The above exception was the direct cause of the following exception:
+2025-04-17 15:51:44,109 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 15:51:44,109 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 208, in initialize
+2025-04-17 15:51:44,109 - dbp.core.lifecycle - ERROR -       self._db_manager.initialize()
+2025-04-17 15:51:44,109 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 384, in initialize
+2025-04-17 15:51:44,109 - dbp.core.lifecycle - ERROR -       self._run_alembic_migrations()
+2025-04-17 15:51:44,109 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 796, in _run_alembic_migrations
+2025-04-17 15:51:44,109 - dbp.core.lifecycle - ERROR -       raise RuntimeError(f"Failed to initialize database schema: {e}") from e
+2025-04-17 15:51:44,109 - dbp.core.lifecycle - ERROR -   RuntimeError: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:51:44,109 - dbp.core.lifecycle - ERROR -   The above exception was the direct cause of the following exception:
+2025-04-17 15:51:44,110 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 15:51:44,110 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/core/system.py", line 288, in initialize_all
+2025-04-17 15:51:44,110 - dbp.core.lifecycle - ERROR -       component.initialize(context)
+2025-04-17 15:51:44,110 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 217, in initialize
+2025-04-17 15:51:44,110 - dbp.core.lifecycle - ERROR -       raise RuntimeError(f"Database component initialization failed: {e}") from e
+2025-04-17 15:51:44,110 - dbp.core.lifecycle - ERROR -   RuntimeError: Database component initialization failed: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:51:44,110 - dbp.core.lifecycle - ERROR - Component 'database' debug info: {'class_name': 'DatabaseComponent', 'module': 'dbp.database.database', 'initialized': False, 'dependencies': ['config_manager'], 'has_logger': True, 'initialization_error': {'error_type': 'RuntimeError', 'error_message': "Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration"}}
+2025-04-17 15:51:44,110 - dbp.core.lifecycle - ERROR - Dependency 'config_manager' initialized: True
+2025-04-17 15:51:44,118 - dbp.core.lifecycle - WARNING - Rolling back initialization of 1 components
+2025-04-17 15:51:44,121 - dbp.core.lifecycle - INFO - Rolling back component 'config_manager'...
+2025-04-17 15:51:44,122 - dbp.config_manager - INFO - Shutting down component 'config_manager'...
+2025-04-17 15:51:44,122 - dbp.config_manager - INFO - Component 'config_manager' shut down.
+2025-04-17 15:51:44,122 - dbp.core.lifecycle - ERROR - System startup failed due to component initialization errors.
+2025-04-17 15:51:44,122 - dbp.mcp_server.__main__ - CRITICAL - Failed to start components
+2025-04-17 15:51:44,123 - dbp.mcp_server.__main__ - ERROR - Error collecting diagnostic information: 'ConfigManagerComponent' object has no attribute '_initialized'
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 15:54:25 ---
+
+2025-04-17 15:54:27,725 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-17 15:54:27,725 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-17 15:54:27,725 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-17 15:54:27,726 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-17 15:54:27,726 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-17 15:54:27,726 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-17 15:54:27,726 - dbp.config.config_manager - INFO - Initializing configuration...
+2025-04-17 15:54:27,727 - dbp.config.config_manager - INFO - Configuration initialized successfully.
+2025-04-17 15:54:27,727 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-17 15:54:27,727 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-17 15:54:27,727 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-17 15:54:27,736 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-17 15:54:27,738 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-17 15:54:27,739 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-17 15:54:27,739 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-17 15:54:27,739 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-17 15:54:27,739 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-17 15:54:27,739 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-17 15:54:27,739 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-17 15:54:27,739 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-17 15:54:27,742 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-17 15:54:27,742 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-17 15:54:27,742 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-17 15:54:27,742 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - CRITICAL for query processing
+2025-04-17 15:54:27,742 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-17 15:54:27,742 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-17 15:54:27,742 - dbp.core.lifecycle - INFO - Initializing 13 components
+2025-04-17 15:54:27,742 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-17 15:54:27,742 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, database, change_queue, fs_monitor, metadata_extraction, scheduler, memory_cache, llm_coordinator, filter, doc_relationships, consistency_analysis, recommendation_generator, mcp_server
+2025-04-17 15:54:27,742 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-17 15:54:27,742 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 15:54:27,742 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 15:54:27,743 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-17 15:54:27,744 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-17 15:54:27,745 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-17 15:54:27,746 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-17 15:54:27,746 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-17 15:54:27,747 - dbp.core.lifecycle - INFO - Initializing component 'database'...
+2025-04-17 15:54:27,747 - dbp.core.lifecycle - INFO - Initializing component 'database' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 15:54:27,747 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 15:54:27,747 - dbp.database - INFO - Initializing component 'database'...
+2025-04-17 15:54:27,747 - dbp.database.database - INFO - Initializing database with type: sqlite
+2025-04-17 15:54:27,747 - dbp.config.config_manager - ERROR - Configuration key 'general.base_dir' not found
+2025-04-17 15:54:27,747 - dbp.config.config_manager - WARNING - Template variable '${general.base_dir}' not found in configuration
+2025-04-17 15:54:27,748 - dbp.config.config_manager - ERROR - Configuration key 'general.base_dir' not found
+2025-04-17 15:54:27,748 - dbp.config.config_manager - WARNING - Template variable '${general.base_dir}' not found in configuration
+2025-04-17 15:54:27,748 - dbp.database.database - INFO - Initializing SQLite database at: ${general.base_dir}/database.sqlite
+2025-04-17 15:54:27,748 - dbp.database.database - INFO - SQLite configuration: pool_size=4, timeout=5
+2025-04-17 15:54:27,748 - dbp.database.database - INFO - SQLite path: absolute=/home/jcjorel/cline-best-practices/${general.base_dir}/database.sqlite, normalized=${general.base_dir}/database.sqlite
+2025-04-17 15:54:27,763 - dbp.database.database - INFO - Enabling SQLite WAL mode...
+2025-04-17 15:54:27,765 - dbp.database.database - INFO - SQLite WAL mode enabled. Current journal mode: wal
+2025-04-17 15:54:27,765 - dbp.database.database - INFO - Running Alembic migrations to initialize/update the database schema...
+2025-04-17 15:54:28,134 - dbp.config.config_manager - ERROR - Configuration key 'database.alembic_ini_path' not found
+2025-04-17 15:54:28,134 - dbp.database.database - ERROR - Failed to run database migrations: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:54:28,134 - dbp.database.database - ERROR - Error type: ValueError
+2025-04-17 15:54:28,151 - dbp.database.database - ERROR - Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+    value = getattr(value, part)
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'DatabaseConfig' object has no attribute 'alembic_ini_path'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 667, in _run_alembic_migrations
+    alembic_ini_path = config_manager.get('database.alembic_ini_path')
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+    return self._config_manager.get(key, resolve_templates)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+    raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+ValueError: Configuration key 'database.alembic_ini_path' not found in configuration
+
+2025-04-17 15:54:28,151 - dbp.database.database - ERROR - Unexpected error during database initialization: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:54:28,152 - dbp.database.database - ERROR - Error type: RuntimeError
+2025-04-17 15:54:28,172 - dbp.database.database - ERROR - Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+    value = getattr(value, part)
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'DatabaseConfig' object has no attribute 'alembic_ini_path'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 667, in _run_alembic_migrations
+    alembic_ini_path = config_manager.get('database.alembic_ini_path')
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+    return self._config_manager.get(key, resolve_templates)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+    raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+ValueError: Configuration key 'database.alembic_ini_path' not found in configuration
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 384, in initialize
+    self._run_alembic_migrations()
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 796, in _run_alembic_migrations
+    raise RuntimeError(f"Failed to initialize database schema: {e}") from e
+RuntimeError: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+
+2025-04-17 15:54:28,172 - dbp.database - ERROR - Failed to initialize database component: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+    value = getattr(value, part)
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'DatabaseConfig' object has no attribute 'alembic_ini_path'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 667, in _run_alembic_migrations
+    alembic_ini_path = config_manager.get('database.alembic_ini_path')
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+    return self._config_manager.get(key, resolve_templates)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+    raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+ValueError: Configuration key 'database.alembic_ini_path' not found in configuration
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 208, in initialize
+    self._db_manager.initialize()
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 384, in initialize
+    self._run_alembic_migrations()
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 796, in _run_alembic_migrations
+    raise RuntimeError(f"Failed to initialize database schema: {e}") from e
+RuntimeError: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:54:28,190 - dbp.core.lifecycle - ERROR - Failed to initialize component 'database': Database component initialization failed: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:54:28,190 - dbp.core.lifecycle - ERROR - Exception type: RuntimeError
+2025-04-17 15:54:28,211 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 15:54:28,211 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+2025-04-17 15:54:28,212 - dbp.core.lifecycle - ERROR -       value = getattr(value, part)
+2025-04-17 15:54:28,212 - dbp.core.lifecycle - ERROR -               ^^^^^^^^^^^^^^^^^^^^
+2025-04-17 15:54:28,212 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+2025-04-17 15:54:28,212 - dbp.core.lifecycle - ERROR -       raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+2025-04-17 15:54:28,212 - dbp.core.lifecycle - ERROR -   AttributeError: 'DatabaseConfig' object has no attribute 'alembic_ini_path'
+2025-04-17 15:54:28,212 - dbp.core.lifecycle - ERROR -   The above exception was the direct cause of the following exception:
+2025-04-17 15:54:28,212 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 15:54:28,212 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 667, in _run_alembic_migrations
+2025-04-17 15:54:28,212 - dbp.core.lifecycle - ERROR -       alembic_ini_path = config_manager.get('database.alembic_ini_path')
+2025-04-17 15:54:28,212 - dbp.core.lifecycle - ERROR -                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-04-17 15:54:28,212 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+2025-04-17 15:54:28,212 - dbp.core.lifecycle - ERROR -       return self._config_manager.get(key, resolve_templates)
+2025-04-17 15:54:28,212 - dbp.core.lifecycle - ERROR -              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-04-17 15:54:28,213 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+2025-04-17 15:54:28,213 - dbp.core.lifecycle - ERROR -       raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+2025-04-17 15:54:28,213 - dbp.core.lifecycle - ERROR -   ValueError: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:54:28,213 - dbp.core.lifecycle - ERROR -   The above exception was the direct cause of the following exception:
+2025-04-17 15:54:28,226 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 15:54:28,226 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 208, in initialize
+2025-04-17 15:54:28,226 - dbp.core.lifecycle - ERROR -       self._db_manager.initialize()
+2025-04-17 15:54:28,226 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 384, in initialize
+2025-04-17 15:54:28,226 - dbp.core.lifecycle - ERROR -       self._run_alembic_migrations()
+2025-04-17 15:54:28,227 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 796, in _run_alembic_migrations
+2025-04-17 15:54:28,227 - dbp.core.lifecycle - ERROR -       raise RuntimeError(f"Failed to initialize database schema: {e}") from e
+2025-04-17 15:54:28,227 - dbp.core.lifecycle - ERROR -   RuntimeError: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:54:28,227 - dbp.core.lifecycle - ERROR -   The above exception was the direct cause of the following exception:
+2025-04-17 15:54:28,227 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 15:54:28,227 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/core/system.py", line 288, in initialize_all
+2025-04-17 15:54:28,227 - dbp.core.lifecycle - ERROR -       component.initialize(context)
+2025-04-17 15:54:28,227 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 217, in initialize
+2025-04-17 15:54:28,227 - dbp.core.lifecycle - ERROR -       raise RuntimeError(f"Database component initialization failed: {e}") from e
+2025-04-17 15:54:28,227 - dbp.core.lifecycle - ERROR -   RuntimeError: Database component initialization failed: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 15:54:28,227 - dbp.core.lifecycle - ERROR - Component 'database' debug info: {'class_name': 'DatabaseComponent', 'module': 'dbp.database.database', 'initialized': False, 'dependencies': ['config_manager'], 'has_logger': True, 'initialization_error': {'error_type': 'RuntimeError', 'error_message': "Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration"}}
+2025-04-17 15:54:28,228 - dbp.core.lifecycle - ERROR - Dependency 'config_manager' initialized: True
+2025-04-17 15:54:28,228 - dbp.core.lifecycle - WARNING - Rolling back initialization of 1 components
+2025-04-17 15:54:28,228 - dbp.core.lifecycle - INFO - Rolling back component 'config_manager'...
+2025-04-17 15:54:28,228 - dbp.config_manager - INFO - Shutting down component 'config_manager'...
+2025-04-17 15:54:28,228 - dbp.config_manager - INFO - Component 'config_manager' shut down.
+2025-04-17 15:54:28,228 - dbp.core.lifecycle - ERROR - System startup failed due to component initialization errors.
+2025-04-17 15:54:28,228 - dbp.mcp_server.__main__ - CRITICAL - Failed to start components
+2025-04-17 15:54:28,228 - dbp.mcp_server.__main__ - ERROR - Error collecting diagnostic information: 'ConfigManagerComponent' object has no attribute '_initialized'

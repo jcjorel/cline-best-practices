@@ -35,14 +35,24 @@
 # - src/dbp/mcp_server/server.py
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-16T16:38:00Z : Added server restart option and improved start reliability by CodeAssistant
-# * Added _dump_server_error_logs method to extract and display error logs
-# * Enhanced restart functionality with better error handling and port verification
-# * Added startup verification with signal file detection from server
-# 2025-04-15T23:54:09Z : Fixed context manager issue in _check_status method by CodeAssistant
-# * Changed incorrect usage of progress.start() with 'with' statement to using the with_progress helper method
-# 2025-04-15T14:50:00Z : Initial creation of ServerCommandHandler by CodeAssistant
-# * Implemented command handler for MCP server management
+# 2025-04-17T16:16:00Z : Removed duplicate log path information by CodeAssistant
+# * Modified _dump_server_error_logs method to avoid displaying redundant log file paths
+# * Improved logging clarity by removing repetitive file path information
+# * Ensured log paths are only reported by the calling method for consistency
+# 2025-04-17T15:52:00Z : Fixed import error in server startup by CodeAssistant
+# * Changed relative import to absolute import for default_config module
+# * Fixed "attempted relative import beyond top-level package" error
+# * Improved import compatibility across different execution environments
+# 2025-04-17T15:49:00Z : Fixed startup configuration access by CodeAssistant
+# * Modified server startup to properly access base_dir from GENERAL_DEFAULTS
+# * Updated startup_timeout to use initialization.timeout_seconds from configuration
+# * Added better logging of signal file path and timeout settings
+# * Fixed server startup failures due to missing 'general.base_dir' key
+# 2025-04-17T13:52:00Z : Added validation for missing configuration values by CodeAssistant
+# * Implemented proper error checking for required configuration values
+# * Added explicit ValueError throws when configuration is missing
+# * Updated method documentation to reflect stricter validation requirements
+# * Improved error messages to indicate exactly which configuration is missing
 ###############################################################################
 
 import argparse
@@ -83,7 +93,6 @@ class ServerCommandHandler(BaseCommandHandler):
     
     DEFAULT_HOST = "localhost"
     DEFAULT_PORT = 6231
-    PID_FILE = Path.home() / ".dbp" / "mcp_server.pid"
     
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         """
@@ -174,23 +183,23 @@ class ServerCommandHandler(BaseCommandHandler):
             logger.exception(f"Server {args.action} error", exc_info=True)
             return 1
 
-    def _dump_server_error_logs(self, stderr_log_path: Path, limit: int = 50) -> None:
+    def _dump_server_error_logs(self, stderr_log_path: Path) -> None:
         """
         [Function intent]
-        Extract and display error logs from the server's stderr log file.
+        Extract and display all logs from the server's stderr log file since the start marker.
         
         [Implementation details]
-        Reads the specified log file and extracts the most recent error messages.
-        Formats and displays these messages to provide context for server failures.
-        Includes file paths for full log access.
+        Reads the specified log file and extracts all log messages since the last server start.
+        Formats and displays these messages to provide complete context for server failures.
+        Shows the entire log without truncation to ensure all error details are visible.
         
         [Design principles]
+        Complete context - shows all logs since server start without truncation.
         Actionable feedback - provides detailed error information for troubleshooting.
-        Context preservation - displays enough log lines to understand the failure.
+        Clear error highlighting - visually distinguishes error messages from info messages.
         
         Args:
             stderr_log_path: Path to the server's stderr log file
-            limit: Maximum number of log lines to display
             
         Returns:
             None
@@ -201,25 +210,42 @@ class ServerCommandHandler(BaseCommandHandler):
                 return
                 
             with open(stderr_log_path, "r") as f:
-                # Read all lines and get the last 'limit' lines
                 lines = f.readlines()
                 if not lines:
                     self.output.warning("Server log file is empty")
                     return
-                    
-                # Capture the most recent log entries
-                error_lines = lines[-limit:]
                 
-                # Display them with proper formatting
-                self.output.error("Recent server error log:")
-                for line in error_lines:
+                # Find the last server start marker
+                start_marker_prefix = "--- SERVER START ATTEMPT AT "
+                start_marker_index = -1
+                
+                for i, line in enumerate(reversed(lines)):
+                    if start_marker_prefix in line:
+                        start_marker_index = len(lines) - i - 1
+                        break
+                
+                # If no start marker found, show all logs
+                if start_marker_index == -1:
+                    self.output.info("No server start marker found, showing all logs:")
+                    log_lines = lines
+                else:
+                    # Get all logs since the last server start
+                    log_lines = lines[start_marker_index:]
+                    start_time = log_lines[0].strip().replace(start_marker_prefix, "").replace("---", "").strip()
+                    self.output.info(f"Server logs since start attempt at {start_time}:")
+                
+                # Display all logs with proper formatting
+                self.output.info("Complete server error log:")
+                for line in log_lines:
                     line = line.strip()
                     if "ERROR" in line or "CRITICAL" in line:
                         self.output.error(f"  {line}")
+                    elif "WARNING" in line:
+                        self.output.warning(f"  {line}")
                     else:
                         self.output.info(f"  {line}")
-                        
-                self.output.info(f"Full server logs available at: {stderr_log_path}")
+                
+                # Log paths will be reported by the calling method
         except Exception as e:
             self.output.error(f"Failed to read error log: {e}")
     
@@ -256,8 +282,12 @@ class ServerCommandHandler(BaseCommandHandler):
                 logger.debug(f"Removing stale PID file (PID: {pid} not found)")
                 self._clear_pid_file()
         
-        # Prepare directory for PID file
-        self.PID_FILE.parent.mkdir(parents=True, exist_ok=True)
+        # Get required PID file path from configuration manager
+        pid_file_path = self.mcp_client.config_manager.get('mcp_server.pid_file')
+        if pid_file_path is None:
+            raise ValueError("Required configuration 'mcp_server.pid_file' is missing")
+        pid_file = Path(pid_file_path)
+        pid_file.parent.mkdir(parents=True, exist_ok=True)
         
         # Check port availability
         if not self._is_port_available(args.host, args.port):
@@ -282,8 +312,11 @@ class ServerCommandHandler(BaseCommandHandler):
                 subprocess.run(cmd, check=True)
                 return 0
             else:
-                # Create log directory and files for server output
-                logs_dir = Path.home() / ".dbp" / "logs"
+                # Get required log directory from configuration manager
+                logs_dir_path = self.mcp_client.config_manager.get('mcp_server.logs_dir')
+                if logs_dir_path is None:
+                    raise ValueError("Required configuration 'mcp_server.logs_dir' is missing")
+                logs_dir = Path(logs_dir_path)
                 logs_dir.mkdir(parents=True, exist_ok=True)
                 stdout_log = logs_dir / "mcp_server_stdout.log"
                 stderr_log = logs_dir / "mcp_server_stderr.log"
@@ -306,24 +339,32 @@ class ServerCommandHandler(BaseCommandHandler):
                     )
                 
                 # Store PID for later management
-                with open(self.PID_FILE, "w") as f:
+                with open(pid_file, "w") as f:
                     f.write(str(process.pid))
                 
                 # Process is started, now wait for it to initialize
                 self.output.info("Process started, waiting for server initialization...")
                 
-                # Give the server some time to initialize
-                startup_timeout = 30  # seconds
-                startup_signal_file = Path.home() / '.dbp' / 'mcp_server_started'
+                # Get timeout from config or use default
+                startup_timeout = self.mcp_client.config_manager.get('initialization.timeout_seconds', 30)
+                
+                # Use the base_dir from the centralized configuration - with absolute import
+                from dbp.config.default_config import GENERAL_DEFAULTS
+                base_dir_path = GENERAL_DEFAULTS["base_dir"]
+                startup_signal_file = Path(base_dir_path) / 'mcp_server_started'
+                
+                self.output.info(f"Waiting for startup signal at {startup_signal_file} (timeout: {startup_timeout}s)...")
                 
                 # Initial check if process is still running
                 if process.poll() is not None:
                     # Server failed to start, read error logs
                     self.output.error(f"Server failed to start (exit code: {process.returncode})")
+                    # Pass the complete stderr_log path without limit param since our updated method shows all logs
                     self._dump_server_error_logs(stderr_log)
                     self.output.info(f"Full server logs available at:")
                     self.output.info(f"  - Stdout: {stdout_log}")
                     self.output.info(f"  - Stderr: {stderr_log}")
+                    self.output.info(f"  All logs directory: {logs_dir}")
                     return 1
                 
                 # Wait for startup signal or timeout
@@ -337,6 +378,7 @@ class ServerCommandHandler(BaseCommandHandler):
                     # Check if process is still running
                     if process.poll() is not None:
                         self.output.error(f"Server failed during startup (exit code: {process.returncode})")
+                        # Display complete logs without limit since we removed the limit parameter
                         self._dump_server_error_logs(stderr_log)
                         self.output.info(f"Full server logs available at:")
                         self.output.info(f"  - Stdout: {stdout_log}")
@@ -365,6 +407,7 @@ class ServerCommandHandler(BaseCommandHandler):
                         # Check if process died
                         if process.poll() is not None:
                             self.output.error(f"Server crashed during startup (exit code: {process.returncode})")
+                            # Show complete logs for better debugging
                             self._dump_server_error_logs(stderr_log)
                             self.output.info(f"Full server logs available at:")
                             self.output.info(f"  - Stdout: {stdout_log}")
@@ -597,21 +640,32 @@ class ServerCommandHandler(BaseCommandHandler):
         Retrieve the process ID of a running MCP server from the PID file.
         
         [Implementation details]
-        Checks if the PID file exists at the location specified by the class constant.
+        Gets PID file path from configuration manager.
+        Checks if the PID file exists at the configured location.
         Reads and parses the PID as an integer if the file exists.
         Returns None if the file doesn't exist or can't be read properly.
-        Logs errors for troubleshooting but doesn't raise exceptions.
+        Throws an error if the required configuration value is missing.
         
         [Design principles]
         Defensive coding - handles file not found and parsing errors gracefully.
         Diagnostic logging - logs errors but doesn't propagate them to calling code.
+        Configuration-driven - uses configured paths instead of hardcoded values.
+        Fail-fast - throws error for missing configuration rather than using fallbacks.
         
         Returns:
             The server process ID if available, None otherwise
+            
+        Raises:
+            ValueError: If the required configuration value is missing
         """
+        pid_file_path = self.mcp_client.config_manager.get('mcp_server.pid_file')
+        if pid_file_path is None:
+            raise ValueError("Required configuration 'mcp_server.pid_file' is missing")
+            
         try:
-            if self.PID_FILE.exists():
-                with open(self.PID_FILE, "r") as f:
+            pid_file = Path(pid_file_path)
+            if pid_file.exists():
+                with open(pid_file, "r") as f:
                     return int(f.read().strip())
             return None
         except (ValueError, IOError):
@@ -624,21 +678,33 @@ class ServerCommandHandler(BaseCommandHandler):
         Delete the PID file to clean up after server shutdown.
         
         [Implementation details]
+        Gets PID file path from configuration manager.
         Checks if the PID file exists before attempting deletion.
         Uses Path.unlink() to remove the file.
         Logs errors if deletion fails but doesn't raise exceptions.
+        Throws an error if the required configuration value is missing.
         
         [Design principles]
         Idempotent operation - safe to call multiple times.
         Defensive coding - checks file existence before deletion.
         Diagnostic logging - logs errors but doesn't propagate them.
+        Configuration-driven - uses configured paths instead of hardcoded values.
+        Fail-fast - throws error for missing configuration rather than using fallbacks.
         
         Returns:
             None
+            
+        Raises:
+            ValueError: If the required configuration value is missing
         """
+        pid_file_path = self.mcp_client.config_manager.get('mcp_server.pid_file')
+        if pid_file_path is None:
+            raise ValueError("Required configuration 'mcp_server.pid_file' is missing")
+            
         try:
-            if self.PID_FILE.exists():
-                self.PID_FILE.unlink()
+            pid_file = Path(pid_file_path)
+            if pid_file.exists():
+                pid_file.unlink()
         except IOError:
             logger.error("Failed to delete PID file", exc_info=True)
     

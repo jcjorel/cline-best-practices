@@ -1,0 +1,10 @@
+{
+  "general": {
+    "base_dir": ".dbp"
+  },
+  "mcp_server": {
+    "pid_file": "${general.base_dir}/mcp_server.pid",
+    "logs_dir": "${general.base_dir}/logs",
+    "cli_config_file": "${general.base_dir}/cli_config.json"
+  }
+}

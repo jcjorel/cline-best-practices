@@ -33,34 +33,34 @@ This approach provides several benefits:
 
 ## MCP Python CLI Client Configuration
 
-### Connection Settings
+### CLI Connection Settings
 
 | Parameter | Description | Default | Valid Values |
 |-----------|-------------|---------|-------------|
-| `server.default` | Default MCP server to connect to | `"local"` | Any configured server name |
-| `server.bind_address` | Network address to bind server to | `"127.0.0.1"` | Valid IP address or hostname |
-| `server.port` | Port to use when connecting to MCP servers | `6231` | `1024-65535` |
-| `server.timeout` | Connection timeout in seconds | `5` | `1-60` |
-| `server.retry_attempts` | Number of connection retry attempts | `3` | `0-10` |
-| `server.retry_interval` | Seconds between retry attempts | `2` | `1-30` |
+| `cli_server_connection.default` | Default MCP server to connect to | `"local"` | Any configured server name |
+| `cli_server_connection.bind_address` | Network address to bind server to | `"127.0.0.1"` | Valid IP address or hostname |
+| `cli_server_connection.port` | Port to use when connecting to MCP servers | `6231` | `1024-65535` |
+| `cli_server_connection.timeout` | Connection timeout in seconds | `30` | `1-60` |
+| `cli_server_connection.retry_attempts` | Number of connection retry attempts | `3` | `0-10` |
+| `cli_server_connection.retry_interval` | Seconds between retry attempts | `2` | `1-30` |
 
-### Output Formatting
-
-| Parameter | Description | Default | Valid Values |
-|-----------|-------------|---------|-------------|
-| `output.format` | Default output format for responses | `"formatted"` | `"json", "yaml", "formatted"` |
-| `output.color` | Use colored output in terminal | `true` | `true, false` |
-| `output.verbosity` | Level of detail in output | `"normal"` | `"minimal", "normal", "detailed"` |
-| `output.max_width` | Maximum width for formatted output | Terminal width | `80-1000` |
-
-### Command History
+### CLI Output Formatting
 
 | Parameter | Description | Default | Valid Values |
 |-----------|-------------|---------|-------------|
-| `history.enabled` | Enable command history | `true` | `true, false` |
-| `history.size` | Maximum number of commands to store | `100` | `10-1000` |
-| `history.file` | File location for persistent history | `"~/.mcp_cli_history"` | Valid file path |
-| `history.save_failed` | Include failed commands in history | `true` | `true, false` |
+| `cli_output.format` | Default output format for responses | `"formatted"` | `"json", "yaml", "formatted"` |
+| `cli_output.color` | Use colored output in terminal | `true` | `true, false` |
+| `cli_output.verbosity` | Level of detail in output | `"normal"` | `"minimal", "normal", "detailed"` |
+| `cli_output.max_width` | Maximum width for formatted output | Terminal width | `80-1000` |
+
+### CLI Command History
+
+| Parameter | Description | Default | Valid Values |
+|-----------|-------------|---------|-------------|
+| `cli_history.enabled` | Enable command history | `true` | `true, false` |
+| `cli_history.size` | Maximum number of commands to store | `100` | `10-1000` |
+| `cli_history.file` | File location for persistent history | `"${general.base_dir}/cli_history"` | Valid file path |
+| `cli_history.save_failed` | Include failed commands in history | `true` | `true, false` |
 
 ### Scripting Support
 
@@ -96,7 +96,7 @@ This approach provides several benefits:
 | Parameter | Description | Default | Valid Values |
 |-----------|-------------|---------|-------------|
 | `database.type` | Database backend to use | `"sqlite"` | `"sqlite", "postgresql"` |
-| `database.path` | Path to SQLite database file (when using SQLite) | `"~/.dbp/metadata.db"` | Valid file path |
+| `database.path` | Path to SQLite database file (when using SQLite) | `"coding_assistant/dbp/database.db"` | Valid file path |
 | `database.connection_string` | PostgreSQL connection string (when using PostgreSQL) | `null` | Valid PostgreSQL connection string |
 | `database.max_size_mb` | Maximum database size in megabytes (SQLite only) | `500` | `10-10000` |
 | `database.vacuum_threshold` | Threshold for automatic vacuum (% free space) (SQLite only) | `20` | `5-50` |
@@ -119,23 +119,23 @@ Configuration can be specified in JSON format:
 
 ```json
 {
-  "server": {
+  "cli_server_connection": {
     "default": "local",
     "bind_address": "127.0.0.1",
     "port": 6231,
-    "timeout": 5,
+    "timeout": 30,
     "retry_attempts": 3,
     "retry_interval": 2
   },
-  "output": {
+  "cli_output": {
     "format": "formatted",
     "color": true,
     "verbosity": "normal"
   },
-  "history": {
+  "cli_history": {
     "enabled": true,
     "size": 100,
-    "file": "~/.mcp_cli_history",
+    "file": "${general.base_dir}/cli_history",
     "save_failed": true
   },
   "script": {
@@ -150,7 +150,7 @@ Configuration can be specified in JSON format:
   },
   "database": {
     "type": "sqlite",
-    "path": "~/.dbp/metadata.db",
+    "path": "coding_assistant/dbp/database.db",
     "max_size_mb": 500,
     "vacuum_threshold": 20,
     "use_wal_mode": true
@@ -170,9 +170,9 @@ All configuration parameters can be overridden using environment variables with 
 
 | Environment Variable | Corresponding Parameter |
 |---------------------|-------------------------|
-| `DBP_SERVER_DEFAULT` | `server.default` |
-| `DBP_SERVER_PORT` | `server.port` |
-| `DBP_OUTPUT_FORMAT` | `output.format` |
+| `DBP_CLI_SERVER_CONNECTION_DEFAULT` | `cli_server_connection.default` |
+| `DBP_CLI_SERVER_CONNECTION_PORT` | `cli_server_connection.port` |
+| `DBP_CLI_OUTPUT_FORMAT` | `cli_output.format` |
 | `DBP_MONITOR_DELAY` | `monitor.delay` |
 | `DBP_DATABASE_TYPE` | `database.type` |
 | `DBP_RECOMMENDATIONS_PURGE_AGE_DAYS` | `recommendations.purge_age_days` |
@@ -194,7 +194,7 @@ When used within the Cline environment, the following integration points are ava
 For the CLI client, configuration can be overridden using command-line parameters:
 
 ```
-mcp-cli --server.port=7000 --output.format=json connect local
+mcp-cli --cli_server_connection.port=7000 --cli_output.format=json connect local
 ```
 
 ## Configuration Precedence

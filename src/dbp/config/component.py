@@ -38,6 +38,14 @@
 # - src/dbp/config/config_manager.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-17T12:56:00Z : Added Git root path initialization by CodeAssistant
+# * Added detection and setting of project.root_path from Git root directory
+# * Added error handling when Git root cannot be found
+# * Enhanced initialization method to set project.root_path automatically
+# 2025-04-17T12:23:22Z : Added template variable substitution by CodeAssistant
+# * Implemented resolve_template_string method for ${key} variable substitution
+# * Enhanced get method to support template resolution in configuration values
+# * Added support for nested templates with recursion depth limit
 # 2025-04-16T01:25:43Z : Initial creation by CodeAssistant
 # * Created ConfigManagerComponent implementing Component protocol
 # * Wrapped ConfigurationManager singleton
@@ -49,6 +57,7 @@ from typing import List, Optional, Dict, Any
 # Import core component types
 from ..core.component import Component, InitializationContext
 from .config_manager import ConfigurationManager
+from ..core.fs_utils import find_git_root
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +95,7 @@ class ConfigManagerComponent(Component):
         """
         Initializes the ConfigManagerComponent.
         If the ConfigurationManager is not already initialized, initializes it.
+        Sets the project root path from Git repository root.
         
         Args:
             config: Configuration object with application settings
@@ -96,6 +106,17 @@ class ConfigManagerComponent(Component):
         if not self._config_manager.initialized_flag:
             self.logger.info("ConfigurationManager not yet initialized. Initializing now.")
             self._config_manager.initialize()
+        
+        # Find Git root and set project.root_path
+        git_root = find_git_root()
+        if git_root is None:
+            self.logger.error("Could not find Git root directory. This is required for project.root_path.")
+            raise RuntimeError("Git root directory not found. Cannot initialize configuration properly.")
+            
+        self.logger.info(f"Setting project.root_path to Git root: {git_root}")
+        if not self._config_manager.set('project.root_path', str(git_root)):
+            self.logger.error("Failed to set project.root_path in configuration")
+            raise RuntimeError("Failed to set project.root_path in configuration")
         
         self._is_initialized = True
         self.logger.info(f"Component '{self.name}' initialized successfully.")
@@ -114,18 +135,22 @@ class ConfigManagerComponent(Component):
         """Returns True if the component is initialized."""
         return self._is_initialized
 
-    def get(self, key: str, default: Any = None) -> Any:
+    def get(self, key: str, resolve_templates: bool = True) -> Any:
         """
         Retrieves a configuration value using dot notation.
         
         Args:
             key: The configuration key in dot notation.
-            default: The value to return if the key is not found.
+            resolve_templates: If True, resolves any template variables in string values.
             
         Returns:
-            The configuration value or the default.
+            The configuration value with template variables resolved.
+            
+        Raises:
+            ValueError: If the configuration key doesn't exist.
         """
-        return self._config_manager.get(key, default)
+        # The configuration manager now handles template resolution internally
+        return self._config_manager.get(key, resolve_templates)
 
     def set(self, key: str, value: Any) -> bool:
         """
@@ -149,7 +174,24 @@ class ConfigManagerComponent(Component):
             
         Returns:
             Dictionary containing default values for the section.
+            
+        Raises:
+            ValueError: If the section doesn't exist.
         """
-        # Get default values from the Pydantic model
-        default_config = self._config_manager._config.dict().get(section, {})
-        return default_config
+        try:
+            # Get values from the configuration model
+            section_config = self._config_manager.get(section)
+            
+            # If it's a dictionary, return it directly
+            if isinstance(section_config, dict):
+                return section_config
+                
+            # If it's a Pydantic model with a dict() method
+            if hasattr(section_config, 'dict') and callable(section_config.dict):
+                return section_config.dict()
+                
+            # Last resort - try to convert to dict if possible
+            return dict(section_config)
+        except Exception as e:
+            self.logger.error(f"Could not get default configuration for section '{section}': {e}")
+            raise ValueError(f"Could not get default configuration for section '{section}'") from e

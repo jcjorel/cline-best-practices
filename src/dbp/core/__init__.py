@@ -28,6 +28,9 @@
 # - doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-17T17:02:45Z : Added logging utility exports by CodeAssistant
+# * Imported MillisecondFormatter and logging utilities from log_utils module
+# * Added them to __all__ to expose them to other modules
 # 2025-04-15T21:58:23Z : Added GenAI header to comply with documentation standards by CodeAssistant
 # * Added complete header template with appropriate sections
 ###############################################################################
@@ -51,10 +54,20 @@ Key components:
 from .component import Component, InitializationContext
 from .system import ComponentSystem
 from .lifecycle import LifecycleManager
+from .log_utils import (
+    MillisecondFormatter,
+    configure_logger, 
+    get_formatted_logger,
+    setup_application_logging,
+)
 
 __all__ = [
     "Component",
     "InitializationContext",
     "ComponentSystem",
     "LifecycleManager",
+    "MillisecondFormatter",
+    "configure_logger",
+    "get_formatted_logger",
+    "setup_application_logging",
 ]

@@ -40,11 +40,25 @@
 # - doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-16T23:57:00Z : Updated to use centralized default values by CodeAssistant
-# * Imported default values from default_config.py
-# * Modified all Pydantic models to reference centralized defaults
-# 2025-04-15T09:35:40Z : Initial creation of configuration schema models by CodeAssistant
-# * Defined all Pydantic models based on plan_config_management.md.
+# 2025-04-17T16:46:00Z : Renamed MonitorConfig to FSMonitorConfig for component name consistency by CodeAssistant
+# * Renamed MonitorConfig class to FSMonitorConfig to match fs_monitor component name
+# * Updated AppConfig to use fs_monitor field instead of monitor
+# * Fixed "Configuration key 'fs_monitor' not found" error during server startup
+# * Aligned configuration schema with component naming conventions
+# 2025-04-17T16:17:00Z : Added database.alembic_ini_path configuration field by CodeAssistant
+# * Added missing alembic_ini_path field to DatabaseConfig class
+# * Fixed "Configuration key 'database.alembic_ini_path' not found" error
+# * Enabled successful execution of database migrations during server startup
+# 2025-04-17T16:04:00Z : Added GeneralConfig class and fixed missing configuration by CodeAssistant
+# * Added new GeneralConfig class to expose general.base_dir configuration setting
+# * Added general field to main AppConfig class to make it accessible
+# * Fixed "Configuration key 'general.base_dir' not found" errors during server startup
+# * Fixed database and MCP server component access to configuration values
+# 2025-04-17T15:29:00Z : Updated imports and references to match renamed config keys by CodeAssistant
+# * Changed imports to use CLI_SERVER_CONNECTION_DEFAULTS instead of SERVER_DEFAULTS
+# * Changed imports to use CLI_OUTPUT_DEFAULTS instead of OUTPUT_DEFAULTS
+# * Changed imports to use CLI_HISTORY_DEFAULTS instead of HISTORY_DEFAULTS
+# * Updated all model field references to use the new config key names
 ###############################################################################
 
 from pydantic import BaseModel, Field, validator, DirectoryPath, FilePath
@@ -54,9 +68,11 @@ import logging
 
 # Import centralized default values
 from .default_config import (
-    SERVER_DEFAULTS,
-    OUTPUT_DEFAULTS,
-    HISTORY_DEFAULTS,
+    GENERAL_DEFAULTS,
+    PROJECT_DEFAULTS,
+    CLI_SERVER_CONNECTION_DEFAULTS,
+    CLI_OUTPUT_DEFAULTS,
+    CLI_HISTORY_DEFAULTS,
     SCRIPT_DEFAULTS,
     SCHEDULER_DEFAULTS,
     MONITOR_DEFAULTS,
@@ -70,24 +86,36 @@ from .default_config import (
     CONSISTENCY_ANALYSIS_DEFAULTS,
     RECOMMENDATION_GENERATOR_DEFAULTS,
     MCP_SERVER_DEFAULTS,
+    CLI_DEFAULTS,
 )
 
 logger = logging.getLogger(__name__)
 
+# General application settings
+class GeneralConfig(BaseModel):
+    """General application settings."""
+    base_dir: str = Field(default=GENERAL_DEFAULTS["base_dir"], description="Base directory for all DBP files, relative to Git root")
+
 class ServerConfig(BaseModel):
     """Server configuration settings."""
-    default: str = Field(default=SERVER_DEFAULTS["default"], description="Default MCP server to connect to")
-    port: int = Field(default=SERVER_DEFAULTS["port"], ge=1024, le=65535, description="Port to use when connecting to MCP servers")
-    timeout: int = Field(default=SERVER_DEFAULTS["timeout"], ge=1, le=60, description="Connection timeout in seconds")
-    retry_attempts: int = Field(default=SERVER_DEFAULTS["retry_attempts"], ge=0, le=10, description="Number of connection retry attempts")
-    retry_interval: int = Field(default=SERVER_DEFAULTS["retry_interval"], ge=1, le=30, description="Seconds between retry attempts")
+    default: str = Field(default=CLI_SERVER_CONNECTION_DEFAULTS["default"], description="Default MCP server to connect to")
+    port: int = Field(default=CLI_SERVER_CONNECTION_DEFAULTS["port"], ge=1024, le=65535, description="Port to use when connecting to MCP servers")
+    timeout: int = Field(default=CLI_SERVER_CONNECTION_DEFAULTS["timeout"], ge=1, le=60, description="Connection timeout in seconds")
+    retry_attempts: int = Field(default=CLI_SERVER_CONNECTION_DEFAULTS["retry_attempts"], ge=0, le=10, description="Number of connection retry attempts")
+    retry_interval: int = Field(default=CLI_SERVER_CONNECTION_DEFAULTS["retry_interval"], ge=1, le=30, description="Seconds between retry attempts")
+
+class ProjectConfig(BaseModel):
+    """Project settings."""
+    name: str = Field(default=PROJECT_DEFAULTS["name"], description="Project name")
+    description: str = Field(default=PROJECT_DEFAULTS["description"], description="Project description")
+    root_path: str = Field(default="", description="Git root path for the project")
 
 class OutputConfig(BaseModel):
     """Output formatting settings."""
-    format: str = Field(default=OUTPUT_DEFAULTS["format"], description="Default output format for responses")
-    color: bool = Field(default=OUTPUT_DEFAULTS["color"], description="Use colored output in terminal")
-    verbosity: str = Field(default=OUTPUT_DEFAULTS["verbosity"], description="Level of detail in output")
-    max_width: Optional[int] = Field(default=OUTPUT_DEFAULTS["max_width"], ge=80, le=1000, description="Maximum width for formatted output")
+    format: str = Field(default=CLI_OUTPUT_DEFAULTS["format"], description="Default output format for responses")
+    color: bool = Field(default=CLI_OUTPUT_DEFAULTS["color"], description="Use colored output in terminal")
+    verbosity: str = Field(default=CLI_OUTPUT_DEFAULTS["verbosity"], description="Level of detail in output")
+    max_width: Optional[int] = Field(default=CLI_OUTPUT_DEFAULTS["max_width"], ge=80, le=1000, description="Maximum width for formatted output")
 
     @validator('format')
     def validate_format(cls, v):
@@ -109,10 +137,10 @@ class OutputConfig(BaseModel):
 
 class HistoryConfig(BaseModel):
     """Command history settings."""
-    enabled: bool = Field(default=HISTORY_DEFAULTS["enabled"], description="Enable command history")
-    size: int = Field(default=HISTORY_DEFAULTS["size"], ge=10, le=1000, description="Maximum number of commands to store")
-    file: str = Field(default=HISTORY_DEFAULTS["file"], description="File location for persistent history")
-    save_failed: bool = Field(default=HISTORY_DEFAULTS["save_failed"], description="Include failed commands in history")
+    enabled: bool = Field(default=CLI_HISTORY_DEFAULTS["enabled"], description="Enable command history")
+    size: int = Field(default=CLI_HISTORY_DEFAULTS["size"], ge=10, le=1000, description="Maximum number of commands to store")
+    file: str = Field(default=CLI_HISTORY_DEFAULTS["file"], description="File location for persistent history")
+    save_failed: bool = Field(default=CLI_HISTORY_DEFAULTS["save_failed"], description="Include failed commands in history")
 
     @validator('file', pre=True, always=True) # Use pre=True to modify before validation
     def expand_path(cls, v):
@@ -160,7 +188,7 @@ class SchedulerConfig(BaseModel):
     max_queue_size: int = Field(default=SCHEDULER_DEFAULTS["max_queue_size"], ge=100, le=10000, description="Maximum size of change queue")
     batch_size: int = Field(default=SCHEDULER_DEFAULTS["batch_size"], ge=1, le=100, description="Files processed in one batch")
 
-class MonitorConfig(BaseModel):
+class FSMonitorConfig(BaseModel):
     """File system monitoring settings."""
     enabled: bool = Field(default=MONITOR_DEFAULTS["enabled"], description="Enable file system monitoring")
     ignore_patterns: List[str] = Field(default=MONITOR_DEFAULTS["ignore_patterns"], description="Glob patterns to ignore during monitoring")
@@ -177,6 +205,7 @@ class DatabaseConfig(BaseModel):
     max_connections: int = Field(default=DATABASE_DEFAULTS["max_connections"], ge=1, le=16, description="Maximum number of concurrent connections in the pool")
     use_wal_mode: bool = Field(default=DATABASE_DEFAULTS["use_wal_mode"], description="Use Write-Ahead Logging mode for SQLite (recommended)")
     echo_sql: bool = Field(default=DATABASE_DEFAULTS["echo_sql"], description="Log SQL statements executed by SQLAlchemy")
+    alembic_ini_path: str = Field(default=DATABASE_DEFAULTS["alembic_ini_path"], description="Path to the Alembic configuration file for database migrations")
 
     @validator('path', pre=True, always=True)
     def expand_path(cls, v):
@@ -300,7 +329,7 @@ class AppConfig(BaseModel):
     history: HistoryConfig = Field(default_factory=HistoryConfig, description="Command history settings")
     script: ScriptConfig = Field(default_factory=ScriptConfig, description="Script settings")
     scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig, description="Background task scheduler settings")
-    monitor: MonitorConfig = Field(default_factory=MonitorConfig, description="File system monitoring settings")
+    fs_monitor: FSMonitorConfig = Field(default_factory=FSMonitorConfig, description="File system monitoring settings")
     database: DatabaseConfig = Field(default_factory=DatabaseConfig, description="Database settings")
     recommendations: RecommendationConfig = Field(default_factory=RecommendationConfig, description="Recommendation settings")
     initialization: InitializationConfig = Field(default_factory=InitializationConfig, description="Initialization settings")
@@ -326,7 +355,7 @@ class AppConfig(BaseModel):
     history: HistoryConfig = Field(default_factory=HistoryConfig, description="Command history settings")
     script: ScriptConfig = Field(default_factory=ScriptConfig, description="Script settings")
     scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig, description="Background task scheduler settings")
-    monitor: MonitorConfig = Field(default_factory=MonitorConfig, description="File system monitoring settings")
+    fs_monitor: FSMonitorConfig = Field(default_factory=FSMonitorConfig, description="File system monitoring settings")
     database: DatabaseConfig = Field(default_factory=DatabaseConfig, description="Database settings")
     recommendations: RecommendationConfig = Field(default_factory=RecommendationConfig, description="Recommendation settings")
     initialization: InitializationConfig = Field(default_factory=InitializationConfig, description="Initialization settings")
@@ -352,7 +381,7 @@ class AppConfig(BaseModel):
     history: HistoryConfig = Field(default_factory=HistoryConfig, description="Command history settings")
     script: ScriptConfig = Field(default_factory=ScriptConfig, description="Script settings")
     scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig, description="Background task scheduler settings")
-    monitor: MonitorConfig = Field(default_factory=MonitorConfig, description="File system monitoring settings")
+    fs_monitor: FSMonitorConfig = Field(default_factory=FSMonitorConfig, description="File system monitoring settings")
     database: DatabaseConfig = Field(default_factory=DatabaseConfig, description="Database settings")
     recommendations: RecommendationConfig = Field(default_factory=RecommendationConfig, description="Recommendation settings") # Renamed from plan for consistency
     initialization: InitializationConfig = Field(default_factory=InitializationConfig, description="Initialization settings")
@@ -371,33 +400,63 @@ class APIKeyEntry(BaseModel):
 
 class MCPServerConfig(BaseModel):
     """Configuration for the MCP Server Integration component."""
-    host: str = Field(default="0.0.0.0", description="Host address for the MCP server to bind to.")
-    port: int = Field(default=6231, ge=1024, le=65535, description="Port number for the MCP server.") # Default MCP port
-    server_name: str = Field(default="dbp-mcp-server", description="Name of the MCP server.")
-    server_description: str = Field(default="MCP Server for Documentation-Based Programming", description="Description of the MCP server.")
-    server_version: str = Field(default="1.0.0", description="Version of the MCP server implementation.")
-    auth_enabled: bool = Field(default=False, description="Enable API key authentication for MCP requests.") # Default to False for easier local dev?
+    host: str = Field(default=MCP_SERVER_DEFAULTS["host"], description="Host address for the MCP server to bind to.")
+    port: int = Field(default=MCP_SERVER_DEFAULTS["port"], ge=1024, le=65535, description="Port number for the MCP server.") # Default MCP port
+    server_name: str = Field(default=MCP_SERVER_DEFAULTS["server_name"], description="Name of the MCP server.")
+    server_description: str = Field(default=MCP_SERVER_DEFAULTS["server_description"], description="Description of the MCP server.")
+    server_version: str = Field(default=MCP_SERVER_DEFAULTS["server_version"], description="Version of the MCP server implementation.")
+    auth_enabled: bool = Field(default=MCP_SERVER_DEFAULTS["auth_enabled"], description="Enable API key authentication for MCP requests.") # Default to False for easier local dev?
     api_keys: List[APIKeyEntry] = Field(default_factory=list, description="List of valid API keys and their permissions.")
     
     # FastAPI/Uvicorn specific settings
-    workers: int = Field(default=1, ge=1, le=8, description="Number of Uvicorn worker processes")
-    enable_cors: bool = Field(default=False, description="Enable CORS middleware")
-    cors_origins: List[str] = Field(default=["*"], description="Allowed origins for CORS")
-    cors_methods: List[str] = Field(default=["*"], description="Allowed HTTP methods for CORS")
-    cors_headers: List[str] = Field(default=["*"], description="Allowed HTTP headers for CORS")
-    cors_allow_credentials: bool = Field(default=False, description="Allow credentials for CORS requests")
-    keep_alive: int = Field(default=5, ge=1, le=30, description="Keep-alive timeout in seconds")
-    graceful_shutdown_timeout: int = Field(default=10, ge=1, le=60, description="Graceful shutdown timeout in seconds")
+    workers: int = Field(default=MCP_SERVER_DEFAULTS["workers"], ge=1, le=8, description="Number of Uvicorn worker processes")
+    logs_dir: str = Field(default=MCP_SERVER_DEFAULTS["logs_dir"], description="Directory for server log files")
+    pid_file: str = Field(default=MCP_SERVER_DEFAULTS["pid_file"], description="File to store the server process ID")
+    cli_config_file: str = Field(default=MCP_SERVER_DEFAULTS["cli_config_file"], description="Path to CLI configuration file")
+    enable_cors: bool = Field(default=MCP_SERVER_DEFAULTS["enable_cors"], description="Enable CORS middleware")
+    cors_origins: List[str] = Field(default=MCP_SERVER_DEFAULTS["cors_origins"], description="Allowed origins for CORS")
+    cors_methods: List[str] = Field(default=MCP_SERVER_DEFAULTS["cors_methods"], description="Allowed HTTP methods for CORS")
+    cors_headers: List[str] = Field(default=MCP_SERVER_DEFAULTS["cors_headers"], description="Allowed HTTP headers for CORS")
+    cors_allow_credentials: bool = Field(default=MCP_SERVER_DEFAULTS["cors_allow_credentials"], description="Allow credentials for CORS requests")
+    keep_alive: int = Field(default=MCP_SERVER_DEFAULTS["keep_alive"], ge=1, le=30, description="Keep-alive timeout in seconds")
+    graceful_shutdown_timeout: int = Field(default=MCP_SERVER_DEFAULTS["graceful_shutdown_timeout"], ge=1, le=60, description="Graceful shutdown timeout in seconds")
 
+
+# CLI specific settings
+class CLIConfig(BaseModel):
+    """CLI-specific configuration settings."""
+    output_format: str = Field(default=CLI_DEFAULTS["output_format"], description="Output format for CLI responses (text, json, markdown, html)")
+    color: bool = Field(default=CLI_DEFAULTS["color"], description="Use colored output in terminal")
+    progress_bar: bool = Field(default=CLI_DEFAULTS["progress_bar"], description="Show progress bars for long-running operations")
+    cache_dir: str = Field(default=CLI_DEFAULTS["cache_dir"], description="Directory for CLI-specific cache data")
+    api_key: str = Field(default=CLI_DEFAULTS["api_key"], description="API key for client authentication with MCP server")
+
+    @validator('output_format')
+    def validate_output_format(cls, v):
+        allowed = ["text", "json", "markdown", "html"]
+        if v not in allowed:
+            logger.warning(f"Invalid output format '{v}'. Defaulting to 'text'. Allowed: {allowed}")
+            return "text"
+        return v
+
+    @validator('cache_dir', pre=True, always=True)
+    def expand_cache_dir(cls, v):
+        try:
+            return os.path.expanduser(v)
+        except Exception as e:
+            logger.error(f"Could not expand cache directory path '{v}': {e}")
+            return os.path.expanduser("~/.dbp/cli_cache_fallback")
 
 class AppConfig(BaseModel):
     """Root configuration model for the DBP application."""
+    general: GeneralConfig = Field(default_factory=GeneralConfig, description="General application settings")
     server: ServerConfig = Field(default_factory=ServerConfig, description="Server connection settings")
+    project: ProjectConfig = Field(default_factory=ProjectConfig, description="Project settings")
     output: OutputConfig = Field(default_factory=OutputConfig, description="Output formatting settings")
     history: HistoryConfig = Field(default_factory=HistoryConfig, description="Command history settings")
     script: ScriptConfig = Field(default_factory=ScriptConfig, description="Script settings")
     scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig, description="Background task scheduler settings")
-    monitor: MonitorConfig = Field(default_factory=MonitorConfig, description="File system monitoring settings")
+    fs_monitor: FSMonitorConfig = Field(default_factory=FSMonitorConfig, description="File system monitoring settings")
     database: DatabaseConfig = Field(default_factory=DatabaseConfig, description="Database settings")
     recommendations: RecommendationConfig = Field(default_factory=RecommendationConfig, description="Recommendation settings") # Renamed from plan for consistency
     initialization: InitializationConfig = Field(default_factory=InitializationConfig, description="Initialization settings")
@@ -406,6 +465,7 @@ class AppConfig(BaseModel):
     consistency_analysis: ConsistencyAnalysisConfig = Field(default_factory=ConsistencyAnalysisConfig, description="Consistency Analysis settings")
     recommendation_generator: RecommendationGeneratorConfig = Field(default_factory=RecommendationGeneratorConfig, description="Recommendation Generator settings")
     mcp_server: MCPServerConfig = Field(default_factory=MCPServerConfig, description="MCP Server Integration settings")
+    cli: CLIConfig = Field(default_factory=CLIConfig, description="CLI-specific settings")
 
 
     class Config:

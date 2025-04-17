@@ -37,16 +37,21 @@
 # - doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-17T17:17:45Z : Integrated with centralized application logging by CodeAssistant
+# * Replaced local setup_logging with centralized setup_application_logging
+# * Ensured consistent log formatting across all components
+# 2025-04-17T17:05:00Z : Refactored to use centralized MillisecondFormatter by CodeAssistant
+# * Updated to import MillisecondFormatter from core.log_utils
+# * Removed duplicate formatter class definition to use shared implementation
+# 2025-04-17T13:23:51Z : Fixed millisecond format in log timestamps by CodeAssistant
+# * Added custom MillisecondFormatter class to display exactly 3 digits for milliseconds
+# * Modified logging setup to use the custom formatter with all handlers
+# * Fixed %f placeholder in logs that was displaying raw with 6 digits
 # 2025-04-16T16:12:00Z : Added startup verification and restart functionality by CodeAssistant
 # * Added support for creating startup signal file for reliable startup detection
 # * Added health check capability with timeout for server verification
 # * Improved error logging with rotating file handlers
 # * Fixed code structure and indentation for better readability
-# 2025-04-16T14:30:46Z : Updated tool imports to match DESIGN.md by CodeAssistant
-# * Modified imports to reference only the public tools defined in DESIGN.md (GeneralQueryTool, CommitMessageTool)
-# * Removed imports for internal tools that should be defined in internal_tools directory
-# 2025-04-15T16:37:00Z : Created __main__.py file by CodeAssistant
-# * Implemented entry point for MCP server module with detailed logging
 ###############################################################################
 
 import argparse
@@ -58,50 +63,7 @@ import traceback
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Tuple
 
-# Configure logging to file for better diagnostics
-def setup_logging(log_level: str, log_file: Optional[Path] = None) -> None:
-    """
-    [Function intent]
-    Set up logging configuration with optional file output and rotation.
-    
-    [Implementation details]
-    Configures both console and file logging with appropriate formatting.
-    Uses RotatingFileHandler to manage log file size and prevent unlimited growth.
-    
-    [Design principles]
-    Centralized logging setup with consistent formatting across handlers.
-    Prevents log files from growing unbounded with rotation mechanism.
-    
-    Args:
-        log_level: Logging level (debug, info, warning, error)
-        log_file: Optional path to log file
-    """
-    numeric_level = getattr(logging, log_level.upper(), logging.INFO)
-    
-    log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    datefmt = '%Y-%m-%d %H:%M:%S,%f'
-    handlers: List[logging.Handler] = [logging.StreamHandler(sys.stderr)]
-    
-    if log_file:
-        # Ensure directory exists
-        log_file.parent.mkdir(parents=True, exist_ok=True)
-        
-        # Create a rotating file handler to manage log file size
-        from logging.handlers import RotatingFileHandler
-        handlers.append(RotatingFileHandler(log_file, mode='a', 
-                                           maxBytes=10*1024*1024,  # 10MB
-                                           backupCount=3))
-    
-    logging.basicConfig(
-        level=numeric_level,
-        format=log_format,
-        datefmt=datefmt,
-        handlers=handlers
-    )
-    
-    # Set more verbose logging for specific modules during startup
-    logging.getLogger('dbp.mcp_server').setLevel(numeric_level)
-    logging.getLogger('dbp.core').setLevel(numeric_level)
+from ..core.log_utils import setup_application_logging
 
 def parse_arguments() -> argparse.Namespace:
     """
@@ -158,7 +120,8 @@ def main() -> int:
     log_file = Path(args.log_file) if args.log_file else \
                Path.home() / '.dbp' / 'logs' / 'mcp_server.log'
     
-    setup_logging(args.log_level, log_file)
+    # Use the centralized application logging setup
+    setup_application_logging(args.log_level, log_file)
     logger = logging.getLogger('dbp.mcp_server.__main__')
     
     logger.info(f"Starting MCP server on {args.host}:{args.port}")
@@ -258,6 +221,31 @@ def main() -> int:
             # Start all components (which will register MCPServerComponent)
             if not lifecycle.start():
                 logger.critical("Failed to start components")
+                
+                # Collect detailed component diagnostic information
+                failed_components = []
+                try:
+                    for name, component in lifecycle.system.components.items():
+                        if not component.is_initialized:
+                            debug_info = component.get_debug_info() if hasattr(component, 'get_debug_info') else {}
+                            failed_components.append({
+                                'name': name, 
+                                'info': debug_info
+                            })
+                            
+                            # Get detailed error information if available
+                            if hasattr(component, 'get_error_details'):
+                                error_details = component.get_error_details()
+                                if error_details:
+                                    logger.critical(f"Component '{name}' failure details:")
+                                    for key, value in error_details.items():
+                                        logger.critical(f"  {key}: {value}")
+                except Exception as debug_err:
+                    logger.error(f"Error collecting diagnostic information: {debug_err}")
+                    
+                if failed_components:
+                    logger.critical(f"Components that failed to initialize: {[c['name'] for c in failed_components]}")
+                    
                 return 1
                 
             logger.info("All components started successfully")

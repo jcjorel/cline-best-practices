@@ -1,209 +1,203 @@
-# Design Decisions
+# Configuration Key Reorganization for Clarity
 
-## 2025-04-16: Centralized Default Configuration Values
+## Decision Date: 2025-04-17
 
-**Decision**: Centralize all default configuration values in a single module to serve as the single source of truth.
+## Decision Makers
 
-**Context**: Previously, default configuration values were scattered throughout Pydantic models in `config_schema.py`. This approach had several drawbacks:
-- Default values were duplicated between schema code and documentation
-- Updating defaults required changes in multiple locations
-- It was difficult to get a comprehensive view of all default values in one place
-- Ensuring consistency between code defaults and documentation was challenging
+CodeAssistant in collaboration with system stakeholders
 
-**Solution**: 
+## Context
 
-1. Create a new module `src/dbp/config/default_config.py` that:
-   - Contains all default values organized in dictionaries corresponding to configuration sections
-   - Includes descriptive comments for each value
-   - Serves as the authoritative source for default configuration
+The DBP system's configuration in `src/dbp/config/default_config.py` had several naming inconsistencies and organizational issues:
+- Similar naming between `SERVER_DEFAULTS` and `MCP_SERVER_DEFAULTS` caused confusion about their distinct purposes
+- CLI-specific configuration keys like `OUTPUT_DEFAULTS` and `HISTORY_DEFAULTS` lacked clear association with the CLI
+- `COORDINATOR_LLM_DEFAULTS` referenced an incorrect model (Amazon Titan) when Nova Lite is actually used
+- CLI-related defaults were scattered throughout the file rather than grouped together
 
-2. Update `config_schema.py` to:
-   - Import default values from the centralized module
-   - Reference these values in all Field definitions
-   - Maintain validation rules, descriptions, and schema structure
+## Decision
 
-3. Key benefits:
-   - Single source of truth for all default values
-   - Easier to maintain consistency between code and documentation
-   - Comprehensive view of all default values in one place
-   - Clearer separation between schema structure and default values
-   - Simplified process for updating default values
+1. Rename `SERVER_DEFAULTS` to `CLI_SERVER_CONNECTION_DEFAULTS` to clarify it's for CLI connections to the server
+2. Rename `OUTPUT_DEFAULTS` to `CLI_OUTPUT_DEFAULTS` to clearly associate with CLI
+3. Rename `HISTORY_DEFAULTS` to `CLI_HISTORY_DEFAULTS` to clearly associate with CLI
+4. Update `COORDINATOR_LLM_DEFAULTS` to reference the Nova Lite model actually used
+5. Group all CLI-related defaults at the end of the file for better organization
 
-**Alternatives Considered**:
+## Rationale
 
-1. **Keep defaults in schema models**: Rejected because it mixes structure definition with default values and complicates maintenance.
+- **Clarity**: The new naming scheme makes it immediately clear which component each configuration block belongs to
+- **Consistency**: All CLI-related configuration now follows the same prefix pattern
+- **Accuracy**: Configuration now correctly references the actual models and components used
+- **Organization**: Related configuration settings are now grouped together
 
-2. **Store defaults in JSON/YAML file**: Considered but rejected because it would require additional file loading logic and wouldn't have the benefit of inline documentation.
+## Alternatives Considered
 
-3. **Generate defaults from documentation**: Rejected due to complexity and potential for errors in parsing documentation for programmatic use.
+1. **Keeping the existing naming**: Rejected as it was causing confusion and potential misuse of configuration values.
+2. **Using a nested structure with a top-level CLI key**: Rejected as it would require substantial changes to the configuration schema and all code that accesses these values.
 
-**Relationship to Other Components**:
+## Implementation Details
 
-- **ConfigurationManager**: No changes needed as it still uses the AppConfig model
-- **ConfigManagerComponent**: No changes needed as it accesses configuration through the standardized interfaces
-- **Documentation**: Should be kept in sync with the centralized defaults
+The implementation includes:
 
-**Impact Assessment**:
+1. Renaming the configuration constants in `default_config.py`
+2. Updating references in documentation (`CONFIGURATION.md`)
+3. Grouping all CLI-related settings at the end of the file
+4. Updating the model reference in `COORDINATOR_LLM_DEFAULTS` to align with actual usage
 
-- **Maintainability**: Improved through clear separation of concerns and single source of truth
-- **Documentation alignment**: Easier to keep documentation in sync with actual default values
-- **Development workflow**: Simplified process for updating default values
-- **Code clarity**: Enhanced by separating schema structure from default values
+## Implications
 
-## 2025-04-16: Use Alembic for Database Schema Management
+- Code that directly references the old configuration key names will need to be updated
+- Documentation now correctly reflects the actual configuration structure
+- Future development should follow the established naming pattern for clarity
 
-**Decision**: Implement Alembic to manage database schema creation, upgrades, and migrations.
+## Related Decisions
 
-**Context**: The system previously relied on direct table creation via SQLAlchemy's `Base.metadata.create_all()` method without a proper migration system. This approach lacks version control for schema changes and does not support smooth upgrades between database versions.
+- Centralized Default Configuration Values (2025-04-16)
 
-**Solution**: 
+# Git Root-relative Path Resolution for Configuration
 
-1. Implement Alembic for database migrations with:
-   - Structured migration files in `src/dbp/database/alembic/versions/`
-   - Configuration in `alembic.ini` at project root
-   - Environment configuration in `src/dbp/database/alembic/env.py`
-   - Migration template in `src/dbp/database/alembic/script.py.mako`
-   - Initial schema baseline migration
+## Decision Date: 2025-04-17
 
-2. Key benefits:
-   - Version-controlled database schema changes
-   - Support for upgrading and downgrading between versions
-   - Automatic migration generation based on model changes
-   - Clear documentation of schema evolution
-   - Support for both SQLite and PostgreSQL backends
+## Decision Makers
 
-3. Integration with DatabaseManager:
-   - Migrations are run during database initialization
-   - Existing SQLAlchemy models are used as the source of truth for schema
-   - Compatible with both development and production environments
+CodeAssistant in collaboration with system stakeholders
 
-**Alternatives Considered**:
+## Context
 
-1. **Custom migration system**: Rejected due to complexity and maintenance burden.
+The DBP system requires access to various files and directories for its operation, including:
+- SQLite database files: `.dbp/database.sqlite`
+- Server logs directory: `.dbp/logs/`
+- CLI configuration files: `.dbp/cli_config.json`
+- Server PID files: `.dbp/mcp_server.pid`
 
-2. **Continue using direct schema creation**: Rejected because it lacks version control and doesn't support incremental changes.
+When specifying these paths in configuration, we need a consistent way to resolve them regardless of where in the project directory structure the application is executed from.
 
-3. **Other migration tools** (like SQLAlchemy-Migrate): Rejected in favor of Alembic which is more actively maintained and has better SQLAlchemy integration.
+## Decision
 
-**Relationship to Other Components**:
+1. All relative paths in the configuration will be resolved relative to the Git project root (where `.git/` directory is located)
+2. A centralized path resolution system will be implemented in `src/dbp/core/fs_utils.py` to handle this consistently
+3. If the Git root cannot be found, the system will raise an error rather than falling back to the current working directory
+4. All components that work with file paths will use this centralized resolution system
 
-- **DatabaseManager**: Modified to use Alembic for schema management
-- **Database Models**: No changes needed, Alembic uses existing SQLAlchemy models
-- **Configuration System**: Extended to include Alembic-specific settings
+## Rationale
 
-**Impact Assessment**:
+- **Consistency**: No matter which directory the user starts the application from, paths will always be resolved correctly
+- **Project Organization**: Keeps all DBP system files in a single `.dbp/` directory at the project root
+- **Explicit Failure**: Fails clearly when running outside a Git repository rather than creating files in unexpected locations
+- **Centralized Logic**: Single implementation ensures consistent behavior across all components
 
-- **Schema management**: Improved with proper version control and migration paths
-- **Development workflow**: Enhanced with ability to generate migrations automatically
-- **Deployment**: Simplified through standardized migration procedures
-- **Database compatibility**: Maintained support for both SQLite and PostgreSQL
+## Alternatives Considered
 
-## 2025-04-16: Simplified Component Initialization System
+1. **Current Working Directory Resolution**: Using the current working directory for resolving relative paths.
+   * Rejected because it would lead to files spread across different directories depending on where the application is started from.
 
-**Decision**: Replace the complex multi-stage initialization process with an ultra-simplified KISS approach focused on maintainability and clarity.
+2. **Fixed Absolute Paths**: Requiring absolute paths for all configuration.
+   * Rejected because it reduces portability and makes configuration more verbose.
 
-**Context**: The previous component initialization system was overly complex with:
-- Six distinct initialization stages with multiple substeps
-- Complex dependency resolution using topological sorting algorithms
-- Sophisticated error recovery strategies and monitoring
-- Three separate classes (LifecycleManager, InitializationOrchestrator, DependencyResolver)
+3. **Fallback to Current Working Directory**: When Git root cannot be found, fall back to resolving paths from the current directory.
+   * Rejected as this would lead to silent creation of files in unexpected locations.
 
-This complexity made the system difficult to implement reliably, harder to maintain, and introduced potential points of failure.
+## Implementation Details
 
-**Solution**: 
+The implementation includes:
 
-1. Implement a minimalist component system with:
-   - Simple `Component` interface with clear lifecycle methods
-   - Direct dictionary-based component registry
-   - Basic two-step validation and initialization
-   - Simple dependency order calculation without complex algorithms
-   - Straightforward error reporting
+1. A `find_git_root()` function that:
+   - First attempts to use the `git` command to find the repository root
+   - Falls back to searching for a `.git` directory by traversing up from the current directory
+   - Returns the Git root path or `None` if not found
 
-2. Key simplification principles:
-   - Explicit over implicit behavior
-   - Clear error messages over sophisticated recovery
-   - Direct component access over layers of abstraction
-   - Fail fast when errors are encountered
-   - Simpler code that's easier to understand and maintain
+2. A `resolve_path()` function that:
+   - Handles path normalization and user home directory expansion
+   - Returns absolute paths unchanged
+   - For relative paths, resolves them relative to the Git root
+   - Raises a `RuntimeError` if Git root cannot be found
 
-3. Stripped-down lifecycle management:
-   - Simple component registration
-   - Direct dependency validation
-   - Clear initialization and shutdown processes
-   - Minimal error handling focused on reporting
+3. Updated directory creation utilities that:
+   - Use the path resolution functions to ensure paths are resolved correctly
+   - Create any missing directories with proper error handling
+   - Verify write permissions after directory creation
 
-**Alternatives Considered**:
+## Implications
 
-1. **Keeping the existing system**: Rejected due to implementation and maintenance complexity.
+- The application requires running within a Git repository
+- Components must handle the possibility of a RuntimeError when resolving paths
+- No fallback behaviors - if Git root can't be found, components should fail explicitly rather than proceeding with potentially incorrect paths
+- The centralized approach ensures that if path resolution behavior needs to be modified in the future, changes need to be made in just one place
 
-2. **Partial simplification**: Considered but rejected because it would leave substantial complexity in place and create unclear boundaries between simple and complex parts.
+## Related Decisions
 
-3. **Using a dependency injection framework**: Rejected as it would introduce external dependencies and still require custom initialization logic.
+- Default locations for database files and other system files
+- Component initialization sequence and error handling
 
-4. **Event-based initialization**: Considered but rejected as it would introduce more complexity and potential for subtle bugs in initialization order.
+# Standardized Log Format for System-Wide Consistency
 
-**Relationship to Other Components**:
+## Decision Date: 2025-04-17
 
-- **All Component Implementations**: Will need to be updated to follow the simplified component interface
-- **System Startup**: Will use the new simplified approach for component initialization
-- **Configuration**: Will be directly passed to components during initialization
+## Decision Makers
 
-**Impact Assessment**:
+CodeAssistant in collaboration with system stakeholders
 
-- **Code reduction**: ~70% reduction in initialization system code
-- **Maintainability**: Greatly improved through simplification and clearer code
-- **Reliability**: Improved by reducing potential failure points
-- **Flexibility**: Slightly reduced but acceptable given the improved maintainability
-- **Error handling**: More direct with clearer error messages but less sophisticated recovery
+## Context
 
-## 2025-04-16: Bedrock LLM Client Code Unification
+The DBP system previously had inconsistent log formats across different components. Some components were using the default Python logging format (e.g., "ERROR:root:message"), while others had custom formatters. This inconsistency made logs difficult to parse, analyze, and correlate.
 
-**Decision**: Introduce common code patterns across model-specific Bedrock clients (Nova Lite, Claude 3.7, etc.) to eliminate duplication.
+## Decision
 
-**Context**: The initial implementation of model-specific clients (NovaLiteClient, Claude37SonnetClient) contained significant code duplication, especially in the areas of:
-- Prompt formatting
-- Model invocation
-- Error handling
-- Response processing
-- Streaming implementation
+1. Standardize all application logs to follow this exact format:
+   ```
+   YYYY-MM-DD HH:MM:SS,mmm - logger.name - LOGLEVEL - message
+   ```
 
-**Solution**: 
+   Example:
+   ```
+   2025-04-17 17:24:30,221 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+   ```
 
-1. Created a new module `bedrock_client_common.py` with the following components:
-   - `BedrockRequestFormatter`: Abstract base class for model-specific request formatting
-   - `BedrockClientMixin`: Reusable mixin class with common methods
-   - Common utility functions for model invocation: `invoke_model_common` and `invoke_model_stream_common`
+2. Implement a centralized logging setup through `setup_application_logging()` in `log_utils.py`
+   
+3. Configure the root logger early in the application startup process to prevent default-formatted logs
 
-2. Applied the Strategy pattern to isolate model-specific behaviors:
-   - Each model client now delegates request formatting to a specialized formatter class
-   - The formatter encapsulates model-specific request structures and parameter handling
-   - Common invocation code remains model-agnostic
+4. Use the `MillisecondFormatter` class to ensure consistent millisecond timestamps
 
-3. Used composition over inheritance:
-   - Model clients inherit from `BedrockModelClientBase` for interface consistency
-   - Common functionality is composed through mixins and utility functions
-   - This approach supports different model behavior without deep inheritance hierarchies
+## Rationale
 
-**Alternatives Considered**:
+- **Consistency**: All log messages follow the same format for easier reading and parsing
+- **Precision**: Timestamps include milliseconds for accurate timing analysis
+- **Clarity**: Logger name clearly shows which component generated the message
+- **Standards Compliance**: Format is similar to standard logging formats while maintaining our specific requirements
 
-1. **Template Method Pattern**: Have a base class with template methods that model-specific clients would override. Rejected because it would require a deeper inheritance hierarchy, making it harder to add new model types without significant code changes.
+## Alternatives Considered
 
-2. **Shared Utility Module**: Move common code to utility functions without formal patterns. Rejected because it would lack the encapsulation and type safety provided by the Strategy pattern.
+1. **JSON-formatted logs**: Considered for better machine parsing, but rejected for human readability.
+2. **Including thread ID**: Considered for multi-threaded debugging, but excluded for simplicity and readability.
+3. **Allowing component-specific formats**: Rejected to maintain system-wide consistency.
+4. **Different datetime formats**: Considered ISO-8601 with 'T' separator, but kept space separator for readability.
 
-3. **Abstract Factory Pattern**: Create a factory for generating appropriate clients. This approach might still be useful in the future but was too complex for the immediate goal of reducing code duplication.
+## Implementation Details
 
-**Relationship to Other Components**:
+1. Enhanced `setup_application_logging()` in `log_utils.py` to:
+   - Reset any existing logging configuration to prevent format inconsistencies
+   - Configure logging.basicConfig() early to catch logs that might appear before handlers are added
+   - Use the custom MillisecondFormatter for precise timestamp formatting
+   - Configure both the root logger and component-specific loggers consistently
 
-- **BedrockClientManager**: Will need minimal changes since the public interface of model clients remains unchanged
-- **LLMPromptManager**: No changes required as its interface remains stable
-- **LLM Coordinator**: Benefits from more consistent behavior across model types
+2. Updated the MillisecondFormatter to:
+   - Format timestamps with exactly 3 digits of millisecond precision
+   - Remove duplicate log level prefixes from messages
+   - Handle both uppercase and lowercase log level names in prefixes
 
-**Impact Assessment**:
+3. Ensure all application components:
+   - Use the centralized setup function at startup
+   - Get loggers through the provided utility functions
+   - Avoid direct calls to logging.basicConfig() or custom formatters
 
-- **Code reduction**: ~50% reduction in model client implementation code
-- **Maintainability**: Significantly improved by centralizing common logic
-- **Extensibility**: New model types can be added with minimal code by implementing only model-specific formatters
-- **Testing**: More focused testing possible with clear separation between common and model-specific code
+## Implications
 
-**Integration Plan**:
-This design should be integrated into the `doc/DESIGN.md` document specifically in the LLM integration section, highlighting the design patterns used for maintaining different model clients.
+- All components must use the centralized logging configuration
+- Logs will have a consistent format throughout the system
+- Better troubleshooting and log analysis capabilities
+- Improved ability to correlate events across different components
+
+## Related Decisions
+
+- Component initialization sequence
+- Error handling strategy

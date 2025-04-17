@@ -34,6 +34,10 @@
 # - doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-17T08:54:49Z : Added get_debug_info method for better diagnostics by CodeAssistant
+# * Implemented debug information gathering for component failure analysis
+# * Enhanced Component base class with diagnostic capabilities
+# * Added documentation for new debugging methods
 # 2025-04-15T09:47:05Z : Initial creation of component interfaces by CodeAssistant
 # * Defined Component protocol and InitializationContext dataclass.
 # 2025-04-16T15:45:16Z : Replaced with simplified Component implementation by CodeAssistant
@@ -41,6 +45,9 @@
 ###############################################################################
 
 import logging
+import inspect
+import sys
+import traceback
 from typing import Any, Dict, List, TypeVar, Optional, TYPE_CHECKING
 from dataclasses import dataclass
 
@@ -105,7 +112,8 @@ class Component:
         """
         self._initialized = False
         self.logger = None  # Will be set during initialize()
-    
+        self._initialization_error = None  # Track last initialization error
+        
     @property
     def name(self) -> str:
         """
@@ -197,3 +205,117 @@ class Component:
             NotImplementedError: If not implemented by concrete component
         """
         raise NotImplementedError("Component must implement shutdown method")
+        
+    def get_debug_info(self) -> Dict[str, Any]:
+        """
+        [Function intent]
+        Provides diagnostic information about the component state for debugging.
+        
+        [Implementation details]
+        Gathers key component details including class details, initialization status,
+        and any instance attributes that might be useful for diagnosing issues.
+        Components may override to add component-specific diagnostic information.
+        
+        [Design principles]
+        Provides actionable debug information when component initialization fails.
+        Non-intrusive collection of state data with safe defaults.
+        
+        Returns:
+            Dict[str, Any]: Dictionary containing component debug information
+        """
+        # Basic component information
+        debug_info = {
+            "class_name": self.__class__.__name__,
+            "module": self.__class__.__module__,
+            "initialized": self._initialized,
+            "dependencies": self.dependencies,
+            "has_logger": self.logger is not None
+        }
+        
+        # Collect initialization error if present
+        if hasattr(self, '_initialization_error') and self._initialization_error:
+            error_info = {
+                "error_type": type(self._initialization_error).__name__,
+                "error_message": str(self._initialization_error),
+            }
+            debug_info["initialization_error"] = error_info
+        
+        # Add component-specific attributes that might help with diagnosis
+        # (but avoid large objects, sensitive data, or complex structures)
+        for attr_name, attr_value in self.__dict__.items():
+            # Skip internal attributes, logger, large objects
+            if attr_name.startswith('_') or attr_name == 'logger':
+                continue
+                
+            # For simple types that are useful for diagnosis
+            if isinstance(attr_value, (bool, int, str, float)) or attr_value is None:
+                debug_info[f"attr_{attr_name}"] = attr_value
+            else:
+                # Just note the type for complex objects
+                debug_info[f"attr_{attr_name}_type"] = type(attr_value).__name__
+        
+        return debug_info
+        
+    def set_initialization_error(self, error: Exception) -> None:
+        """
+        [Function intent]
+        Records an initialization error for improved diagnostics.
+        
+        [Implementation details]
+        Stores the exception that caused initialization failure.
+        
+        [Design principles]
+        Preserves error context for later diagnostic reporting.
+        
+        Args:
+            error: The exception that caused initialization to fail
+        """
+        self._initialization_error = error
+        
+        # Also log the current traceback if a logger is available
+        if self.logger:
+            self.logger.debug(f"Component '{self.name}' initialization error recorded: {error}")
+            
+    def get_error_details(self) -> Dict[str, Any]:
+        """
+        [Function intent]
+        Provides detailed information about initialization failures.
+        
+        [Implementation details]
+        Returns comprehensive exception information including traceback
+        if available from the most recent initialization failure.
+        
+        [Design principles]
+        Preserves complete error context for diagnosis of initialization failures.
+        
+        Returns:
+            Dict[str, Any]: Dictionary containing detailed error information or empty dict if no error
+        """
+        if not hasattr(self, '_initialization_error') or not self._initialization_error:
+            return {}
+            
+        error = self._initialization_error
+        error_details = {
+            "error_type": type(error).__name__,
+            "error_message": str(error),
+            "error_module": type(error).__module__
+        }
+        
+        # Try to get traceback if available
+        if hasattr(error, '__traceback__') and error.__traceback__:
+            # Format the traceback as text
+            tb_lines = traceback.format_exception(
+                type(error), error, error.__traceback__
+            )
+            error_details["traceback"] = ''.join(tb_lines)
+            
+            # Get the frame where the exception occurred
+            frame_info = traceback.extract_tb(error.__traceback__)
+            if frame_info:
+                last_frame = frame_info[-1]
+                error_details["file"] = last_frame.filename
+                error_details["line"] = last_frame.lineno
+                error_details["function"] = last_frame.name
+                error_details["line_context"] = last_frame.line
+                
+        return error_details

@@ -237,19 +237,20 @@ class OutputFormatter:
         Display an error message to stderr with appropriate formatting.
         
         [Implementation details]
-        Prefixes the message with "Error:" for clear identification.
         Uses red color for the entire message if color is enabled.
         Always outputs to stderr rather than stdout.
+        Does not add any prefix to avoid duplicating log level information.
         
         [Design principles]
-        Visual distinction - uses color and prefix to highlight errors.
+        Visual distinction - uses color to highlight errors.
         Proper stream direction - writes errors to stderr instead of stdout.
         Consistent formatting - provides uniform appearance for all error messages.
+        Compatibility - works with centralized log formatters without duplication.
         
         Args:
             message: The error message to display
         """
-        print(f"{self.colors.get('red','')}Error: {message}{self.colors.get('reset','')}", file=sys.stderr)
+        print(f"{self.colors.get('red','')}{message}{self.colors.get('reset','')}", file=sys.stderr)
 
     def warning(self, message: str):
         """
@@ -257,19 +258,20 @@ class OutputFormatter:
         Display a warning message to stderr with appropriate formatting.
         
         [Implementation details]
-        Prefixes the message with "Warning:" for clear identification.
         Uses yellow color for the entire message if color is enabled.
         Always outputs to stderr rather than stdout.
+        Does not add any prefix to avoid duplicating log level information.
         
         [Design principles]
-        Visual distinction - uses color and prefix to highlight warnings.
+        Visual distinction - uses color to highlight warnings.
         Proper stream direction - writes warnings to stderr instead of stdout.
         Consistent formatting - provides uniform appearance for all warning messages.
+        Compatibility - works with centralized log formatters without duplication.
         
         Args:
             message: The warning message to display
         """
-        print(f"{self.colors.get('yellow','')}Warning: {message}{self.colors.get('reset','')}", file=sys.stderr)
+        print(f"{self.colors.get('yellow','')}{message}{self.colors.get('reset','')}", file=sys.stderr)
 
     def success(self, message: str):
         """

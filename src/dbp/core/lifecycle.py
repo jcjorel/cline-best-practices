@@ -34,17 +34,26 @@
 # - doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-15T09:49:00Z : Initial creation of LifecycleManager class by CodeAssistant
-# * Implemented setup, component registration, start/shutdown methods, and basic signal handling.
+# 2025-04-17T17:28:22Z : Standardized log format for consistency by CodeAssistant
+# * Ensured log format follows standard: 2025-04-17 17:24:30,221 - dbp.core.lifecycle - <LOGLEVEL> - <message>
+# * Verified that _setup_logging is using the centralized formatter from log_utils
+# 2025-04-17T17:03:30Z : Updated to use centralized log formatter by CodeAssistant
+# * Modified _setup_logging to use MillisecondFormatter from log_utils
+# * Added proper handling of milliseconds in log timestamps
 # 2025-04-16T15:48:00Z : Replaced with simplified LifecycleManager implementation by CodeAssistant
 # * Implemented ultra-simple lifecycle management with KISS principles
+# 2025-04-15T09:49:00Z : Initial creation of LifecycleManager class by CodeAssistant
+# * Implemented setup, component registration, start/shutdown methods, and basic signal handling.
 ###############################################################################
 
 import logging
 import signal
 import sys
 import threading
+import traceback
 from typing import Optional, List
+
+from .log_utils import setup_application_logging
 
 # Import core components
 from .system import ComponentSystem
@@ -117,25 +126,21 @@ class LifecycleManager:
         Sets up basic logging configuration.
         
         [Implementation details]
-        Configures log level based on environment or defaults to INFO.
+        Uses centralized setup_application_logging from log_utils module.
+        Reads log level from environment or defaults to INFO.
         
         [Design principles]
-        Simple logging setup with minimal configuration.
+        Simple logging setup with consistent formatting across all components.
         """
         import os
         
         # Get log level from environment or default to INFO
         log_level_name = os.environ.get("DBP_LOG_LEVEL", "INFO").upper()
-        log_level = getattr(logging, log_level_name, logging.INFO)
         
-        # Configure logging with basic format
-        logging.basicConfig(
-            level=log_level,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S,%f'
-        )
+        # Use the centralized logging setup function
+        setup_application_logging(log_level=log_level_name)
         
-        logger.debug(f"Logging initialized at level {log_level_name}")
+        logger.debug(f"Logging initialized at level {log_level_name} with consistent formatting")
 
     def _load_config(self, cli_args: Optional[List[str]]) -> Optional[ConfigurationManager]:
         """
@@ -224,106 +229,102 @@ class LifecycleManager:
         """
         logger.info("Registering components...")
         
+        # Register config manager component if available
+        if ConfigManagerComponent and self.config_manager:
+            self.system.register(ConfigManagerComponent(self.config_manager))
+            logger.debug("Registered config_manager component")
+        
+        # Register database components
         try:
-            # Register config manager component if available
-            if ConfigManagerComponent and self.config_manager:
-                self.system.register(ConfigManagerComponent(self.config_manager))
-                logger.debug("Registered config_manager component")
-                
-            # Register database components
-            try:
-                from ..database.database import DatabaseComponent
-                self.system.register(DatabaseComponent())
-                logger.debug("Registered database component")
-            except ImportError as e:
-                logger.error(f"Failed to register database component: {e}")
+            from ..database.database import DatabaseComponent
+            self.system.register(DatabaseComponent())
+            logger.debug("Registered database component")
+        except ImportError as e:
+            logger.error(f"Failed to register database component: {e}")
+        
+        # Register monitoring components
+        try:
+            from ..fs_monitor.component import FileSystemMonitorComponent
+            self.system.register(FileSystemMonitorComponent())
+            logger.debug("Registered fs_monitor component")
+        except ImportError as e:
+            logger.error(f"Failed to register fs_monitor component: {e}")
             
-            # Register monitoring components
-            try:
-                from ..fs_monitor.component import FileSystemMonitorComponent
-                self.system.register(FileSystemMonitorComponent())
-                logger.debug("Registered fs_monitor component")
-            except ImportError as e:
-                logger.error(f"Failed to register fs_monitor component: {e}")
-                
-            try:
-                from ..fs_monitor.filter import FilterComponent
-                self.system.register(FilterComponent())
-                logger.debug("Registered filter component")
-            except ImportError as e:
-                logger.error(f"Failed to register filter component: {e}")
-                
-            try:
-                from ..fs_monitor.queue import ChangeQueueComponent
-                self.system.register(ChangeQueueComponent())
-                logger.debug("Registered change_queue component")
-            except ImportError as e:
-                logger.error(f"Failed to register change_queue component: {e}")
-                
-            # Register processing components
-            try:
-                from ..memory_cache.component import MemoryCacheComponent
-                self.system.register(MemoryCacheComponent())
-                logger.debug("Registered memory_cache component")
-            except ImportError as e:
-                logger.error(f"Failed to register memory_cache component: {e}")
-                
-            try:
-                from ..consistency_analysis.component import ConsistencyAnalysisComponent
-                self.system.register(ConsistencyAnalysisComponent())
-                logger.debug("Registered consistency_analysis component")
-            except ImportError as e:
-                logger.error(f"Failed to register consistency_analysis component: {e}")
-                
-            try:
-                from ..doc_relationships.component import DocRelationshipsComponent
-                self.system.register(DocRelationshipsComponent())
-                logger.debug("Registered doc_relationships component")
-            except ImportError as e:
-                logger.error(f"Failed to register doc_relationships component: {e}")
-                
-            try:
-                from ..recommendation_generator.component import RecommendationGeneratorComponent
-                self.system.register(RecommendationGeneratorComponent())
-                logger.debug("Registered recommendation_generator component")
-            except ImportError as e:
-                logger.error(f"Failed to register recommendation_generator component: {e}")
-                
-            try:
-                from ..scheduler.component import SchedulerComponent
-                self.system.register(SchedulerComponent())
-                logger.debug("Registered scheduler component")
-            except ImportError as e:
-                logger.error(f"Failed to register scheduler component: {e}")
-            except Exception as e:
-                logger.error(f"Failed to register scheduler component: {e}")
-                
-            # Register LLM components
-            try:
-                from ..metadata_extraction.component import MetadataExtractionComponent
-                self.system.register(MetadataExtractionComponent())
-                logger.debug("Registered metadata_extraction component")
-            except ImportError as e:
-                logger.error(f"Failed to register metadata_extraction component: {e}")
-                
-            try:
-                from ..llm_coordinator.component import LLMCoordinatorComponent
-                self.system.register(LLMCoordinatorComponent())
-                logger.info("Registered llm_coordinator component - CRITICAL for query processing")
-            except ImportError as e:
-                logger.error(f"Failed to register llm_coordinator component: {e}")
-                
-            # Register API components
-            try:
-                from ..mcp_server.component import MCPServerComponent
-                self.system.register(MCPServerComponent())
-                logger.debug("Registered mcp_server component")
-            except ImportError as e:
-                logger.error(f"Failed to register mcp_server component: {e}")
-                
+        try:
+            from ..fs_monitor.filter import FilterComponent
+            self.system.register(FilterComponent())
+            logger.debug("Registered filter component")
+        except ImportError as e:
+            logger.error(f"Failed to register filter component: {e}")
+            
+        try:
+            from ..fs_monitor.queue import ChangeQueueComponent
+            self.system.register(ChangeQueueComponent())
+            logger.debug("Registered change_queue component")
+        except ImportError as e:
+            logger.error(f"Failed to register change_queue component: {e}")
+            
+        # Register processing components
+        try:
+            from ..memory_cache.component import MemoryCacheComponent
+            self.system.register(MemoryCacheComponent())
+            logger.debug("Registered memory_cache component")
+        except ImportError as e:
+            logger.error(f"Failed to register memory_cache component: {e}")
+            
+        try:
+            from ..consistency_analysis.component import ConsistencyAnalysisComponent
+            self.system.register(ConsistencyAnalysisComponent())
+            logger.debug("Registered consistency_analysis component")
+        except ImportError as e:
+            logger.error(f"Failed to register consistency_analysis component: {e}")
+            
+        try:
+            from ..doc_relationships.component import DocRelationshipsComponent
+            self.system.register(DocRelationshipsComponent())
+            logger.debug("Registered doc_relationships component")
+        except ImportError as e:
+            logger.error(f"Failed to register doc_relationships component: {e}")
+            
+        try:
+            from ..recommendation_generator.component import RecommendationGeneratorComponent
+            self.system.register(RecommendationGeneratorComponent())
+            logger.debug("Registered recommendation_generator component")
+        except ImportError as e:
+            logger.error(f"Failed to register recommendation_generator component: {e}")
+            
+        try:
+            from ..scheduler.component import SchedulerComponent
+            self.system.register(SchedulerComponent())
+            logger.debug("Registered scheduler component")
+        except ImportError as e:
+            logger.error(f"Failed to register scheduler component: {e}")
         except Exception as e:
-            logger.critical(f"Failed to register components: {e}", exc_info=True)
-            raise
+            logger.error(f"Failed to register scheduler component: {e}")
+            
+        # Register LLM components
+        try:
+            from ..metadata_extraction.component import MetadataExtractionComponent
+            self.system.register(MetadataExtractionComponent())
+            logger.debug("Registered metadata_extraction component")
+        except ImportError as e:
+            logger.error(f"Failed to register metadata_extraction component: {e}")
+            
+        try:
+            from ..llm_coordinator.component import LLMCoordinatorComponent
+            self.system.register(LLMCoordinatorComponent())
+            logger.info("Registered llm_coordinator component - CRITICAL for query processing")
+        except ImportError as e:
+            logger.error(f"Failed to register llm_coordinator component: {e}")
+            
+        # Register API components
+        try:
+            from ..mcp_server.component import MCPServerComponent
+            self.system.register(MCPServerComponent())
+            logger.debug("Registered mcp_server component")
+        except ImportError as e:
+            logger.error(f"Failed to register mcp_server component: {e}")
+                
 
     def start(self) -> bool:
         """

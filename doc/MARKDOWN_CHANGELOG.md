@@ -2,6 +2,14 @@
 
 This file tracks all changes made to documentation markdown files in this directory.
 
+2025-04-17T17:37:50Z : [DESIGN_DECISIONS.md] Added standardized log format design decision
+2025-04-17T15:18:00Z : [CONFIGURATION.md] Updated CLI configuration parameter names to match renamed configuration keys
+2025-04-17T12:34:25Z : [DESIGN_DECISIONS.md] Added design decision: Git Root-relative Path Resolution for Configuration
+2025-04-17T12:32:59Z : [CONFIGURATION.md] Updated default paths to use template variables with base directory
+2025-04-17T11:31:52Z : [DATA_MODEL.md] Added default database location to SQLite-Specific Implementation section
+2025-04-17T11:29:50Z : [CONFIGURATION.md] Updated default SQLite database path to coding_assistant/dbp/database.db
+2025-04-17T09:50:36Z : [DESIGN_DECISIONS.md] Added design decision: Enhanced Error Logging for Server Initialization
+2025-04-17T08:33:52Z : [DOCUMENT_RELATIONSHIPS.md] Restructured document with mermaid graph at top, added code components and bidirectional relationships
 2025-04-17T00:31:46Z : [DOCUMENT_RELATIONSHIPS.md] Updated impact relationships for design decisions
 2025-04-17T00:30:51Z : [DOCUMENT_RELATIONSHIPS.md] Added relationship for Centralized Default Configuration Values
 2025-04-17T00:27:14Z : [DOCUMENT_RELATIONSHIPS.md] Added relationship for Alembic Database Schema Management
@@ -17,10 +25,7 @@ This file tracks all changes made to documentation markdown files in this direct
 2025-04-15T22:33:48Z : [DATA_MODEL.md] Updated example recommendation reference to point to existing file
 2025-04-15T23:52:08Z : [DOCUMENT_RELATIONSHIPS.md] Updated document relationships to include the new design decision about MCP Server Interface Consistency
 2025-04-15T23:50:36Z : [DESIGN_DECISIONS.md] Added design decision: MCP Server Interface Consistency
-
 2025-04-15T22:45:42Z : [DATA_MODEL.md] Updated database repository structure to follow 600-line modular file pattern
 2025-04-15T21:43:00Z : [DOCUMENT_RELATIONSHIPS.md] Updated document relationships to include the new design decision about Default Network Binding
 2025-04-15T21:42:00Z : [DESIGN_DECISIONS.md] Added design decision: Default Network Binding to 127.0.0.1 for security reasons
 2025-04-15T00:59:00Z : [DATA_MODEL.md, DESIGN.md, PR-FAQ.md, WORKING_BACKWARDS.md, design/COMPONENT_INITIALIZATION.md] Removed references to FIFO recommendation management to reflect the simplified recommendation system
-2025-04-15T00:12:03Z : [DOCUMENT_RELATIONSHIPS.md] Updated document relationships to include the new design decisions about LLM-Based Metadata Extraction, External Prompt Template Files, and LLM-Based Language Detection
-2025-04-15T00:08:29Z : [DESIGN_DECISIONS.md] Added three new design decisions: LLM-Based Metadata Extraction, External Prompt Template Files, and LLM-Based Language Detection

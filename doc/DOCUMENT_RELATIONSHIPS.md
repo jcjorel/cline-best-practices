@@ -124,6 +124,7 @@ This graph structure helps the system determine the correct order for propagatin
 - Depends on: [DATA_MODEL.md](#data_modelmd) - Topic: CLI Client model - Scope: Configuration structure
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Configuration strategy - Scope: Default values policy
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Centralized Default Configuration Values - Scope: Configuration management
+- Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Configuration Key Reorganization for Clarity - Scope: CLI-related configuration naming
 - Impacts: [src/dbp/config/default_config.py] - Topic: Implementation - Scope: Configuration defaults
 - Impacts: [src/dbp/config/config_schema.py] - Topic: Implementation - Scope: Configuration schema
 
@@ -132,6 +133,7 @@ This graph structure helps the system determine the correct order for propagatin
 - Impacts: [DESIGN.md](#designmd) - Topic: Design decisions - Scope: Project-wide architectural choices
 - Impacts: [DATA_MODEL.md](#data_modelmd) - Topic: Design decisions - Scope: Database implementation and persistence strategy
 - Impacts: [CONFIGURATION.md](#configurationmd) - Topic: Configuration strategy - Scope: Default values policy
+- Impacts: [CONFIGURATION.md](#configurationmd) - Topic: Configuration Key Reorganization for Clarity - Scope: CLI-related configuration naming
 - Impacts: [SECURITY.md](#securitymd) - Topic: MCP client security - Scope: Credential management
 - Impacts: [DATA_MODEL.md](#data_modelmd) - Topic: Enhanced metadata extraction - Scope: MD5 digest storage
 - Impacts: [DATA_MODEL.md](#data_modelmd) - Topic: LLM-Based Metadata Extraction - Scope: Metadata extraction approach
@@ -148,6 +150,9 @@ This graph structure helps the system determine the correct order for propagatin
 - Impacts: [DESIGN.md](#designmd) - Topic: Simplified Component Management - Scope: Component lifecycle approach
 - Impacts: [DESIGN.md](#designmd) - Topic: Component Initialization System - Scope: Component management implementation
 - Impacts: [DESIGN.md](#designmd) - Topic: LLM Client Architecture - Scope: Bedrock client implementation
+- Impacts: [src/dbp/config/default_config.py] - Topic: Configuration Key Reorganization - Scope: Configuration structure
+- Impacts: [src/dbp/core/log_utils.py] - Topic: Standardized Log Format - Scope: Logging implementation
+- Impacts: [src/dbp/core/lifecycle.py] - Topic: Standardized Log Format - Scope: Application logging setup
 
 ## DESIGN.md
 - Depends on: None

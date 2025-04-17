@@ -35,9 +35,13 @@
 ###############################################################################
 # [Reference documentation]
 # - doc/DESIGN.md (Dynamic File Exclusion Strategy)
-# - doc/CONFIGURATION.md (monitor.ignore_patterns)
+# - doc/CONFIGURATION.md (fs_monitor.ignore_patterns)
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-17T16:49:00Z : Updated configuration key for ignore patterns by CodeAssistant
+# * Changed configuration key from 'monitor.ignore_patterns' to 'fs_monitor.ignore_patterns'
+# * Fixed component initialization error due to renamed config model
+# * Aligned with schema changes for configuration consistency
 # 2025-04-15T09:45:10Z : Initial creation of GitIgnoreFilter class by CodeAssistant
 # * Implemented loading of gitignore files, config patterns, mandatory ignores, and path matching logic.
 ###############################################################################
@@ -124,7 +128,7 @@ class GitIgnoreFilter:
 
     def _add_config_patterns(self):
         """Adds ignore patterns specified in the configuration."""
-        patterns = self.config.get('monitor.ignore_patterns', [])
+        patterns = self.config.get('fs_monitor.ignore_patterns', [])
         logger.debug(f"Adding {len(patterns)} patterns from configuration.")
         base = self.project_root if self.project_root else Path('.')
         for pattern in patterns:

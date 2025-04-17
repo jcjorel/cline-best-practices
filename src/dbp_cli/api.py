@@ -43,8 +43,13 @@
 # - src/dbp/mcp_server/data_models.py (MCPRequest/Response/Error structure)
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-15T10:58:35Z : Initial creation of MCPClientAPI class by CodeAssistant
-# * Implemented request making, error handling, and specific methods for DBP tools.
+# 2025-04-17T15:34:30Z : Fixed configuration key in MCPClientAPI by CodeAssistant
+# * Changed config key from "mcp_server.timeout" to "server.timeout" to match schema structure
+# * Fixed server initialization error that was preventing debug_server.sh from working correctly
+# 2025-04-17T14:58:30Z : Updated server URL computation in MCPClientAPI by CodeAssistant
+# * Modified initialize() to compute server URL from host and port instead of reading url directly
+# * Improved compatibility with CLI/server configuration sharing
+# * Fixed issue with missing mcp_server.url configuration
 ###############################################################################
 
 import logging
@@ -118,13 +123,17 @@ class MCPClientAPI:
         if self._initialized:
             return
         self.logger.debug("Initializing MCPClientAPI configuration...")
-        self.server_url = self.config_manager.get("mcp_server.url")
-        self.timeout = int(self.config_manager.get("mcp_server.timeout", 30))
+        
+        # Compute URL from host and port
+        host = self.config_manager.get("mcp_server.host", "localhost")
+        port = self.config_manager.get("mcp_server.port", 6231)
+        self.server_url = f"http://{host}:{port}"
+        self.timeout = int(self.config_manager.get("server.timeout", 30))
 
         if not self.server_url:
-            raise ConfigurationError("MCP server URL ('mcp_server.url') is not configured.")
+            raise ConfigurationError("MCP server URL could not be computed from host and port.")
 
-        # Ensure URL ends with a slash for easier endpoint joining? Or handle in _make_request.
+        # Ensure URL ends with a slash for easier endpoint joining
         if not self.server_url.endswith('/'):
             self.server_url += '/'
 

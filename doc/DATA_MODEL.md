@@ -478,10 +478,11 @@ This approach ensures:
 
 When using the default SQLite database:
 
-1. **WAL Mode**: Write-Ahead Logging mode is used for maximum safety and concurrency
-2. **Thread Safety**: All database access is thread-safe through connection pooling and proper locking
-3. **Performance Tuning**: Appropriate indexes and optimizations for common query patterns
-4. **Automatic Maintenance**: Periodic VACUUM operations to maintain performance
+1. **Default Location**: Database file is stored at `coding_assistant/dbp/database.db` relative to project root
+2. **WAL Mode**: Write-Ahead Logging mode is used for maximum safety and concurrency
+3. **Thread Safety**: All database access is thread-safe through connection pooling and proper locking
+4. **Performance Tuning**: Appropriate indexes and optimizations for common query patterns
+5. **Automatic Maintenance**: Periodic VACUUM operations to maintain performance
 
 ### PostgreSQL-Specific Implementation
 

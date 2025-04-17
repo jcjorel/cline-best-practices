@@ -41,6 +41,10 @@
 # - All other files in src/dbp/mcp_server/
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-17T11:54:21Z : Added directory creation for required paths by CodeAssistant
+# * Integrated with fs_utils to ensure required directories exist
+# * Added validation of configuration values from config_manager
+# * Removed hardcoded default values in server configuration
 # 2025-04-15T16:38:29Z : Updated component to use centralized exceptions by CodeAssistant
 # * Modified imports to use exceptions from centralized exceptions module
 # * Removed local ComponentNotInitializedError class definition
@@ -54,6 +58,7 @@ from typing import List, Optional, Any
 # Core component imports
 try:
     from ..core.component import Component, InitializationContext
+    from ..core.fs_utils import ensure_directory_exists, ensure_directories_exist
     Config = Any # Placeholder
     MCPServerConfig = Any # Placeholder
 except ImportError:
@@ -179,19 +184,68 @@ class MCPServerComponent(Component):
             tool_registry = ToolRegistry(logger_override=self.logger.getChild("tool_registry"))
             resource_provider = ResourceProvider(logger_override=self.logger.getChild("resource_provider"))
 
-            # Get configuration values or use config manager for defaults
+            # Get configuration values from config manager
             from ..core.system import ComponentSystem
+            import os
             system = ComponentSystem.get_instance()
             config_manager = system.get_component("config_manager")
-            default_config = config_manager.get_default_config("mcp_server")
+            
+            # Get base directory and derived paths (with template substitution)
+            base_dir = config_manager.get('general.base_dir')
+            logs_dir = config_manager.get('mcp_server.logs_dir')
+            pid_file = config_manager.get('mcp_server.pid_file')
+            cli_config_file = config_manager.get('mcp_server.cli_config_file')
+            db_path = config_manager.get('database.path')
+            
+            if not base_dir or not logs_dir or not pid_file or not cli_config_file or not db_path:
+                missing = []
+                if not base_dir: missing.append('general.base_dir')
+                if not logs_dir: missing.append('mcp_server.logs_dir')
+                if not pid_file: missing.append('mcp_server.pid_file')
+                if not cli_config_file: missing.append('mcp_server.cli_config_file')
+                if not db_path: missing.append('database.path')
+                error_msg = f"Missing required configuration values: {', '.join(missing)}"
+                self.logger.error(error_msg)
+                raise ValueError(error_msg)
+            
+            # Create required directories
+            self.logger.info(f"Ensuring required directories exist using base directory: {base_dir}")
+            required_directories = [
+                logs_dir,
+                os.path.dirname(pid_file),
+                os.path.dirname(cli_config_file),
+                os.path.dirname(db_path)
+            ]
+            
+            # Create all directories
+            try:
+                # Import directory creation utilities
+                from ..core.fs_utils import ensure_directories_exist, create_dbp_gitignore
+                
+                # Create directories relative to Git root
+                ensure_directories_exist(required_directories)
+                self.logger.info("Required directories created or verified successfully")
+                
+                # Create .gitignore file in base directory to exclude database files and logs
+                if create_dbp_gitignore(base_dir):
+                    self.logger.info(f"Created or verified .gitignore file in {base_dir}")
+                else:
+                    self.logger.warning(f"Failed to create .gitignore file in {base_dir}")
+                    
+            except RuntimeError as e:
+                self.logger.error(f"Failed to resolve paths from Git root: {e}")
+                raise RuntimeError(f"Failed to set up directories: {e}") from e
+            except OSError as e:
+                self.logger.error(f"Failed to create required directories: {e}")
+                raise RuntimeError(f"Failed to create required directories: {e}") from e
             
             # Create the MCP server instance with FastAPI/Uvicorn
             self._server = MCPServer(
-                host=mcp_config.get('host', default_config.get('host')),
-                port=int(mcp_config.get('port', default_config.get('port'))),
-                name=mcp_config.get('server_name', default_config.get('server_name')),
-                description=mcp_config.get('server_description', default_config.get('server_description')),
-                version=mcp_config.get('server_version', default_config.get('server_version')),
+                host=config_manager.get('mcp_server.host'),
+                port=int(config_manager.get('mcp_server.port')),
+                name=config_manager.get('mcp_server.server_name'),
+                description=config_manager.get('mcp_server.server_description'),
+                version=config_manager.get('mcp_server.server_version'),
                 tool_registry=tool_registry,
                 resource_provider=resource_provider,
                 auth_provider=auth_provider,
@@ -201,14 +255,14 @@ class MCPServerComponent(Component):
             
             # Set the server configuration for FastAPI/Uvicorn settings
             self._server.config = {
-                "workers": mcp_config.get('workers', default_config.get('workers', 1)),
-                "enable_cors": mcp_config.get('enable_cors', default_config.get('enable_cors', False)),
-                "cors_origins": mcp_config.get('cors_origins', default_config.get('cors_origins', ["*"])),
-                "cors_methods": mcp_config.get('cors_methods', default_config.get('cors_methods', ["*"])),
-                "cors_headers": mcp_config.get('cors_headers', default_config.get('cors_headers', ["*"])),
-                "cors_allow_credentials": mcp_config.get('cors_allow_credentials', default_config.get('cors_allow_credentials', False)),
-                "keep_alive": mcp_config.get('keep_alive', default_config.get('keep_alive', 5)),
-                "graceful_shutdown_timeout": mcp_config.get('graceful_shutdown_timeout', default_config.get('graceful_shutdown_timeout', 10))
+                "workers": config_manager.get('mcp_server.workers'),
+                "enable_cors": config_manager.get('mcp_server.enable_cors'),
+                "cors_origins": config_manager.get('mcp_server.cors_origins'),
+                "cors_methods": config_manager.get('mcp_server.cors_methods'),
+                "cors_headers": config_manager.get('mcp_server.cors_headers'),
+                "cors_allow_credentials": config_manager.get('mcp_server.cors_allow_credentials'),
+                "keep_alive": config_manager.get('mcp_server.keep_alive'),
+                "graceful_shutdown_timeout": config_manager.get('mcp_server.graceful_shutdown_timeout')
             }
 
             # Register tools and resources

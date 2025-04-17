@@ -43,6 +43,26 @@
 # - doc/CONFIGURATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-17T10:55:37Z : Fixed Alembic configuration handling by CodeAssistant
+# * Updated _run_alembic_migrations method to safely handle Alembic configuration
+# * Resolved AttributeError: 'Config' object has no attribute 'sections'
+# * Implemented robust error handling for Alembic configuration access
+# 2025-04-17T10:47:23Z : Updated DatabaseManager to use config_manager properly by CodeAssistant
+# * Modified DatabaseManager to use config_manager's get method for configuration
+# * Added robust error handling for configuration access
+# * Fixed AttributeError: 'ConfigManagerComponent' object has no attribute 'items'
+# 2025-04-17T10:05:04Z : Fixed initialization context handling by CodeAssistant
+# * Updated DatabaseComponent.initialize to properly handle InitializationContext
+# * Added proper component system lookup for config_manager
+# * Fixed AttributeError: 'InitializationContext' object has no attribute 'get'
+# 2025-04-17T09:55:22Z : Added DatabaseComponent class by CodeAssistant
+# * Created Component implementation that wraps DatabaseManager
+# * Implemented component lifecycle methods (initialize, shutdown)
+# * Added methods to access database functionality through component
+# 2025-04-17T08:41:14Z : Enhanced database initialization error logging by CodeAssistant
+# * Added detailed logging for database errors during startup and migration steps
+# * Improved error capture in _run_alembic_migrations method for better debugging
+# * Added filesystem access verification and detailed SQLite configuration logging
 # 2025-04-16T18:01:22Z : Fixed SQLAlchemy SQL execution by CodeAssistant
 # * Updated SQL execution to use SQLAlchemy's text() function
 # * Resolved "Textual SQL expression should be explicitly declared as text" error
@@ -54,16 +74,19 @@
 # * Updated initialize method to set initialized=true before schema operations
 # * Added proper Alembic migration support for schema management
 # * Fixed class duplication issue in the file
-# 2025-04-16T17:36:38Z : Fixed component initialization configuration access by CodeAssistant
-# * Modified initialize method to properly access configuration through the config_manager component
 ###############################################################################
 
 import os
 import logging
 import time
+import shutil
+import sqlite3
+import traceback
+import sys
+from pathlib import Path
 from contextlib import contextmanager
-from typing import List, Any
-from ..core.component import Component
+from typing import List, Any, Dict, Optional
+from ..core.component import Component, InitializationContext
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.pool import QueuePool
@@ -78,6 +101,214 @@ except ImportError:
 
 
 logger = logging.getLogger(__name__)
+
+class DatabaseComponent(Component):
+    """
+    [Class intent]
+    Component wrapper for DatabaseManager that integrates with the component lifecycle
+    system. Provides database access to other components via component registry.
+    
+    [Implementation details]
+    Acts as an adapter between DatabaseManager and Component protocol.
+    Manages database initialization and shutdown as part of the component lifecycle.
+    
+    [Design principles]
+    Single source of database access through component system.
+    Centralized database initialization and configuration.
+    """
+
+    def __init__(self):
+        """
+        [Function intent]
+        Initializes the DatabaseComponent with a new DatabaseManager instance.
+        
+        [Implementation details]
+        Creates a DatabaseManager but does not initialize it yet.
+        Full initialization happens during component initialization.
+        
+        [Design principles]
+        Deferred initialization to support component lifecycle management.
+        """
+        super().__init__()
+        self._db_manager = None
+        self.logger = logging.getLogger(f"dbp.{self.name}")
+
+    @property
+    def name(self) -> str:
+        """
+        [Function intent]
+        Returns the unique name of this component for registration and dependency references.
+        
+        [Implementation details]
+        Simple property returning the standard name for this component.
+        
+        [Design principles]
+        Consistent naming convention for database component.
+        
+        Returns:
+            str: 'database' as the component name
+        """
+        return "database"
+
+    @property
+    def dependencies(self) -> list[str]:
+        """
+        [Function intent]
+        Declares dependencies required by this component.
+        
+        [Implementation details]
+        Depends only on the config_manager component to obtain database configuration.
+        
+        [Design principles]
+        Minimal dependencies for database functionality.
+        
+        Returns:
+            list[str]: List of component names this component depends on
+        """
+        return ["config_manager"]
+
+    def initialize(self, context: Any) -> None:
+        """
+        [Function intent]
+        Initializes the database component with the application configuration.
+        
+        [Implementation details]
+        Creates and initializes the DatabaseManager with configuration.
+        Sets _initialized flag to indicate successful initialization.
+        
+        [Design principles]
+        Clean initialization with proper error handling.
+        
+        Args:
+            context: InitializationContext object containing configuration
+        
+        Raises:
+            RuntimeError: If database initialization fails
+        """
+        self.logger.info(f"Initializing component '{self.name}'...")
+        
+        try:
+            # Get the config_manager component from the context
+            from ..core.system import ComponentSystem
+            system = ComponentSystem.get_instance()
+            if not system:
+                self.logger.error("Failed to get ComponentSystem instance")
+                raise RuntimeError("ComponentSystem not initialized")
+                
+            config_manager = system.get_component("config_manager")
+            if not config_manager:
+                self.logger.error("Failed to get config_manager component")
+                raise RuntimeError("config_manager component not found")
+            
+            # Create database manager if it doesn't exist
+            if not self._db_manager:
+                self._db_manager = DatabaseManager(config_manager)
+                
+            # Initialize the database
+            self._db_manager.initialize()
+            
+            # Mark component as initialized
+            self._initialized = True
+            self.logger.info(f"Component '{self.name}' initialized successfully.")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to initialize database component: {e}", exc_info=True)
+            self.set_initialization_error(e)
+            raise RuntimeError(f"Database component initialization failed: {e}") from e
+
+    def shutdown(self) -> None:
+        """
+        [Function intent]
+        Performs graceful shutdown of the database component.
+        
+        [Implementation details]
+        Currently no explicit cleanup needed for DatabaseManager.
+        Sets _initialized flag to False to indicate component is inactive.
+        
+        [Design principles]
+        Clean resource release and state management.
+        """
+        self.logger.info(f"Shutting down component '{self.name}'...")
+        
+        # Nothing to do for now, but in the future might need to close connections
+        
+        self._initialized = False
+        self.logger.info(f"Component '{self.name}' shut down.")
+        
+    def get_manager(self) -> 'DatabaseManager':
+        """
+        [Function intent]
+        Provides access to the underlying DatabaseManager.
+        
+        [Implementation details]
+        Returns the encapsulated DatabaseManager instance for direct database access.
+        
+        [Design principles]
+        Controlled access to database functionality.
+        
+        Returns:
+            DatabaseManager: The database manager instance
+            
+        Raises:
+            RuntimeError: If accessed before initialization
+        """
+        if not self._initialized:
+            self.logger.error("Attempted to access database manager before initialization")
+            raise RuntimeError("Database component not initialized")
+            
+        return self._db_manager
+        
+    def get_session(self):
+        """
+        [Function intent]
+        Provides a transactional scope for a series of database operations.
+        
+        [Implementation details]
+        Delegates to DatabaseManager's get_session context manager.
+        
+        [Design principles]
+        Consistent database session access through component layer.
+        
+        Returns:
+            Context manager yielding a SQLAlchemy session
+            
+        Raises:
+            RuntimeError: If accessed before initialization
+        """
+        if not self._initialized:
+            self.logger.error("Attempted to get database session before initialization")
+            raise RuntimeError("Database component not initialized")
+            
+        return self._db_manager.get_session()
+        
+    def execute_with_retry(self, operation, max_retries=3, retry_interval=1):
+        """
+        [Function intent]
+        Delegates to DatabaseManager's execute_with_retry method.
+        
+        [Implementation details]
+        Passes the operation along with retry parameters to the database manager.
+        
+        [Design principles]
+        Consistent error handling and retry logic access through component layer.
+        
+        Args:
+            operation: Callable database operation
+            max_retries: Maximum retry attempts
+            retry_interval: Time between retries in seconds
+            
+        Returns:
+            Result of the operation
+            
+        Raises:
+            RuntimeError: If accessed before initialization
+        """
+        if not self._initialized:
+            self.logger.error("Attempted to execute database operation before initialization")
+            raise RuntimeError("Database component not initialized")
+            
+        return self._db_manager.execute_with_retry(operation, max_retries, retry_interval)
+
 
 class DatabaseManager:
     """Manages database connections, sessions, and schema initialization."""
@@ -97,6 +328,7 @@ class DatabaseManager:
         self.engine = None
         self.Session = None
         self.initialized = False
+        self.db_path = None
         logger.debug("DatabaseManager instantiated.")
 
     def initialize(self):
@@ -110,6 +342,28 @@ class DatabaseManager:
 
         db_type = self.config.get('database.type', 'sqlite')
         logger.info(f"Initializing database with type: {db_type}")
+
+        # Log detailed configuration for debugging
+        try:
+            # Use the config manager's get method directly for each database setting
+            db_config = {
+                'database.type': self.config.get('database.type', 'sqlite'),
+                'database.path': self.config.get('database.path', '~/.dbp/metadata.db'),
+                'database.max_connections': self.config.get('database.max_connections', 4),
+                'database.connection_timeout': self.config.get('database.connection_timeout', 5),
+                'database.use_wal_mode': self.config.get('database.use_wal_mode', True),
+                'database.vacuum_threshold': self.config.get('database.vacuum_threshold', 20),
+                'database.echo_sql': self.config.get('database.echo_sql', False)
+            }
+            
+            # Add PostgreSQL config if present
+            connection_string = self.config.get('database.connection_string', None)
+            if connection_string:
+                db_config['database.connection_string'] = connection_string
+                
+            logger.debug(f"Database configuration: {db_config}")
+        except Exception as e:
+            logger.warning(f"Could not log detailed configuration: {e}")
 
         try:
             if db_type == 'sqlite':
@@ -134,17 +388,158 @@ class DatabaseManager:
         except SQLAlchemyError as e:
             logger.error(f"Database initialization failed: {e}", exc_info=True)
             self.initialized = False # Ensure state reflects failure
+            
+            # Log more details about the SQLAlchemy error
+            self._log_detailed_sqlalchemy_error(e)
+            
+            # Gather and log system information that might help diagnose issues
+            self._log_system_info()
+            
             raise # Re-raise the exception to signal failure
         except ValueError as e:
             logger.error(f"Database configuration error: {e}", exc_info=True)
             self.initialized = False
             raise
+        except Exception as e:
+            logger.error(f"Unexpected error during database initialization: {str(e)}")
+            logger.error(f"Error type: {type(e).__name__}")
+            logger.error(traceback.format_exc())
+            self.initialized = False
+            raise
+
+    def _log_detailed_sqlalchemy_error(self, error: SQLAlchemyError):
+        """
+        [Function intent]
+        Logs detailed information about SQLAlchemy errors.
+        
+        [Implementation details]
+        Extracts specific error details from different types of SQLAlchemy exceptions.
+        
+        [Design principles]
+        Provides actionable error information for database failures.
+        """
+        logger.error(f"SQLAlchemy error details:")
+        
+        # Get error class and module
+        error_class = error.__class__.__name__
+        error_module = error.__class__.__module__
+        logger.error(f"  Error class: {error_module}.{error_class}")
+        
+        # Extract connection information if available
+        if hasattr(error, 'connection'):
+            conn = error.connection
+            logger.error(f"  Connection info: {conn}")
+            
+        # Log statement that caused the error if available
+        if hasattr(error, 'statement'):
+            logger.error(f"  Failed statement: {error.statement}")
+        
+        # For operational errors, log more details
+        if isinstance(error, OperationalError):
+            if hasattr(error, 'orig') and error.orig:
+                logger.error(f"  Original error: {error.orig}")
+                
+                # For SQLite errors, provide more specific info
+                if isinstance(error.orig, sqlite3.OperationalError):
+                    sqlite_err = str(error.orig)
+                    logger.error(f"  SQLite error: {sqlite_err}")
+                    
+                    # Check for common SQLite errors
+                    if "unable to open database file" in sqlite_err:
+                        logger.error("  This indicates filesystem permission issues or missing directories.")
+                    elif "database is locked" in sqlite_err:
+                        logger.error("  This indicates another process has locked the database.")
+                    elif "disk I/O error" in sqlite_err:
+                        logger.error("  This indicates filesystem/disk errors accessing the database file.")
+
+    def _log_system_info(self):
+        """
+        [Function intent]
+        Logs system information relevant to database operation.
+        
+        [Implementation details]
+        Collects and logs information about filesystem, SQLAlchemy version, 
+        and database configuration that might help diagnose issues.
+        
+        [Design principles]
+        Provides context for error diagnosis without exposing sensitive information.
+        """
+        logger.error("System information for database diagnosis:")
+        
+        # Log SQLAlchemy version
+        import sqlalchemy
+        logger.error(f"  SQLAlchemy version: {sqlalchemy.__version__}")
+        
+        # Log database type and path
+        db_type = self.config.get('database.type', 'sqlite')
+        logger.error(f"  Database type: {db_type}")
+        
+        if db_type == 'sqlite' and self.db_path:
+            db_path = self.db_path
+            
+            # Log path information
+            logger.error(f"  Database path: {db_path}")
+            
+            # Check if directory exists
+            db_dir = os.path.dirname(db_path)
+            dir_exists = os.path.exists(db_dir)
+            logger.error(f"  Database directory exists: {dir_exists}")
+            
+            if dir_exists:
+                # Check permissions
+                try:
+                    readable = os.access(db_dir, os.R_OK)
+                    writable = os.access(db_dir, os.W_OK)
+                    executable = os.access(db_dir, os.X_OK)
+                    logger.error(f"  Directory permissions: read={readable}, write={writable}, execute={executable}")
+                    
+                    # Check free space
+                    try:
+                        free_space = shutil.disk_usage(db_dir).free / (1024 * 1024)  # MB
+                        logger.error(f"  Free disk space: {free_space:.2f} MB")
+                    except Exception as e:
+                        logger.error(f"  Could not determine free space: {e}")
+                        
+                    # Check if database file exists
+                    file_exists = os.path.exists(db_path)
+                    logger.error(f"  Database file exists: {file_exists}")
+                    
+                    if file_exists:
+                        # Log file size and permissions
+                        size = os.path.getsize(db_path) / 1024  # KB
+                        logger.error(f"  Database file size: {size:.2f} KB")
+                        
+                        file_readable = os.access(db_path, os.R_OK)
+                        file_writable = os.access(db_path, os.W_OK)
+                        logger.error(f"  File permissions: read={file_readable}, write={file_writable}")
+                        
+                        # Check if file is a valid SQLite database
+                        try:
+                            conn = sqlite3.connect(db_path)
+                            cursor = conn.cursor()
+                            cursor.execute("PRAGMA integrity_check")
+                            result = cursor.fetchone()[0]
+                            conn.close()
+                            logger.error(f"  Database integrity: {result}")
+                        except Exception as e:
+                            logger.error(f"  Database integrity check failed: {e}")
+                except Exception as e:
+                    logger.error(f"  Error checking directory/file access: {e}")
+        
+        # Log process information
+        import os
+        logger.error(f"  Process ID: {os.getpid()}")
+        logger.error(f"  Process username: {os.getlogin()}")
+        logger.error(f"  Current working directory: {os.getcwd()}")
 
     def _initialize_sqlite(self):
         """Initializes the SQLite database engine."""
         db_path_config = self.config.get('database.path', '~/.dbp/metadata.db')
         db_path = os.path.expanduser(db_path_config)
         db_dir = os.path.dirname(db_path)
+        
+        # Save for potential error logging
+        self.db_path = db_path
 
         logger.info(f"Initializing SQLite database at: {db_path}")
 
@@ -153,26 +548,51 @@ class DatabaseManager:
             if not os.path.exists(db_dir):
                 os.makedirs(db_dir, exist_ok=True)
                 logger.info(f"Created database directory: {db_dir}")
+                
+            # Verify the directory is writable after creation
+            if not os.access(db_dir, os.W_OK):
+                logger.error(f"Database directory {db_dir} is not writable!")
+                raise PermissionError(f"Database directory {db_dir} is not writable!")
+                
         except OSError as e:
             logger.error(f"Failed to create database directory {db_dir}: {e}")
+            logger.error(f"Directory creation error type: {type(e).__name__}")
+            logger.error(traceback.format_exc())
+            
+            # Check parent directory permissions
+            parent_dir = os.path.dirname(db_dir)
+            if os.path.exists(parent_dir):
+                parent_writable = os.access(parent_dir, os.W_OK)
+                logger.error(f"Parent directory {parent_dir} writable: {parent_writable}")
+            
             raise
 
         # Create engine with connection pooling and WAL mode settings
         pool_size = self.config.get('database.max_connections', 4)
         timeout = self.config.get('database.connection_timeout', 5)
         
+        # Log configuration values
+        logger.info(f"SQLite configuration: pool_size={pool_size}, timeout={timeout}")
+        logger.info(f"SQLite path: absolute={os.path.abspath(db_path)}, normalized={os.path.normpath(db_path)}")
+        
         # Note: connect_args for timeout might not be directly supported by SQLite driver this way.
         # Timeout is typically handled at the application level or via pool settings.
-        self.engine = create_engine(
-            f"sqlite:///{db_path}",
-            poolclass=QueuePool,
-            pool_size=pool_size,
-            max_overflow=2, # Allow 2 extra connections beyond pool_size
-            pool_timeout=timeout,
-            # connect_args={'timeout': timeout} # This might cause issues with standard SQLite driver
-            echo=self.config.get('database.echo_sql', False) # Optional SQL logging
-        )
-        logger.debug(f"SQLAlchemy engine created for SQLite with pool size {pool_size}.")
+        try:
+            self.engine = create_engine(
+                f"sqlite:///{db_path}",
+                poolclass=QueuePool,
+                pool_size=pool_size,
+                max_overflow=2, # Allow 2 extra connections beyond pool_size
+                pool_timeout=timeout,
+                # connect_args={'timeout': timeout} # This might cause issues with standard SQLite driver
+                echo=self.config.get('database.echo_sql', False) # Optional SQL logging
+            )
+            logger.debug(f"SQLAlchemy engine created for SQLite with pool size {pool_size}.")
+        except Exception as e:
+            logger.error(f"Failed to create SQLAlchemy engine: {e}")
+            logger.error(f"Engine creation error type: {type(e).__name__}")
+            logger.error(traceback.format_exc())
+            raise
 
         # Enable WAL mode for better concurrency and safety
         if self.config.get('database.use_wal_mode', True):
@@ -180,13 +600,21 @@ class DatabaseManager:
                 from sqlalchemy import text
                 with self.engine.connect() as conn:
                     # Use text() to create proper SQL expressions
+                    logger.info("Enabling SQLite WAL mode...")
                     conn.execute(text("PRAGMA journal_mode=WAL;"))
                     conn.execute(text("PRAGMA synchronous=NORMAL;")) # Recommended with WAL
-                logger.info("SQLite WAL mode enabled.")
+                
+                # Verify WAL mode was set
+                with self.engine.connect() as conn:
+                    result = conn.execute(text("PRAGMA journal_mode;")).scalar()
+                    logger.info(f"SQLite WAL mode enabled. Current journal mode: {result}")
             except OperationalError as e:
                 logger.warning(f"Could not enable WAL mode (might be already set or unsupported): {e}")
+                logger.warning(traceback.format_exc())
             except Exception as e:
-                 logger.error(f"Unexpected error enabling WAL mode: {e}", exc_info=True)
+                logger.error(f"Unexpected error enabling WAL mode: {e}")
+                logger.error(f"Error type: {type(e).__name__}")
+                logger.error(traceback.format_exc())
 
 
     def _run_alembic_migrations(self):
@@ -208,65 +636,162 @@ class DatabaseManager:
         try:
             # Import alembic modules here to avoid unnecessary dependencies
             # if the feature is not used
-            from alembic import command
-            from alembic.config import Config
-            import importlib.resources
+            logger.debug("Importing Alembic modules...")
+            try:
+                from alembic import command
+                from alembic.config import Config
+                import importlib.resources
+                logger.debug("Alembic modules imported successfully")
+            except ImportError as e:
+                logger.error(f"Failed to import Alembic modules: {e}")
+                logger.error("Make sure Alembic is installed. Try: pip install alembic")
+                raise RuntimeError(f"Failed to import Alembic: {e}")
             
             # Access config through the config manager to get Alembic settings
+            logger.debug("Getting ComponentSystem instance...")
             from ..core.system import ComponentSystem
             system = ComponentSystem.get_instance()
+            if not system:
+                logger.error("Failed to get ComponentSystem instance - it may not be initialized")
+                raise RuntimeError("ComponentSystem not initialized")
+                
+            logger.debug("Getting config_manager component...")
             config_manager = system.get_component("config_manager")
+            if not config_manager:
+                logger.error("Failed to get config_manager component")
+                raise RuntimeError("config_manager component not found")
+                
+            logger.debug("Config manager retrieved successfully")
             
-            # Get alembic.ini location from global config or use default
-            alembic_ini_path = config_manager.get('database.alembic_ini_path', 'alembic.ini')
+            # Get alembic.ini location from global config
+            alembic_ini_path = config_manager.get('database.alembic_ini_path')
+            logger.debug(f"Using alembic.ini path: {alembic_ini_path}")
+            
+            # Use module-specific Alembic migrations directory
+            module_alembic_dir = os.path.join(os.path.dirname(__file__), 'alembic')
+            logger.debug(f"Using module-specific Alembic directory: {module_alembic_dir}")
+            
+            # Verify that the required Alembic files exist
+            if not os.path.exists(alembic_ini_path):
+                raise FileNotFoundError(f"Alembic config file not found: {alembic_ini_path}")
+                
+            if not os.path.isdir(module_alembic_dir):
+                raise FileNotFoundError(f"Module Alembic directory not found: {module_alembic_dir}")
             
             # Load Alembic configuration
+            logger.debug(f"Loading Alembic configuration from: {alembic_ini_path}")
             alembic_cfg = Config(alembic_ini_path)
             
             # Configure Alembic with database URL from global config
-            db_url = config_manager.get('database.url')
+            db_url = None
+            try:
+                db_url = config_manager.get('database.url')
+            except Exception as e:
+                logger.warning(f"Failed to get database.url from config_manager: {e}")
+                
             if db_url:
+                logger.debug(f"Using database URL from config: {db_url}")
                 alembic_cfg.set_main_option('sqlalchemy.url', db_url)
             elif hasattr(self.engine, 'url'):
                 # Fall back to engine URL if available
-                alembic_cfg.set_main_option('sqlalchemy.url', str(self.engine.url))
+                engine_url = str(self.engine.url)
+                logger.debug(f"Using engine URL: {engine_url}")
+                alembic_cfg.set_main_option('sqlalchemy.url', engine_url)
+            else:
+                logger.error("No database URL available for Alembic")
+                raise ValueError("No database URL available for Alembic")
             
-            # Ensure default sections exist in config to prevent 'NoneType not iterable' error
-            if not alembic_cfg.get_section(alembic_cfg.config_ini_section):
-                alembic_cfg.set_section_option(alembic_cfg.config_ini_section, 'script_location', 'alembic')
-                alembic_cfg.set_section_option(alembic_cfg.config_ini_section, 'prepend_sys_path', '.')
+            # Configure Alembic to use our module-specific migrations directory
+            logger.debug("Setting Alembic script_location to module-specific alembic directory")
+            alembic_cfg.set_main_option('script_location', module_alembic_dir)
+            
+            # Ensure other required config options are set
+            alembic_cfg.set_main_option('prepend_sys_path', '.')
+            
+            # Log main Alembic configuration options for debugging
+            logger.debug("Alembic configuration:")
+            main_section = alembic_cfg.config_ini_section
+            logger.debug(f"  Main section: {main_section}")
+            
+            # Try to safely log configuration options
+            try:
+                if hasattr(alembic_cfg, 'get_section') and callable(alembic_cfg.get_section):
+                    section_items = alembic_cfg.get_section(main_section)
+                    if section_items:
+                        for key, value in section_items.items():
+                            logger.debug(f"    {key} = {value}")
+                elif hasattr(alembic_cfg, 'get_main_option') and callable(alembic_cfg.get_main_option):
+                    logger.debug(f"    sqlalchemy.url = {alembic_cfg.get_main_option('sqlalchemy.url')}")
+            except Exception as e:
+                logger.warning(f"Could not log detailed Alembic configuration: {e}")
             
             # Ensure schema exists first (stamp head if this is a new database)
             try:
                 from sqlalchemy import text
+                logger.info("Running database migrations...")
+                
                 with self.get_session() as session:
                     # Simple check to see if alembic_version table exists
                     # by attempting to create a transaction
+                    logger.debug("Testing database connection...")
                     session.execute(text("SELECT 1"))
+                    logger.debug("Database connection successful")
                 
                 # Run the migration to bring database up to date
-                logger.info("Running database migrations...")
-                command.upgrade(alembic_cfg, "head")
-                logger.info("Database migrations completed successfully.")
+                logger.info("Upgrading database schema to latest version...")
+                try:
+                    command.upgrade(alembic_cfg, "head")
+                    logger.info("Database migrations completed successfully.")
+                except Exception as e:
+                    logger.error(f"Alembic upgrade failed: {e}")
+                    logger.error(traceback.format_exc())
+                    
+                    # Try to capture alembic version information
+                    try:
+                        with self.get_session() as session:
+                            version_result = session.execute(text("SELECT version_num FROM alembic_version")).fetchone()
+                            if version_result:
+                                logger.error(f"Current alembic version before failure: {version_result[0]}")
+                    except Exception:
+                        logger.error("Could not determine current alembic version")
+                    
+                    raise
                 
-            except OperationalError:
+            except OperationalError as e:
                 # Table doesn't exist, this may be a fresh database
+                logger.info(f"Database appears to be new or empty: {e}")
                 logger.info("Initializing new database schema...")
                 
                 # Create all tables directly for a fresh database
-                Base.metadata.create_all(self.engine)
-                
-                # Then stamp with current version to avoid running all migrations
-                command.stamp(alembic_cfg, "head")
-                logger.info("Database schema initialized with current version.")
+                try:
+                    logger.debug("Creating database tables directly...")
+                    Base.metadata.create_all(self.engine)
+                    logger.debug("Tables created successfully")
+                    
+                    # Then stamp with current version to avoid running all migrations
+                    logger.debug("Stamping database with current version...")
+                    command.stamp(alembic_cfg, "head")
+                    logger.info("Database schema initialized with current version.")
+                except Exception as table_error:
+                    logger.error(f"Failed to create database tables: {table_error}")
+                    logger.error(traceback.format_exc())
+                    raise
                 
         except ImportError as e:
             logger.warning(f"Alembic not available, skipping migrations: {e}. Schema changes may need to be applied manually.")
             # Fall back to direct schema creation without migrations
-            Base.metadata.create_all(self.engine)
-            logger.info("Database schema created directly (without migrations).")
+            try:
+                logger.info("Creating tables directly (without migrations)...")
+                Base.metadata.create_all(self.engine)
+                logger.info("Database schema created directly (without migrations).")
+            except Exception as direct_error:
+                logger.error(f"Failed to create schema directly: {direct_error}")
+                logger.error(traceback.format_exc())
+                raise
         except Exception as e:
-            logger.error(f"Failed to run database migrations: {e}", exc_info=True)
+            logger.error(f"Failed to run database migrations: {e}")
+            logger.error(f"Error type: {type(e).__name__}")
+            logger.error(traceback.format_exc())
             # This is a critical error that should bubble up
             raise RuntimeError(f"Failed to initialize database schema: {e}") from e
 
@@ -431,214 +956,3 @@ class DatabaseManager:
         except SQLAlchemyError as e:
             logger.error(f"Failed to check database fragmentation: {e}", exc_info=True)
             return False # Avoid vacuuming on error
-
-    def close(self):
-        """Closes the session factory and disposes of the engine."""
-        if self.Session:
-            self.Session.remove() # Ensure scoped session is cleaned up
-            logger.debug("Scoped session factory removed.")
-        if self.engine:
-            self.engine.dispose()
-            logger.info("Database engine disposed.")
-        self.initialized = False
-        logger.info("DatabaseManager closed.")
-
-    def __enter__(self):
-        self.initialize()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
-
-
-class DatabaseComponent(Component):
-    """
-    [Class intent]
-    Component wrapper for the DatabaseManager following the KISS component pattern.
-    Acts as the interface between the component system and the database functionality.
-    
-    [Implementation details]
-    Wraps the DatabaseManager class, initializing it during component initialization
-    and providing access to the database session and manager through properties.
-    
-    [Design principles]
-    Single responsibility for database access and lifecycle within the component system.
-    Encapsulates the database implementation details from the component system.
-    """
-    
-    def __init__(self):
-        """
-        [Function intent]
-        Initializes the DatabaseComponent with minimal setup.
-        
-        [Implementation details]
-        Sets the initialized flag to False and prepares for database manager creation.
-        
-        [Design principles]
-        Minimal initialization with explicit state tracking.
-        """
-        super().__init__()
-        self._initialized = False
-        self._db_manager = None
-        self.logger = None
-    
-    @property
-    def name(self) -> str:
-        """
-        [Function intent]
-        Returns the unique name of this component, used for registration and dependency references.
-        
-        [Implementation details]
-        Returns a simple string constant.
-        
-        [Design principles]
-        Explicit naming for clear component identification.
-        
-        Returns:
-            str: The component name "database"
-        """
-        return "database"
-    
-    @property
-    def dependencies(self) -> List[str]:
-        """
-        [Function intent]
-        Returns the component names that this component depends on.
-        
-        [Implementation details]
-        Database depends on config_manager to access configuration.
-        
-        [Design principles]
-        Explicit dependency declaration for clear initialization order.
-        
-        Returns:
-            List[str]: List of component dependencies
-        """
-        return ["config_manager"]
-    
-    def initialize(self, config: Any) -> None:
-        """
-        [Function intent]
-        Initializes the database manager with the provided configuration.
-        
-        [Implementation details]
-        Creates a DatabaseManager instance and initializes it.
-        
-        [Design principles]
-        Explicit initialization with clear success/failure indication.
-        
-        Args:
-            config: Configuration object with database settings
-            
-        Raises:
-            RuntimeError: If initialization fails
-        """
-        if self._initialized:
-            self.logger.warning(f"Component '{self.name}' already initialized.")
-            return
-        
-        self.logger = logging.getLogger(f"dbp.{self.name}")
-        self.logger.info(f"Initializing component '{self.name}'...")
-        
-        try:
-            # Get component-specific configuration through config_manager
-            from ..core.system import ComponentSystem
-            system = ComponentSystem.get_instance()
-            config_manager = system.get_component("config_manager")
-            default_config = config_manager.get_default_config(self.name)
-            
-            # Create and initialize the database manager
-            self._db_manager = DatabaseManager(default_config)
-            self._db_manager.initialize()
-            
-            self._initialized = True
-            self.logger.info(f"Component '{self.name}' initialized successfully.")
-        except Exception as e:
-            self.logger.error(f"Failed to initialize database component: {e}", exc_info=True)
-            self._db_manager = None
-            self._initialized = False
-            raise RuntimeError(f"Failed to initialize database component: {e}") from e
-    
-    def shutdown(self) -> None:
-        """
-        [Function intent]
-        Shuts down the database manager and releases resources.
-        
-        [Implementation details]
-        Calls close on the database manager and resets state.
-        
-        [Design principles]
-        Clean resource release with clear state reset.
-        """
-        self.logger.info(f"Shutting down component '{self.name}'...")
-        
-        if self._db_manager:
-            try:
-                self._db_manager.close()
-            except Exception as e:
-                self.logger.error(f"Error during database shutdown: {e}", exc_info=True)
-            finally:
-                self._db_manager = None
-        
-        self._initialized = False
-        self.logger.info(f"Component '{self.name}' shut down.")
-    
-    @property
-    def is_initialized(self) -> bool:
-        """
-        [Function intent]
-        Indicates if the component is successfully initialized.
-        
-        [Implementation details]
-        Returns the value of the internal _initialized flag.
-        
-        [Design principles]
-        Simple boolean flag for clear initialization status.
-        
-        Returns:
-            bool: True if component is initialized, False otherwise
-        """
-        return self._initialized
-    
-    @property
-    def db_manager(self) -> DatabaseManager:
-        """
-        [Function intent]
-        Provides access to the underlying DatabaseManager.
-        
-        [Implementation details]
-        Returns the internal database manager if initialized.
-        
-        [Design principles]
-        Protected access to ensure initialization check.
-        
-        Returns:
-            DatabaseManager: The initialized database manager
-            
-        Raises:
-            RuntimeError: If accessed before initialization
-        """
-        if not self._initialized or not self._db_manager:
-            raise RuntimeError("DatabaseComponent not initialized")
-        return self._db_manager
-    
-    def get_session(self):
-        """
-        [Function intent]
-        Provides a database session for transactional operations.
-        
-        [Implementation details]
-        Delegates to the DatabaseManager's get_session method.
-        
-        [Design principles]
-        Convenience method to simplify access to database sessions.
-        
-        Returns:
-            Context manager for a database session
-            
-        Raises:
-            RuntimeError: If accessed before initialization
-        """
-        if not self._initialized or not self._db_manager:
-            raise RuntimeError("DatabaseComponent not initialized")
-        return self._db_manager.get_session()

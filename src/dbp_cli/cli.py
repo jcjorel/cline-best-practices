@@ -36,10 +36,14 @@
 # - src/dbp_cli/commands/base.py
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-15T13:15:30Z : Initial creation of DocumentationProgrammingCLI by CodeAssistant
-# * Implemented main CLI class with command registration and entry point.
+# 2025-04-17T14:35:00Z : Updated to use server ConfigurationManager by CodeAssistant
+# * Changed from local CLI config manager to use the shared server ConfigurationManager
+# * Improves configuration consistency by having a single source of truth
+# * Fixed issue with missing configuration keys for MCP server components
 # 2025-04-15T14:52:30Z : Added ServerCommandHandler to command registry by CodeAssistant
 # * Integrated server management functionality into CLI.
+# 2025-04-15T13:15:30Z : Initial creation of DocumentationProgrammingCLI by CodeAssistant
+# * Implemented main CLI class with command registration and entry point.
 ###############################################################################
 
 import argparse
@@ -50,7 +54,7 @@ from importlib import metadata
 from typing import Dict, List, Optional, Any
 
 # Import core components
-from .config import ConfigurationManager
+from dbp.config.config_manager import ConfigurationManager
 from .auth import AuthenticationManager
 from .api import MCPClientAPI
 from .output import OutputFormatter
@@ -129,7 +133,9 @@ class DocumentationProgrammingCLI:
         self.logger.debug("Initializing CLI components")
         
         # Create configuration manager
-        self.config_manager = ConfigurationManager(config_file_override=config_file)
+        self.config_manager = ConfigurationManager()
+        if config_file:
+            self.config_manager.load_from_file(config_file)
         
         # Create authentication manager
         self.auth_manager = AuthenticationManager(self.config_manager)
@@ -304,36 +310,35 @@ class DocumentationProgrammingCLI:
         - verbosity=0 → WARNING level (default)
         - verbosity=1 → INFO level
         - verbosity≥2 → DEBUG level
-        Configures the root logger with appropriate format and level.
+        Uses the centralized application logging setup from log_utils.py for consistent formatting.
         Sets specific level for dbp_cli package loggers.
         
         [Design principles]
         Progressive verbosity - more verbose output with increasing verbosity level.
         Quiet override - quiet flag takes precedence over verbosity.
         Consistent formatting - standardized log format across all components.
+        Reuses centralized logging utilities for system-wide consistency.
         
         Args:
             verbosity: Verbosity level (0=warning, 1=info, 2+=debug)
             quiet: Whether to suppress all non-error output
         """
-        log_level = logging.WARNING  # Default
+        # Determine log level based on verbosity and quiet flags
+        log_level_name = "WARNING"  # Default
         
         if quiet:
-            log_level = logging.ERROR
+            log_level_name = "ERROR"
         elif verbosity == 1:
-            log_level = logging.INFO
+            log_level_name = "INFO"
         elif verbosity >= 2:
-            log_level = logging.DEBUG
+            log_level_name = "DEBUG"
             
-        # Configure root logger
-        logging.basicConfig(
-            level=log_level,
-            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-            datefmt='%Y-%m-%d %H:%M:%S,%f'
-        )
+        # Use the centralized application logging setup
+        from dbp.core.log_utils import setup_application_logging
+        setup_application_logging(log_level_name)
         
-        # Set level for our loggers
-        logging.getLogger("dbp_cli").setLevel(log_level)
+        # Set specific level for dbp_cli loggers
+        logging.getLogger("dbp_cli").setLevel(getattr(logging, log_level_name))
     
     def run(self, args: Optional[List[str]] = None) -> int:
         """

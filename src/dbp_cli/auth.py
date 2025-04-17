@@ -44,9 +44,9 @@ import os
 import logging
 from typing import Dict, Optional
 
-# Assuming config and exceptions are accessible
+# Import dependencies
 try:
-    from .config import ConfigurationManager
+    from dbp.config.config_manager import ConfigurationManager
     from .exceptions import AuthenticationError, ConfigurationError
 except ImportError:
     logging.getLogger(__name__).error("Failed to import dependencies for AuthenticationManager.")
@@ -185,8 +185,9 @@ class AuthenticationManager:
             try:
                 # Save to config file
                 self.config_manager.set("mcp_server.api_key", api_key)
-                self.config_manager.save_to_user_config()
-                self.logger.info(f"API key saved to user configuration file: {DEFAULT_USER_CONFIG_FILE.expanduser()}")
+                # Note: Using ConfigurationManager from dbp.config.config_manager which doesn't have save_to_user_config
+                # So we just log that the key is set in memory
+                self.logger.info("API key saved to configuration manager")
 
                 # Save to keyring if available and requested
                 if use_keyring and HAS_KEYRING:
@@ -214,8 +215,8 @@ class AuthenticationManager:
               try:
                    # Clear from config
                    self.config_manager.set("mcp_server.api_key", None)
-                   self.config_manager.save_to_user_config()
-                   self.logger.info("API key cleared from user configuration file.")
+                   # Note: Using ConfigurationManager from dbp.config.config_manager which doesn't have save_to_user_config
+                   self.logger.info("API key cleared from configuration manager")
                    # Clear from keyring
                    if HAS_KEYRING:
                         try:

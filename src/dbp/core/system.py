@@ -34,6 +34,10 @@
 # - doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-17T08:41:14Z : Enhanced component initialization error logging by CodeAssistant
+# * Added detailed error logging for component initialization failures
+# * Improved error context capture for initialization exceptions
+# * Added component state reporting in initialization error messages
 # 2025-04-16T23:32:00Z : Enhanced error logging levels by CodeAssistant
 # * Changed debug logging to error/info for critical initialization steps
 # * Improved visibility of component initialization context information
@@ -49,6 +53,7 @@
 import logging
 from typing import Any, Dict, List, Set, Optional
 import sys
+import traceback
 
 from .component import Component, InitializationContext
 
@@ -294,9 +299,35 @@ class ComponentSystem:
                 self.logger.info(f"Component '{name}' initialized successfully")
                 
             except Exception as e:
+                # Enhanced error logging with exception details and stack trace
                 self.logger.error(f"Failed to initialize component '{name}': {str(e)}")
                 self.logger.error(f"Exception type: {type(e).__name__}")
-                self.logger.error(f"Exception details:", exc_info=True)
+                
+                # Get and log the traceback
+                exc_info = sys.exc_info()
+                tb_lines = traceback.format_exception(*exc_info)
+                
+                # Log the full traceback with proper indentation for readability
+                for line in tb_lines:
+                    for subline in line.splitlines():
+                        if subline.strip():
+                            self.logger.error(f"  {subline}")
+                
+                # Log component state information if available
+                if hasattr(component, 'get_debug_info'):
+                    try:
+                        debug_info = component.get_debug_info()
+                        self.logger.error(f"Component '{name}' debug info: {debug_info}")
+                    except Exception as debug_err:
+                        self.logger.error(f"Failed to get component debug info: {debug_err}")
+                
+                # Log dependency states to help with troubleshooting
+                if hasattr(component, 'dependencies'):
+                    for dep_name in component.dependencies:
+                        dep = self.get_component(dep_name)
+                        if dep:
+                            self.logger.error(f"Dependency '{dep_name}' initialized: {dep.is_initialized}")
+                
                 self._rollback()
                 return False
         

@@ -241,7 +241,22 @@ class ConfigCLI:
 
 # Main execution block for standalone testing
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S,%f')
+    # Use the centralized application logging setup
+    try:
+        # Try absolute import first (when running as part of package)
+        from dbp.core.log_utils import setup_application_logging
+    except ImportError:
+        # Fall back to relative import (when running standalone)
+        try:
+            from ..core.log_utils import setup_application_logging
+        except ImportError:
+            # If all else fails, set up basic logging as fallback
+            logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            print("Warning: Unable to import centralized logging utilities, using basic configuration", file=sys.stderr)
+    else:
+        # Initialize logging with centralized formatter
+        setup_application_logging("INFO")
+    
     cli = ConfigCLI()
     exit_code = cli.run()
     sys.exit(exit_code)

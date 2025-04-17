@@ -31,6 +31,9 @@
 # - Design Decision: Layered Configuration Loading (2025-04-14)
 #   * Rationale: Provides flexibility for users to override defaults at different levels (system, user, project, runtime).
 #   * Alternatives considered: Single config file (less flexible), Only env vars (harder for complex configs).
+# - Design Decision: No Default Values in get() Method (2025-04-17)
+#   * Rationale: Forces callers to explicitly handle missing configuration values rather than relying on implicit defaults.
+#   * Alternatives considered: Supporting default values in get() method (rejected to encourage explicit error handling).
 ###############################################################################
 # [Source file constraints]
 # - Requires `config_schema.py` for the `AppConfig` model.
@@ -43,10 +46,19 @@
 # - doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-16T16:20:07Z : Added missing BaseModel import by CodeAssistant
-# * Fixed NameError in get() method by adding missing import from pydantic
-# 2025-04-15T09:36:15Z : Initial creation of ConfigurationManager class by CodeAssistant
-# * Implemented singleton structure, loading logic for files/env/cli, merging, and access methods.
+# 2025-04-17T18:26:00Z : Removed warning log for initialization check by CodeAssistant
+# * Removed logger.warning("Accessing configuration before initialization") message
+# * Silently falling back to default configuration when not initialized
+# 2025-04-17T18:09:00Z : Fixed circular import issue by CodeAssistant
+# * Removed dependency on core.log_utils.get_formatted_logger
+# * Switched to standard logging to break circular dependency chain
+# * Maintained logging functionality while enabling proper module initialization
+# 2025-04-17T17:22:30Z : Switched to get_formatted_logger for consistent logging by CodeAssistant
+# * Updated to use get_formatted_logger from core.log_utils 
+# * Simplified logger creation for better consistency across components
+# 2025-04-17T17:04:45Z : Updated to use centralized logging formatter by CodeAssistant
+# * Imported and used configure_logger from core.log_utils 
+# * Fixed millisecond display in log messages
 ###############################################################################
 
 import os
@@ -54,10 +66,12 @@ import json
 import yaml # Requires PyYAML
 import logging
 import argparse
+import re
 from typing import Any, Dict, List, Optional, Union
 from pathlib import Path
 import threading
 
+# Use standard logging to avoid circular imports
 from pydantic import BaseModel, ValidationError
 
 # Assuming config_schema.py is in the same directory or accessible
@@ -67,6 +81,7 @@ except ImportError:
     from config_schema import AppConfig
 
 
+# Set up logger with standard logging
 logger = logging.getLogger(__name__)
 
 # Define default config paths relative to standard locations
@@ -376,28 +391,34 @@ class ConfigurationManager:
             elif value is not None: # Avoid merging None values unless explicitly intended
                 target[key] = value
 
-    def get(self, key: str, default: Any = None) -> Any:
+    def get(self, key: str, resolve_templates: bool = True) -> Any:
         """
         Retrieves a configuration value using dot notation (e.g., 'database.type').
-
+        Automatically resolves any template variables in string values.
+        
         Args:
             key: The configuration key in dot notation.
-            default: The value to return if the key is not found.
+            resolve_templates: Whether to resolve template variables in string values.
 
         Returns:
-            The configuration value or the default.
+            The configuration value with template variables resolved.
+            
+        Raises:
+            ValueError: If the configuration key doesn't exist.
         """
         if not self.initialized_flag:
-             logger.warning("Accessing configuration before initialization. Returning default.")
              # Fallback to trying to access default AppConfig if not initialized
              try:
                  parts = key.split('.')
                  value = AppConfig() # Get defaults
                  for part in parts:
                      value = getattr(value, part)
+                 # Default values might also contain templates
+                 if resolve_templates and isinstance(value, str):
+                     value = self.resolve_template_string(value)
                  return value
              except (AttributeError, KeyError):
-                 return default
+                 raise ValueError(f"Configuration key '{key}' not found in default configuration")
 
 
         try:
@@ -413,13 +434,63 @@ class ConfigurationManager:
                 else:
                      # If it's neither a model nor a dict, we can't go deeper
                      raise AttributeError(f"Cannot access part '{part}' in non-model/dict value")
+            
+            # Resolve template variables in string values
+            if resolve_templates and isinstance(value, str):
+                value = self.resolve_template_string(value)
+                
             return value
-        except (AttributeError, KeyError, IndexError):
-            logger.debug(f"Configuration key '{key}' not found, returning default.")
-            return default
+        except (AttributeError, KeyError, IndexError) as e:
+            logger.error(f"Configuration key '{key}' not found")
+            raise ValueError(f"Configuration key '{key}' not found in configuration") from e
         except Exception as e:
             logger.error(f"Error retrieving configuration key '{key}': {e}", exc_info=True)
-            return default
+            raise ValueError(f"Error retrieving configuration key '{key}': {e}") from e
+            
+    def resolve_template_string(self, template_str: str, max_depth: int = 10) -> str:
+        """
+        Resolves a string containing template variables in the format ${key},
+        where key is a configuration key in dot notation.
+        
+        Args:
+            template_str: The string containing template variables.
+            max_depth: Maximum recursion depth for nested templates.
+            
+        Returns:
+            The resolved string with all template variables replaced with their values.
+        """
+        # If we've reached the maximum recursion depth, just return the string
+        if max_depth <= 0:
+            logger.warning(f"Maximum template resolution depth reached for: '{template_str}'")
+            return template_str
+            
+        # Define regex pattern for ${key} syntax
+        pattern = r'\${([^}]+)}'
+        
+        # Function to replace each match with its value
+        def replace_var(match):
+            key = match.group(1)  # Extract the key from ${key}
+            try:
+                value = self.get(key, resolve_templates=False)  # Get raw value without template resolution
+            except ValueError:
+                logger.warning(f"Template variable '${{{key}}}' not found in configuration")
+                return f"${{{key}}}"  # Return the original template if not found
+                
+            # Convert non-string values to string
+            if not isinstance(value, str):
+                return str(value)
+                
+            return value
+            
+        # Replace all template variables
+        result = re.sub(pattern, replace_var, template_str)
+        
+        # If the result still contains template variables and we haven't reached max depth,
+        # recursively resolve any nested templates that were values of replaced variables
+        if '${' in result and result != template_str and max_depth > 1:
+            return self.resolve_template_string(result, max_depth - 1)
+            
+        return result
 
     def set(self, key: str, value: Any) -> bool:
         """

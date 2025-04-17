@@ -35,8 +35,18 @@
 # - doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-16T23:56:00Z : Initial creation by CodeAssistant
-# * Created centralized default configuration values
+# 2025-04-17T15:16:00Z : Reorganized configuration structure for clarity by CodeAssistant
+# * Renamed SERVER_DEFAULTS to CLI_SERVER_CONNECTION_DEFAULTS
+# * Renamed OUTPUT_DEFAULTS to CLI_OUTPUT_DEFAULTS
+# * Renamed HISTORY_DEFAULTS to CLI_HISTORY_DEFAULTS
+# * Updated COORDINATOR_LLM_DEFAULTS to reference Nova Lite model
+# * Grouped all CLI-related defaults at the end of file
+# 2025-04-17T14:46:00Z : Added CLI-specific settings to defaults by CodeAssistant
+# * Increased server timeout from 5 to 30 seconds for CLI compatibility
+# * Added CLI specific settings for output formatting and progress display
+# 2025-04-17T11:44:31Z : Updated default file paths for all components by CodeAssistant
+# * Changed all file paths to use .dbp/ directory structure
+# * Added server logs_dir, pid_file, and cli_config_file configurations
 ###############################################################################
 
 """
@@ -49,29 +59,15 @@ and reference these values rather than hardcoding defaults directly.
 
 import os
 
-# Server connection settings
-SERVER_DEFAULTS = {
-    "default": "local",
-    "port": 6231,
-    "timeout": 5,
-    "retry_attempts": 3,
-    "retry_interval": 2,
+# General application settings
+GENERAL_DEFAULTS = {
+    "base_dir": ".dbp"  # Base directory for all DBP files, relative to Git root
 }
 
-# Output formatting settings
-OUTPUT_DEFAULTS = {
-    "format": "formatted",
-    "color": True,
-    "verbosity": "normal",
-    "max_width": None,  # Will default to terminal width
-}
-
-# Command history settings
-HISTORY_DEFAULTS = {
-    "enabled": True,
-    "size": 100,
-    "file": "~/.dbp_cli_history",
-    "save_failed": True,
+# Project settings - root_path will be set dynamically during initialization
+PROJECT_DEFAULTS = {
+    "name": "dbp_project",
+    "description": "Documentation-Based Programming Project",
 }
 
 # Script settings
@@ -101,7 +97,7 @@ MONITOR_DEFAULTS = {
 # Database settings
 DATABASE_DEFAULTS = {
     "type": "sqlite",
-    "path": "~/.dbp/metadata.db",
+    "path": "${general.base_dir}/database.sqlite",
     "connection_string": None,
     "max_size_mb": 500,
     "vacuum_threshold": 20,
@@ -109,6 +105,7 @@ DATABASE_DEFAULTS = {
     "max_connections": 4,
     "use_wal_mode": True,
     "echo_sql": False,
+    "alembic_ini_path": "alembic.ini",
 }
 
 # Recommendation settings
@@ -130,7 +127,8 @@ INITIALIZATION_DEFAULTS = {
 
 # LLM Coordinator settings - Coordinator LLM
 COORDINATOR_LLM_DEFAULTS = {
-    "model_id": "amazon.titan-text-lite-v1",
+    "model_id": "amazon.titan-text-express-v1",
+    "model_name": "nova-lite",
     "temperature": 0.0,
     "max_tokens": 4096,
     "prompt_templates_dir": "doc/llm/prompts",
@@ -189,6 +187,9 @@ MCP_SERVER_DEFAULTS = {
     "server_version": "1.0.0",
     "auth_enabled": False,
     "workers": 1,
+    "logs_dir": "${general.base_dir}/logs",
+    "pid_file": "${general.base_dir}/mcp_server.pid",
+    "cli_config_file": "${general.base_dir}/cli_config.json",
     "enable_cors": False,
     "cors_origins": ["*"],
     "cors_methods": ["*"],
@@ -196,4 +197,40 @@ MCP_SERVER_DEFAULTS = {
     "cors_allow_credentials": False,
     "keep_alive": 5,
     "graceful_shutdown_timeout": 10,
+}
+
+# === CLI-specific settings ===
+
+# CLI server connection settings
+CLI_SERVER_CONNECTION_DEFAULTS = {
+    "default": "local",
+    "port": 6231,
+    "timeout": 30,  # Increased from 5 to 30 seconds for compatibility with CLI
+    "retry_attempts": 3,
+    "retry_interval": 2,
+}
+
+# CLI output formatting settings
+CLI_OUTPUT_DEFAULTS = {
+    "format": "formatted",
+    "color": True,
+    "verbosity": "normal",
+    "max_width": None,  # Will default to terminal width
+}
+
+# CLI command history settings
+CLI_HISTORY_DEFAULTS = {
+    "enabled": True,
+    "size": 100,
+    "file": "${general.base_dir}/cli_history",
+    "save_failed": True,
+}
+
+# CLI general settings
+CLI_DEFAULTS = {
+    "output_format": "text",  # text, json, markdown, html
+    "color": True,
+    "progress_bar": True,
+    "cache_dir": "~/.dbp/cli_cache",  # Cache dir for CLI specific data
+    "api_key": "CHANGE_ME!"  # Default placeholder API key for client authentication
 }

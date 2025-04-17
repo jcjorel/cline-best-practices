@@ -1,0 +1,1402 @@
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 16:15:15 ---
+
+2025-04-17 16:15:19,955 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-17 16:15:19,956 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-17 16:15:19,966 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-17 16:15:19,966 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-17 16:15:19,967 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-17 16:15:19,967 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-17 16:15:19,968 - dbp.config.config_manager - INFO - Initializing configuration...
+2025-04-17 16:15:19,969 - dbp.config.config_manager - INFO - Configuration initialized successfully.
+2025-04-17 16:15:19,970 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-17 16:15:19,970 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-17 16:15:19,970 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-17 16:15:20,016 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-17 16:15:20,019 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-17 16:15:20,032 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-17 16:15:20,032 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-17 16:15:20,032 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-17 16:15:20,033 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-17 16:15:20,033 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-17 16:15:20,033 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-17 16:15:20,033 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-17 16:15:20,048 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-17 16:15:20,049 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-17 16:15:20,049 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-17 16:15:20,049 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - CRITICAL for query processing
+2025-04-17 16:15:20,050 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-17 16:15:20,050 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-17 16:15:20,051 - dbp.core.lifecycle - INFO - Initializing 13 components
+2025-04-17 16:15:20,051 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-17 16:15:20,051 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, llm_coordinator, filter, database, memory_cache, metadata_extraction, doc_relationships, consistency_analysis, recommendation_generator, change_queue, fs_monitor, scheduler, mcp_server
+2025-04-17 16:15:20,052 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-17 16:15:20,052 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 16:15:20,052 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 16:15:20,053 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-17 16:15:20,066 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-17 16:15:20,068 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-17 16:15:20,068 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-17 16:15:20,069 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-17 16:15:20,069 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator'...
+2025-04-17 16:15:20,069 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 16:15:20,069 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 16:15:20,070 - dbp.llm_coordinator - INFO - Initializing component 'llm_coordinator'...
+2025-04-17 16:15:20,071 - dbp.llm_coordinator.coordinator_llm - INFO - {'message': 'Getting Bedrock client manager instance', 'region': 'us-east-1', 'component': 'CoordinatorLLM'}
+2025-04-17 16:15:20,071 - dbp.llm_coordinator.coordinator_llm.bedrock - INFO - {'message': 'Bedrock client manager initialized', 'default_region': 'us-east-1', 'prompt_manager_configured': True}
+2025-04-17 16:15:20,071 - dbp.llm_coordinator.coordinator_llm - INFO - {'message': 'Bedrock client manager instance retrieved successfully', 'component': 'CoordinatorLLM'}
+2025-04-17 16:15:20,072 - dbp.llm_coordinator.component - WARNING - Using Placeholder InternalToolExecutionEngine
+2025-04-17 16:15:20,073 - dbp.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_context' -> execute_codebase_context_tool
+2025-04-17 16:15:20,076 - dbp.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_changelog_context' -> execute_codebase_changelog_tool
+2025-04-17 16:15:20,077 - dbp.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_context' -> execute_documentation_context_tool
+2025-04-17 16:15:20,077 - dbp.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_changelog_context' -> execute_documentation_changelog_tool
+2025-04-17 16:15:20,077 - dbp.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_expert_architect_advice' -> execute_expert_architect_advice_tool
+2025-04-17 16:15:20,077 - dbp.llm_coordinator - INFO - Registered 5 internal tools.
+2025-04-17 16:15:20,077 - dbp.llm_coordinator - INFO - Component 'llm_coordinator' initialized successfully.
+2025-04-17 16:15:20,078 - dbp.core.lifecycle - INFO - Component 'llm_coordinator' initialized successfully
+2025-04-17 16:15:20,078 - dbp.core.lifecycle - INFO - Initializing component 'filter'...
+2025-04-17 16:15:20,078 - dbp.core.lifecycle - INFO - Initializing component 'filter' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 16:15:20,078 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 16:15:20,078 - dbp.filter - INFO - Initializing component 'filter'...
+2025-04-17 16:15:20,658 - dbp.fs_monitor.filter - INFO - Found 2 .gitignore files.
+2025-04-17 16:15:20,661 - dbp.fs_monitor.filter - INFO - GitIgnoreFilter initialized with 40 patterns.
+2025-04-17 16:15:20,661 - dbp.filter - INFO - Component 'filter' initialized successfully.
+2025-04-17 16:15:20,661 - dbp.core.lifecycle - INFO - Component 'filter' initialized successfully
+2025-04-17 16:15:20,661 - dbp.core.lifecycle - INFO - Initializing component 'database'...
+2025-04-17 16:15:20,662 - dbp.core.lifecycle - INFO - Initializing component 'database' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 16:15:20,662 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 16:15:20,662 - dbp.database - INFO - Initializing component 'database'...
+2025-04-17 16:15:20,662 - dbp.database.database - INFO - Initializing database with type: sqlite
+2025-04-17 16:15:20,663 - dbp.database.database - INFO - Initializing SQLite database at: .dbp/database.sqlite
+2025-04-17 16:15:20,668 - dbp.database.database - INFO - SQLite configuration: pool_size=4, timeout=5
+2025-04-17 16:15:20,668 - dbp.database.database - INFO - SQLite path: absolute=/home/jcjorel/cline-best-practices/.dbp/database.sqlite, normalized=.dbp/database.sqlite
+2025-04-17 16:15:20,697 - dbp.database.database - INFO - Enabling SQLite WAL mode...
+2025-04-17 16:15:20,707 - dbp.database.database - INFO - SQLite WAL mode enabled. Current journal mode: wal
+2025-04-17 16:15:20,707 - dbp.database.database - INFO - Running Alembic migrations to initialize/update the database schema...
+2025-04-17 16:15:21,084 - dbp.config.config_manager - ERROR - Configuration key 'database.alembic_ini_path' not found
+2025-04-17 16:15:21,085 - dbp.database.database - ERROR - Failed to run database migrations: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 16:15:21,085 - dbp.database.database - ERROR - Error type: ValueError
+2025-04-17 16:15:21,098 - dbp.database.database - ERROR - Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+    value = getattr(value, part)
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'DatabaseConfig' object has no attribute 'alembic_ini_path'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 667, in _run_alembic_migrations
+    alembic_ini_path = config_manager.get('database.alembic_ini_path')
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+    return self._config_manager.get(key, resolve_templates)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+    raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+ValueError: Configuration key 'database.alembic_ini_path' not found in configuration
+
+2025-04-17 16:15:21,099 - dbp.database.database - ERROR - Unexpected error during database initialization: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 16:15:21,100 - dbp.database.database - ERROR - Error type: RuntimeError
+2025-04-17 16:15:21,114 - dbp.database.database - ERROR - Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+    value = getattr(value, part)
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'DatabaseConfig' object has no attribute 'alembic_ini_path'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 667, in _run_alembic_migrations
+    alembic_ini_path = config_manager.get('database.alembic_ini_path')
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+    return self._config_manager.get(key, resolve_templates)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+    raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+ValueError: Configuration key 'database.alembic_ini_path' not found in configuration
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 384, in initialize
+    self._run_alembic_migrations()
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 796, in _run_alembic_migrations
+    raise RuntimeError(f"Failed to initialize database schema: {e}") from e
+RuntimeError: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+
+2025-04-17 16:15:21,114 - dbp.database - ERROR - Failed to initialize database component: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+    value = getattr(value, part)
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'DatabaseConfig' object has no attribute 'alembic_ini_path'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 667, in _run_alembic_migrations
+    alembic_ini_path = config_manager.get('database.alembic_ini_path')
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+    return self._config_manager.get(key, resolve_templates)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+    raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+ValueError: Configuration key 'database.alembic_ini_path' not found in configuration
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 208, in initialize
+    self._db_manager.initialize()
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 384, in initialize
+    self._run_alembic_migrations()
+  File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 796, in _run_alembic_migrations
+    raise RuntimeError(f"Failed to initialize database schema: {e}") from e
+RuntimeError: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 16:15:21,137 - dbp.core.lifecycle - ERROR - Failed to initialize component 'database': Database component initialization failed: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 16:15:21,137 - dbp.core.lifecycle - ERROR - Exception type: RuntimeError
+2025-04-17 16:15:21,169 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 16:15:21,170 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+2025-04-17 16:15:21,175 - dbp.core.lifecycle - ERROR -       value = getattr(value, part)
+2025-04-17 16:15:21,179 - dbp.core.lifecycle - ERROR -               ^^^^^^^^^^^^^^^^^^^^
+2025-04-17 16:15:21,179 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+2025-04-17 16:15:21,179 - dbp.core.lifecycle - ERROR -       raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+2025-04-17 16:15:21,179 - dbp.core.lifecycle - ERROR -   AttributeError: 'DatabaseConfig' object has no attribute 'alembic_ini_path'
+2025-04-17 16:15:21,180 - dbp.core.lifecycle - ERROR -   The above exception was the direct cause of the following exception:
+2025-04-17 16:15:21,180 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 16:15:21,180 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 667, in _run_alembic_migrations
+2025-04-17 16:15:21,180 - dbp.core.lifecycle - ERROR -       alembic_ini_path = config_manager.get('database.alembic_ini_path')
+2025-04-17 16:15:21,180 - dbp.core.lifecycle - ERROR -                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-04-17 16:15:21,180 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+2025-04-17 16:15:21,180 - dbp.core.lifecycle - ERROR -       return self._config_manager.get(key, resolve_templates)
+2025-04-17 16:15:21,180 - dbp.core.lifecycle - ERROR -              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-04-17 16:15:21,180 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+2025-04-17 16:15:21,180 - dbp.core.lifecycle - ERROR -       raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+2025-04-17 16:15:21,181 - dbp.core.lifecycle - ERROR -   ValueError: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 16:15:21,181 - dbp.core.lifecycle - ERROR -   The above exception was the direct cause of the following exception:
+2025-04-17 16:15:21,181 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 16:15:21,181 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 208, in initialize
+2025-04-17 16:15:21,181 - dbp.core.lifecycle - ERROR -       self._db_manager.initialize()
+2025-04-17 16:15:21,181 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 384, in initialize
+2025-04-17 16:15:21,181 - dbp.core.lifecycle - ERROR -       self._run_alembic_migrations()
+2025-04-17 16:15:21,181 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 796, in _run_alembic_migrations
+2025-04-17 16:15:21,181 - dbp.core.lifecycle - ERROR -       raise RuntimeError(f"Failed to initialize database schema: {e}") from e
+2025-04-17 16:15:21,181 - dbp.core.lifecycle - ERROR -   RuntimeError: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 16:15:21,182 - dbp.core.lifecycle - ERROR -   The above exception was the direct cause of the following exception:
+2025-04-17 16:15:21,182 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 16:15:21,182 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/core/system.py", line 288, in initialize_all
+2025-04-17 16:15:21,182 - dbp.core.lifecycle - ERROR -       component.initialize(context)
+2025-04-17 16:15:21,182 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/database/database.py", line 217, in initialize
+2025-04-17 16:15:21,182 - dbp.core.lifecycle - ERROR -       raise RuntimeError(f"Database component initialization failed: {e}") from e
+2025-04-17 16:15:21,182 - dbp.core.lifecycle - ERROR -   RuntimeError: Database component initialization failed: Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration
+2025-04-17 16:15:21,182 - dbp.core.lifecycle - ERROR - Component 'database' debug info: {'class_name': 'DatabaseComponent', 'module': 'dbp.database.database', 'initialized': False, 'dependencies': ['config_manager'], 'has_logger': True, 'initialization_error': {'error_type': 'RuntimeError', 'error_message': "Failed to initialize database schema: Configuration key 'database.alembic_ini_path' not found in configuration"}}
+2025-04-17 16:15:21,182 - dbp.core.lifecycle - ERROR - Dependency 'config_manager' initialized: True
+2025-04-17 16:15:21,183 - dbp.core.lifecycle - WARNING - Rolling back initialization of 3 components
+2025-04-17 16:15:21,183 - dbp.core.lifecycle - INFO - Rolling back component 'filter'...
+2025-04-17 16:15:21,183 - dbp.filter - INFO - Shutting down component 'filter'...
+2025-04-17 16:15:21,183 - dbp.filter - INFO - Component 'filter' shut down.
+2025-04-17 16:15:21,183 - dbp.core.lifecycle - INFO - Rolling back component 'llm_coordinator'...
+2025-04-17 16:15:21,183 - dbp.llm_coordinator - INFO - Shutting down component 'llm_coordinator'...
+2025-04-17 16:15:21,184 - dbp.llm_coordinator.job_manager - INFO - JobManager shutdown initiated. No new jobs will be scheduled.
+2025-04-17 16:15:21,184 - dbp.llm_coordinator.coordinator_llm - INFO - {'message': 'Shutting down CoordinatorLLM', 'model_name': 'nova-lite'}
+2025-04-17 16:15:21,184 - dbp.llm_coordinator.coordinator_llm - INFO - {'message': 'CoordinatorLLM shutdown completed'}
+2025-04-17 16:15:21,184 - dbp.llm_coordinator - INFO - Component 'llm_coordinator' shut down.
+2025-04-17 16:15:21,184 - dbp.core.lifecycle - INFO - Rolling back component 'config_manager'...
+2025-04-17 16:15:21,185 - dbp.config_manager - INFO - Shutting down component 'config_manager'...
+2025-04-17 16:15:21,185 - dbp.config_manager - INFO - Component 'config_manager' shut down.
+2025-04-17 16:15:21,185 - dbp.core.lifecycle - ERROR - System startup failed due to component initialization errors.
+2025-04-17 16:15:21,185 - dbp.mcp_server.__main__ - CRITICAL - Failed to start components
+2025-04-17 16:15:21,186 - dbp.mcp_server.__main__ - ERROR - Error collecting diagnostic information: 'ConfigManagerComponent' object has no attribute '_initialized'
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 16:20:18 ---
+
+2025-04-17 16:20:22,495 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-17 16:20:22,495 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-17 16:20:22,496 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-17 16:20:22,496 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-17 16:20:22,496 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-17 16:20:22,496 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-17 16:20:22,497 - dbp.config.config_manager - INFO - Initializing configuration...
+2025-04-17 16:20:22,499 - dbp.config.config_manager - INFO - Configuration initialized successfully.
+2025-04-17 16:20:22,499 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-17 16:20:22,499 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-17 16:20:22,500 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-17 16:20:22,544 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-17 16:20:22,548 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-17 16:20:22,550 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-17 16:20:22,550 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-17 16:20:22,551 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-17 16:20:22,551 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-17 16:20:22,551 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-17 16:20:22,551 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-17 16:20:22,560 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-17 16:20:22,566 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-17 16:20:22,576 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-17 16:20:22,576 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-17 16:20:22,577 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - CRITICAL for query processing
+2025-04-17 16:20:22,577 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-17 16:20:22,577 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-17 16:20:22,577 - dbp.core.lifecycle - INFO - Initializing 13 components
+2025-04-17 16:20:22,578 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-17 16:20:22,578 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, filter, change_queue, fs_monitor, database, metadata_extraction, doc_relationships, consistency_analysis, scheduler, memory_cache, llm_coordinator, recommendation_generator, mcp_server
+2025-04-17 16:20:22,578 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-17 16:20:22,578 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 16:20:22,579 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 16:20:22,579 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-17 16:20:22,584 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-17 16:20:22,585 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-17 16:20:22,593 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-17 16:20:22,593 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-17 16:20:22,594 - dbp.core.lifecycle - INFO - Initializing component 'filter'...
+2025-04-17 16:20:22,594 - dbp.core.lifecycle - INFO - Initializing component 'filter' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 16:20:22,595 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 16:20:22,595 - dbp.filter - INFO - Initializing component 'filter'...
+2025-04-17 16:20:23,040 - dbp.fs_monitor.filter - INFO - Found 2 .gitignore files.
+2025-04-17 16:20:23,041 - dbp.fs_monitor.filter - INFO - GitIgnoreFilter initialized with 40 patterns.
+2025-04-17 16:20:23,041 - dbp.filter - INFO - Component 'filter' initialized successfully.
+2025-04-17 16:20:23,041 - dbp.core.lifecycle - INFO - Component 'filter' initialized successfully
+2025-04-17 16:20:23,041 - dbp.core.lifecycle - INFO - Initializing component 'change_queue'...
+2025-04-17 16:20:23,041 - dbp.core.lifecycle - INFO - Initializing component 'change_queue' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 16:20:23,041 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 16:20:23,041 - dbp.change_queue - INFO - Initializing component 'change_queue'...
+2025-04-17 16:20:23,042 - dbp.change_queue - INFO - Setting up event filtering with filter component
+2025-04-17 16:20:23,042 - dbp.fs_monitor.queue - INFO - Event filter set to: FilterComponent
+2025-04-17 16:20:23,042 - dbp.change_queue - INFO - Component 'change_queue' initialized successfully.
+2025-04-17 16:20:23,042 - dbp.core.lifecycle - INFO - Component 'change_queue' initialized successfully
+2025-04-17 16:20:23,042 - dbp.core.lifecycle - INFO - Initializing component 'fs_monitor'...
+2025-04-17 16:20:23,042 - dbp.core.lifecycle - INFO - Initializing component 'fs_monitor' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 16:20:23,042 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 16:20:23,042 - dbp.core.lifecycle.fs_monitor - INFO - Initializing component 'fs_monitor'...
+2025-04-17 16:20:23,043 - dbp.config.config_manager - ERROR - Configuration key 'fs_monitor' not found
+2025-04-17 16:20:23,043 - dbp.core.lifecycle.fs_monitor - ERROR - Failed to initialize FileSystemMonitorComponent: Configuration key 'fs_monitor' not found in configuration
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+    value = getattr(value, part)
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'AppConfig' object has no attribute 'fs_monitor'. Did you mean: 'monitor'?
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/fs_monitor/component.py", line 160, in initialize
+    config = context.config.get(self.name, {})
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+    return self._config_manager.get(key, resolve_templates)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+    raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+ValueError: Configuration key 'fs_monitor' not found in configuration
+2025-04-17 16:20:23,056 - dbp.core.lifecycle - ERROR - Failed to initialize component 'fs_monitor': Failed to initialize fs_monitor: Configuration key 'fs_monitor' not found in configuration
+2025-04-17 16:20:23,056 - dbp.core.lifecycle - ERROR - Exception type: RuntimeError
+2025-04-17 16:20:23,062 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 16:20:23,062 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+2025-04-17 16:20:23,062 - dbp.core.lifecycle - ERROR -       value = getattr(value, part)
+2025-04-17 16:20:23,062 - dbp.core.lifecycle - ERROR -               ^^^^^^^^^^^^^^^^^^^^
+2025-04-17 16:20:23,062 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+2025-04-17 16:20:23,063 - dbp.core.lifecycle - ERROR -       raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+2025-04-17 16:20:23,063 - dbp.core.lifecycle - ERROR -   AttributeError: 'AppConfig' object has no attribute 'fs_monitor'. Did you mean: 'monitor'?
+2025-04-17 16:20:23,063 - dbp.core.lifecycle - ERROR -   The above exception was the direct cause of the following exception:
+2025-04-17 16:20:23,063 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 16:20:23,063 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/fs_monitor/component.py", line 160, in initialize
+2025-04-17 16:20:23,063 - dbp.core.lifecycle - ERROR -       config = context.config.get(self.name, {})
+2025-04-17 16:20:23,063 - dbp.core.lifecycle - ERROR -                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-04-17 16:20:23,063 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+2025-04-17 16:20:23,063 - dbp.core.lifecycle - ERROR -       return self._config_manager.get(key, resolve_templates)
+2025-04-17 16:20:23,064 - dbp.core.lifecycle - ERROR -              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-04-17 16:20:23,064 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+2025-04-17 16:20:23,064 - dbp.core.lifecycle - ERROR -       raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+2025-04-17 16:20:23,064 - dbp.core.lifecycle - ERROR -   ValueError: Configuration key 'fs_monitor' not found in configuration
+2025-04-17 16:20:23,064 - dbp.core.lifecycle - ERROR -   The above exception was the direct cause of the following exception:
+2025-04-17 16:20:23,064 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 16:20:23,064 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/core/system.py", line 288, in initialize_all
+2025-04-17 16:20:23,064 - dbp.core.lifecycle - ERROR -       component.initialize(context)
+2025-04-17 16:20:23,064 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/fs_monitor/component.py", line 203, in initialize
+2025-04-17 16:20:23,064 - dbp.core.lifecycle - ERROR -       raise RuntimeError(f"Failed to initialize {self.name}: {e}") from e
+2025-04-17 16:20:23,071 - dbp.core.lifecycle - ERROR -   RuntimeError: Failed to initialize fs_monitor: Configuration key 'fs_monitor' not found in configuration
+2025-04-17 16:20:23,072 - dbp.core.lifecycle - ERROR - Component 'fs_monitor' debug info: {'class_name': 'FileSystemMonitorComponent', 'module': 'dbp.fs_monitor.component', 'initialized': False, 'dependencies': ['config_manager', 'change_queue'], 'has_logger': True}
+2025-04-17 16:20:23,072 - dbp.core.lifecycle - ERROR - Dependency 'config_manager' initialized: True
+2025-04-17 16:20:23,072 - dbp.core.lifecycle - ERROR - Dependency 'change_queue' initialized: True
+2025-04-17 16:20:23,075 - dbp.core.lifecycle - WARNING - Rolling back initialization of 3 components
+2025-04-17 16:20:23,075 - dbp.core.lifecycle - INFO - Rolling back component 'change_queue'...
+2025-04-17 16:20:23,075 - dbp.change_queue - INFO - Shutting down component 'change_queue'...
+2025-04-17 16:20:23,076 - dbp.fs_monitor.queue - INFO - Change detection queue cleared.
+2025-04-17 16:20:23,076 - dbp.change_queue - INFO - Component 'change_queue' shut down.
+2025-04-17 16:20:23,076 - dbp.core.lifecycle - INFO - Rolling back component 'filter'...
+2025-04-17 16:20:23,077 - dbp.filter - INFO - Shutting down component 'filter'...
+2025-04-17 16:20:23,077 - dbp.filter - INFO - Component 'filter' shut down.
+2025-04-17 16:20:23,078 - dbp.core.lifecycle - INFO - Rolling back component 'config_manager'...
+2025-04-17 16:20:23,078 - dbp.config_manager - INFO - Shutting down component 'config_manager'...
+2025-04-17 16:20:23,078 - dbp.config_manager - INFO - Component 'config_manager' shut down.
+2025-04-17 16:20:23,079 - dbp.core.lifecycle - ERROR - System startup failed due to component initialization errors.
+2025-04-17 16:20:23,079 - dbp.mcp_server.__main__ - CRITICAL - Failed to start components
+2025-04-17 16:20:23,079 - dbp.mcp_server.__main__ - ERROR - Error collecting diagnostic information: 'ConfigManagerComponent' object has no attribute '_initialized'
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 16:47:41 ---
+
+2025-04-17 16:47:43,045 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-17 16:47:43,045 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-17 16:47:43,045 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-17 16:47:43,045 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-17 16:47:43,045 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-17 16:47:43,045 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-17 16:47:43,046 - dbp.config.config_manager - INFO - Initializing configuration...
+2025-04-17 16:47:43,047 - dbp.config.config_manager - INFO - Configuration initialized successfully.
+2025-04-17 16:47:43,047 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-17 16:47:43,047 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-17 16:47:43,047 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-17 16:47:43,062 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-17 16:47:43,064 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-17 16:47:43,066 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-17 16:47:43,066 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-17 16:47:43,066 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-17 16:47:43,066 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-17 16:47:43,066 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-17 16:47:43,066 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-17 16:47:43,066 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-17 16:47:43,070 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-17 16:47:43,070 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-17 16:47:43,070 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-17 16:47:43,070 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - CRITICAL for query processing
+2025-04-17 16:47:43,071 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-17 16:47:43,071 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-17 16:47:43,071 - dbp.core.lifecycle - INFO - Initializing 13 components
+2025-04-17 16:47:43,071 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-17 16:47:43,071 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, change_queue, filter, database, metadata_extraction, llm_coordinator, fs_monitor, scheduler, memory_cache, doc_relationships, consistency_analysis, recommendation_generator, mcp_server
+2025-04-17 16:47:43,071 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-17 16:47:43,072 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 16:47:43,072 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 16:47:43,072 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-17 16:47:43,074 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-17 16:47:43,075 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-17 16:47:43,075 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-17 16:47:43,075 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-17 16:47:43,075 - dbp.core.lifecycle - INFO - Initializing component 'change_queue'...
+2025-04-17 16:47:43,075 - dbp.core.lifecycle - INFO - Initializing component 'change_queue' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 16:47:43,076 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 16:47:43,076 - dbp.change_queue - INFO - Initializing component 'change_queue'...
+2025-04-17 16:47:43,076 - dbp.change_queue - INFO - Component 'change_queue' initialized successfully.
+2025-04-17 16:47:43,076 - dbp.core.lifecycle - INFO - Component 'change_queue' initialized successfully
+2025-04-17 16:47:43,076 - dbp.core.lifecycle - INFO - Initializing component 'filter'...
+2025-04-17 16:47:43,076 - dbp.core.lifecycle - INFO - Initializing component 'filter' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 16:47:43,076 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 16:47:43,076 - dbp.filter - INFO - Initializing component 'filter'...
+2025-04-17 16:47:43,085 - dbp.config.config_manager - ERROR - Configuration key 'monitor.ignore_patterns' not found
+2025-04-17 16:47:43,085 - dbp.filter - ERROR - Failed to initialize filter component: Configuration key 'monitor.ignore_patterns' not found in configuration
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+    value = getattr(value, part)
+            ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'AppConfig' object has no attribute 'monitor'. Did you mean: 'fs_monitor'?
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/fs_monitor/filter.py", line 407, in initialize
+    self._filter = GitIgnoreFilter(config_manager, self.project_root)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/fs_monitor/filter.py", line 78, in __init__
+    self._initialize_patterns()
+  File "/home/jcjorel/cline-best-practices/src/dbp/fs_monitor/filter.py", line 90, in _initialize_patterns
+    self._add_config_patterns()
+  File "/home/jcjorel/cline-best-practices/src/dbp/fs_monitor/filter.py", line 127, in _add_config_patterns
+    patterns = self.config.get('monitor.ignore_patterns', [])
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+    return self._config_manager.get(key, resolve_templates)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+    raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+ValueError: Configuration key 'monitor.ignore_patterns' not found in configuration
+2025-04-17 16:47:43,091 - dbp.core.lifecycle - ERROR - Failed to initialize component 'filter': Failed to initialize filter component: Configuration key 'monitor.ignore_patterns' not found in configuration
+2025-04-17 16:47:43,091 - dbp.core.lifecycle - ERROR - Exception type: RuntimeError
+2025-04-17 16:47:43,104 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 16:47:43,105 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 423, in get
+2025-04-17 16:47:43,105 - dbp.core.lifecycle - ERROR -       value = getattr(value, part)
+2025-04-17 16:47:43,105 - dbp.core.lifecycle - ERROR -               ^^^^^^^^^^^^^^^^^^^^
+2025-04-17 16:47:43,105 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+2025-04-17 16:47:43,105 - dbp.core.lifecycle - ERROR -       raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+2025-04-17 16:47:43,105 - dbp.core.lifecycle - ERROR -   AttributeError: 'AppConfig' object has no attribute 'monitor'. Did you mean: 'fs_monitor'?
+2025-04-17 16:47:43,105 - dbp.core.lifecycle - ERROR -   The above exception was the direct cause of the following exception:
+2025-04-17 16:47:43,105 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 16:47:43,105 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/fs_monitor/filter.py", line 407, in initialize
+2025-04-17 16:47:43,105 - dbp.core.lifecycle - ERROR -       self._filter = GitIgnoreFilter(config_manager, self.project_root)
+2025-04-17 16:47:43,105 - dbp.core.lifecycle - ERROR -                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-04-17 16:47:43,105 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/fs_monitor/filter.py", line 78, in __init__
+2025-04-17 16:47:43,105 - dbp.core.lifecycle - ERROR -       self._initialize_patterns()
+2025-04-17 16:47:43,106 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/fs_monitor/filter.py", line 90, in _initialize_patterns
+2025-04-17 16:47:43,106 - dbp.core.lifecycle - ERROR -       self._add_config_patterns()
+2025-04-17 16:47:43,106 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/fs_monitor/filter.py", line 127, in _add_config_patterns
+2025-04-17 16:47:43,106 - dbp.core.lifecycle - ERROR -       patterns = self.config.get('monitor.ignore_patterns', [])
+2025-04-17 16:47:43,106 - dbp.core.lifecycle - ERROR -                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-04-17 16:47:43,106 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 153, in get
+2025-04-17 16:47:43,106 - dbp.core.lifecycle - ERROR -       return self._config_manager.get(key, resolve_templates)
+2025-04-17 16:47:43,106 - dbp.core.lifecycle - ERROR -              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-04-17 16:47:43,106 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 438, in get
+2025-04-17 16:47:43,106 - dbp.core.lifecycle - ERROR -       raise ValueError(f"Configuration key '{key}' not found in configuration") from e
+2025-04-17 16:47:43,106 - dbp.core.lifecycle - ERROR -   ValueError: Configuration key 'monitor.ignore_patterns' not found in configuration
+2025-04-17 16:47:43,106 - dbp.core.lifecycle - ERROR -   The above exception was the direct cause of the following exception:
+2025-04-17 16:47:43,106 - dbp.core.lifecycle - ERROR -   Traceback (most recent call last):
+2025-04-17 16:47:43,106 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/core/system.py", line 288, in initialize_all
+2025-04-17 16:47:43,106 - dbp.core.lifecycle - ERROR -       component.initialize(context)
+2025-04-17 16:47:43,107 - dbp.core.lifecycle - ERROR -     File "/home/jcjorel/cline-best-practices/src/dbp/fs_monitor/filter.py", line 415, in initialize
+2025-04-17 16:47:43,107 - dbp.core.lifecycle - ERROR -       raise RuntimeError(f"Failed to initialize filter component: {e}") from e
+2025-04-17 16:47:43,107 - dbp.core.lifecycle - ERROR -   RuntimeError: Failed to initialize filter component: Configuration key 'monitor.ignore_patterns' not found in configuration
+2025-04-17 16:47:43,107 - dbp.core.lifecycle - ERROR - Component 'filter' debug info: {'class_name': 'FilterComponent', 'module': 'dbp.fs_monitor.filter', 'initialized': False, 'dependencies': ['config_manager'], 'has_logger': True, 'attr_project_root': '/home/jcjorel/cline-best-practices'}
+2025-04-17 16:47:43,107 - dbp.core.lifecycle - ERROR - Dependency 'config_manager' initialized: True
+2025-04-17 16:47:43,107 - dbp.core.lifecycle - WARNING - Rolling back initialization of 2 components
+2025-04-17 16:47:43,107 - dbp.core.lifecycle - INFO - Rolling back component 'change_queue'...
+2025-04-17 16:47:43,107 - dbp.change_queue - INFO - Shutting down component 'change_queue'...
+2025-04-17 16:47:43,107 - dbp.fs_monitor.queue - INFO - Change detection queue cleared.
+2025-04-17 16:47:43,107 - dbp.change_queue - INFO - Component 'change_queue' shut down.
+2025-04-17 16:47:43,107 - dbp.core.lifecycle - INFO - Rolling back component 'config_manager'...
+2025-04-17 16:47:43,107 - dbp.config_manager - INFO - Shutting down component 'config_manager'...
+2025-04-17 16:47:43,107 - dbp.config_manager - INFO - Component 'config_manager' shut down.
+2025-04-17 16:47:43,107 - dbp.core.lifecycle - ERROR - System startup failed due to component initialization errors.
+2025-04-17 16:47:43,107 - dbp.mcp_server.__main__ - CRITICAL - Failed to start components
+2025-04-17 16:47:43,108 - dbp.mcp_server.__main__ - ERROR - Error collecting diagnostic information: 'ConfigManagerComponent' object has no attribute '_initialized'
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 16:50:52 ---
+
+2025-04-17 16:50:53,637 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-17 16:50:53,637 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-17 16:50:53,637 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-17 16:50:53,638 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-17 16:50:53,638 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-17 16:50:53,638 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-17 16:50:53,639 - dbp.config.config_manager - INFO - Initializing configuration...
+2025-04-17 16:50:53,640 - dbp.config.config_manager - INFO - Configuration initialized successfully.
+2025-04-17 16:50:53,640 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-17 16:50:53,640 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-17 16:50:53,640 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-17 16:50:53,660 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-17 16:50:53,663 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-17 16:50:53,665 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-17 16:50:53,665 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-17 16:50:53,666 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-17 16:50:53,666 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-17 16:50:53,666 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-17 16:50:53,667 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-17 16:50:53,667 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-17 16:50:53,670 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-17 16:50:53,670 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-17 16:50:53,671 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-17 16:50:53,671 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - CRITICAL for query processing
+2025-04-17 16:50:53,671 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-17 16:50:53,671 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-17 16:50:53,671 - dbp.core.lifecycle - INFO - Initializing 13 components
+2025-04-17 16:50:53,671 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-17 16:50:53,671 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, llm_coordinator, change_queue, filter, database, metadata_extraction, doc_relationships, memory_cache, consistency_analysis, recommendation_generator, mcp_server, fs_monitor, scheduler
+2025-04-17 16:50:53,671 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-17 16:50:53,671 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 16:50:53,672 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 16:50:53,672 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-17 16:50:53,675 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-17 16:50:53,676 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-17 16:50:53,677 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-17 16:50:53,677 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-17 16:50:53,677 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator'...
+2025-04-17 16:50:53,678 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 16:50:53,678 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 16:50:53,678 - dbp.llm_coordinator - INFO - Initializing component 'llm_coordinator'...
+2025-04-17 16:50:53,679 - dbp.llm_coordinator.coordinator_llm - INFO - {'message': 'Getting Bedrock client manager instance', 'region': 'us-east-1', 'component': 'CoordinatorLLM'}
+2025-04-17 16:50:53,679 - dbp.llm_coordinator.coordinator_llm.bedrock - INFO - {'message': 'Bedrock client manager initialized', 'default_region': 'us-east-1', 'prompt_manager_configured': True}
+2025-04-17 16:50:53,679 - dbp.llm_coordinator.coordinator_llm - INFO - {'message': 'Bedrock client manager instance retrieved successfully', 'component': 'CoordinatorLLM'}
+2025-04-17 16:50:53,680 - dbp.llm_coordinator.component - WARNING - Using Placeholder InternalToolExecutionEngine
+2025-04-17 16:50:53,680 - dbp.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_context' -> execute_codebase_context_tool
+2025-04-17 16:50:53,680 - dbp.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_changelog_context' -> execute_codebase_changelog_tool
+2025-04-17 16:50:53,680 - dbp.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_context' -> execute_documentation_context_tool
+2025-04-17 16:50:53,681 - dbp.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_changelog_context' -> execute_documentation_changelog_tool
+2025-04-17 16:50:53,681 - dbp.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_expert_architect_advice' -> execute_expert_architect_advice_tool
+2025-04-17 16:50:53,681 - dbp.llm_coordinator - INFO - Registered 5 internal tools.
+2025-04-17 16:50:53,681 - dbp.llm_coordinator - INFO - Component 'llm_coordinator' initialized successfully.
+2025-04-17 16:50:53,682 - dbp.core.lifecycle - INFO - Component 'llm_coordinator' initialized successfully
+2025-04-17 16:50:53,682 - dbp.core.lifecycle - INFO - Initializing component 'change_queue'...
+2025-04-17 16:50:53,682 - dbp.core.lifecycle - INFO - Initializing component 'change_queue' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 16:50:53,683 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 16:50:53,683 - dbp.change_queue - INFO - Initializing component 'change_queue'...
+2025-04-17 16:50:53,683 - dbp.change_queue - INFO - Component 'change_queue' initialized successfully.
+2025-04-17 16:50:53,683 - dbp.core.lifecycle - INFO - Component 'change_queue' initialized successfully
+2025-04-17 16:50:53,684 - dbp.core.lifecycle - INFO - Initializing component 'filter'...
+2025-04-17 16:50:53,684 - dbp.core.lifecycle - INFO - Initializing component 'filter' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 16:50:53,684 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 16:50:53,684 - dbp.filter - INFO - Initializing component 'filter'...
+2025-04-17 16:50:53,916 - dbp.fs_monitor.filter - INFO - Found 2 .gitignore files.
+2025-04-17 16:50:53,919 - dbp.fs_monitor.filter - INFO - GitIgnoreFilter initialized with 40 patterns.
+2025-04-17 16:50:53,919 - dbp.filter - INFO - Component 'filter' initialized successfully.
+2025-04-17 16:50:53,920 - dbp.core.lifecycle - INFO - Component 'filter' initialized successfully
+2025-04-17 16:50:53,920 - dbp.core.lifecycle - INFO - Initializing component 'database'...
+2025-04-17 16:50:53,921 - dbp.core.lifecycle - INFO - Initializing component 'database' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 16:50:53,921 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 16:50:53,921 - dbp.database - INFO - Initializing component 'database'...
+2025-04-17 16:50:53,922 - dbp.database.database - INFO - Initializing database with type: sqlite
+2025-04-17 16:50:53,922 - dbp.database.database - INFO - Initializing SQLite database at: .dbp/database.sqlite
+2025-04-17 16:50:53,923 - dbp.database.database - INFO - SQLite configuration: pool_size=4, timeout=5
+2025-04-17 16:50:53,923 - dbp.database.database - INFO - SQLite path: absolute=/home/jcjorel/cline-best-practices/.dbp/database.sqlite, normalized=.dbp/database.sqlite
+2025-04-17 16:50:53,938 - dbp.database.database - INFO - Enabling SQLite WAL mode...
+2025-04-17 16:50:53,940 - dbp.database.database - INFO - SQLite WAL mode enabled. Current journal mode: wal
+2025-04-17 16:50:53,940 - dbp.database.database - INFO - Running Alembic migrations to initialize/update the database schema...
+2025-04-17 16:50:54,149 - dbp.config.config_manager - ERROR - Configuration key 'database.url' not found
+2025-04-17 16:50:54,149 - dbp.database.database - WARNING - Failed to get database.url from config_manager: Configuration key 'database.url' not found in configuration
+2025-04-17 16:50:54,151 - dbp.database.database - INFO - Running database migrations...
+2025-04-17 16:50:54,152 - dbp.database.database - INFO - Upgrading database schema to latest version...
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 17:03:47 ---
+
+ERROR:root:Failed to import configuration modules: cannot import name 'ConfigurationManager' from partially initialized module 'dbp.config.config_manager' (most likely due to a circular import) (/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py)
+INFO:dbp.mcp_server.__main__:Starting MCP server on localhost:6231
+INFO:dbp.mcp_server.__main__:Checking component dependencies and imports...
+INFO:dbp.mcp_server.__main__:FastAPI version: 0.115.12
+INFO:dbp.mcp_server.__main__:Uvicorn available: uvicorn
+INFO:dbp.mcp_server.__main__:Starting MCP server using LifecycleManager
+2025-04-17 17:03:48,796 - dbp.core.lifecycle - ERROR - ConfigurationManager class not available
+2025-04-17 17:03:48,797 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-17 17:03:48,797 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-17 17:03:48,806 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-17 17:03:48,808 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-17 17:03:48,809 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-17 17:03:48,809 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-17 17:03:48,809 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-17 17:03:48,809 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-17 17:03:48,809 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-17 17:03:48,809 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-17 17:03:48,809 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-17 17:03:48,812 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-17 17:03:48,812 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-17 17:03:48,812 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-17 17:03:48,813 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - CRITICAL for query processing
+2025-04-17 17:03:48,813 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-17 17:03:48,813 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-17 17:03:48,813 - dbp.core.lifecycle - INFO - Initializing 12 components
+2025-04-17 17:03:48,813 - dbp.core.lifecycle - ERROR - Component 'database' depends on 'config_manager' which is not registered
+2025-04-17 17:03:48,813 - dbp.core.lifecycle - ERROR - Component 'fs_monitor' depends on 'config_manager' which is not registered
+2025-04-17 17:03:48,813 - dbp.core.lifecycle - ERROR - Component 'filter' depends on 'config_manager' which is not registered
+2025-04-17 17:03:48,813 - dbp.core.lifecycle - ERROR - Component 'change_queue' depends on 'config_manager' which is not registered
+2025-04-17 17:03:48,813 - dbp.core.lifecycle - ERROR - Component 'llm_coordinator' depends on 'config_manager' which is not registered
+2025-04-17 17:03:48,813 - dbp.core.lifecycle - ERROR - Component 'mcp_server' depends on 'config_manager' which is not registered
+2025-04-17 17:03:48,813 - dbp.core.lifecycle - ERROR - Dependency validation failed with 6 errors
+2025-04-17 17:03:48,813 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'database' depends on 'config_manager' which is not registered
+2025-04-17 17:03:48,813 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'fs_monitor' depends on 'config_manager' which is not registered
+2025-04-17 17:03:48,813 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'filter' depends on 'config_manager' which is not registered
+2025-04-17 17:03:48,813 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'change_queue' depends on 'config_manager' which is not registered
+2025-04-17 17:03:48,813 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'llm_coordinator' depends on 'config_manager' which is not registered
+2025-04-17 17:03:48,813 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'mcp_server' depends on 'config_manager' which is not registered
+2025-04-17 17:03:48,813 - dbp.core.lifecycle - ERROR - System startup failed due to component initialization errors.
+2025-04-17 17:03:48,813 - dbp.mcp_server.__main__ - CRITICAL - Failed to start components
+2025-04-17 17:03:48,813 - dbp.mcp_server.__main__ - CRITICAL - Components that failed to initialize: ['database', 'fs_monitor', 'filter', 'change_queue', 'memory_cache', 'consistency_analysis', 'doc_relationships', 'recommendation_generator', 'scheduler', 'metadata_extraction', 'llm_coordinator', 'mcp_server']
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 17:09:07 ---
+
+ERROR:root:Failed to import configuration modules: cannot import name 'ConfigurationManager' from partially initialized module 'dbp.config.config_manager' (most likely due to a circular import) (/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py)
+INFO:dbp.mcp_server.__main__:Starting MCP server on localhost:6231
+INFO:dbp.mcp_server.__main__:Checking component dependencies and imports...
+INFO:dbp.mcp_server.__main__:FastAPI version: 0.115.12
+INFO:dbp.mcp_server.__main__:Uvicorn available: uvicorn
+INFO:dbp.mcp_server.__main__:Starting MCP server using LifecycleManager
+2025-04-17 17:09:08,852 - dbp.core.lifecycle - ERROR - ConfigurationManager class not available
+2025-04-17 17:09:08,852 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-17 17:09:08,852 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-17 17:09:08,860 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-17 17:09:08,861 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-17 17:09:08,861 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-17 17:09:08,861 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-17 17:09:08,861 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-17 17:09:08,861 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-17 17:09:08,861 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-17 17:09:08,862 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-17 17:09:08,862 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-17 17:09:08,863 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-17 17:09:08,864 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-17 17:09:08,864 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-17 17:09:08,864 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - CRITICAL for query processing
+2025-04-17 17:09:08,864 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-17 17:09:08,864 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-17 17:09:08,864 - dbp.core.lifecycle - INFO - Initializing 12 components
+2025-04-17 17:09:08,864 - dbp.core.lifecycle - ERROR - Component 'database' depends on 'config_manager' which is not registered
+2025-04-17 17:09:08,864 - dbp.core.lifecycle - ERROR - Component 'fs_monitor' depends on 'config_manager' which is not registered
+2025-04-17 17:09:08,864 - dbp.core.lifecycle - ERROR - Component 'filter' depends on 'config_manager' which is not registered
+2025-04-17 17:09:08,864 - dbp.core.lifecycle - ERROR - Component 'change_queue' depends on 'config_manager' which is not registered
+2025-04-17 17:09:08,864 - dbp.core.lifecycle - ERROR - Component 'llm_coordinator' depends on 'config_manager' which is not registered
+2025-04-17 17:09:08,864 - dbp.core.lifecycle - ERROR - Component 'mcp_server' depends on 'config_manager' which is not registered
+2025-04-17 17:09:08,864 - dbp.core.lifecycle - ERROR - Dependency validation failed with 6 errors
+2025-04-17 17:09:08,864 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'database' depends on 'config_manager' which is not registered
+2025-04-17 17:09:08,864 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'fs_monitor' depends on 'config_manager' which is not registered
+2025-04-17 17:09:08,864 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'filter' depends on 'config_manager' which is not registered
+2025-04-17 17:09:08,864 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'change_queue' depends on 'config_manager' which is not registered
+2025-04-17 17:09:08,864 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'llm_coordinator' depends on 'config_manager' which is not registered
+2025-04-17 17:09:08,864 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'mcp_server' depends on 'config_manager' which is not registered
+2025-04-17 17:09:08,864 - dbp.core.lifecycle - ERROR - System startup failed due to component initialization errors.
+2025-04-17 17:09:08,864 - dbp.mcp_server.__main__ - CRITICAL - Failed to start components
+2025-04-17 17:09:08,864 - dbp.mcp_server.__main__ - CRITICAL - Components that failed to initialize: ['database', 'fs_monitor', 'filter', 'change_queue', 'memory_cache', 'consistency_analysis', 'doc_relationships', 'recommendation_generator', 'scheduler', 'metadata_extraction', 'llm_coordinator', 'mcp_server']
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 17:24:29 ---
+
+ERROR:root:Failed to import configuration modules: cannot import name 'ConfigurationManager' from partially initialized module 'dbp.config.config_manager' (most likely due to a circular import) (/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py)
+2025-04-17 17:24:30,213 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-17 17:24:30,213 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-17 17:24:30,213 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-17 17:24:30,213 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-17 17:24:30,213 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-17 17:24:30,213 - root - DEBUG - Application logging initialized at level DEBUG with consistent formatting
+2025-04-17 17:24:30,213 - dbp.core.lifecycle - DEBUG - Logging initialized at level DEBUG with consistent formatting
+2025-04-17 17:24:30,213 - dbp.core.lifecycle - ERROR - ConfigurationManager class not available
+2025-04-17 17:24:30,213 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-17 17:24:30,213 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-17 17:24:30,213 - dbp.core.lifecycle - DEBUG - Registered database component
+2025-04-17 17:24:30,219 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-17 17:24:30,220 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-17 17:24:30,221 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-17 17:24:30,221 - dbp.core.lifecycle - DEBUG - Registered fs_monitor component
+2025-04-17 17:24:30,221 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-17 17:24:30,221 - dbp.core.lifecycle - DEBUG - Registered filter component
+2025-04-17 17:24:30,221 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-17 17:24:30,221 - dbp.core.lifecycle - DEBUG - Registered change_queue component
+2025-04-17 17:24:30,221 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-17 17:24:30,221 - dbp.core.lifecycle - DEBUG - Registered memory_cache component
+2025-04-17 17:24:30,221 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-17 17:24:30,221 - dbp.core.lifecycle - DEBUG - Registered consistency_analysis component
+2025-04-17 17:24:30,221 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-17 17:24:30,221 - dbp.core.lifecycle - DEBUG - Registered doc_relationships component
+2025-04-17 17:24:30,221 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-17 17:24:30,221 - dbp.core.lifecycle - DEBUG - Registered recommendation_generator component
+2025-04-17 17:24:30,224 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-17 17:24:30,224 - dbp.core.lifecycle - DEBUG - Registered scheduler component
+2025-04-17 17:24:30,224 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-17 17:24:30,224 - dbp.core.lifecycle - DEBUG - Registered metadata_extraction component
+2025-04-17 17:24:30,224 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-17 17:24:30,224 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - CRITICAL for query processing
+2025-04-17 17:24:30,224 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-17 17:24:30,224 - dbp.core.lifecycle - DEBUG - Registered mcp_server component
+2025-04-17 17:24:30,224 - dbp.core.lifecycle - DEBUG - Registered handler for signal 2
+2025-04-17 17:24:30,225 - dbp.core.lifecycle - DEBUG - Registered handler for signal 15
+2025-04-17 17:24:30,225 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-17 17:24:30,225 - dbp.core.lifecycle - INFO - Initializing 12 components
+2025-04-17 17:24:30,225 - dbp.core.lifecycle - DEBUG - Validating dependencies. Registered components: {'database', 'consistency_analysis', 'memory_cache', 'scheduler', 'mcp_server', 'metadata_extraction', 'fs_monitor', 'llm_coordinator', 'recommendation_generator', 'change_queue', 'doc_relationships', 'filter'}
+2025-04-17 17:24:30,225 - dbp.core.lifecycle - ERROR - Component 'database' depends on 'config_manager' which is not registered
+2025-04-17 17:24:30,225 - dbp.core.lifecycle - ERROR - Component 'fs_monitor' depends on 'config_manager' which is not registered
+2025-04-17 17:24:30,225 - dbp.core.lifecycle - ERROR - Component 'filter' depends on 'config_manager' which is not registered
+2025-04-17 17:24:30,225 - dbp.core.lifecycle - ERROR - Component 'change_queue' depends on 'config_manager' which is not registered
+2025-04-17 17:24:30,225 - dbp.core.lifecycle - ERROR - Component 'llm_coordinator' depends on 'config_manager' which is not registered
+2025-04-17 17:24:30,225 - dbp.core.lifecycle - ERROR - Component 'mcp_server' depends on 'config_manager' which is not registered
+2025-04-17 17:24:30,225 - dbp.core.lifecycle - ERROR - Dependency validation failed with 6 errors
+2025-04-17 17:24:30,226 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'database' depends on 'config_manager' which is not registered
+2025-04-17 17:24:30,226 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'fs_monitor' depends on 'config_manager' which is not registered
+2025-04-17 17:24:30,226 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'filter' depends on 'config_manager' which is not registered
+2025-04-17 17:24:30,226 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'change_queue' depends on 'config_manager' which is not registered
+2025-04-17 17:24:30,226 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'llm_coordinator' depends on 'config_manager' which is not registered
+2025-04-17 17:24:30,226 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'mcp_server' depends on 'config_manager' which is not registered
+2025-04-17 17:24:30,226 - dbp.core.lifecycle - ERROR - System startup failed due to component initialization errors.
+2025-04-17 17:24:30,226 - dbp.mcp_server.__main__ - CRITICAL - Failed to start components
+2025-04-17 17:24:30,226 - dbp.mcp_server.__main__ - CRITICAL - Components that failed to initialize: ['database', 'fs_monitor', 'filter', 'change_queue', 'memory_cache', 'consistency_analysis', 'doc_relationships', 'recommendation_generator', 'scheduler', 'metadata_extraction', 'llm_coordinator', 'mcp_server']
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 17:35:38 ---
+
+ERROR:root:Failed to import configuration modules: cannot import name 'ConfigurationManager' from partially initialized module 'dbp.config.config_manager' (most likely due to a circular import) (/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py)
+2025-04-17 17:35:39,006 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-17 17:35:39,006 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-17 17:35:39,006 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-17 17:35:39,006 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-17 17:35:39,006 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-17 17:35:39,007 - root - DEBUG - Application logging initialized at level DEBUG with consistent formatting
+2025-04-17 17:35:39,007 - dbp.core.lifecycle - DEBUG - Logging initialized at level DEBUG with consistent formatting
+2025-04-17 17:35:39,007 - dbp.core.lifecycle - ERROR - ConfigurationManager class not available
+2025-04-17 17:35:39,007 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-17 17:35:39,007 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-17 17:35:39,007 - dbp.core.lifecycle - DEBUG - Registered database component
+2025-04-17 17:35:39,011 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-17 17:35:39,012 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-17 17:35:39,013 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-17 17:35:39,013 - dbp.core.lifecycle - DEBUG - Registered fs_monitor component
+2025-04-17 17:35:39,013 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-17 17:35:39,013 - dbp.core.lifecycle - DEBUG - Registered filter component
+2025-04-17 17:35:39,013 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-17 17:35:39,013 - dbp.core.lifecycle - DEBUG - Registered change_queue component
+2025-04-17 17:35:39,013 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-17 17:35:39,013 - dbp.core.lifecycle - DEBUG - Registered memory_cache component
+2025-04-17 17:35:39,013 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-17 17:35:39,013 - dbp.core.lifecycle - DEBUG - Registered consistency_analysis component
+2025-04-17 17:35:39,013 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-17 17:35:39,013 - dbp.core.lifecycle - DEBUG - Registered doc_relationships component
+2025-04-17 17:35:39,013 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-17 17:35:39,013 - dbp.core.lifecycle - DEBUG - Registered recommendation_generator component
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - DEBUG - Registered scheduler component
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - DEBUG - Registered metadata_extraction component
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - CRITICAL for query processing
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - DEBUG - Registered mcp_server component
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - DEBUG - Registered handler for signal 2
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - DEBUG - Registered handler for signal 15
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - INFO - Initializing 12 components
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - DEBUG - Validating dependencies. Registered components: {'doc_relationships', 'consistency_analysis', 'mcp_server', 'filter', 'recommendation_generator', 'llm_coordinator', 'memory_cache', 'fs_monitor', 'metadata_extraction', 'scheduler', 'change_queue', 'database'}
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - ERROR - Component 'database' depends on 'config_manager' which is not registered
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - ERROR - Component 'fs_monitor' depends on 'config_manager' which is not registered
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - ERROR - Component 'filter' depends on 'config_manager' which is not registered
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - ERROR - Component 'change_queue' depends on 'config_manager' which is not registered
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - ERROR - Component 'llm_coordinator' depends on 'config_manager' which is not registered
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - ERROR - Component 'mcp_server' depends on 'config_manager' which is not registered
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - ERROR - Dependency validation failed with 6 errors
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'database' depends on 'config_manager' which is not registered
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'fs_monitor' depends on 'config_manager' which is not registered
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'filter' depends on 'config_manager' which is not registered
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'change_queue' depends on 'config_manager' which is not registered
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'llm_coordinator' depends on 'config_manager' which is not registered
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'mcp_server' depends on 'config_manager' which is not registered
+2025-04-17 17:35:39,015 - dbp.core.lifecycle - ERROR - System startup failed due to component initialization errors.
+2025-04-17 17:35:39,015 - dbp.mcp_server.__main__ - CRITICAL - Failed to start components
+2025-04-17 17:35:39,015 - dbp.mcp_server.__main__ - CRITICAL - Components that failed to initialize: ['database', 'fs_monitor', 'filter', 'change_queue', 'memory_cache', 'consistency_analysis', 'doc_relationships', 'recommendation_generator', 'scheduler', 'metadata_extraction', 'llm_coordinator', 'mcp_server']
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 17:39:42 ---
+
+ERROR:root:Failed to import configuration modules: cannot import name 'ConfigurationManager' from partially initialized module 'dbp.config.config_manager' (most likely due to a circular import) (/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py)
+2025-04-17 17:39:43,334 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-17 17:39:43,335 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-17 17:39:43,335 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-17 17:39:43,335 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-17 17:39:43,335 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-17 17:39:43,335 - root - DEBUG - Application logging initialized at level DEBUG with consistent formatting
+2025-04-17 17:39:43,335 - dbp.core.lifecycle - DEBUG - Logging initialized at level DEBUG with consistent formatting
+2025-04-17 17:39:43,335 - dbp.core.lifecycle - ERROR - ConfigurationManager class not available
+2025-04-17 17:39:43,335 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-17 17:39:43,335 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-17 17:39:43,335 - dbp.core.lifecycle - DEBUG - Registered database component
+2025-04-17 17:39:43,340 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-17 17:39:43,342 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-17 17:39:43,342 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-17 17:39:43,342 - dbp.core.lifecycle - DEBUG - Registered fs_monitor component
+2025-04-17 17:39:43,342 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-17 17:39:43,342 - dbp.core.lifecycle - DEBUG - Registered filter component
+2025-04-17 17:39:43,342 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-17 17:39:43,342 - dbp.core.lifecycle - DEBUG - Registered change_queue component
+2025-04-17 17:39:43,342 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-17 17:39:43,342 - dbp.core.lifecycle - DEBUG - Registered memory_cache component
+2025-04-17 17:39:43,342 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-17 17:39:43,342 - dbp.core.lifecycle - DEBUG - Registered consistency_analysis component
+2025-04-17 17:39:43,342 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-17 17:39:43,342 - dbp.core.lifecycle - DEBUG - Registered doc_relationships component
+2025-04-17 17:39:43,342 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-17 17:39:43,342 - dbp.core.lifecycle - DEBUG - Registered recommendation_generator component
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - DEBUG - Registered scheduler component
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - DEBUG - Registered metadata_extraction component
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - CRITICAL for query processing
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - DEBUG - Registered mcp_server component
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - DEBUG - Registered handler for signal 2
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - DEBUG - Registered handler for signal 15
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - INFO - Initializing 12 components
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - DEBUG - Validating dependencies. Registered components: {'memory_cache', 'fs_monitor', 'llm_coordinator', 'consistency_analysis', 'database', 'change_queue', 'mcp_server', 'recommendation_generator', 'metadata_extraction', 'doc_relationships', 'scheduler', 'filter'}
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - ERROR - Component 'database' depends on 'config_manager' which is not registered
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - ERROR - Component 'fs_monitor' depends on 'config_manager' which is not registered
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - ERROR - Component 'filter' depends on 'config_manager' which is not registered
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - ERROR - Component 'change_queue' depends on 'config_manager' which is not registered
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - ERROR - Component 'llm_coordinator' depends on 'config_manager' which is not registered
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - ERROR - Component 'mcp_server' depends on 'config_manager' which is not registered
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - ERROR - Dependency validation failed with 6 errors
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'database' depends on 'config_manager' which is not registered
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'fs_monitor' depends on 'config_manager' which is not registered
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'filter' depends on 'config_manager' which is not registered
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'change_queue' depends on 'config_manager' which is not registered
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'llm_coordinator' depends on 'config_manager' which is not registered
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'mcp_server' depends on 'config_manager' which is not registered
+2025-04-17 17:39:43,344 - dbp.core.lifecycle - ERROR - System startup failed due to component initialization errors.
+2025-04-17 17:39:43,344 - dbp.mcp_server.__main__ - CRITICAL - Failed to start components
+2025-04-17 17:39:43,344 - dbp.mcp_server.__main__ - CRITICAL - Components that failed to initialize: ['database', 'fs_monitor', 'filter', 'change_queue', 'memory_cache', 'consistency_analysis', 'doc_relationships', 'recommendation_generator', 'scheduler', 'metadata_extraction', 'llm_coordinator', 'mcp_server']
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 17:44:28 ---
+
+ERROR:root:Failed to import configuration modules: cannot import name 'ConfigurationManager' from partially initialized module 'dbp.config.config_manager' (most likely due to a circular import) (/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py)
+2025-04-17 17:44:29,606 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-17 17:44:29,607 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-17 17:44:29,607 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-17 17:44:29,607 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-17 17:44:29,607 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-17 17:44:29,607 - root - DEBUG - Application logging initialized at level DEBUG with consistent formatting
+2025-04-17 17:44:29,607 - dbp.core.lifecycle - DEBUG - Logging initialized at level DEBUG with consistent formatting
+2025-04-17 17:44:29,607 - dbp.core.lifecycle - ERROR - ConfigurationManager class not available
+2025-04-17 17:44:29,607 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-17 17:44:29,607 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-17 17:44:29,607 - dbp.core.lifecycle - DEBUG - Registered database component
+2025-04-17 17:44:29,612 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-17 17:44:29,613 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-17 17:44:29,613 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-17 17:44:29,614 - dbp.core.lifecycle - DEBUG - Registered fs_monitor component
+2025-04-17 17:44:29,614 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-17 17:44:29,614 - dbp.core.lifecycle - DEBUG - Registered filter component
+2025-04-17 17:44:29,614 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-17 17:44:29,614 - dbp.core.lifecycle - DEBUG - Registered change_queue component
+2025-04-17 17:44:29,614 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-17 17:44:29,614 - dbp.core.lifecycle - DEBUG - Registered memory_cache component
+2025-04-17 17:44:29,614 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-17 17:44:29,614 - dbp.core.lifecycle - DEBUG - Registered consistency_analysis component
+2025-04-17 17:44:29,614 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-17 17:44:29,614 - dbp.core.lifecycle - DEBUG - Registered doc_relationships component
+2025-04-17 17:44:29,614 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-17 17:44:29,614 - dbp.core.lifecycle - DEBUG - Registered recommendation_generator component
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - DEBUG - Registered scheduler component
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - DEBUG - Registered metadata_extraction component
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - CRITICAL for query processing
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - DEBUG - Registered mcp_server component
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - DEBUG - Registered handler for signal 2
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - DEBUG - Registered handler for signal 15
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - INFO - Initializing 12 components
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - DEBUG - Validating dependencies. Registered components: {'change_queue', 'database', 'consistency_analysis', 'doc_relationships', 'metadata_extraction', 'recommendation_generator', 'mcp_server', 'memory_cache', 'llm_coordinator', 'filter', 'scheduler', 'fs_monitor'}
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - ERROR - Component 'database' depends on 'config_manager' which is not registered
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - ERROR - Component 'fs_monitor' depends on 'config_manager' which is not registered
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - ERROR - Component 'filter' depends on 'config_manager' which is not registered
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - ERROR - Component 'change_queue' depends on 'config_manager' which is not registered
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - ERROR - Component 'llm_coordinator' depends on 'config_manager' which is not registered
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - ERROR - Component 'mcp_server' depends on 'config_manager' which is not registered
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - ERROR - Dependency validation failed with 6 errors
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'database' depends on 'config_manager' which is not registered
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'fs_monitor' depends on 'config_manager' which is not registered
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'filter' depends on 'config_manager' which is not registered
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'change_queue' depends on 'config_manager' which is not registered
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'llm_coordinator' depends on 'config_manager' which is not registered
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'mcp_server' depends on 'config_manager' which is not registered
+2025-04-17 17:44:29,618 - dbp.core.lifecycle - ERROR - System startup failed due to component initialization errors.
+2025-04-17 17:44:29,618 - dbp.mcp_server.__main__ - CRITICAL - Failed to start components
+2025-04-17 17:44:29,618 - dbp.mcp_server.__main__ - CRITICAL - Components that failed to initialize: ['database', 'fs_monitor', 'filter', 'change_queue', 'memory_cache', 'consistency_analysis', 'doc_relationships', 'recommendation_generator', 'scheduler', 'metadata_extraction', 'llm_coordinator', 'mcp_server']
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 17:55:54 ---
+
+ERROR:root:Failed to import configuration modules: cannot import name 'ConfigurationManager' from partially initialized module 'dbp.config.config_manager' (most likely due to a circular import) (/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py)
+2025-04-17 17:55:54,549 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-17 17:55:54,549 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-17 17:55:54,549 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-17 17:55:54,549 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-17 17:55:54,549 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-17 17:55:54,549 - root - DEBUG - Application logging initialized at level DEBUG with consistent formatting
+2025-04-17 17:55:54,549 - dbp.core.lifecycle - DEBUG - Logging initialized at level DEBUG with consistent formatting
+2025-04-17 17:55:54,550 - dbp.core.lifecycle - ERROR - ConfigurationManager class not available
+2025-04-17 17:55:54,550 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-17 17:55:54,550 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-17 17:55:54,550 - dbp.core.lifecycle - DEBUG - Registered database component
+2025-04-17 17:55:54,555 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-17 17:55:54,556 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-17 17:55:54,557 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-17 17:55:54,557 - dbp.core.lifecycle - DEBUG - Registered fs_monitor component
+2025-04-17 17:55:54,557 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-17 17:55:54,557 - dbp.core.lifecycle - DEBUG - Registered filter component
+2025-04-17 17:55:54,557 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-17 17:55:54,557 - dbp.core.lifecycle - DEBUG - Registered change_queue component
+2025-04-17 17:55:54,557 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-17 17:55:54,557 - dbp.core.lifecycle - DEBUG - Registered memory_cache component
+2025-04-17 17:55:54,557 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-17 17:55:54,557 - dbp.core.lifecycle - DEBUG - Registered consistency_analysis component
+2025-04-17 17:55:54,557 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-17 17:55:54,557 - dbp.core.lifecycle - DEBUG - Registered doc_relationships component
+2025-04-17 17:55:54,557 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-17 17:55:54,557 - dbp.core.lifecycle - DEBUG - Registered recommendation_generator component
+2025-04-17 17:55:54,558 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - DEBUG - Registered scheduler component
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - DEBUG - Registered metadata_extraction component
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - CRITICAL for query processing
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - DEBUG - Registered mcp_server component
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - DEBUG - Registered handler for signal 2
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - DEBUG - Registered handler for signal 15
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - INFO - Initializing 12 components
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - DEBUG - Validating dependencies. Registered components: {'memory_cache', 'recommendation_generator', 'scheduler', 'mcp_server', 'doc_relationships', 'consistency_analysis', 'llm_coordinator', 'change_queue', 'fs_monitor', 'database', 'filter', 'metadata_extraction'}
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - ERROR - Component 'database' depends on 'config_manager' which is not registered
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - ERROR - Component 'fs_monitor' depends on 'config_manager' which is not registered
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - ERROR - Component 'filter' depends on 'config_manager' which is not registered
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - ERROR - Component 'change_queue' depends on 'config_manager' which is not registered
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - ERROR - Component 'llm_coordinator' depends on 'config_manager' which is not registered
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - ERROR - Component 'mcp_server' depends on 'config_manager' which is not registered
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - ERROR - Dependency validation failed with 6 errors
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'database' depends on 'config_manager' which is not registered
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'fs_monitor' depends on 'config_manager' which is not registered
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'filter' depends on 'config_manager' which is not registered
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'change_queue' depends on 'config_manager' which is not registered
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'llm_coordinator' depends on 'config_manager' which is not registered
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'mcp_server' depends on 'config_manager' which is not registered
+2025-04-17 17:55:54,559 - dbp.core.lifecycle - ERROR - System startup failed due to component initialization errors.
+2025-04-17 17:55:54,559 - dbp.mcp_server.__main__ - CRITICAL - Failed to start components
+2025-04-17 17:55:54,559 - dbp.mcp_server.__main__ - CRITICAL - Components that failed to initialize: ['database', 'fs_monitor', 'filter', 'change_queue', 'memory_cache', 'consistency_analysis', 'doc_relationships', 'recommendation_generator', 'scheduler', 'metadata_extraction', 'llm_coordinator', 'mcp_server']
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 18:11:55 ---
+
+2025-04-17 18:11:59,632 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-17 18:11:59,633 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-17 18:11:59,633 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-17 18:11:59,634 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-17 18:11:59,634 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-17 18:11:59,635 - root - DEBUG - Application logging initialized at level DEBUG with consistent formatting
+2025-04-17 18:11:59,635 - dbp.core.lifecycle - DEBUG - Logging initialized at level DEBUG with consistent formatting
+2025-04-17 18:11:59,636 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-17 18:11:59,637 - dbp.config.config_manager - DEBUG - ConfigurationManager singleton instance created.
+2025-04-17 18:11:59,647 - dbp.config.config_manager - INFO - Initializing configuration...
+2025-04-17 18:11:59,647 - dbp.config.config_manager - DEBUG - Loading standard configuration files...
+2025-04-17 18:11:59,648 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /etc/dbp/config.json
+2025-04-17 18:11:59,648 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /etc/dbp/config.yaml
+2025-04-17 18:11:59,648 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /etc/dbp/config.yml
+2025-04-17 18:11:59,648 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /home/jcjorel/.config/dbp/config.json
+2025-04-17 18:11:59,648 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /home/jcjorel/.config/dbp/config.yaml
+2025-04-17 18:11:59,649 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /home/jcjorel/.config/dbp/config.yml
+2025-04-17 18:11:59,649 - dbp.config.config_manager - DEBUG - Loading configuration from environment variables...
+2025-04-17 18:11:59,649 - dbp.config.config_manager - DEBUG - Loaded 1 configuration values from environment variables.
+2025-04-17 18:11:59,649 - dbp.config.config_manager - DEBUG - Loading configuration from command-line arguments...
+2025-04-17 18:11:59,650 - dbp.config.config_manager - DEBUG - Loaded 6 configuration values from command-line arguments.
+2025-04-17 18:11:59,650 - dbp.config.config_manager - DEBUG - Applying configuration hierarchy...
+2025-04-17 18:11:59,650 - dbp.config.config_manager - DEBUG - Merging config from environment variables...
+2025-04-17 18:11:59,650 - dbp.config.config_manager - DEBUG - Merging config from command-line arguments...
+2025-04-17 18:11:59,651 - dbp.config.config_manager - DEBUG - Configuration validated successfully against schema.
+2025-04-17 18:11:59,651 - dbp.config.config_manager - INFO - Configuration initialized successfully.
+2025-04-17 18:11:59,651 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-17 18:11:59,651 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-17 18:11:59,652 - dbp.core.lifecycle - DEBUG - Registered config_manager component
+2025-04-17 18:11:59,652 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-17 18:11:59,652 - dbp.core.lifecycle - DEBUG - Registered database component
+2025-04-17 18:11:59,693 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-17 18:11:59,706 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-17 18:11:59,711 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-17 18:11:59,711 - dbp.core.lifecycle - DEBUG - Registered fs_monitor component
+2025-04-17 18:11:59,711 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-17 18:11:59,711 - dbp.core.lifecycle - DEBUG - Registered filter component
+2025-04-17 18:11:59,711 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-17 18:11:59,711 - dbp.core.lifecycle - DEBUG - Registered change_queue component
+2025-04-17 18:11:59,711 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-17 18:11:59,711 - dbp.core.lifecycle - DEBUG - Registered memory_cache component
+2025-04-17 18:11:59,711 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-17 18:11:59,711 - dbp.core.lifecycle - DEBUG - Registered consistency_analysis component
+2025-04-17 18:11:59,712 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-17 18:11:59,712 - dbp.core.lifecycle - DEBUG - Registered doc_relationships component
+2025-04-17 18:11:59,712 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-17 18:11:59,712 - dbp.core.lifecycle - DEBUG - Registered recommendation_generator component
+2025-04-17 18:11:59,728 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-17 18:11:59,729 - dbp.core.lifecycle - DEBUG - Registered scheduler component
+2025-04-17 18:11:59,729 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-17 18:11:59,729 - dbp.core.lifecycle - DEBUG - Registered metadata_extraction component
+2025-04-17 18:11:59,729 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-17 18:11:59,730 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - CRITICAL for query processing
+2025-04-17 18:11:59,730 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-17 18:11:59,730 - dbp.core.lifecycle - DEBUG - Registered mcp_server component
+2025-04-17 18:11:59,730 - dbp.core.lifecycle - DEBUG - Registered handler for signal 2
+2025-04-17 18:11:59,731 - dbp.core.lifecycle - DEBUG - Registered handler for signal 15
+2025-04-17 18:11:59,731 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-17 18:11:59,731 - dbp.core.lifecycle - INFO - Initializing 13 components
+2025-04-17 18:11:59,732 - dbp.core.lifecycle - DEBUG - Validating dependencies. Registered components: {'filter', 'mcp_server', 'scheduler', 'llm_coordinator', 'config_manager', 'doc_relationships', 'metadata_extraction', 'memory_cache', 'consistency_analysis', 'change_queue', 'database', 'recommendation_generator', 'fs_monitor'}
+2025-04-17 18:11:59,732 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-17 18:11:59,732 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, filter, llm_coordinator, change_queue, database, metadata_extraction, doc_relationships, memory_cache, consistency_analysis, recommendation_generator, mcp_server, fs_monitor, scheduler
+2025-04-17 18:11:59,732 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-17 18:11:59,732 - dbp.core.lifecycle - DEBUG - Component 'config_manager' class: ConfigManagerComponent
+2025-04-17 18:11:59,733 - dbp.core.lifecycle - DEBUG - Component 'config_manager' dependencies: []
+2025-04-17 18:11:59,733 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 18:11:59,733 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 18:11:59,736 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-17 18:11:59,744 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-17 18:11:59,745 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-17 18:11:59,745 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-17 18:11:59,746 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-17 18:11:59,746 - dbp.core.lifecycle - INFO - Initializing component 'filter'...
+2025-04-17 18:11:59,746 - dbp.core.lifecycle - DEBUG - Component 'filter' class: FilterComponent
+2025-04-17 18:11:59,746 - dbp.core.lifecycle - DEBUG - Component 'filter' dependencies: ['config_manager']
+2025-04-17 18:11:59,746 - dbp.core.lifecycle - INFO - Initializing component 'filter' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 18:11:59,746 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 18:11:59,746 - dbp.filter - INFO - Initializing component 'filter'...
+2025-04-17 18:11:59,746 - dbp.fs_monitor.filter - DEBUG - Adding mandatory ignore patterns.
+2025-04-17 18:11:59,747 - dbp.fs_monitor.filter - DEBUG - Adding 8 patterns from configuration.
+2025-04-17 18:11:59,747 - dbp.fs_monitor.filter - DEBUG - Scanning for .gitignore files starting from: /home/jcjorel/cline-best-practices
+2025-04-17 18:12:00,193 - dbp.fs_monitor.filter - INFO - Found 2 .gitignore files.
+2025-04-17 18:12:00,194 - dbp.fs_monitor.filter - DEBUG - Loading patterns from: /home/jcjorel/cline-best-practices/.gitignore (relative to: /home/jcjorel/cline-best-practices)
+2025-04-17 18:12:00,194 - dbp.fs_monitor.filter - DEBUG - Added 30 patterns from /home/jcjorel/cline-best-practices/.gitignore
+2025-04-17 18:12:00,195 - dbp.fs_monitor.filter - DEBUG - Loading patterns from: /home/jcjorel/cline-best-practices/venv/.gitignore (relative to: /home/jcjorel/cline-best-practices/venv)
+2025-04-17 18:12:00,195 - dbp.fs_monitor.filter - DEBUG - Added 1 patterns from /home/jcjorel/cline-best-practices/venv/.gitignore
+2025-04-17 18:12:00,195 - dbp.fs_monitor.filter - INFO - GitIgnoreFilter initialized with 40 patterns.
+2025-04-17 18:12:00,195 - dbp.filter - INFO - Component 'filter' initialized successfully.
+2025-04-17 18:12:00,195 - dbp.core.lifecycle - INFO - Component 'filter' initialized successfully
+2025-04-17 18:12:00,195 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator'...
+2025-04-17 18:12:00,196 - dbp.core.lifecycle - DEBUG - Component 'llm_coordinator' class: LLMCoordinatorComponent
+2025-04-17 18:12:00,196 - dbp.core.lifecycle - DEBUG - Component 'llm_coordinator' dependencies: ['config_manager']
+2025-04-17 18:12:00,196 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 18:12:00,196 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 18:12:00,197 - dbp.llm_coordinator - INFO - Initializing component 'llm_coordinator'...
+2025-04-17 18:12:00,199 - dbp.llm_coordinator.request_handler - DEBUG - RequestHandler initialized.
+2025-04-17 18:12:00,199 - dbp.llm_coordinator.tool_registry - DEBUG - ToolRegistry initialized.
+2025-04-17 18:12:00,199 - dbp.llm_coordinator.job_manager - DEBUG - JobManager initialized.
+2025-04-17 18:12:00,200 - dbp.llm_coordinator.response_formatter - DEBUG - ResponseFormatter initialized.
+2025-04-17 18:12:00,200 - dbp.llm_coordinator.coordinator_llm.prompts - DEBUG - LLMPromptManager initialized.
+2025-04-17 18:12:00,200 - dbp.llm_coordinator.coordinator_llm - INFO - {'message': 'Getting Bedrock client manager instance', 'region': 'us-east-1', 'component': 'CoordinatorLLM'}
+2025-04-17 18:12:00,201 - dbp.llm_coordinator.coordinator_llm.bedrock - INFO - {'message': 'Bedrock client manager initialized', 'default_region': 'us-east-1', 'prompt_manager_configured': True}
+2025-04-17 18:12:00,202 - dbp.llm_coordinator.coordinator_llm - INFO - {'message': 'Bedrock client manager instance retrieved successfully', 'component': 'CoordinatorLLM'}
+2025-04-17 18:12:00,202 - dbp.llm_coordinator.coordinator_llm - DEBUG - {'message': 'CoordinatorLLM initialized', 'model_name': 'nova-lite'}
+2025-04-17 18:12:00,202 - dbp.llm_coordinator.component - WARNING - Using Placeholder InternalToolExecutionEngine
+2025-04-17 18:12:00,202 - dbp.llm_coordinator - DEBUG - Registering internal LLM tools...
+2025-04-17 18:12:00,202 - dbp.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_context' -> execute_codebase_context_tool
+2025-04-17 18:12:00,202 - dbp.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_changelog_context' -> execute_codebase_changelog_tool
+2025-04-17 18:12:00,202 - dbp.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_context' -> execute_documentation_context_tool
+2025-04-17 18:12:00,202 - dbp.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_changelog_context' -> execute_documentation_changelog_tool
+2025-04-17 18:12:00,202 - dbp.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_expert_architect_advice' -> execute_expert_architect_advice_tool
+2025-04-17 18:12:00,202 - dbp.llm_coordinator - INFO - Registered 5 internal tools.
+2025-04-17 18:12:00,202 - dbp.llm_coordinator - INFO - Component 'llm_coordinator' initialized successfully.
+2025-04-17 18:12:00,203 - dbp.core.lifecycle - INFO - Component 'llm_coordinator' initialized successfully
+2025-04-17 18:12:00,203 - dbp.core.lifecycle - INFO - Initializing component 'change_queue'...
+2025-04-17 18:12:00,203 - dbp.core.lifecycle - DEBUG - Component 'change_queue' class: ChangeQueueComponent
+2025-04-17 18:12:00,203 - dbp.core.lifecycle - DEBUG - Component 'change_queue' dependencies: ['config_manager']
+2025-04-17 18:12:00,203 - dbp.core.lifecycle - INFO - Initializing component 'change_queue' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 18:12:00,203 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 18:12:00,203 - dbp.change_queue - INFO - Initializing component 'change_queue'...
+2025-04-17 18:12:00,203 - dbp.fs_monitor.queue - DEBUG - ChangeDetectionQueue initialized.
+2025-04-17 18:12:00,203 - dbp.change_queue - INFO - Setting up event filtering with filter component
+2025-04-17 18:12:00,203 - dbp.fs_monitor.queue - INFO - Event filter set to: FilterComponent
+2025-04-17 18:12:00,203 - dbp.change_queue - INFO - Component 'change_queue' initialized successfully.
+2025-04-17 18:12:00,203 - dbp.core.lifecycle - INFO - Component 'change_queue' initialized successfully
+2025-04-17 18:12:00,203 - dbp.core.lifecycle - INFO - Initializing component 'database'...
+2025-04-17 18:12:00,203 - dbp.core.lifecycle - DEBUG - Component 'database' class: DatabaseComponent
+2025-04-17 18:12:00,203 - dbp.core.lifecycle - DEBUG - Component 'database' dependencies: ['config_manager']
+2025-04-17 18:12:00,204 - dbp.core.lifecycle - INFO - Initializing component 'database' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 18:12:00,204 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 18:12:00,204 - dbp.database - INFO - Initializing component 'database'...
+2025-04-17 18:12:00,204 - dbp.database.database - DEBUG - DatabaseManager instantiated.
+2025-04-17 18:12:00,204 - dbp.database.database - INFO - Initializing database with type: sqlite
+2025-04-17 18:12:00,204 - dbp.database.database - DEBUG - Database configuration: {'database.type': 'sqlite', 'database.path': '.dbp/database.sqlite', 'database.max_connections': 4, 'database.connection_timeout': 5, 'database.use_wal_mode': True, 'database.vacuum_threshold': 20, 'database.echo_sql': False}
+2025-04-17 18:12:00,204 - dbp.database.database - INFO - Initializing SQLite database at: .dbp/database.sqlite
+2025-04-17 18:12:00,204 - dbp.database.database - INFO - SQLite configuration: pool_size=4, timeout=5
+2025-04-17 18:12:00,204 - dbp.database.database - INFO - SQLite path: absolute=/home/jcjorel/cline-best-practices/.dbp/database.sqlite, normalized=.dbp/database.sqlite
+2025-04-17 18:12:00,226 - dbp.database.database - DEBUG - SQLAlchemy engine created for SQLite with pool size 4.
+2025-04-17 18:12:00,227 - dbp.database.database - INFO - Enabling SQLite WAL mode...
+2025-04-17 18:12:00,231 - dbp.database.database - INFO - SQLite WAL mode enabled. Current journal mode: wal
+2025-04-17 18:12:00,231 - dbp.database.database - DEBUG - Scoped session factory created.
+2025-04-17 18:12:00,231 - dbp.database.database - INFO - Running Alembic migrations to initialize/update the database schema...
+2025-04-17 18:12:00,232 - dbp.database.database - DEBUG - Importing Alembic modules...
+2025-04-17 18:12:00,498 - dbp.database.database - DEBUG - Alembic modules imported successfully
+2025-04-17 18:12:00,498 - dbp.database.database - DEBUG - Getting ComponentSystem instance...
+2025-04-17 18:12:00,498 - dbp.database.database - DEBUG - Getting config_manager component...
+2025-04-17 18:12:00,498 - dbp.database.database - DEBUG - Config manager retrieved successfully
+2025-04-17 18:12:00,498 - dbp.database.database - DEBUG - Using alembic.ini path: alembic.ini
+2025-04-17 18:12:00,498 - dbp.database.database - DEBUG - Using module-specific Alembic directory: /home/jcjorel/cline-best-practices/src/dbp/database/alembic
+2025-04-17 18:12:00,499 - dbp.database.database - DEBUG - Loading Alembic configuration from: alembic.ini
+2025-04-17 18:12:00,499 - dbp.config.config_manager - ERROR - Configuration key 'database.url' not found
+2025-04-17 18:12:00,499 - dbp.database.database - WARNING - Failed to get database.url from config_manager: Configuration key 'database.url' not found in configuration
+2025-04-17 18:12:00,499 - dbp.database.database - DEBUG - Using engine URL: sqlite:///.dbp/database.sqlite
+2025-04-17 18:12:00,501 - dbp.database.database - DEBUG - Setting Alembic script_location to module-specific alembic directory
+2025-04-17 18:12:00,501 - dbp.database.database - DEBUG - Alembic configuration:
+2025-04-17 18:12:00,501 - dbp.database.database - DEBUG -   Main section: alembic
+2025-04-17 18:12:00,502 - dbp.database.database - DEBUG -     here = /home/jcjorel/cline-best-practices
+2025-04-17 18:12:00,502 - dbp.database.database - DEBUG -     script_location = /home/jcjorel/cline-best-practices/src/dbp/database/alembic
+2025-04-17 18:12:00,502 - dbp.database.database - DEBUG -     file_template = %(year)d%(month).2d%(day).2d_%(hour).2d%(minute).2d%(second).2d_%(slug)s
+2025-04-17 18:12:00,502 - dbp.database.database - DEBUG -     prepend_sys_path = .
+2025-04-17 18:12:00,502 - dbp.database.database - DEBUG -     version_path_separator = os  # Use os.pathsep. Default configuration used for new projects.
+2025-04-17 18:12:00,503 - dbp.database.database - DEBUG -     sqlalchemy.url = sqlite:///.dbp/database.sqlite
+2025-04-17 18:12:00,503 - dbp.database.database - INFO - Running database migrations...
+2025-04-17 18:12:00,503 - dbp.database.database - DEBUG - Session 140079151804400 acquired from scoped session factory.
+2025-04-17 18:12:00,503 - dbp.database.database - DEBUG - Testing database connection...
+2025-04-17 18:12:00,505 - dbp.database.database - DEBUG - Database connection successful
+2025-04-17 18:12:00,506 - dbp.database.database - DEBUG - Session 140079151804400 committed.
+2025-04-17 18:12:00,506 - dbp.database.database - DEBUG - Session 140079151804400 closed.
+2025-04-17 18:12:00,506 - dbp.database.database - INFO - Upgrading database schema to latest version...
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 18:18:15 ---
+
+2025-04-17 18:18:17,113 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-17 18:18:17,113 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-17 18:18:17,113 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-17 18:18:17,113 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-17 18:18:17,113 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-17 18:18:17,114 - root - DEBUG - Application logging initialized at level DEBUG with consistent formatting
+2025-04-17 18:18:17,114 - dbp.core.lifecycle - DEBUG - Logging initialized at level DEBUG with consistent formatting
+2025-04-17 18:18:17,114 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-17 18:18:17,114 - dbp.config.config_manager - DEBUG - ConfigurationManager singleton instance created.
+2025-04-17 18:18:17,114 - dbp.config.config_manager - INFO - Initializing configuration...
+2025-04-17 18:18:17,114 - dbp.config.config_manager - DEBUG - Loading standard configuration files...
+2025-04-17 18:18:17,114 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /etc/dbp/config.json
+2025-04-17 18:18:17,114 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /etc/dbp/config.yaml
+2025-04-17 18:18:17,115 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /etc/dbp/config.yml
+2025-04-17 18:18:17,115 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /home/jcjorel/.config/dbp/config.json
+2025-04-17 18:18:17,115 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /home/jcjorel/.config/dbp/config.yaml
+2025-04-17 18:18:17,115 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /home/jcjorel/.config/dbp/config.yml
+2025-04-17 18:18:17,115 - dbp.config.config_manager - DEBUG - Loading configuration from environment variables...
+2025-04-17 18:18:17,115 - dbp.config.config_manager - DEBUG - Loaded 1 configuration values from environment variables.
+2025-04-17 18:18:17,115 - dbp.config.config_manager - DEBUG - Loading configuration from command-line arguments...
+2025-04-17 18:18:17,115 - dbp.config.config_manager - DEBUG - Loaded 6 configuration values from command-line arguments.
+2025-04-17 18:18:17,115 - dbp.config.config_manager - DEBUG - Applying configuration hierarchy...
+2025-04-17 18:18:17,115 - dbp.config.config_manager - DEBUG - Merging config from environment variables...
+2025-04-17 18:18:17,115 - dbp.config.config_manager - DEBUG - Merging config from command-line arguments...
+2025-04-17 18:18:17,116 - dbp.config.config_manager - DEBUG - Configuration validated successfully against schema.
+2025-04-17 18:18:17,116 - dbp.config.config_manager - INFO - Configuration initialized successfully.
+2025-04-17 18:18:17,116 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-17 18:18:17,116 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-17 18:18:17,116 - dbp.core.lifecycle - DEBUG - Registered config_manager component
+2025-04-17 18:18:17,116 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-17 18:18:17,116 - dbp.core.lifecycle - DEBUG - Registered database component
+2025-04-17 18:18:17,130 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-17 18:18:17,135 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-17 18:18:17,138 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-17 18:18:17,138 - dbp.core.lifecycle - DEBUG - Registered fs_monitor component
+2025-04-17 18:18:17,139 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-17 18:18:17,139 - dbp.core.lifecycle - DEBUG - Registered filter component
+2025-04-17 18:18:17,139 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-17 18:18:17,139 - dbp.core.lifecycle - DEBUG - Registered change_queue component
+2025-04-17 18:18:17,139 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-17 18:18:17,139 - dbp.core.lifecycle - DEBUG - Registered memory_cache component
+2025-04-17 18:18:17,140 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-17 18:18:17,140 - dbp.core.lifecycle - DEBUG - Registered consistency_analysis component
+2025-04-17 18:18:17,140 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-17 18:18:17,140 - dbp.core.lifecycle - DEBUG - Registered doc_relationships component
+2025-04-17 18:18:17,140 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-17 18:18:17,140 - dbp.core.lifecycle - DEBUG - Registered recommendation_generator component
+2025-04-17 18:18:17,146 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-17 18:18:17,146 - dbp.core.lifecycle - DEBUG - Registered scheduler component
+2025-04-17 18:18:17,146 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-17 18:18:17,146 - dbp.core.lifecycle - DEBUG - Registered metadata_extraction component
+2025-04-17 18:18:17,147 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-17 18:18:17,147 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - CRITICAL for query processing
+2025-04-17 18:18:17,147 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-17 18:18:17,147 - dbp.core.lifecycle - DEBUG - Registered mcp_server component
+2025-04-17 18:18:17,147 - dbp.core.lifecycle - DEBUG - Registered handler for signal 2
+2025-04-17 18:18:17,147 - dbp.core.lifecycle - DEBUG - Registered handler for signal 15
+2025-04-17 18:18:17,147 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-17 18:18:17,148 - dbp.core.lifecycle - INFO - Initializing 13 components
+2025-04-17 18:18:17,148 - dbp.core.lifecycle - DEBUG - Validating dependencies. Registered components: {'database', 'mcp_server', 'config_manager', 'doc_relationships', 'llm_coordinator', 'recommendation_generator', 'metadata_extraction', 'consistency_analysis', 'scheduler', 'fs_monitor', 'filter', 'change_queue', 'memory_cache'}
+2025-04-17 18:18:17,148 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-17 18:18:17,148 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, database, llm_coordinator, metadata_extraction, doc_relationships, consistency_analysis, recommendation_generator, filter, change_queue, fs_monitor, scheduler, memory_cache, mcp_server
+2025-04-17 18:18:17,148 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-17 18:18:17,148 - dbp.core.lifecycle - DEBUG - Component 'config_manager' class: ConfigManagerComponent
+2025-04-17 18:18:17,148 - dbp.core.lifecycle - DEBUG - Component 'config_manager' dependencies: []
+2025-04-17 18:18:17,148 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 18:18:17,148 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 18:18:17,148 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-17 18:18:17,151 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-17 18:18:17,153 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-17 18:18:17,153 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-17 18:18:17,153 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-17 18:18:17,154 - dbp.core.lifecycle - INFO - Initializing component 'database'...
+2025-04-17 18:18:17,154 - dbp.core.lifecycle - DEBUG - Component 'database' class: DatabaseComponent
+2025-04-17 18:18:17,154 - dbp.core.lifecycle - DEBUG - Component 'database' dependencies: ['config_manager']
+2025-04-17 18:18:17,154 - dbp.core.lifecycle - INFO - Initializing component 'database' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 18:18:17,154 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 18:18:17,154 - dbp.database - INFO - Initializing component 'database'...
+2025-04-17 18:18:17,154 - dbp.database.database - DEBUG - DatabaseManager instantiated.
+2025-04-17 18:18:17,155 - dbp.database.database - INFO - Initializing database with type: sqlite
+2025-04-17 18:18:17,155 - dbp.database.database - DEBUG - Database configuration: {'database.type': 'sqlite', 'database.path': '.dbp/database.sqlite', 'database.max_connections': 4, 'database.connection_timeout': 5, 'database.use_wal_mode': True, 'database.vacuum_threshold': 20, 'database.echo_sql': False}
+2025-04-17 18:18:17,155 - dbp.database.database - INFO - Initializing SQLite database at: .dbp/database.sqlite
+2025-04-17 18:18:17,156 - dbp.database.database - INFO - SQLite configuration: pool_size=4, timeout=5
+2025-04-17 18:18:17,156 - dbp.database.database - INFO - SQLite path: absolute=/home/jcjorel/cline-best-practices/.dbp/database.sqlite, normalized=.dbp/database.sqlite
+2025-04-17 18:18:17,224 - dbp.database.database - DEBUG - SQLAlchemy engine created for SQLite with pool size 4.
+2025-04-17 18:18:17,224 - dbp.database.database - INFO - Enabling SQLite WAL mode...
+2025-04-17 18:18:17,226 - dbp.database.database - INFO - SQLite WAL mode enabled. Current journal mode: wal
+2025-04-17 18:18:17,226 - dbp.database.database - DEBUG - Scoped session factory created.
+2025-04-17 18:18:17,227 - dbp.database.database - INFO - Running Alembic migrations to initialize/update the database schema...
+2025-04-17 18:18:17,227 - dbp.database.database - DEBUG - Importing Alembic modules...
+2025-04-17 18:18:17,483 - dbp.database.database - DEBUG - Alembic modules imported successfully
+2025-04-17 18:18:17,483 - dbp.database.database - DEBUG - Getting ComponentSystem instance...
+2025-04-17 18:18:17,484 - dbp.database.database - DEBUG - Getting config_manager component...
+2025-04-17 18:18:17,486 - dbp.database.database - DEBUG - Config manager retrieved successfully
+2025-04-17 18:18:17,486 - dbp.database.database - DEBUG - Using alembic.ini path: alembic.ini
+2025-04-17 18:18:17,486 - dbp.database.database - DEBUG - Using module-specific Alembic directory: /home/jcjorel/cline-best-practices/src/dbp/database/alembic
+2025-04-17 18:18:17,486 - dbp.database.database - DEBUG - Loading Alembic configuration from: alembic.ini
+2025-04-17 18:18:17,487 - dbp.config.config_manager - ERROR - Configuration key 'database.url' not found
+2025-04-17 18:18:17,487 - dbp.database.database - WARNING - Failed to get database.url from config_manager: Configuration key 'database.url' not found in configuration
+2025-04-17 18:18:17,487 - dbp.database.database - DEBUG - Using engine URL: sqlite:///.dbp/database.sqlite
+2025-04-17 18:18:17,490 - dbp.database.database - DEBUG - Setting Alembic script_location to module-specific alembic directory
+2025-04-17 18:18:17,491 - dbp.database.database - DEBUG - Alembic configuration:
+2025-04-17 18:18:17,491 - dbp.database.database - DEBUG -   Main section: alembic
+2025-04-17 18:18:17,491 - dbp.database.database - DEBUG -     here = /home/jcjorel/cline-best-practices
+2025-04-17 18:18:17,492 - dbp.database.database - DEBUG -     script_location = /home/jcjorel/cline-best-practices/src/dbp/database/alembic
+2025-04-17 18:18:17,492 - dbp.database.database - DEBUG -     file_template = %(year)d%(month).2d%(day).2d_%(hour).2d%(minute).2d%(second).2d_%(slug)s
+2025-04-17 18:18:17,492 - dbp.database.database - DEBUG -     prepend_sys_path = .
+2025-04-17 18:18:17,492 - dbp.database.database - DEBUG -     version_path_separator = os  # Use os.pathsep. Default configuration used for new projects.
+2025-04-17 18:18:17,492 - dbp.database.database - DEBUG -     sqlalchemy.url = sqlite:///.dbp/database.sqlite
+2025-04-17 18:18:17,492 - dbp.database.database - INFO - Running database migrations...
+2025-04-17 18:18:17,492 - dbp.database.database - DEBUG - Session 139936653185664 acquired from scoped session factory.
+2025-04-17 18:18:17,493 - dbp.database.database - DEBUG - Testing database connection...
+2025-04-17 18:18:17,494 - dbp.database.database - DEBUG - Database connection successful
+2025-04-17 18:18:17,494 - dbp.database.database - DEBUG - Session 139936653185664 committed.
+2025-04-17 18:18:17,495 - dbp.database.database - DEBUG - Session 139936653185664 closed.
+2025-04-17 18:18:17,495 - dbp.database.database - INFO - Upgrading database schema to latest version...
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+
+
+--- SERVER START ATTEMPT AT 2025-04-17 18:28:16 ---
+
+2025-04-17 18:28:17,310 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-17 18:28:17,311 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-17 18:28:17,311 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-17 18:28:17,311 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-17 18:28:17,311 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-17 18:28:17,311 - root - DEBUG - Application logging initialized at level DEBUG with consistent formatting
+2025-04-17 18:28:17,311 - dbp.core.lifecycle - DEBUG - Logging initialized at level DEBUG with consistent formatting
+2025-04-17 18:28:17,311 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-17 18:28:17,311 - dbp.config.config_manager - DEBUG - ConfigurationManager singleton instance created.
+2025-04-17 18:28:17,312 - dbp.config.config_manager - INFO - Initializing configuration...
+2025-04-17 18:28:17,312 - dbp.config.config_manager - DEBUG - Loading standard configuration files...
+2025-04-17 18:28:17,312 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /etc/dbp/config.json
+2025-04-17 18:28:17,312 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /etc/dbp/config.yaml
+2025-04-17 18:28:17,312 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /etc/dbp/config.yml
+2025-04-17 18:28:17,312 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /home/jcjorel/.config/dbp/config.json
+2025-04-17 18:28:17,312 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /home/jcjorel/.config/dbp/config.yaml
+2025-04-17 18:28:17,312 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /home/jcjorel/.config/dbp/config.yml
+2025-04-17 18:28:17,312 - dbp.config.config_manager - DEBUG - Loading configuration from environment variables...
+2025-04-17 18:28:17,312 - dbp.config.config_manager - DEBUG - Loaded 1 configuration values from environment variables.
+2025-04-17 18:28:17,312 - dbp.config.config_manager - DEBUG - Loading configuration from command-line arguments...
+2025-04-17 18:28:17,313 - dbp.config.config_manager - DEBUG - Loaded 6 configuration values from command-line arguments.
+2025-04-17 18:28:17,313 - dbp.config.config_manager - DEBUG - Applying configuration hierarchy...
+2025-04-17 18:28:17,313 - dbp.config.config_manager - DEBUG - Merging config from environment variables...
+2025-04-17 18:28:17,313 - dbp.config.config_manager - DEBUG - Merging config from command-line arguments...
+2025-04-17 18:28:17,313 - dbp.config.config_manager - DEBUG - Configuration validated successfully against schema.
+2025-04-17 18:28:17,313 - dbp.config.config_manager - INFO - Configuration initialized successfully.
+2025-04-17 18:28:17,313 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-17 18:28:17,313 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-17 18:28:17,313 - dbp.core.lifecycle - DEBUG - Registered config_manager component
+2025-04-17 18:28:17,313 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-17 18:28:17,313 - dbp.core.lifecycle - DEBUG - Registered database component
+2025-04-17 18:28:17,328 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-17 18:28:17,330 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-17 18:28:17,332 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-17 18:28:17,332 - dbp.core.lifecycle - DEBUG - Registered fs_monitor component
+2025-04-17 18:28:17,333 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-17 18:28:17,333 - dbp.core.lifecycle - DEBUG - Registered filter component
+2025-04-17 18:28:17,333 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-17 18:28:17,333 - dbp.core.lifecycle - DEBUG - Registered change_queue component
+2025-04-17 18:28:17,333 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-17 18:28:17,335 - dbp.core.lifecycle - DEBUG - Registered memory_cache component
+2025-04-17 18:28:17,335 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-17 18:28:17,336 - dbp.core.lifecycle - DEBUG - Registered consistency_analysis component
+2025-04-17 18:28:17,336 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-17 18:28:17,336 - dbp.core.lifecycle - DEBUG - Registered doc_relationships component
+2025-04-17 18:28:17,337 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-17 18:28:17,338 - dbp.core.lifecycle - DEBUG - Registered recommendation_generator component
+2025-04-17 18:28:17,346 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-17 18:28:17,346 - dbp.core.lifecycle - DEBUG - Registered scheduler component
+2025-04-17 18:28:17,346 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-17 18:28:17,346 - dbp.core.lifecycle - DEBUG - Registered metadata_extraction component
+2025-04-17 18:28:17,346 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-17 18:28:17,346 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - CRITICAL for query processing
+2025-04-17 18:28:17,346 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-17 18:28:17,346 - dbp.core.lifecycle - DEBUG - Registered mcp_server component
+2025-04-17 18:28:17,346 - dbp.core.lifecycle - DEBUG - Registered handler for signal 2
+2025-04-17 18:28:17,346 - dbp.core.lifecycle - DEBUG - Registered handler for signal 15
+2025-04-17 18:28:17,346 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-17 18:28:17,346 - dbp.core.lifecycle - INFO - Initializing 13 components
+2025-04-17 18:28:17,346 - dbp.core.lifecycle - DEBUG - Validating dependencies. Registered components: {'consistency_analysis', 'filter', 'mcp_server', 'change_queue', 'database', 'metadata_extraction', 'scheduler', 'doc_relationships', 'fs_monitor', 'config_manager', 'recommendation_generator', 'llm_coordinator', 'memory_cache'}
+2025-04-17 18:28:17,346 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-17 18:28:17,347 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, filter, change_queue, database, metadata_extraction, doc_relationships, consistency_analysis, fs_monitor, scheduler, llm_coordinator, recommendation_generator, memory_cache, mcp_server
+2025-04-17 18:28:17,347 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-17 18:28:17,347 - dbp.core.lifecycle - DEBUG - Component 'config_manager' class: ConfigManagerComponent
+2025-04-17 18:28:17,347 - dbp.core.lifecycle - DEBUG - Component 'config_manager' dependencies: []
+2025-04-17 18:28:17,347 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 18:28:17,347 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 18:28:17,347 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-17 18:28:17,350 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-17 18:28:17,352 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-17 18:28:17,352 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-17 18:28:17,352 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-17 18:28:17,352 - dbp.core.lifecycle - INFO - Initializing component 'filter'...
+2025-04-17 18:28:17,353 - dbp.core.lifecycle - DEBUG - Component 'filter' class: FilterComponent
+2025-04-17 18:28:17,353 - dbp.core.lifecycle - DEBUG - Component 'filter' dependencies: ['config_manager']
+2025-04-17 18:28:17,353 - dbp.core.lifecycle - INFO - Initializing component 'filter' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 18:28:17,353 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 18:28:17,353 - dbp.filter - INFO - Initializing component 'filter'...
+2025-04-17 18:28:17,354 - dbp.fs_monitor.filter - DEBUG - Adding mandatory ignore patterns.
+2025-04-17 18:28:17,354 - dbp.fs_monitor.filter - DEBUG - Adding 8 patterns from configuration.
+2025-04-17 18:28:17,354 - dbp.fs_monitor.filter - DEBUG - Scanning for .gitignore files starting from: /home/jcjorel/cline-best-practices
+2025-04-17 18:28:17,499 - dbp.fs_monitor.filter - INFO - Found 2 .gitignore files.
+2025-04-17 18:28:17,499 - dbp.fs_monitor.filter - DEBUG - Loading patterns from: /home/jcjorel/cline-best-practices/.gitignore (relative to: /home/jcjorel/cline-best-practices)
+2025-04-17 18:28:17,499 - dbp.fs_monitor.filter - DEBUG - Added 30 patterns from /home/jcjorel/cline-best-practices/.gitignore
+2025-04-17 18:28:17,499 - dbp.fs_monitor.filter - DEBUG - Loading patterns from: /home/jcjorel/cline-best-practices/venv/.gitignore (relative to: /home/jcjorel/cline-best-practices/venv)
+2025-04-17 18:28:17,499 - dbp.fs_monitor.filter - DEBUG - Added 1 patterns from /home/jcjorel/cline-best-practices/venv/.gitignore
+2025-04-17 18:28:17,500 - dbp.fs_monitor.filter - INFO - GitIgnoreFilter initialized with 40 patterns.
+2025-04-17 18:28:17,500 - dbp.filter - INFO - Component 'filter' initialized successfully.
+2025-04-17 18:28:17,500 - dbp.core.lifecycle - INFO - Component 'filter' initialized successfully
+2025-04-17 18:28:17,500 - dbp.core.lifecycle - INFO - Initializing component 'change_queue'...
+2025-04-17 18:28:17,500 - dbp.core.lifecycle - DEBUG - Component 'change_queue' class: ChangeQueueComponent
+2025-04-17 18:28:17,500 - dbp.core.lifecycle - DEBUG - Component 'change_queue' dependencies: ['config_manager']
+2025-04-17 18:28:17,500 - dbp.core.lifecycle - INFO - Initializing component 'change_queue' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 18:28:17,500 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 18:28:17,500 - dbp.change_queue - INFO - Initializing component 'change_queue'...
+2025-04-17 18:28:17,500 - dbp.fs_monitor.queue - DEBUG - ChangeDetectionQueue initialized.
+2025-04-17 18:28:17,500 - dbp.change_queue - INFO - Setting up event filtering with filter component
+2025-04-17 18:28:17,500 - dbp.fs_monitor.queue - INFO - Event filter set to: FilterComponent
+2025-04-17 18:28:17,500 - dbp.change_queue - INFO - Component 'change_queue' initialized successfully.
+2025-04-17 18:28:17,500 - dbp.core.lifecycle - INFO - Component 'change_queue' initialized successfully
+2025-04-17 18:28:17,500 - dbp.core.lifecycle - INFO - Initializing component 'database'...
+2025-04-17 18:28:17,500 - dbp.core.lifecycle - DEBUG - Component 'database' class: DatabaseComponent
+2025-04-17 18:28:17,500 - dbp.core.lifecycle - DEBUG - Component 'database' dependencies: ['config_manager']
+2025-04-17 18:28:17,500 - dbp.core.lifecycle - INFO - Initializing component 'database' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-17 18:28:17,500 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-17 18:28:17,500 - dbp.database - INFO - Initializing component 'database'...
+2025-04-17 18:28:17,500 - dbp.database.database - DEBUG - DatabaseManager instantiated.
+2025-04-17 18:28:17,500 - dbp.database.database - INFO - Initializing database with type: sqlite
+2025-04-17 18:28:17,500 - dbp.database.database - DEBUG - Database configuration: {'database.type': 'sqlite', 'database.path': '.dbp/database.sqlite', 'database.max_connections': 4, 'database.connection_timeout': 5, 'database.use_wal_mode': True, 'database.vacuum_threshold': 20, 'database.echo_sql': False}
+2025-04-17 18:28:17,500 - dbp.database.database - INFO - Initializing SQLite database at: .dbp/database.sqlite
+2025-04-17 18:28:17,500 - dbp.database.database - INFO - SQLite configuration: pool_size=4, timeout=5
+2025-04-17 18:28:17,500 - dbp.database.database - INFO - SQLite path: absolute=/home/jcjorel/cline-best-practices/.dbp/database.sqlite, normalized=.dbp/database.sqlite
+2025-04-17 18:28:17,507 - dbp.database.database - DEBUG - SQLAlchemy engine created for SQLite with pool size 4.
+2025-04-17 18:28:17,508 - dbp.database.database - INFO - Enabling SQLite WAL mode...
+2025-04-17 18:28:17,510 - dbp.database.database - INFO - SQLite WAL mode enabled. Current journal mode: wal
+2025-04-17 18:28:17,510 - dbp.database.database - DEBUG - Scoped session factory created.
+2025-04-17 18:28:17,510 - dbp.database.database - INFO - Running Alembic migrations to initialize/update the database schema...
+2025-04-17 18:28:17,510 - dbp.database.database - DEBUG - Importing Alembic modules...
+2025-04-17 18:28:17,644 - dbp.database.database - DEBUG - Alembic modules imported successfully
+2025-04-17 18:28:17,644 - dbp.database.database - DEBUG - Getting ComponentSystem instance...
+2025-04-17 18:28:17,644 - dbp.database.database - DEBUG - Getting config_manager component...
+2025-04-17 18:28:17,644 - dbp.database.database - DEBUG - Config manager retrieved successfully
+2025-04-17 18:28:17,644 - dbp.database.database - DEBUG - Using alembic.ini path: alembic.ini
+2025-04-17 18:28:17,644 - dbp.database.database - DEBUG - Using module-specific Alembic directory: /home/jcjorel/cline-best-practices/src/dbp/database/alembic
+2025-04-17 18:28:17,644 - dbp.database.database - DEBUG - Loading Alembic configuration from: alembic.ini
+2025-04-17 18:28:17,644 - dbp.config.config_manager - ERROR - Configuration key 'database.url' not found
+2025-04-17 18:28:17,644 - dbp.database.database - WARNING - Failed to get database.url from config_manager: Configuration key 'database.url' not found in configuration
+2025-04-17 18:28:17,644 - dbp.database.database - DEBUG - Using engine URL: sqlite:///.dbp/database.sqlite
+2025-04-17 18:28:17,645 - dbp.database.database - DEBUG - Setting Alembic script_location to module-specific alembic directory
+2025-04-17 18:28:17,645 - dbp.database.database - DEBUG - Alembic configuration:
+2025-04-17 18:28:17,645 - dbp.database.database - DEBUG -   Main section: alembic
+2025-04-17 18:28:17,645 - dbp.database.database - DEBUG -     here = /home/jcjorel/cline-best-practices
+2025-04-17 18:28:17,645 - dbp.database.database - DEBUG -     script_location = /home/jcjorel/cline-best-practices/src/dbp/database/alembic
+2025-04-17 18:28:17,645 - dbp.database.database - DEBUG -     file_template = %(year)d%(month).2d%(day).2d_%(hour).2d%(minute).2d%(second).2d_%(slug)s
+2025-04-17 18:28:17,645 - dbp.database.database - DEBUG -     prepend_sys_path = .
+2025-04-17 18:28:17,645 - dbp.database.database - DEBUG -     version_path_separator = os  # Use os.pathsep. Default configuration used for new projects.
+2025-04-17 18:28:17,645 - dbp.database.database - DEBUG -     sqlalchemy.url = sqlite:///.dbp/database.sqlite
+2025-04-17 18:28:17,645 - dbp.database.database - INFO - Running database migrations...
+2025-04-17 18:28:17,645 - dbp.database.database - DEBUG - Session 140104132833984 acquired from scoped session factory.
+2025-04-17 18:28:17,645 - dbp.database.database - DEBUG - Testing database connection...
+2025-04-17 18:28:17,646 - dbp.database.database - DEBUG - Database connection successful
+2025-04-17 18:28:17,646 - dbp.database.database - DEBUG - Session 140104132833984 committed.
+2025-04-17 18:28:17,646 - dbp.database.database - DEBUG - Session 140104132833984 closed.
+2025-04-17 18:28:17,646 - dbp.database.database - INFO - Upgrading database schema to latest version...
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
