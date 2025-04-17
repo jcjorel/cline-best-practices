@@ -142,7 +142,7 @@ For complex changes:
 - Do not silently catch errors - always include both error logging and error re-throwing
 - Never return null, undefined, or empty objects as a response to error conditions
 - Construct descriptive error messages that specify: 1) the exact component that failed and 2) the precise reason for the failure
-- Do not implement any fallback or graceful degradation behavior unless the user explicitly requests it
+- NEVER implement any fallback mechanisms or graceful degradation behavior unless the user explicitly requests it
 
 ## Code and Documentation Standards
 
