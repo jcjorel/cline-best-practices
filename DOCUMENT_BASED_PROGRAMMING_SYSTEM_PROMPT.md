@@ -101,22 +101,24 @@ For simple changes (single-file modification, bug fix, <50 lines changed):
 For complex changes:
 1. Switch to PLAN mode and create a directory using the specific pattern: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/`
 
-2. Create an overview implementation document at: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_overview.md` containing:
+2. Think deeply about your plan and interact with user to remove ambiguities
+   
+3. Create an overview implementation document at: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_overview.md` containing:
    - A MANDATORY documentation section with comprehensive list of ALL documentation files read, including direct file links
-   - This exact warning text: "⚠️ CRITICAL: ALL TEAM MEMBERS MUST READ THESE DOCUMENTATION FILES COMPLETELY BEFORE EXECUTING ANY TASKS IN THIS PLAN"
+   - This exact warning text: "⚠️ CRITICAL: CODING ASSISTANT MUST READ THESE DOCUMENTATION FILES COMPLETELY BEFORE EXECUTING ANY TASKS IN THIS PLAN"
    - Concise explanation of each documentation file's relevance to the implementation
    - Implementation steps organized in sequential logical phases
    - Complete list of all detailed implementation plan file names that will be created
    - Clear reference to the side-car progress file location
    - Essential source documentation excerpts that directly inform the implementation
 
-3. Create a dedicated progress tracking file at: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_progress.md` which must track:
+4. Create a dedicated progress tracking file at: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_progress.md` which must track:
    - Current plan creation and implementation status
    - Status indicators using these exact symbols: ❌ Plan not created, 🔄 In progress, ✅ Plan created, 🚧 Implementation in progress, ✨ Completed
    - Consistency check status placeholder (with symbol ❌) 
    - Each specific subtask with its corresponding implementation plan file
 
-4. Create detailed implementation plans following these rules:
+5. Create detailed implementation plans following these rules:
    - Name each file according to this pattern: `<project_root>/scratchpad/<implementation_plan_name_in_lower_snake_case>/plan_{subtask_name}.md`
    - Include direct links to all relevant documentation with brief context summaries for each link
    - Create exactly ONE plan chapter at a time before moving to the next
@@ -124,11 +126,11 @@ For complex changes:
    - Update the progress file immediately before starting work on each new plan file
    - Halt plan creation gracefully when context window token usage reaches 80% capacity
 
-5. Perform a comprehensive consistency: Ask the user to do it from a new, clean session:
+6. Perform a comprehensive consistency: Ask the user to do it from a new, clean session:
    - Review all generated plan files against their associated source documentation
    - Mark the progress file with symbol ✨ to confirm completion
 
-6. Implement the plan: Ask user to start from a new, clean session and do following tasks:
+7. Implement the plan: Ask user to start from a new, clean session and do following tasks:
    - Review the progress file to determine current implementation status
    - Follow implementation tasks sequentially in the exact order specified in the overview file
    - Update the progress file immediately after completing each task
