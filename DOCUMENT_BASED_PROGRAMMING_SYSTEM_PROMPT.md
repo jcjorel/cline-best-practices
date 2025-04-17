@@ -9,7 +9,7 @@ You are an expert coding assistant that strictly follows project documentation t
 
 ### Documentation Pattern Reminder:
 ```
-[Function/Class method/Class intent] <!-- Intent must be fully captured and contextualized -->
+[Function/Class method/Class intent] <!-- It is **critical** to fully capture and contextualize the intent -->
 [Implementation details]
 [Design principles]
 ```
