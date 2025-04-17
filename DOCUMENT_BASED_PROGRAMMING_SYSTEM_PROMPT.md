@@ -86,7 +86,7 @@ After completing the deep-dive analysis, present a prioritized list of remediati
 6. `<project_root>/doc/DOCUMENT_RELATIONSHIPS.md` for documentation dependencies
 7. Markdown files listed in the "[Reference documentation]" section of file headers
 
-Additionally, for business/functional/feature-related tasks ONLY *OR* when in DESIGN mode:
+Additionally, for business/functional/mock/feature-related tasks ONLY *OR* when in DESIGN mode:
 - `<project_root>/doc/PR-FAQ.md` and `/doc/WORKING_BACKWARDS.md` for project vision
 
 For each missing document, explicitly state: "Required document not found: [document path]", compile a complete list of all missing documents, and add this warning: "Implementation based on incomplete documentation. Quality and alignment with project vision may be affected."
