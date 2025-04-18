@@ -43,6 +43,10 @@
 # - doc/CONFIGURATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-18T09:31:00Z : Modified Alembic to throw errors without fallbacks by CodeAssistant
+# * Removed fallback behavior in ImportError and OperationalError cases 
+# * Enforced strict dependency on Alembic for database schema management
+# * Ensured database failures propagate properly without silent fallbacks
 # 2025-04-18T08:15:00Z : Fixed database URL configuration in Alembic setup by CodeAssistant
 # * Modified _run_alembic_migrations to construct database URL from configuration
 # * Fixed error: "Configuration key 'database.url' not found"
@@ -52,10 +56,6 @@
 # * Resolved AttributeError: 'Config' object has no attribute 'sections'
 # * Implemented robust error handling for Alembic configuration access
 # 2025-04-17T10:47:23Z : Updated DatabaseManager to use config_manager properly by CodeAssistant
-# * Modified DatabaseManager to use config_manager's get method for configuration
-# * Added robust error handling for configuration access
-# * Fixed AttributeError: 'ConfigManagerComponent' object has no attribute 'items'
-# 2025-04-17T10:05:04Z : Fixed initialization context handling by CodeAssistant
 ###############################################################################
 
 import os
@@ -729,11 +729,21 @@ class DatabaseManager:
                 try:
                     command.upgrade(alembic_cfg, "head")
                     logger.info("Database migrations completed successfully.")
+                    
+                    # Verify that migrations were applied correctly
+                    with self.get_session() as session:
+                        version_result = session.execute(text("SELECT version_num FROM alembic_version")).fetchone()
+                        if version_result:
+                            logger.info(f"Current alembic version after migration: {version_result[0]}")
+                        else:
+                            logger.error("Alembic version table exists but contains no version information")
+                            raise RuntimeError("Database migration incomplete: missing version information")
+                    
                 except Exception as e:
                     logger.error(f"Alembic upgrade failed: {e}")
                     logger.error(traceback.format_exc())
                     
-                    # Try to capture alembic version information
+                    # Try to capture alembic version information for diagnostic purposes
                     try:
                         with self.get_session() as session:
                             version_result = session.execute(text("SELECT version_num FROM alembic_version")).fetchone()
@@ -742,45 +752,27 @@ class DatabaseManager:
                     except Exception:
                         logger.error("Could not determine current alembic version")
                     
-                    raise
+                    # Always throw the error without any fallback
+                    raise RuntimeError(f"Database migration failed: {e}") from e
                 
             except OperationalError as e:
-                # Table doesn't exist, this may be a fresh database
-                logger.info(f"Database appears to be new or empty: {e}")
-                logger.info("Initializing new database schema...")
-                
-                # Create all tables directly for a fresh database
-                try:
-                    logger.debug("Creating database tables directly...")
-                    Base.metadata.create_all(self.engine)
-                    logger.debug("Tables created successfully")
-                    
-                    # Then stamp with current version to avoid running all migrations
-                    logger.debug("Stamping database with current version...")
-                    command.stamp(alembic_cfg, "head")
-                    logger.info("Database schema initialized with current version.")
-                except Exception as table_error:
-                    logger.error(f"Failed to create database tables: {table_error}")
-                    logger.error(traceback.format_exc())
-                    raise
+                # Table doesn't exist, but we won't create tables directly as fallback
+                logger.error(f"Database error during migration: {e}")
+                logger.error("Alembic encountered an operational error - cannot proceed")
+                logger.error("Make sure the database is properly configured and accessible")
+                raise RuntimeError(f"Alembic operational error: {e}") from e
                 
         except ImportError as e:
-            logger.warning(f"Alembic not available, skipping migrations: {e}. Schema changes may need to be applied manually.")
-            # Fall back to direct schema creation without migrations
-            try:
-                logger.info("Creating tables directly (without migrations)...")
-                Base.metadata.create_all(self.engine)
-                logger.info("Database schema created directly (without migrations).")
-            except Exception as direct_error:
-                logger.error(f"Failed to create schema directly: {direct_error}")
-                logger.error(traceback.format_exc())
-                raise
+            logger.error(f"Alembic not available: {e}")
+            logger.error("Alembic is required for schema management - cannot proceed without it")
+            raise RuntimeError(f"Failed to initialize database: Alembic not available: {e}") from e
         except Exception as e:
             logger.error(f"Failed to run database migrations: {e}")
             logger.error(f"Error type: {type(e).__name__}")
             logger.error(traceback.format_exc())
             # This is a critical error that should bubble up
             raise RuntimeError(f"Failed to initialize database schema: {e}") from e
+        logger.info("Alembic migrations completed successfully.")
 
     def _initialize_postgresql(self):
         """Initializes the PostgreSQL database engine."""
