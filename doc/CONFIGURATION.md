@@ -116,6 +116,25 @@ This approach provides several benefits:
 | `recommendations.purge_decisions_with_recommendations` | Also purge related developer decisions | `true` | `true, false` |
 | `recommendations.auto_invalidate` | Automatically invalidate recommendation on codebase change | `true` | `true, false` |
 
+### Component Enablement Settings
+
+| Parameter | Description | Default | Valid Values |
+|-----------|-------------|---------|-------------|
+| `component_enabled.config_manager` | Enable configuration manager component | `true` | `true, false` |
+| `component_enabled.file_access` | Enable file access component | `true` | `true, false` |
+| `component_enabled.database` | Enable database component | `true` | `true, false` |
+| `component_enabled.fs_monitor` | Enable file system monitor component | `false` | `true, false` |
+| `component_enabled.filter` | Enable file filter component | `false` | `true, false` |
+| `component_enabled.change_queue` | Enable change queue component | `false` | `true, false` |
+| `component_enabled.memory_cache` | Enable memory cache component | `false` | `true, false` |
+| `component_enabled.consistency_analysis` | Enable consistency analysis component | `false` | `true, false` |
+| `component_enabled.doc_relationships` | Enable document relationships component | `false` | `true, false` |
+| `component_enabled.recommendation_generator` | Enable recommendation generator component | `false` | `true, false` |
+| `component_enabled.scheduler` | Enable scheduler component | `false` | `true, false` |
+| `component_enabled.metadata_extraction` | Enable metadata extraction component | `false` | `true, false` |
+| `component_enabled.llm_coordinator` | Enable LLM coordinator component | `true` | `true, false` |
+| `component_enabled.mcp_server` | Enable MCP server component | `true` | `true, false` |
+
 ## Configuration File Format
 
 Configuration can be specified in JSON format:
@@ -166,6 +185,24 @@ Configuration can be specified in JSON format:
   }
 }
 ```
+
+## Path Resolution
+
+The Documentation-Based Programming system uses a consistent approach to resolve all relative paths specified in configuration:
+
+1. **Git Root-Relative Resolution**: All relative paths are resolved relative to the Git project root (where the `.git/` directory is located)
+2. **Explicit Failure**: If the Git root cannot be found, the system will raise an error rather than falling back to the current working directory
+3. **Absolute Paths**: Absolute paths are used unchanged
+4. **Home Directory Expansion**: Paths starting with `~` are expanded to the user's home directory
+
+This Git root-relative approach ensures:
+
+- Consistent path resolution regardless of where in the project directory the application is executed from
+- Centralized storage of all DBP system files in predictable locations
+- Clear error reporting when running outside a Git repository context
+- Reliable access to resources across different components
+
+For example, when specifying `database.path` as `"coding_assistant/dbp/database.db"`, this path will always resolve to `<git_project_root>/coding_assistant/dbp/database.db`, ensuring that components find the database file regardless of their current working directory.
 
 ## Environment Variables
 

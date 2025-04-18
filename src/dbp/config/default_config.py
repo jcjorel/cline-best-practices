@@ -58,6 +58,26 @@ and reference these values rather than hardcoding defaults directly.
 """
 
 import os
+# Default component enablement settings - only essential components for LLM coordinator are enabled
+COMPONENT_ENABLED_DEFAULTS = {
+    # Essential components required for LLM coordinator functionality
+    "config_manager": True,   # Required for configuration
+    "file_access": True,      # Required for file access operations
+    "database": True,         # Required for database operations
+    "llm_coordinator": True,  # Main component we want to keep
+    "mcp_server": True,       # Required for API access
+    
+    # Non-essential components disabled by default
+    "fs_monitor": False,      # Not needed for basic LLM coordinator functioning
+    "filter": False,          # Part of monitoring system
+    "change_queue": False,    # Part of monitoring system
+    "memory_cache": False,    # Can be disabled to reduce memory usage
+    "consistency_analysis": False,    # Non-essential for LLM coordinator
+    "doc_relationships": False,       # Non-essential for LLM coordinator
+    "recommendation_generator": False, # Non-essential for LLM coordinator
+    "scheduler": False,       # Non-essential background tasks can be disabled
+    "metadata_extraction": False,     # Non-essential for basic LLM operation
+}
 
 # General application settings
 GENERAL_DEFAULTS = {

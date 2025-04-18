@@ -37,6 +37,10 @@
 # - doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-18T14:01:00Z : Fixed truncated WARNING log level display by CodeAssistant
+# * Imported get_formatted_logger and MillisecondFormatter from core.log_utils
+# * Modified exit_handler to use get_formatted_logger instead of direct StreamHandler
+# * Ensured proper width formatting for log level names in emergency logger
 # 2025-04-18T11:45:00Z : Added watchdog mechanism for deadlock detection by CodeAssistant
 # * Implemented keep_alive() that components must call to prevent timeout termination
 # * Added watchdog thread that monitors for inactivity and terminates stuck processes
@@ -50,13 +54,6 @@
 # 2025-04-17T17:17:45Z : Integrated with centralized application logging by CodeAssistant
 # * Replaced local setup_logging with centralized setup_application_logging
 # * Ensured consistent log formatting across all components
-# 2025-04-17T17:05:00Z : Refactored to use centralized MillisecondFormatter by CodeAssistant
-# * Updated to import MillisecondFormatter from core.log_utils
-# * Removed duplicate formatter class definition to use shared implementation
-# 2025-04-17T13:23:51Z : Fixed millisecond format in log timestamps by CodeAssistant
-# * Added custom MillisecondFormatter class to display exactly 3 digits for milliseconds
-# * Modified logging setup to use the custom formatter with all handlers
-# * Fixed %f placeholder in logs that was displaying raw with 6 digits
 ###############################################################################
 
 import argparse
@@ -71,7 +68,7 @@ import threading
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Tuple
 
-from ..core.log_utils import setup_application_logging
+from ..core.log_utils import setup_application_logging, get_formatted_logger, MillisecondFormatter
 
 # Global logger
 logger = None
@@ -294,10 +291,8 @@ def exit_handler(signum=None, frame=None, reason=None, source=None, exception=No
     
     if not logger:
         # Ensure we have a logger even if called before setup
-        logger = logging.getLogger('dbp.mcp_server.exit_handler')
-        handler = logging.StreamHandler()
-        logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
+        # Use get_formatted_logger to ensure proper formatting with consistent width for level names
+        logger = get_formatted_logger('dbp.mcp_server.exit_handler', logging.INFO)
     
     # Determine exit source
     if source is None:

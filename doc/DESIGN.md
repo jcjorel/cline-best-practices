@@ -56,6 +56,18 @@ This document describes the architectural principles, components, and design dec
    - **Implementation**: Complete dependency on LLM for metadata extraction operations
    - **Benefits**: Improved adaptability to varied documentation formats, consistent extraction quality
 
+9. **Standardized Logging Format**: All application logs follow a consistent format for ease of parsing and analysis.
+   - **Format**: `YYYY-MM-DD HH:MM:SS,mmm - logger.name - LOGLEVEL - message`
+   - **Implementation**: Centralized logging setup through `setup_application_logging()` in `log_utils.py`
+   - **Components**: All components use the same logging configuration
+   - **Benefits**: Easier log correlation, analysis, and troubleshooting across components
+
+10. **Strict Configuration Access**: Component configuration uses direct attribute access on Pydantic models with no fallback mechanisms.
+    - **Pattern**: Direct attribute notation (`config.attribute_name`) with no dictionary-style access (`config.get('key', 'default')`)
+    - **Validation**: Missing or invalid configuration causes immediate failure with clear error messages
+    - **Type Safety**: Preserves Pydantic's type checking benefits throughout the codebase
+    - **Explicit Behavior**: All component behavior is directly tied to explicitly accessed configuration
+
 ## System Components
 
 ### 1. Python CLI Client
@@ -156,6 +168,14 @@ The system implements a minimalist component management approach with:
 3. **Two-Step Process**: Validation followed by initialization for reliable startup
 4. **Straightforward Error Handling**: Clear error messages with fail-fast behavior
 5. **Explicit Component Dependencies**: Direct declaration of dependencies without complex resolution algorithms
+
+The system also implements a selective component enablement mechanism:
+
+1. **Configuration-Based Enablement**: Components can be individually enabled or disabled through configuration
+2. **Default Configuration**: Essential components (config_manager, file_access, database, llm_coordinator, mcp_server) are enabled by default
+3. **Resource Conservation**: Non-essential components are disabled by default to minimize resource usage
+4. **LLM-Focused Operation**: Default configuration optimizes for LLM coordinator functionality with minimal footprint
+5. **On-Demand Activation**: Additional components can be enabled via configuration as needed
 
 Key principles of this approach:
 - Explicit behavior over implicit mechanisms

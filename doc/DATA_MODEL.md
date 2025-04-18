@@ -465,6 +465,8 @@ The system implements Alembic to manage database schema creation, upgrades, and 
 3. **Automatic Migration Generation**: Based on SQLAlchemy model changes
 4. **Bidirectional Migration Support**: Both upgrading and downgrading between versions
 5. **Initial Schema Baseline**: Established with an initial migration
+6. **Migration Validation**: Ensures data integrity during schema changes
+7. **Script-based Approach**: Uses Alembic's script-based migration rather than auto-migration for safety
 
 This approach ensures:
 - Consistent database schemas across all environments
@@ -473,6 +475,7 @@ This approach ensures:
 - Support for both SQLite and PostgreSQL backends
 - Fallback to rebuild database from scratch if migration fails
 - Safe migration path between SQLite and PostgreSQL when needed
+- Reliable schema evolution with historical tracking
 
 ### SQLite-Specific Implementation
 

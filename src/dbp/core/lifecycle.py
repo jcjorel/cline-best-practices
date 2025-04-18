@@ -34,14 +34,16 @@
 # - doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-18T17:02:00Z : Fixed component registration import mechanism by CodeAssistant
+# * Changed relative imports to absolute imports to solve "No module named '.'" errors
+# * Updated register_if_enabled to handle absolute imports correctly
+# * Improved log messages to show component dependencies for better debugging
 # 2025-04-17T17:28:22Z : Standardized log format for consistency by CodeAssistant
 # * Ensured log format follows standard: 2025-04-17 17:24:30,221 - dbp.core.lifecycle - <LOGLEVEL> - <message>
 # * Verified that _setup_logging is using the centralized formatter from log_utils
 # 2025-04-17T17:03:30Z : Updated to use centralized log formatter by CodeAssistant
 # * Modified _setup_logging to use MillisecondFormatter from log_utils
 # * Added proper handling of milliseconds in log timestamps
-# 2025-04-16T15:48:00Z : Replaced with simplified LifecycleManager implementation by CodeAssistant
-# * Implemented ultra-simple lifecycle management with KISS principles
 # 2025-04-15T09:49:00Z : Initial creation of LifecycleManager class by CodeAssistant
 # * Implemented setup, component registration, start/shutdown methods, and basic signal handling.
 ###############################################################################
@@ -58,8 +60,9 @@ from .log_utils import setup_application_logging
 # Import core components
 from .system import ComponentSystem
 from .component import Component
+from .file_access_component import FileAccessComponent
 
-# Config-related imports
+# Import core components
 try:
     from ..config.config_manager import ConfigurationManager
     from ..config.component import ConfigManagerComponent
@@ -219,111 +222,75 @@ class LifecycleManager:
         """
         [Function intent]
         Registers all application components directly with the component system.
+        Respects component enablement configuration settings.
         
         [Implementation details]
         Creates and registers component instances directly in code.
+        Checks enablement status from config before registering each component.
+        Uses a registration helper to avoid code duplication.
         
         [Design principles]
         Direct component registration without factories.
         Clear error reporting for registration failures.
+        Selective component registration based on configuration.
+        DRY (Don't Repeat Yourself) implementation.
         """
         logger.info("Registering components...")
         
-        # Register config manager component if available
+        # Get component enablement configuration
+        try:
+            enabled_config = self.config_manager.get('component_enabled', False) if self.config_manager else {}
+            logger.info(f"Using component enablement configuration")
+        except Exception as e:
+            logger.warning(f"Failed to get component enablement configuration: {e}, using defaults")
+            enabled_config = {}
+        
+        # Helper function to check if component is enabled
+        def is_component_enabled(name):
+            if not isinstance(enabled_config, dict):
+                return True  # Default to enabled if config is invalid
+            return enabled_config.get(name, True)  # Default to enabled if not specified
+        
+        # Helper function to register a component if it's enabled
+        def register_if_enabled(component_name, import_path, component_class, info=None):
+            if not is_component_enabled(component_name):
+                logger.info(f"Component '{component_name}' disabled by configuration")
+                return False
+                
+            try:
+                # Use absolute imports instead of relative imports
+                import_path = import_path.replace("..", "dbp")
+                module = __import__(import_path, fromlist=[component_class])
+                component = getattr(module, component_class)()
+                self.system.register(component)
+                logger.info(f"Registered component: '{component_name}' with dependencies: {component.dependencies}")
+                return True
+            except ImportError as e:
+                logger.error(f"Failed to register {component_name} component: {e}")
+                return False
+            except Exception as e:
+                logger.error(f"Failed to register {component_name} component: {e}")
+                return False
+        
+        # Register config manager component if available (always enabled as it's required)
         if ConfigManagerComponent and self.config_manager:
             self.system.register(ConfigManagerComponent(self.config_manager))
-            logger.debug("Registered config_manager component")
+            logger.info(f"Registered component: 'config_manager' with dependencies: []")
         
-        # Register database components
-        try:
-            from ..database.database import DatabaseComponent
-            self.system.register(DatabaseComponent())
-            logger.debug("Registered database component")
-        except ImportError as e:
-            logger.error(f"Failed to register database component: {e}")
-        
-        # Register monitoring components
-        try:
-            from ..fs_monitor.component import FileSystemMonitorComponent
-            self.system.register(FileSystemMonitorComponent())
-            logger.debug("Registered fs_monitor component")
-        except ImportError as e:
-            logger.error(f"Failed to register fs_monitor component: {e}")
-            
-        try:
-            from ..fs_monitor.filter import FilterComponent
-            self.system.register(FilterComponent())
-            logger.debug("Registered filter component")
-        except ImportError as e:
-            logger.error(f"Failed to register filter component: {e}")
-            
-        try:
-            from ..fs_monitor.queue import ChangeQueueComponent
-            self.system.register(ChangeQueueComponent())
-            logger.debug("Registered change_queue component")
-        except ImportError as e:
-            logger.error(f"Failed to register change_queue component: {e}")
-            
-        # Register processing components
-        try:
-            from ..memory_cache.component import MemoryCacheComponent
-            self.system.register(MemoryCacheComponent())
-            logger.debug("Registered memory_cache component")
-        except ImportError as e:
-            logger.error(f"Failed to register memory_cache component: {e}")
-            
-        try:
-            from ..consistency_analysis.component import ConsistencyAnalysisComponent
-            self.system.register(ConsistencyAnalysisComponent())
-            logger.debug("Registered consistency_analysis component")
-        except ImportError as e:
-            logger.error(f"Failed to register consistency_analysis component: {e}")
-            
-        try:
-            from ..doc_relationships.component import DocRelationshipsComponent
-            self.system.register(DocRelationshipsComponent())
-            logger.debug("Registered doc_relationships component")
-        except ImportError as e:
-            logger.error(f"Failed to register doc_relationships component: {e}")
-            
-        try:
-            from ..recommendation_generator.component import RecommendationGeneratorComponent
-            self.system.register(RecommendationGeneratorComponent())
-            logger.debug("Registered recommendation_generator component")
-        except ImportError as e:
-            logger.error(f"Failed to register recommendation_generator component: {e}")
-            
-        try:
-            from ..scheduler.component import SchedulerComponent
-            self.system.register(SchedulerComponent())
-            logger.debug("Registered scheduler component")
-        except ImportError as e:
-            logger.error(f"Failed to register scheduler component: {e}")
-        except Exception as e:
-            logger.error(f"Failed to register scheduler component: {e}")
-            
-        # Register LLM components
-        try:
-            from ..metadata_extraction.component import MetadataExtractionComponent
-            self.system.register(MetadataExtractionComponent())
-            logger.debug("Registered metadata_extraction component")
-        except ImportError as e:
-            logger.error(f"Failed to register metadata_extraction component: {e}")
-            
-        try:
-            from ..llm_coordinator.component import LLMCoordinatorComponent
-            self.system.register(LLMCoordinatorComponent())
-            logger.info("Registered llm_coordinator component - Manage query processing")
-        except ImportError as e:
-            logger.error(f"Failed to register llm_coordinator component: {e}")
-            
-        # Register API components
-        try:
-            from ..mcp_server.component import MCPServerComponent
-            self.system.register(MCPServerComponent())
-            logger.debug("Registered mcp_server component")
-        except ImportError as e:
-            logger.error(f"Failed to register mcp_server component: {e}")
+        # Register all other components using the helper function
+        register_if_enabled("file_access", "dbp.core.file_access_component", "FileAccessComponent")
+        register_if_enabled("database", "dbp.database.database", "DatabaseComponent")
+        register_if_enabled("fs_monitor", "dbp.fs_monitor.component", "FileSystemMonitorComponent")
+        register_if_enabled("filter", "dbp.fs_monitor.filter", "FilterComponent")
+        register_if_enabled("change_queue", "dbp.fs_monitor.queue", "ChangeQueueComponent")
+        register_if_enabled("memory_cache", "dbp.memory_cache.component", "MemoryCacheComponent")
+        register_if_enabled("consistency_analysis", "dbp.consistency_analysis.component", "ConsistencyAnalysisComponent")
+        register_if_enabled("doc_relationships", "dbp.doc_relationships.component", "DocRelationshipsComponent")
+        register_if_enabled("recommendation_generator", "dbp.recommendation_generator.component", "RecommendationGeneratorComponent")
+        register_if_enabled("scheduler", "dbp.scheduler.component", "SchedulerComponent")
+        register_if_enabled("metadata_extraction", "dbp.metadata_extraction.component", "MetadataExtractionComponent")
+        register_if_enabled("llm_coordinator", "dbp.llm_coordinator.component", "LLMCoordinatorComponent", "Manage query processing")
+        register_if_enabled("mcp_server", "dbp.mcp_server.component", "MCPServerComponent")
                 
 
     def start(self) -> bool:

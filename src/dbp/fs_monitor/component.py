@@ -283,8 +283,40 @@ class FileSystemMonitorComponent(Component):
             return False
             
         try:
-            self._change_queue.register_listener(listener)
-            return True
+            # Check if change_queue has register_listener method, add it if not
+            if not hasattr(self._change_queue, 'register_listener'):
+                self.logger.info("Adding listener support to change queue")
+                # The queue doesn't have a register_listener method, so we need to add it directly
+                if not hasattr(self._change_queue, '_listeners'):
+                    self._change_queue._listeners = []
+                
+                # Add the listener directly to the queue's internal list
+                self._change_queue._listeners.append(listener)
+                
+                # Monkey patch the add_change method if needed to notify listeners
+                if not hasattr(self._change_queue, '_original_add_change'):
+                    self._change_queue._original_add_change = self._change_queue.add_event
+                    
+                    def enhanced_add_event(event):
+                        # Call the original method first
+                        self._change_queue._original_add_change(event)
+                        # Then notify all listeners
+                        for l in self._change_queue._listeners:
+                            try:
+                                l(event)
+                            except Exception as e:
+                                self.logger.error(f"Error notifying listener about change: {e}")
+                    
+                    # Replace the method
+                    self._change_queue.add_event = enhanced_add_event
+                
+                self.logger.info("Successfully added listener support to change queue")
+                return True
+            else:
+                # The queue has a register_listener method, use it
+                self._change_queue.register_listener(listener)
+                return True
+                
         except Exception as e:
             self.logger.error(f"Failed to register change listener: {e}")
             return False

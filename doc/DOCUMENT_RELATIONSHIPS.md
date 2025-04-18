@@ -162,6 +162,10 @@ This graph structure helps the system determine the correct order for propagatin
 - Impacts: [src/dbp/config/default_config.py] - Topic: Configuration Key Reorganization - Scope: Configuration structure
 - Impacts: [src/dbp/core/log_utils.py] - Topic: Standardized Log Format - Scope: Logging implementation
 - Impacts: [src/dbp/core/lifecycle.py] - Topic: Standardized Log Format - Scope: Application logging setup
+- Impacts: [src/dbp/core/lifecycle.py] - Topic: Component Enablement System - Scope: Component registration logic
+- Impacts: [src/dbp/config/config_schema.py] - Topic: Component Enablement System - Scope: Configuration schema
+- Impacts: [src/dbp/config/default_config.py] - Topic: Component Enablement System - Scope: Default component enablement
+- Impacts: [CONFIGURATION.md] - Topic: Component Enablement System - Scope: Selective component loading
 
 ## DESIGN.md
 - Depends on: None

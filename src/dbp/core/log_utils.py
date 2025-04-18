@@ -33,6 +33,10 @@
 # - doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-18T13:54:00Z : Fixed log level name truncation by CodeAssistant
+# * Added width specifier to level name format to prevent truncation 
+# * Changed '%(levelname)s' to '%(levelname)-8s' to ensure complete level names display
+# * Updated formatter in both setup_application_logging and configure_logger for consistency
 # 2025-04-17T17:35:32Z : Enhanced root logger configuration for consistent format by CodeAssistant
 # * Added explicit root logger configuration with basicConfig
 # * Added handler cleanup to prevent inconsistent formats
@@ -44,9 +48,6 @@
 # 2025-04-17T17:09:30Z : Enhanced MillisecondFormatter to remove duplicate level prefixes by CodeAssistant
 # * Added format method override to strip redundant "Error:" prefixes from messages
 # * Added support for all log levels and case variants in prefix detection
-# 2025-04-17T16:56:00Z : Initial creation by CodeAssistant
-# * Created centralized logging utilities
-# * Implemented MillisecondFormatter for consistent timestamp display
 ###############################################################################
 
 import logging

@@ -121,9 +121,9 @@ class DocRelationshipsComponent(Component):
     def dependencies(self) -> List[str]:
         """Returns the list of component names this component depends on."""
         # Depends on database for persistence.
-        # Analyzer might need metadata_extraction if analyzing code comments for refs.
-        # Plan shows dependency on metadata_extraction for analyzer.
-        return ["database", "metadata_extraction"]
+        # File access for reading document contents
+        # Metadata extraction for additional document information
+        return ["database", "metadata_extraction", "file_access"]
 
     def initialize(self, context: InitializationContext):
         """
@@ -146,6 +146,7 @@ class DocRelationshipsComponent(Component):
             # Get dependent components
             db_component = context.get_component("database")
             metadata_component = context.get_component("metadata_extraction") # Needed for analyzer
+            file_access_component = context.get_component("file_access") # For file access service
 
             # Get database manager using the method instead of accessing attribute
             db_manager = db_component.get_manager()
@@ -153,13 +154,12 @@ class DocRelationshipsComponent(Component):
             # Instantiate sub-components
             self._repository = RelationshipRepository(db_manager=db_manager, logger_override=self.logger.getChild("repository"))
             self._graph = RelationshipGraph(logger_override=self.logger.getChild("graph"))
-            # Analyzer needs a way to access file content - assuming metadata component provides this or uses FileAccessService
-            # For now, passing metadata_component, assuming analyzer knows how to use it.
-            # TODO: Refine how analyzer gets file content if needed.
-            file_access_service = getattr(metadata_component, 'file_access_service', None) # Example: try to get it
+            
+            # Get file access service from the dedicated component
+            file_access_service = file_access_component.service if hasattr(file_access_component, 'service') else None
             if file_access_service is None:
-                 self.logger.warning("Could not get FileAccessService from metadata_component for RelationshipAnalyzer. Analysis might be limited.")
-                 # Create a dummy one? Or let analyzer handle it? Let analyzer handle potential None.
+                 self.logger.warning("Could not get FileAccessService from file_access_component. Analysis might be limited.")
+
             self._analyzer = RelationshipAnalyzer(file_access_service=file_access_service, logger_override=self.logger.getChild("analyzer"))
             self._impact_analyzer = ImpactAnalyzer(relationship_graph=self._graph, logger_override=self.logger.getChild("impact"))
             self._change_detector = ChangeDetector(impact_analyzer=self._impact_analyzer, logger_override=self.logger.getChild("change"))

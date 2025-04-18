@@ -2,6 +2,13 @@
 
 This file tracks all changes made to documentation markdown files in this directory.
 
+2025-04-18T16:55:11Z : [DESIGN_DECISIONS.md] Removed integrated design decisions after merging into core documentation
+2025-04-18T16:51:23Z : [DESIGN.md] Added Component Enablement System to Component Initialization section
+2025-04-18T16:48:47Z : [DESIGN.md] Added Strict Configuration Access to Implementation Principles
+2025-04-18T16:46:41Z : [DESIGN.md] Added Standardized Logging Format to Implementation Principles
+2025-04-18T16:44:57Z : [CONFIGURATION.md] Added Path Resolution section for Git root-relative path resolution
+2025-04-18T16:41:44Z : [DATA_MODEL.md] Enhanced Database Migration Strategy section with additional Alembic details
+2025-04-18T16:30:54Z : [DESIGN_DECISIONS.md] Added Component Enablement System for Selective Component Loading
 2025-04-18T10:59:00Z : [DATA_MODEL.md] Updated database implementation section to reflect separation of Alembic migration functionality
 2025-04-18T10:36:30Z : [CONFIGURATION.md] Added documentation for database.verbose_migrations configuration option
 2025-04-17T18:58:46Z : [CONFIGURATION.md] Removed duplicate AppConfig definitions in config schema

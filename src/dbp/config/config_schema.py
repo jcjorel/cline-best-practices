@@ -466,6 +466,23 @@ class CLIConfig(BaseModel):
             logger.error(f"Could not expand cache directory path '{v}': {e}")
             return os.path.expanduser("~/.dbp/cli_cache_fallback")
 
+class ComponentEnabledConfig(BaseModel):
+    """Configuration for enabling/disabling individual components."""
+    config_manager: bool = Field(default=True, description="Enable configuration manager component")
+    file_access: bool = Field(default=True, description="Enable file access component")
+    database: bool = Field(default=True, description="Enable database component")
+    fs_monitor: bool = Field(default=True, description="Enable file system monitor component")
+    filter: bool = Field(default=True, description="Enable file filter component")
+    change_queue: bool = Field(default=True, description="Enable change queue component")
+    memory_cache: bool = Field(default=True, description="Enable memory cache component")
+    consistency_analysis: bool = Field(default=True, description="Enable consistency analysis component")
+    doc_relationships: bool = Field(default=True, description="Enable document relationships component")
+    recommendation_generator: bool = Field(default=True, description="Enable recommendation generator component")
+    scheduler: bool = Field(default=True, description="Enable scheduler component")
+    metadata_extraction: bool = Field(default=True, description="Enable metadata extraction component")
+    llm_coordinator: bool = Field(default=True, description="Enable LLM coordinator component (required for MCP server LLM functions)")
+    mcp_server: bool = Field(default=True, description="Enable MCP server component")
+
 class AppConfig(BaseModel):
     """Root configuration model for the DBP application."""
     general: GeneralConfig = Field(default_factory=GeneralConfig, description="General application settings")
@@ -488,6 +505,7 @@ class AppConfig(BaseModel):
     mcp_server: MCPServerConfig = Field(default_factory=MCPServerConfig, description="MCP Server Integration settings")
     cli: CLIConfig = Field(default_factory=CLIConfig, description="CLI-specific settings")
     aws: AWSConfig = Field(default_factory=AWSConfig, description="AWS service configuration settings")
+    component_enabled: ComponentEnabledConfig = Field(default_factory=ComponentEnabledConfig, description="Component enablement settings")
 
 
     class Config:
