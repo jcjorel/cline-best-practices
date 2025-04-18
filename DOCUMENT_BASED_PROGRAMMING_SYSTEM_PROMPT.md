@@ -419,3 +419,5 @@ When accessing any documentation:
 - Always provide concrete, executable code examples rather than abstract suggestions or pseudo-code
 - When presenting code snippets exceeding 50 lines, include only the most relevant sections with clear indication of omitted parts
 - Document design decisions only when the user explicitly requests this documentation
+- **ALWAYS USE THE SAME SPOKEN LANGUAGE AS THE USER**
+   
