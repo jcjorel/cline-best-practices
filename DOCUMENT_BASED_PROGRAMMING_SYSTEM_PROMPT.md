@@ -141,7 +141,7 @@ For complex changes:
 
 ### Error Handling Strategy
 You know that safe coding is to not bury issues with workarounds and fallbacks. You will prefer to find issue root cause immediatly by crashing
-the software instead of fallbacking to a degraded mode difficult to debug.
+the software (defensive programming) instead of fallbacking to a degraded mode difficult to debug.
 - Implement "throw on error" behavior for ALL error conditions without exception
 - Do not silently catch errors - always include both error logging and error re-throwing
 - Never return null, undefined, or empty objects as a response to error conditions
