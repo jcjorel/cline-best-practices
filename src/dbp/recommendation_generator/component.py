@@ -131,10 +131,20 @@ class RecommendationGeneratorComponent(Component):
 
     def initialize(self, context: InitializationContext):
         """
+        [Function intent]
         Initializes the Recommendation Generator component and its sub-components.
-
+        
+        [Implementation details]
+        Uses the strongly-typed configuration for component setup.
+        Creates internal sub-components and registers recommendation strategies.
+        Sets the _initialized flag when initialization succeeds.
+        
+        [Design principles]
+        Explicit initialization with strong typing.
+        Type-safe configuration access.
+        
         Args:
-            context: The initialization context.
+            context: Initialization context with typed configuration and resources
         """
         if self._initialized:
             logger.warning(f"Component '{self.name}' already initialized.")
@@ -144,18 +154,17 @@ class RecommendationGeneratorComponent(Component):
         self.logger.info(f"Initializing component '{self.name}'...")
 
         try:
-            # Get component-specific configuration
-            component_config = context.config.get(self.name, {})
+            # Get strongly-typed configuration
+            config = context.get_typed_config()
+            component_config = getattr(config, self.name)
 
             # Get dependent components
             db_component = context.get_component("database")
             self.consistency_component = context.get_component("consistency_analysis") # Keep ref if needed
             self.llm_component = context.get_component("llm_coordinator") # Keep ref
 
-            # Ensure db_component provides DatabaseManager access
-            if not hasattr(db_component, 'db_manager') or not isinstance(db_component.db_manager, DatabaseManager):
-                 raise TypeError("Database component does not expose a valid 'db_manager' attribute.")
-            db_manager = db_component.db_manager
+            # Get database manager using the method instead of accessing attribute
+            db_manager = db_component.get_manager()
 
             # Instantiate sub-components
             self._repository = RecommendationRepository(db_manager=db_manager, logger_override=self.logger.getChild("repository"))

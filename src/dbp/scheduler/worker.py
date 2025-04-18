@@ -48,6 +48,7 @@
 
 import logging
 import threading
+from threading import RLock
 import time
 import os
 import queue # Using standard library queue for worker availability tracking
@@ -138,7 +139,7 @@ class WorkerThread(threading.Thread):
                     continue # Timeout, loop again
 
                 # Get a batch of changes to process
-                batch_size = int(self.config.get('scheduler.batch_size', 1)) # Get batch size from config
+                batch_size = int(self.config.batch_size) # Access property directly, will throw if not defined
                 changes = self.change_queue.get_next_batch(batch_size)
 
                 if not changes:
@@ -294,7 +295,7 @@ class WorkerThreadPool:
                 self.logger.warning("WorkerThreadPool is already active.")
                 return
 
-            num_workers = int(self.config.get('scheduler.worker_threads', 1))
+            num_workers = int(self.config.worker_threads)
             self.logger.info(f"Starting WorkerThreadPool with {num_workers} worker threads...")
             self._workers = [] # Clear any previous workers
 

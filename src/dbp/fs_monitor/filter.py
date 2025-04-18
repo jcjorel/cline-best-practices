@@ -53,7 +53,7 @@ from typing import List, Set, Dict, Any, Optional, Tuple
 import fnmatch
 from pathlib import Path
 import threading
-from ..core.component import Component
+from ..core.component import Component, InitializationContext
 
 logger = logging.getLogger(__name__)
 
@@ -128,7 +128,7 @@ class GitIgnoreFilter:
 
     def _add_config_patterns(self):
         """Adds ignore patterns specified in the configuration."""
-        patterns = self.config.get('fs_monitor.ignore_patterns', [])
+        patterns = self.config.fs_monitor.ignore_patterns if hasattr(self.config, 'fs_monitor') and hasattr(self.config.fs_monitor, 'ignore_patterns') else []
         logger.debug(f"Adding {len(patterns)} patterns from configuration.")
         base = self.project_root if self.project_root else Path('.')
         for pattern in patterns:
@@ -374,19 +374,20 @@ class FilterComponent(Component):
         """
         return ["config_manager"]
     
-    def initialize(self, config: Any) -> None:
+    def initialize(self, context: InitializationContext) -> None:
         """
         [Function intent]
         Initializes the filter with the provided configuration.
         
         [Implementation details]
-        Creates a GitIgnoreFilter instance and initializes it with the project root path.
+        Creates a GitIgnoreFilter instance using typed configuration and initializes it with the project root path.
         
         [Design principles]
         Explicit initialization with clear success/failure indication.
+        Type-safe configuration access.
         
         Args:
-            config: Configuration object with filter settings
+            context: Initialization context with typed configuration and resources
             
         Raises:
             RuntimeError: If initialization fails
@@ -399,16 +400,14 @@ class FilterComponent(Component):
         self.logger.info(f"Initializing component '{self.name}'...")
         
         try:
-            # Get component-specific configuration through config_manager
-            from ..core.system import ComponentSystem
-            system = ComponentSystem.get_instance()
-            config_manager = system.get_component("config_manager")
+            # Get strongly-typed configuration
+            config = context.get_typed_config()
             
-            # Get project root from configuration
-            self.project_root = config_manager.get('project.root_path')
+            # Get project root from typed configuration
+            self.project_root = config.project.root_path
             
             # Create and initialize the filter
-            self._filter = GitIgnoreFilter(config_manager, self.project_root)
+            self._filter = GitIgnoreFilter(config, self.project_root)
             
             self._initialized = True
             self.logger.info(f"Component '{self.name}' initialized successfully.")

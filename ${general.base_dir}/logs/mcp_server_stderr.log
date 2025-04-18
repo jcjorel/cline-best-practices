@@ -1,0 +1,787 @@
+
+
+--- SERVER START ATTEMPT AT 2025-04-18 07:43:35 ---
+
+2025-04-18 07:43:36,124 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-18 07:43:36,124 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-18 07:43:36,124 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-18 07:43:36,124 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-18 07:43:36,124 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-18 07:43:36,124 - root - DEBUG - Application logging initialized at level DEBUG with consistent formatting
+2025-04-18 07:43:36,124 - dbp.core.lifecycle - DEBUG - Logging initialized at level DEBUG with consistent formatting
+2025-04-18 07:43:36,124 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-18 07:43:36,125 - dbp.config.config_manager - DEBUG - ConfigurationManager singleton instance created.
+2025-04-18 07:43:36,125 - dbp.config.config_manager - INFO - Initializing configuration...
+2025-04-18 07:43:36,125 - dbp.config.config_manager - DEBUG - Loading standard configuration files...
+2025-04-18 07:43:36,125 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /etc/dbp/config.json
+2025-04-18 07:43:36,125 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /etc/dbp/config.yaml
+2025-04-18 07:43:36,125 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /etc/dbp/config.yml
+2025-04-18 07:43:36,125 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /home/jcjorel/.config/dbp/config.json
+2025-04-18 07:43:36,125 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /home/jcjorel/.config/dbp/config.yaml
+2025-04-18 07:43:36,125 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /home/jcjorel/.config/dbp/config.yml
+2025-04-18 07:43:36,125 - dbp.config.config_manager - DEBUG - Loading configuration from environment variables...
+2025-04-18 07:43:36,125 - dbp.config.config_manager - DEBUG - Loaded 1 configuration values from environment variables.
+2025-04-18 07:43:36,125 - dbp.config.config_manager - DEBUG - Loading configuration from command-line arguments...
+2025-04-18 07:43:36,125 - dbp.config.config_manager - DEBUG - Loaded 6 configuration values from command-line arguments.
+2025-04-18 07:43:36,125 - dbp.config.config_manager - DEBUG - Applying configuration hierarchy...
+2025-04-18 07:43:36,126 - dbp.config.config_manager - DEBUG - Applying config from environment variables...
+2025-04-18 07:43:36,126 - dbp.config.config_manager - WARNING - Couldn't navigate to 'log' in path 'log.level'
+2025-04-18 07:43:36,126 - dbp.config.config_manager - DEBUG - Applying config from command-line arguments...
+2025-04-18 07:43:36,126 - dbp.config.config_manager - WARNING - Couldn't navigate to 'mcp-server' in path 'mcp-server.host'
+2025-04-18 07:43:36,126 - dbp.config.config_manager - WARNING - Couldn't navigate to 'mcp-server' in path 'mcp-server.port'
+2025-04-18 07:43:36,126 - dbp.config.config_manager - WARNING - Couldn't navigate to 'mcp-server' in path 'mcp-server.server-name'
+2025-04-18 07:43:36,126 - dbp.config.config_manager - WARNING - Couldn't navigate to 'mcp-server' in path 'mcp-server.server-description'
+2025-04-18 07:43:36,126 - dbp.config.config_manager - WARNING - Couldn't navigate to 'mcp-server' in path 'mcp-server.server-version'
+2025-04-18 07:43:36,126 - dbp.config.config_manager - WARNING - Couldn't navigate to 'mcp-server' in path 'mcp-server.auth-enabled'
+2025-04-18 07:43:36,126 - dbp.config.config_manager - DEBUG - Resolving all template variables in configuration...
+2025-04-18 07:43:36,126 - dbp.config.config_manager - DEBUG - Resolved template in history.file: ${general.base_dir}/cli_history → .dbp/cli_history
+2025-04-18 07:43:36,126 - dbp.config.config_manager - DEBUG - Resolved template in database.path: ${general.base_dir}/database.sqlite → .dbp/database.sqlite
+2025-04-18 07:43:36,126 - dbp.config.config_manager - DEBUG - Resolved template in mcp_server.logs_dir: ${general.base_dir}/logs → .dbp/logs
+2025-04-18 07:43:36,127 - dbp.config.config_manager - DEBUG - Resolved template in mcp_server.pid_file: ${general.base_dir}/mcp_server.pid → .dbp/mcp_server.pid
+2025-04-18 07:43:36,127 - dbp.config.config_manager - DEBUG - Resolved template in mcp_server.cli_config_file: ${general.base_dir}/cli_config.json → .dbp/cli_config.json
+2025-04-18 07:43:36,127 - dbp.config.config_manager - DEBUG - Configuration validated successfully with all template variables resolved.
+2025-04-18 07:43:36,127 - dbp.config.config_manager - INFO - Configuration initialized successfully.
+2025-04-18 07:43:36,127 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-18 07:43:36,127 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-18 07:43:36,127 - dbp.core.lifecycle - DEBUG - Registered config_manager component
+2025-04-18 07:43:36,127 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-18 07:43:36,127 - dbp.core.lifecycle - DEBUG - Registered database component
+2025-04-18 07:43:36,134 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-18 07:43:36,137 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-18 07:43:36,137 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-18 07:43:36,137 - dbp.core.lifecycle - DEBUG - Registered fs_monitor component
+2025-04-18 07:43:36,137 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-18 07:43:36,137 - dbp.core.lifecycle - DEBUG - Registered filter component
+2025-04-18 07:43:36,137 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-18 07:43:36,137 - dbp.core.lifecycle - DEBUG - Registered change_queue component
+2025-04-18 07:43:36,137 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-18 07:43:36,137 - dbp.core.lifecycle - DEBUG - Registered memory_cache component
+2025-04-18 07:43:36,137 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-18 07:43:36,137 - dbp.core.lifecycle - DEBUG - Registered consistency_analysis component
+2025-04-18 07:43:36,137 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-18 07:43:36,138 - dbp.core.lifecycle - DEBUG - Registered doc_relationships component
+2025-04-18 07:43:36,138 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-18 07:43:36,138 - dbp.core.lifecycle - DEBUG - Registered recommendation_generator component
+2025-04-18 07:43:36,139 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-18 07:43:36,139 - dbp.core.lifecycle - DEBUG - Registered scheduler component
+2025-04-18 07:43:36,139 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-18 07:43:36,139 - dbp.core.lifecycle - DEBUG - Registered metadata_extraction component
+2025-04-18 07:43:36,139 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-18 07:43:36,139 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - Manage query processing
+2025-04-18 07:43:36,140 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-18 07:43:36,140 - dbp.core.lifecycle - DEBUG - Registered mcp_server component
+2025-04-18 07:43:36,140 - dbp.core.lifecycle - DEBUG - Registered handler for signal 2
+2025-04-18 07:43:36,140 - dbp.core.lifecycle - DEBUG - Registered handler for signal 15
+2025-04-18 07:43:36,140 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-18 07:43:36,140 - dbp.core.lifecycle - INFO - Initializing 13 components
+2025-04-18 07:43:36,140 - dbp.core.lifecycle - DEBUG - Validating dependencies. Registered components: {'database', 'metadata_extraction', 'doc_relationships', 'filter', 'config_manager', 'change_queue', 'fs_monitor', 'mcp_server', 'memory_cache', 'consistency_analysis', 'recommendation_generator', 'llm_coordinator', 'scheduler'}
+2025-04-18 07:43:36,140 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-18 07:43:36,140 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, database, metadata_extraction, doc_relationships, filter, change_queue, fs_monitor, memory_cache, consistency_analysis, llm_coordinator, recommendation_generator, mcp_server, scheduler
+2025-04-18 07:43:36,140 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-18 07:43:36,140 - dbp.core.lifecycle - DEBUG - Component 'config_manager' class: ConfigManagerComponent
+2025-04-18 07:43:36,140 - dbp.core.lifecycle - DEBUG - Component 'config_manager' dependencies: []
+2025-04-18 07:43:36,140 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-18 07:43:36,140 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-18 07:43:36,140 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-18 07:43:36,171 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-18 07:43:36,171 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-18 07:43:36,171 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-18 07:43:36,171 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-18 07:43:36,171 - dbp.core.lifecycle - INFO - Initializing component 'database'...
+2025-04-18 07:43:36,171 - dbp.core.lifecycle - DEBUG - Component 'database' class: DatabaseComponent
+2025-04-18 07:43:36,172 - dbp.core.lifecycle - DEBUG - Component 'database' dependencies: ['config_manager']
+2025-04-18 07:43:36,172 - dbp.core.lifecycle - INFO - Initializing component 'database' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-18 07:43:36,172 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-18 07:43:36,172 - dbp.database - INFO - Initializing component 'database'...
+2025-04-18 07:43:36,172 - dbp.database.database - DEBUG - DatabaseManager instantiated.
+2025-04-18 07:43:36,172 - dbp.database.database - INFO - Initializing database with type: sqlite
+2025-04-18 07:43:36,172 - dbp.database.database - DEBUG - Database configuration: {'database.type': 'sqlite', 'database.path': '.dbp/database.sqlite', 'database.max_connections': 4, 'database.connection_timeout': 5, 'database.use_wal_mode': True, 'database.vacuum_threshold': 20, 'database.echo_sql': False, 'database.connection_string': None}
+2025-04-18 07:43:36,172 - dbp.database.database - INFO - Initializing SQLite database at: .dbp/database.sqlite
+2025-04-18 07:43:36,172 - dbp.database.database - INFO - SQLite configuration: pool_size=4, timeout=5
+2025-04-18 07:43:36,172 - dbp.database.database - INFO - SQLite path: absolute=/home/jcjorel/cline-best-practices/.dbp/database.sqlite, normalized=.dbp/database.sqlite
+2025-04-18 07:43:36,180 - dbp.database.database - DEBUG - SQLAlchemy engine created for SQLite with pool size 4.
+2025-04-18 07:43:36,180 - dbp.database.database - INFO - Enabling SQLite WAL mode...
+2025-04-18 07:43:36,182 - dbp.database.database - INFO - SQLite WAL mode enabled. Current journal mode: wal
+2025-04-18 07:43:36,182 - dbp.database.database - DEBUG - Scoped session factory created.
+2025-04-18 07:43:36,182 - dbp.database.database - INFO - Running Alembic migrations to initialize/update the database schema...
+2025-04-18 07:43:36,183 - dbp.database.database - DEBUG - Importing Alembic modules...
+2025-04-18 07:43:36,268 - dbp.database.database - DEBUG - Alembic modules imported successfully
+2025-04-18 07:43:36,268 - dbp.database.database - DEBUG - Getting ComponentSystem instance...
+2025-04-18 07:43:36,268 - dbp.database.database - DEBUG - Getting config_manager component...
+2025-04-18 07:43:36,268 - dbp.database.database - DEBUG - Config manager retrieved successfully
+2025-04-18 07:43:36,268 - dbp.database.database - DEBUG - Using alembic.ini path: alembic.ini
+2025-04-18 07:43:36,268 - dbp.database.database - DEBUG - Using module-specific Alembic directory: /home/jcjorel/cline-best-practices/src/dbp/database/alembic
+2025-04-18 07:43:36,268 - dbp.database.database - DEBUG - Loading Alembic configuration from: alembic.ini
+2025-04-18 07:43:36,268 - dbp.config.config_manager - ERROR - Configuration key 'database.url' not found. 'database' exists but has no attribute 'url'.
+2025-04-18 07:43:36,269 - dbp.database.database - WARNING - Failed to get database.url from config_manager: Configuration key 'database.url' not found. 'database' exists but has no attribute 'url'.
+2025-04-18 07:43:36,269 - dbp.database.database - DEBUG - Using engine URL: sqlite:///.dbp/database.sqlite
+2025-04-18 07:43:36,269 - dbp.database.database - DEBUG - Setting Alembic script_location to module-specific alembic directory
+2025-04-18 07:43:36,269 - dbp.database.database - DEBUG - Alembic configuration:
+2025-04-18 07:43:36,269 - dbp.database.database - DEBUG -   Main section: alembic
+2025-04-18 07:43:36,269 - dbp.database.database - DEBUG -     here = /home/jcjorel/cline-best-practices
+2025-04-18 07:43:36,269 - dbp.database.database - DEBUG -     script_location = /home/jcjorel/cline-best-practices/src/dbp/database/alembic
+2025-04-18 07:43:36,270 - dbp.database.database - DEBUG -     file_template = %(year)d%(month).2d%(day).2d_%(hour).2d%(minute).2d%(second).2d_%(slug)s
+2025-04-18 07:43:36,270 - dbp.database.database - DEBUG -     prepend_sys_path = .
+2025-04-18 07:43:36,270 - dbp.database.database - DEBUG -     version_path_separator = os  # Use os.pathsep. Default configuration used for new projects.
+2025-04-18 07:43:36,270 - dbp.database.database - DEBUG -     sqlalchemy.url = sqlite:///.dbp/database.sqlite
+2025-04-18 07:43:36,270 - dbp.database.database - INFO - Running database migrations...
+2025-04-18 07:43:36,270 - dbp.database.database - DEBUG - Session 140178001007232 acquired from scoped session factory.
+2025-04-18 07:43:36,270 - dbp.database.database - DEBUG - Testing database connection...
+2025-04-18 07:43:36,270 - dbp.database.database - DEBUG - Database connection successful
+2025-04-18 07:43:36,270 - dbp.database.database - DEBUG - Session 140178001007232 committed.
+2025-04-18 07:43:36,271 - dbp.database.database - DEBUG - Session 140178001007232 closed.
+2025-04-18 07:43:36,271 - dbp.database.database - INFO - Upgrading database schema to latest version...
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+WARNI [dbp.core.lifecycle.doc_relationships] Could not get FileAccessService from metadata_component for RelationshipAnalyzer. Analysis might be limited.
+ERROR [dbp.core.lifecycle.doc_relationships.repository] Error getting all relationships: (sqlite3.OperationalError) no such table: doc_relationships
+[SQL: SELECT doc_relationships.id AS doc_relationships_id, doc_relationships.source_document AS doc_relationships_source_document, doc_relationships.target_document AS doc_relationships_target_document, doc_relationships.relationship_type AS doc_relationships_relationship_type, doc_relationships.topic AS doc_relationships_topic, doc_relationships.scope AS doc_relationships_scope, doc_relationships.meta_data AS doc_relationships_meta_data, doc_relationships.created_at AS doc_relationships_created_at, doc_relationships.updated_at AS doc_relationships_updated_at 
+FROM doc_relationships]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 945, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such table: doc_relationships
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/doc_relationships/repository.py", line 228, in get_all_relationships
+    all_orms = session.query(DocRelationshipORM).all()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2858, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2365, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2251, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1416, in execute
+    return meth(
+           ^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 523, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1638, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1843, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1983, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2352, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 945, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such table: doc_relationships
+[SQL: SELECT doc_relationships.id AS doc_relationships_id, doc_relationships.source_document AS doc_relationships_source_document, doc_relationships.target_document AS doc_relationships_target_document, doc_relationships.relationship_type AS doc_relationships_relationship_type, doc_relationships.topic AS doc_relationships_topic, doc_relationships.scope AS doc_relationships_scope, doc_relationships.meta_data AS doc_relationships_meta_data, doc_relationships.created_at AS doc_relationships_created_at, doc_relationships.updated_at AS doc_relationships_updated_at 
+FROM doc_relationships]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+ERROR [dbp.core.lifecycle.doc_relationships] Failed to load relationships from repository: Error getting all relationships: (sqlite3.OperationalError) no such table: doc_relationships
+[SQL: SELECT doc_relationships.id AS doc_relationships_id, doc_relationships.source_document AS doc_relationships_source_document, doc_relationships.target_document AS doc_relationships_target_document, doc_relationships.relationship_type AS doc_relationships_relationship_type, doc_relationships.topic AS doc_relationships_topic, doc_relationships.scope AS doc_relationships_scope, doc_relationships.meta_data AS doc_relationships_meta_data, doc_relationships.created_at AS doc_relationships_created_at, doc_relationships.updated_at AS doc_relationships_updated_at 
+FROM doc_relationships]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 945, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such table: doc_relationships
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/doc_relationships/repository.py", line 228, in get_all_relationships
+    all_orms = session.query(DocRelationshipORM).all()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2858, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2365, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2251, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1416, in execute
+    return meth(
+           ^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 523, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1638, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1843, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1983, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2352, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 945, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such table: doc_relationships
+[SQL: SELECT doc_relationships.id AS doc_relationships_id, doc_relationships.source_document AS doc_relationships_source_document, doc_relationships.target_document AS doc_relationships_target_document, doc_relationships.relationship_type AS doc_relationships_relationship_type, doc_relationships.topic AS doc_relationships_topic, doc_relationships.scope AS doc_relationships_scope, doc_relationships.meta_data AS doc_relationships_meta_data, doc_relationships.created_at AS doc_relationships_created_at, doc_relationships.updated_at AS doc_relationships_updated_at 
+FROM doc_relationships]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/doc_relationships/component.py", line 189, in _load_relationships
+    relationships = self._repository.get_all_relationships()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/doc_relationships/repository.py", line 234, in get_all_relationships
+    raise RepositoryError(f"Error getting all relationships: {e}") from e
+dbp.doc_relationships.repository.RepositoryError: Error getting all relationships: (sqlite3.OperationalError) no such table: doc_relationships
+[SQL: SELECT doc_relationships.id AS doc_relationships_id, doc_relationships.source_document AS doc_relationships_source_document, doc_relationships.target_document AS doc_relationships_target_document, doc_relationships.relationship_type AS doc_relationships_relationship_type, doc_relationships.topic AS doc_relationships_topic, doc_relationships.scope AS doc_relationships_scope, doc_relationships.meta_data AS doc_relationships_meta_data, doc_relationships.created_at AS doc_relationships_created_at, doc_relationships.updated_at AS doc_relationships_updated_at 
+FROM doc_relationships]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+ERROR [dbp.core.lifecycle.fs_monitor.fs_monitor] Failed to register change listener: 'ChangeDetectionQueue' object has no attribute 'register_listener'
+WARNI [dbp.core.lifecycle.scheduler] Failed to register change listener with File System Monitor.
+ERROR:    Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/starlette/routing.py", line 699, in lifespan
+    await receive()
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/uvicorn/lifespan/on.py", line 137, in receive
+    return await self.receive_queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/queues.py", line 158, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+WARNI [dbp.fs_monitor.base] LinuxFileSystemMonitor thread did not exit cleanly.
+
+
+--- SERVER START ATTEMPT AT 2025-04-18 07:50:43 ---
+
+2025-04-18 07:50:44,863 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-18 07:50:44,864 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-18 07:50:44,864 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-18 07:50:44,864 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-18 07:50:44,864 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-18 07:50:44,865 - root - DEBUG - Application logging initialized at level DEBUG with consistent formatting
+2025-04-18 07:50:44,865 - dbp.core.lifecycle - DEBUG - Logging initialized at level DEBUG with consistent formatting
+2025-04-18 07:50:44,865 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-18 07:50:44,865 - dbp.config.config_manager - DEBUG - ConfigurationManager singleton instance created.
+2025-04-18 07:50:44,866 - dbp.config.config_manager - INFO - Initializing configuration...
+2025-04-18 07:50:44,866 - dbp.config.config_manager - DEBUG - Loading standard configuration files...
+2025-04-18 07:50:44,866 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /etc/dbp/config.json
+2025-04-18 07:50:44,866 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /etc/dbp/config.yaml
+2025-04-18 07:50:44,866 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /etc/dbp/config.yml
+2025-04-18 07:50:44,866 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /home/jcjorel/.config/dbp/config.json
+2025-04-18 07:50:44,866 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /home/jcjorel/.config/dbp/config.yaml
+2025-04-18 07:50:44,866 - dbp.config.config_manager - DEBUG - Configuration file not found or not a file: /home/jcjorel/.config/dbp/config.yml
+2025-04-18 07:50:44,866 - dbp.config.config_manager - DEBUG - Loading configuration from environment variables...
+2025-04-18 07:50:44,866 - dbp.config.config_manager - DEBUG - Loaded 1 configuration values from environment variables.
+2025-04-18 07:50:44,866 - dbp.config.config_manager - DEBUG - Loading configuration from command-line arguments...
+2025-04-18 07:50:44,867 - dbp.config.config_manager - DEBUG - Loaded 6 configuration values from command-line arguments.
+2025-04-18 07:50:44,867 - dbp.config.config_manager - DEBUG - Applying configuration hierarchy...
+2025-04-18 07:50:44,867 - dbp.config.config_manager - DEBUG - Applying config from environment variables...
+2025-04-18 07:50:44,867 - dbp.config.config_manager - ERROR - Couldn't navigate to 'log' in path 'log.level'
+2025-04-18 07:50:44,867 - dbp.config.config_manager - ERROR - Critical error during configuration initialization: 'AppConfig' object has no attribute 'log'
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 172, in initialize
+    self._apply_configuration_hierarchy()
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 378, in _apply_configuration_hierarchy
+    self._set_config_attr_by_path(config, key, converted_value)
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 643, in _set_config_attr_by_path
+    obj = getattr(obj, part)
+          ^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'AppConfig' object has no attribute 'log'
+2025-04-18 07:50:44,869 - dbp.core.lifecycle - CRITICAL - Failed to load configuration: 'AppConfig' object has no attribute 'log'
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/core/lifecycle.py", line 169, in _load_config
+    config_manager.initialize(args=cli_args)
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 172, in initialize
+    self._apply_configuration_hierarchy()
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 378, in _apply_configuration_hierarchy
+    self._set_config_attr_by_path(config, key, converted_value)
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 643, in _set_config_attr_by_path
+    obj = getattr(obj, part)
+          ^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'AppConfig' object has no attribute 'log'
+2025-04-18 07:50:44,869 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-18 07:50:44,870 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-18 07:50:44,870 - dbp.core.lifecycle - DEBUG - Registered database component
+2025-04-18 07:50:44,880 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-18 07:50:44,884 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-18 07:50:44,887 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-18 07:50:44,887 - dbp.core.lifecycle - DEBUG - Registered fs_monitor component
+2025-04-18 07:50:44,887 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-18 07:50:44,887 - dbp.core.lifecycle - DEBUG - Registered filter component
+2025-04-18 07:50:44,887 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-18 07:50:44,887 - dbp.core.lifecycle - DEBUG - Registered change_queue component
+2025-04-18 07:50:44,887 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-18 07:50:44,887 - dbp.core.lifecycle - DEBUG - Registered memory_cache component
+2025-04-18 07:50:44,887 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-18 07:50:44,887 - dbp.core.lifecycle - DEBUG - Registered consistency_analysis component
+2025-04-18 07:50:44,887 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-18 07:50:44,887 - dbp.core.lifecycle - DEBUG - Registered doc_relationships component
+2025-04-18 07:50:44,887 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-18 07:50:44,887 - dbp.core.lifecycle - DEBUG - Registered recommendation_generator component
+2025-04-18 07:50:44,891 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-18 07:50:44,891 - dbp.core.lifecycle - DEBUG - Registered scheduler component
+2025-04-18 07:50:44,891 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-18 07:50:44,891 - dbp.core.lifecycle - DEBUG - Registered metadata_extraction component
+2025-04-18 07:50:44,891 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-18 07:50:44,891 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - Manage query processing
+2025-04-18 07:50:44,891 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-18 07:50:44,891 - dbp.core.lifecycle - DEBUG - Registered mcp_server component
+2025-04-18 07:50:44,891 - dbp.core.lifecycle - DEBUG - Registered handler for signal 2
+2025-04-18 07:50:44,891 - dbp.core.lifecycle - DEBUG - Registered handler for signal 15
+2025-04-18 07:50:44,891 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-18 07:50:44,892 - dbp.core.lifecycle - INFO - Initializing 12 components
+2025-04-18 07:50:44,892 - dbp.core.lifecycle - DEBUG - Validating dependencies. Registered components: {'fs_monitor', 'filter', 'doc_relationships', 'consistency_analysis', 'metadata_extraction', 'change_queue', 'recommendation_generator', 'database', 'scheduler', 'memory_cache', 'llm_coordinator', 'mcp_server'}
+2025-04-18 07:50:44,892 - dbp.core.lifecycle - ERROR - Component 'database' depends on 'config_manager' which is not registered
+2025-04-18 07:50:44,892 - dbp.core.lifecycle - ERROR - Component 'fs_monitor' depends on 'config_manager' which is not registered
+2025-04-18 07:50:44,892 - dbp.core.lifecycle - ERROR - Component 'filter' depends on 'config_manager' which is not registered
+2025-04-18 07:50:44,892 - dbp.core.lifecycle - ERROR - Component 'change_queue' depends on 'config_manager' which is not registered
+2025-04-18 07:50:44,892 - dbp.core.lifecycle - ERROR - Component 'llm_coordinator' depends on 'config_manager' which is not registered
+2025-04-18 07:50:44,892 - dbp.core.lifecycle - ERROR - Component 'mcp_server' depends on 'config_manager' which is not registered
+2025-04-18 07:50:44,892 - dbp.core.lifecycle - ERROR - Dependency validation failed with 6 errors
+2025-04-18 07:50:44,892 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'database' depends on 'config_manager' which is not registered
+2025-04-18 07:50:44,892 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'fs_monitor' depends on 'config_manager' which is not registered
+2025-04-18 07:50:44,892 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'filter' depends on 'config_manager' which is not registered
+2025-04-18 07:50:44,892 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'change_queue' depends on 'config_manager' which is not registered
+2025-04-18 07:50:44,892 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'llm_coordinator' depends on 'config_manager' which is not registered
+2025-04-18 07:50:44,892 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'mcp_server' depends on 'config_manager' which is not registered
+2025-04-18 07:50:44,892 - dbp.core.lifecycle - ERROR - System startup failed due to component initialization errors.
+2025-04-18 07:50:44,892 - dbp.mcp_server.__main__ - CRITICAL - Failed to start components
+2025-04-18 07:50:44,892 - dbp.mcp_server.__main__ - CRITICAL - Components that failed to initialize: ['database', 'fs_monitor', 'filter', 'change_queue', 'memory_cache', 'consistency_analysis', 'doc_relationships', 'recommendation_generator', 'scheduler', 'metadata_extraction', 'llm_coordinator', 'mcp_server']
+
+
+--- SERVER START ATTEMPT AT 2025-04-18 07:53:20 ---
+
+2025-04-18 07:53:22,956 - root - DEBUG - Application logging initialized at level debug with consistent formatting
+2025-04-18 07:53:22,957 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-18 07:53:22,957 - dbp.mcp_server.__main__ - DEBUG - Arguments: Namespace(host='localhost', port=6231, log_level='debug', log_file=None, startup_timeout=30, startup_check=True)
+2025-04-18 07:53:22,958 - dbp.mcp_server.__main__ - DEBUG - Successfully imported MCPServerComponent
+2025-04-18 07:53:22,958 - dbp.mcp_server.__main__ - DEBUG - Environment: {'Python version': '3.12.3 (main, Feb  4 2025, 14:48:35) [GCC 13.3.0]', 'Working directory': '/home/jcjorel/cline-best-practices', 'Module path': '/home/jcjorel/cline-best-practices/src/dbp/mcp_server/__main__.py', 'PATH': '/home/jcjorel/.vscode-server/extensions/ms-python.python-2025.4.0-linux-x64/python_files/deactivate/bash:/home/jcjorel/cline-best-practices/venv/bin:/home/jcjorel/.vscode-server/extensions/ms-python.python-2025.4.0-linux-x64/python_files/deactivate/bash:/home/jcjorel/cline-best-practices/venv/bin:/home/jcjorel/.vscode-server/bin/17baf841131aa23349f217ca7c570c76ee87b957/bin/remote-cli:/home/jcjorel/.local/bin:/home/jcjorel/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/java8path:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/javapath:/mnt/c/Program Files/Microsoft/jdk-11.0.16.101-hotspot/bin:/mnt/c/Program Files/itacsvc:/mnt/c/WINDOWS/system32:/mnt/c/WINDOWS:/mnt/c/WINDOWS/System32/Wbem:/mnt/c/WINDOWS/System32/WindowsPowerShell/v1.0/:/mnt/c/WINDOWS/System32/OpenSSH/:/mnt/c/Program Files/Microchip/xc16/v2.10/bin:/mnt/c/Program Files/dotnet/:/mnt/c/Program Files (x86)/IVI Foundation/VISA/WinNT/Bin/:/mnt/c/Program Files/IVI Foundation/VISA/Win64/Bin/:/mnt/c/Program Files (x86)/IVI Foundation/VISA/WinNT/Bin:/mnt/c/Program Files/PuTTY/:/mnt/c/Program Files (x86)/ACMEGuardian/:/mnt/c/FPC/3.2.2/bin/i386-Win32:/mnt/c/Program Files (x86)/Quarantine/:/mnt/c/Program Files/Oracle/VirtualBox:/mnt/c/Program Files/GitDefender/bin:/mnt/c/Program Files/Amazon/FOPAzureADMAnagementApp/:/mnt/c/Users/jcjorel/AppData/Local/Programs/Python/Python313/Scripts/:/mnt/c/Users/jcjorel/AppData/Local/Programs/Python/Python313/:/mnt/c/Wincupl/WINCUPL/EXE:/mnt/c/Wincupl/WINCUPL/FITTERS:/mnt/c/Users/jcjorel/AppData/Local/Programs/Git/cmd:/mnt/c/Users/jcjorel/AppData/Local/GitDefender/bin:/mnt/c/Users/jcjorel/AppData/Local/Programs/Microsoft VS Code/bin:/mnt/c/Users/jcjorel/.dotnet/tools:/snap/bin:/usr/local/bin:/usr/local/bin', 'PYTHONPATH': ''}
+2025-04-18 07:53:22,959 - dbp.mcp_server.__main__ - DEBUG - FastAPI version: 0.115.12
+2025-04-18 07:53:22,959 - dbp.mcp_server.__main__ - DEBUG - Uvicorn available: uvicorn
+2025-04-18 07:53:22,959 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-18 07:53:22,959 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-18 07:53:22,960 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-18 07:53:22,960 - dbp.mcp_server.__main__ - DEBUG - Successfully imported tool classes
+2025-04-18 07:53:22,960 - dbp.mcp_server.__main__ - DEBUG - Successfully imported resource classes
+2025-04-18 07:53:22,960 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-18 07:53:22,961 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-18 07:53:22,962 - dbp.config.config_manager - INFO - Initializing configuration...
+2025-04-18 07:53:22,964 - dbp.config.config_manager - ERROR - Couldn't navigate to 'log' in path 'log..level'
+2025-04-18 07:53:22,964 - dbp.config.config_manager - ERROR - Critical error during configuration initialization: 'AppConfig' object has no attribute 'log'
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 172, in initialize
+    self._apply_configuration_hierarchy()
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 378, in _apply_configuration_hierarchy
+    self._set_config_attr_by_path(config, key, converted_value)
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 643, in _set_config_attr_by_path
+    obj = getattr(obj, part)
+          ^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'AppConfig' object has no attribute 'log'
+2025-04-18 07:53:22,976 - dbp.core.lifecycle - CRITICAL - Failed to load configuration: 'AppConfig' object has no attribute 'log'
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/core/lifecycle.py", line 169, in _load_config
+    config_manager.initialize(args=cli_args)
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 172, in initialize
+    self._apply_configuration_hierarchy()
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 378, in _apply_configuration_hierarchy
+    self._set_config_attr_by_path(config, key, converted_value)
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 643, in _set_config_attr_by_path
+    obj = getattr(obj, part)
+          ^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'AppConfig' object has no attribute 'log'
+2025-04-18 07:53:22,978 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-18 07:53:22,978 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-18 07:53:23,000 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-18 07:53:23,004 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-18 07:53:23,006 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-18 07:53:23,006 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-18 07:53:23,006 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-18 07:53:23,006 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-18 07:53:23,006 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-18 07:53:23,006 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-18 07:53:23,007 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-18 07:53:23,021 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-18 07:53:23,021 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-18 07:53:23,022 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-18 07:53:23,022 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - Manage query processing
+2025-04-18 07:53:23,022 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-18 07:53:23,022 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-18 07:53:23,022 - dbp.core.lifecycle - INFO - Initializing 12 components
+2025-04-18 07:53:23,022 - dbp.core.lifecycle - ERROR - Component 'database' depends on 'config_manager' which is not registered
+2025-04-18 07:53:23,022 - dbp.core.lifecycle - ERROR - Component 'fs_monitor' depends on 'config_manager' which is not registered
+2025-04-18 07:53:23,022 - dbp.core.lifecycle - ERROR - Component 'filter' depends on 'config_manager' which is not registered
+2025-04-18 07:53:23,022 - dbp.core.lifecycle - ERROR - Component 'change_queue' depends on 'config_manager' which is not registered
+2025-04-18 07:53:23,022 - dbp.core.lifecycle - ERROR - Component 'llm_coordinator' depends on 'config_manager' which is not registered
+2025-04-18 07:53:23,022 - dbp.core.lifecycle - ERROR - Component 'mcp_server' depends on 'config_manager' which is not registered
+2025-04-18 07:53:23,022 - dbp.core.lifecycle - ERROR - Dependency validation failed with 6 errors
+2025-04-18 07:53:23,022 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'database' depends on 'config_manager' which is not registered
+2025-04-18 07:53:23,022 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'fs_monitor' depends on 'config_manager' which is not registered
+2025-04-18 07:53:23,022 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'filter' depends on 'config_manager' which is not registered
+2025-04-18 07:53:23,022 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'change_queue' depends on 'config_manager' which is not registered
+2025-04-18 07:53:23,022 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'llm_coordinator' depends on 'config_manager' which is not registered
+2025-04-18 07:53:23,022 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'mcp_server' depends on 'config_manager' which is not registered
+2025-04-18 07:53:23,022 - dbp.core.lifecycle - ERROR - System startup failed due to component initialization errors.
+2025-04-18 07:53:23,022 - dbp.mcp_server.__main__ - CRITICAL - Failed to start components
+2025-04-18 07:53:23,023 - dbp.mcp_server.__main__ - CRITICAL - Components that failed to initialize: ['database', 'fs_monitor', 'filter', 'change_queue', 'memory_cache', 'consistency_analysis', 'doc_relationships', 'recommendation_generator', 'scheduler', 'metadata_extraction', 'llm_coordinator', 'mcp_server']
+
+
+--- SERVER START ATTEMPT AT 2025-04-18 08:00:25 ---
+
+2025-04-18 08:00:27,417 - root - DEBUG - Application logging initialized at level debug with consistent formatting
+2025-04-18 08:00:27,417 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-18 08:00:27,417 - dbp.mcp_server.__main__ - DEBUG - Arguments: Namespace(host='localhost', port=6231, log_level='debug', log_file=None, startup_timeout=30, startup_check=True)
+2025-04-18 08:00:27,417 - dbp.mcp_server.__main__ - DEBUG - Successfully imported MCPServerComponent
+2025-04-18 08:00:27,417 - dbp.mcp_server.__main__ - DEBUG - Environment: {'Python version': '3.12.3 (main, Feb  4 2025, 14:48:35) [GCC 13.3.0]', 'Working directory': '/home/jcjorel/cline-best-practices', 'Module path': '/home/jcjorel/cline-best-practices/src/dbp/mcp_server/__main__.py', 'PATH': '/home/jcjorel/.vscode-server/extensions/ms-python.python-2025.4.0-linux-x64/python_files/deactivate/bash:/home/jcjorel/cline-best-practices/venv/bin:/home/jcjorel/.vscode-server/extensions/ms-python.python-2025.4.0-linux-x64/python_files/deactivate/bash:/home/jcjorel/cline-best-practices/venv/bin:/home/jcjorel/.vscode-server/bin/17baf841131aa23349f217ca7c570c76ee87b957/bin/remote-cli:/home/jcjorel/.local/bin:/home/jcjorel/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/java8path:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/javapath:/mnt/c/Program Files/Microsoft/jdk-11.0.16.101-hotspot/bin:/mnt/c/Program Files/itacsvc:/mnt/c/WINDOWS/system32:/mnt/c/WINDOWS:/mnt/c/WINDOWS/System32/Wbem:/mnt/c/WINDOWS/System32/WindowsPowerShell/v1.0/:/mnt/c/WINDOWS/System32/OpenSSH/:/mnt/c/Program Files/Microchip/xc16/v2.10/bin:/mnt/c/Program Files/dotnet/:/mnt/c/Program Files (x86)/IVI Foundation/VISA/WinNT/Bin/:/mnt/c/Program Files/IVI Foundation/VISA/Win64/Bin/:/mnt/c/Program Files (x86)/IVI Foundation/VISA/WinNT/Bin:/mnt/c/Program Files/PuTTY/:/mnt/c/Program Files (x86)/ACMEGuardian/:/mnt/c/FPC/3.2.2/bin/i386-Win32:/mnt/c/Program Files (x86)/Quarantine/:/mnt/c/Program Files/Oracle/VirtualBox:/mnt/c/Program Files/GitDefender/bin:/mnt/c/Program Files/Amazon/FOPAzureADMAnagementApp/:/mnt/c/Users/jcjorel/AppData/Local/Programs/Python/Python313/Scripts/:/mnt/c/Users/jcjorel/AppData/Local/Programs/Python/Python313/:/mnt/c/Wincupl/WINCUPL/EXE:/mnt/c/Wincupl/WINCUPL/FITTERS:/mnt/c/Users/jcjorel/AppData/Local/Programs/Git/cmd:/mnt/c/Users/jcjorel/AppData/Local/GitDefender/bin:/mnt/c/Users/jcjorel/AppData/Local/Programs/Microsoft VS Code/bin:/mnt/c/Users/jcjorel/.dotnet/tools:/snap/bin:/usr/local/bin:/usr/local/bin', 'PYTHONPATH': ''}
+2025-04-18 08:00:27,417 - dbp.mcp_server.__main__ - DEBUG - FastAPI version: 0.115.12
+2025-04-18 08:00:27,417 - dbp.mcp_server.__main__ - DEBUG - Uvicorn available: uvicorn
+2025-04-18 08:00:27,417 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-18 08:00:27,418 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-18 08:00:27,418 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-18 08:00:27,418 - dbp.mcp_server.__main__ - DEBUG - Successfully imported tool classes
+2025-04-18 08:00:27,418 - dbp.mcp_server.__main__ - DEBUG - Successfully imported resource classes
+2025-04-18 08:00:27,418 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-18 08:00:27,419 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-18 08:00:27,420 - dbp.config.config_manager - INFO - Initializing configuration...
+2025-04-18 08:00:27,421 - dbp.config.config_manager - ERROR - Couldn't navigate to 'mcp-server' in path 'mcp-server.host'
+2025-04-18 08:00:27,422 - dbp.config.config_manager - ERROR - Critical error during configuration initialization: 'AppConfig' object has no attribute 'mcp-server'
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 172, in initialize
+    self._apply_configuration_hierarchy()
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 386, in _apply_configuration_hierarchy
+    self._set_config_attr_by_path(config, key, converted_value)
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 643, in _set_config_attr_by_path
+    obj = getattr(obj, part)
+          ^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'AppConfig' object has no attribute 'mcp-server'. Did you mean: 'mcp_server'?
+2025-04-18 08:00:27,427 - dbp.core.lifecycle - CRITICAL - Failed to load configuration: 'AppConfig' object has no attribute 'mcp-server'
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/core/lifecycle.py", line 169, in _load_config
+    config_manager.initialize(args=cli_args)
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 172, in initialize
+    self._apply_configuration_hierarchy()
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 386, in _apply_configuration_hierarchy
+    self._set_config_attr_by_path(config, key, converted_value)
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/config_manager.py", line 643, in _set_config_attr_by_path
+    obj = getattr(obj, part)
+          ^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/main.py", line 994, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'AppConfig' object has no attribute 'mcp-server'. Did you mean: 'mcp_server'?
+2025-04-18 08:00:27,431 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-18 08:00:27,431 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-18 08:00:27,440 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-18 08:00:27,443 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-18 08:00:27,444 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-18 08:00:27,445 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-18 08:00:27,445 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-18 08:00:27,445 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-18 08:00:27,445 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-18 08:00:27,445 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-18 08:00:27,445 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-18 08:00:27,447 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-18 08:00:27,447 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-18 08:00:27,447 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-18 08:00:27,447 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - Manage query processing
+2025-04-18 08:00:27,447 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-18 08:00:27,447 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-18 08:00:27,447 - dbp.core.lifecycle - INFO - Initializing 12 components
+2025-04-18 08:00:27,447 - dbp.core.lifecycle - ERROR - Component 'database' depends on 'config_manager' which is not registered
+2025-04-18 08:00:27,447 - dbp.core.lifecycle - ERROR - Component 'fs_monitor' depends on 'config_manager' which is not registered
+2025-04-18 08:00:27,447 - dbp.core.lifecycle - ERROR - Component 'filter' depends on 'config_manager' which is not registered
+2025-04-18 08:00:27,447 - dbp.core.lifecycle - ERROR - Component 'change_queue' depends on 'config_manager' which is not registered
+2025-04-18 08:00:27,448 - dbp.core.lifecycle - ERROR - Component 'llm_coordinator' depends on 'config_manager' which is not registered
+2025-04-18 08:00:27,448 - dbp.core.lifecycle - ERROR - Component 'mcp_server' depends on 'config_manager' which is not registered
+2025-04-18 08:00:27,448 - dbp.core.lifecycle - ERROR - Dependency validation failed with 6 errors
+2025-04-18 08:00:27,448 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'database' depends on 'config_manager' which is not registered
+2025-04-18 08:00:27,448 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'fs_monitor' depends on 'config_manager' which is not registered
+2025-04-18 08:00:27,448 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'filter' depends on 'config_manager' which is not registered
+2025-04-18 08:00:27,448 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'change_queue' depends on 'config_manager' which is not registered
+2025-04-18 08:00:27,448 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'llm_coordinator' depends on 'config_manager' which is not registered
+2025-04-18 08:00:27,448 - dbp.core.lifecycle - ERROR - Dependency validation error: Component 'mcp_server' depends on 'config_manager' which is not registered
+2025-04-18 08:00:27,448 - dbp.core.lifecycle - ERROR - System startup failed due to component initialization errors.
+2025-04-18 08:00:27,448 - dbp.mcp_server.__main__ - CRITICAL - Failed to start components
+2025-04-18 08:00:27,449 - dbp.mcp_server.__main__ - CRITICAL - Components that failed to initialize: ['database', 'fs_monitor', 'filter', 'change_queue', 'memory_cache', 'consistency_analysis', 'doc_relationships', 'recommendation_generator', 'scheduler', 'metadata_extraction', 'llm_coordinator', 'mcp_server']
+
+
+--- SERVER START ATTEMPT AT 2025-04-18 08:10:43 ---
+
+2025-04-18 08:10:45,385 - root - DEBUG - Application logging initialized at level debug with consistent formatting
+2025-04-18 08:10:45,387 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-18 08:10:45,387 - dbp.mcp_server.__main__ - DEBUG - Arguments: Namespace(host='localhost', port=6231, log_level='debug', log_file=None, startup_timeout=30, startup_check=True)
+2025-04-18 08:10:45,388 - dbp.mcp_server.__main__ - DEBUG - Successfully imported MCPServerComponent
+2025-04-18 08:10:45,389 - dbp.mcp_server.__main__ - DEBUG - Environment: {'Python version': '3.12.3 (main, Feb  4 2025, 14:48:35) [GCC 13.3.0]', 'Working directory': '/home/jcjorel/cline-best-practices', 'Module path': '/home/jcjorel/cline-best-practices/src/dbp/mcp_server/__main__.py', 'PATH': '/home/jcjorel/.vscode-server/extensions/ms-python.python-2025.4.0-linux-x64/python_files/deactivate/bash:/home/jcjorel/cline-best-practices/venv/bin:/home/jcjorel/.vscode-server/extensions/ms-python.python-2025.4.0-linux-x64/python_files/deactivate/bash:/home/jcjorel/cline-best-practices/venv/bin:/home/jcjorel/.vscode-server/bin/17baf841131aa23349f217ca7c570c76ee87b957/bin/remote-cli:/home/jcjorel/.local/bin:/home/jcjorel/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/java8path:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/javapath:/mnt/c/Program Files/Microsoft/jdk-11.0.16.101-hotspot/bin:/mnt/c/Program Files/itacsvc:/mnt/c/WINDOWS/system32:/mnt/c/WINDOWS:/mnt/c/WINDOWS/System32/Wbem:/mnt/c/WINDOWS/System32/WindowsPowerShell/v1.0/:/mnt/c/WINDOWS/System32/OpenSSH/:/mnt/c/Program Files/Microchip/xc16/v2.10/bin:/mnt/c/Program Files/dotnet/:/mnt/c/Program Files (x86)/IVI Foundation/VISA/WinNT/Bin/:/mnt/c/Program Files/IVI Foundation/VISA/Win64/Bin/:/mnt/c/Program Files (x86)/IVI Foundation/VISA/WinNT/Bin:/mnt/c/Program Files/PuTTY/:/mnt/c/Program Files (x86)/ACMEGuardian/:/mnt/c/FPC/3.2.2/bin/i386-Win32:/mnt/c/Program Files (x86)/Quarantine/:/mnt/c/Program Files/Oracle/VirtualBox:/mnt/c/Program Files/GitDefender/bin:/mnt/c/Program Files/Amazon/FOPAzureADMAnagementApp/:/mnt/c/Users/jcjorel/AppData/Local/Programs/Python/Python313/Scripts/:/mnt/c/Users/jcjorel/AppData/Local/Programs/Python/Python313/:/mnt/c/Wincupl/WINCUPL/EXE:/mnt/c/Wincupl/WINCUPL/FITTERS:/mnt/c/Users/jcjorel/AppData/Local/Programs/Git/cmd:/mnt/c/Users/jcjorel/AppData/Local/GitDefender/bin:/mnt/c/Users/jcjorel/AppData/Local/Programs/Microsoft VS Code/bin:/mnt/c/Users/jcjorel/.dotnet/tools:/snap/bin:/usr/local/bin:/usr/local/bin', 'PYTHONPATH': ''}
+2025-04-18 08:10:45,389 - dbp.mcp_server.__main__ - DEBUG - FastAPI version: 0.115.12
+2025-04-18 08:10:45,389 - dbp.mcp_server.__main__ - DEBUG - Uvicorn available: uvicorn
+2025-04-18 08:10:45,390 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-18 08:10:45,390 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-18 08:10:45,391 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-18 08:10:45,391 - dbp.mcp_server.__main__ - DEBUG - Successfully imported tool classes
+2025-04-18 08:10:45,391 - dbp.mcp_server.__main__ - DEBUG - Successfully imported resource classes
+2025-04-18 08:10:45,391 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-18 08:10:45,392 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-18 08:10:45,393 - dbp.config.config_manager - INFO - Initializing configuration...
+2025-04-18 08:10:45,397 - dbp.config.config_manager - INFO - Configuration initialized successfully.
+2025-04-18 08:10:45,398 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-18 08:10:45,398 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-18 08:10:45,398 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-18 08:10:45,415 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-18 08:10:45,419 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-18 08:10:45,421 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-18 08:10:45,421 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-18 08:10:45,421 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-18 08:10:45,421 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-18 08:10:45,421 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-18 08:10:45,421 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-18 08:10:45,421 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-18 08:10:45,425 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-18 08:10:45,425 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-18 08:10:45,425 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-18 08:10:45,425 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - Manage query processing
+2025-04-18 08:10:45,425 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-18 08:10:45,425 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-18 08:10:45,425 - dbp.core.lifecycle - INFO - Initializing 13 components
+2025-04-18 08:10:45,425 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-18 08:10:45,425 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, change_queue, fs_monitor, llm_coordinator, filter, database, metadata_extraction, doc_relationships, consistency_analysis, recommendation_generator, scheduler, memory_cache, mcp_server
+2025-04-18 08:10:45,425 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-18 08:10:45,425 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-18 08:10:45,425 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-18 08:10:45,426 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-18 08:10:45,483 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-18 08:10:45,484 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-18 08:10:45,484 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-18 08:10:45,485 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-18 08:10:45,485 - dbp.core.lifecycle - INFO - Initializing component 'change_queue'...
+2025-04-18 08:10:45,485 - dbp.core.lifecycle - INFO - Initializing component 'change_queue' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-18 08:10:45,485 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-18 08:10:45,485 - dbp.change_queue - INFO - Initializing component 'change_queue'...
+2025-04-18 08:10:45,485 - dbp.change_queue - INFO - Component 'change_queue' initialized successfully.
+2025-04-18 08:10:45,485 - dbp.core.lifecycle - INFO - Component 'change_queue' initialized successfully
+2025-04-18 08:10:45,485 - dbp.core.lifecycle - INFO - Initializing component 'fs_monitor'...
+2025-04-18 08:10:45,485 - dbp.core.lifecycle - INFO - Initializing component 'fs_monitor' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-18 08:10:45,485 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-18 08:10:45,486 - dbp.core.lifecycle.fs_monitor.fs_monitor - INFO - Initializing component 'fs_monitor'...
+2025-04-18 08:10:45,486 - dbp.core.lifecycle.fs_monitor.fs_monitor - INFO - Using queue from change_queue component
+2025-04-18 08:10:45,486 - dbp.core.lifecycle.fs_monitor.fs_monitor - INFO - Creating monitor for platform with project root: /home/jcjorel/cline-best-practices
+2025-04-18 08:10:45,486 - dbp.fs_monitor.factory - INFO - Creating File System Monitor...
+2025-04-18 08:10:45,655 - dbp.fs_monitor.filter - INFO - Found 3 .gitignore files.
+2025-04-18 08:10:45,656 - dbp.fs_monitor.filter - INFO - GitIgnoreFilter initialized with 37 patterns.
+2025-04-18 08:10:45,656 - dbp.fs_monitor.queue - INFO - Event filter set to: GitIgnoreFilter
+2025-04-18 08:10:45,656 - dbp.fs_monitor.factory - INFO - Detected Operating System: Linux
+2025-04-18 08:10:45,656 - dbp.fs_monitor.factory - INFO - Selected LinuxFileSystemMonitor (inotify).
+2025-04-18 08:10:45,657 - dbp.fs_monitor.base - INFO - Starting LinuxFileSystemMonitor...
+2025-04-18 08:10:45,657 - dbp.fs_monitor.linux - INFO - Linux file system monitor started successfully.
+2025-04-18 08:10:45,658 - dbp.core.lifecycle.fs_monitor.fs_monitor - INFO - File system monitoring started
+2025-04-18 08:10:45,658 - dbp.core.lifecycle.fs_monitor.fs_monitor - INFO - Component 'fs_monitor' initialized successfully
+2025-04-18 08:10:45,658 - dbp.core.lifecycle - INFO - Component 'fs_monitor' initialized successfully
+2025-04-18 08:10:45,658 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator'...
+2025-04-18 08:10:45,658 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-18 08:10:45,659 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-18 08:10:45,659 - dbp.core.lifecycle.llm_coordinator - INFO - Initializing component 'llm_coordinator'...
+2025-04-18 08:10:45,659 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Getting Bedrock client manager instance', 'region': 'us-east-1', 'component': 'CoordinatorLLM'}
+2025-04-18 08:10:45,660 - dbp.core.lifecycle.llm_coordinator.coordinator_llm.bedrock - INFO - {'message': 'Bedrock client manager initialized', 'default_region': 'us-east-1', 'prompt_manager_configured': True}
+2025-04-18 08:10:45,660 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Bedrock client manager instance retrieved successfully', 'component': 'CoordinatorLLM'}
+2025-04-18 08:10:45,660 - dbp.llm_coordinator.component - WARNING - Using Placeholder InternalToolExecutionEngine
+2025-04-18 08:10:45,660 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_context' -> execute_codebase_context_tool
+2025-04-18 08:10:45,660 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_changelog_context' -> execute_codebase_changelog_tool
+2025-04-18 08:10:45,661 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_context' -> execute_documentation_context_tool
+2025-04-18 08:10:45,661 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_changelog_context' -> execute_documentation_changelog_tool
+2025-04-18 08:10:45,661 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_expert_architect_advice' -> execute_expert_architect_advice_tool
+2025-04-18 08:10:45,661 - dbp.core.lifecycle.llm_coordinator - INFO - Registered 5 internal tools.
+2025-04-18 08:10:45,661 - dbp.core.lifecycle.llm_coordinator - INFO - Component 'llm_coordinator' initialized successfully.
+2025-04-18 08:10:45,661 - dbp.core.lifecycle - INFO - Component 'llm_coordinator' initialized successfully
+2025-04-18 08:10:45,661 - dbp.core.lifecycle - INFO - Initializing component 'filter'...
+2025-04-18 08:10:45,661 - dbp.core.lifecycle - INFO - Initializing component 'filter' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-18 08:10:45,661 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-18 08:10:45,661 - dbp.filter - INFO - Initializing component 'filter'...
+2025-04-18 08:10:45,779 - dbp.fs_monitor.filter - INFO - Found 3 .gitignore files.
+2025-04-18 08:10:45,780 - dbp.fs_monitor.filter - INFO - GitIgnoreFilter initialized with 45 patterns.
+2025-04-18 08:10:45,780 - dbp.filter - INFO - Component 'filter' initialized successfully.
+2025-04-18 08:10:45,780 - dbp.core.lifecycle - INFO - Component 'filter' initialized successfully
+2025-04-18 08:10:45,780 - dbp.core.lifecycle - INFO - Initializing component 'database'...
+2025-04-18 08:10:45,780 - dbp.core.lifecycle - INFO - Initializing component 'database' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-18 08:10:45,780 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-18 08:10:45,780 - dbp.database - INFO - Initializing component 'database'...
+2025-04-18 08:10:45,780 - dbp.database.database - INFO - Initializing database with type: sqlite
+2025-04-18 08:10:45,781 - dbp.database.database - INFO - Initializing SQLite database at: .dbp/database.sqlite
+2025-04-18 08:10:45,781 - dbp.database.database - INFO - SQLite configuration: pool_size=4, timeout=5
+2025-04-18 08:10:45,781 - dbp.database.database - INFO - SQLite path: absolute=/home/jcjorel/cline-best-practices/.dbp/database.sqlite, normalized=.dbp/database.sqlite
+2025-04-18 08:10:45,791 - dbp.database.database - INFO - Enabling SQLite WAL mode...
+2025-04-18 08:10:45,792 - dbp.database.database - INFO - SQLite WAL mode enabled. Current journal mode: wal
+2025-04-18 08:10:45,793 - dbp.database.database - INFO - Running Alembic migrations to initialize/update the database schema...
+2025-04-18 08:10:45,941 - dbp.config.config_manager - ERROR - Configuration key 'database.url' not found. 'database' exists but has no attribute 'url'.
+2025-04-18 08:10:45,941 - dbp.database.database - WARNING - Failed to get database.url from config_manager: Configuration key 'database.url' not found. 'database' exists but has no attribute 'url'.
+2025-04-18 08:10:45,942 - dbp.database.database - INFO - Running database migrations...
+2025-04-18 08:10:45,943 - dbp.database.database - INFO - Upgrading database schema to latest version...
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+WARNI [dbp.core.lifecycle.doc_relationships] Could not get FileAccessService from metadata_component for RelationshipAnalyzer. Analysis might be limited.
+ERROR [dbp.core.lifecycle.doc_relationships.repository] Error getting all relationships: (sqlite3.OperationalError) no such table: doc_relationships
+[SQL: SELECT doc_relationships.id AS doc_relationships_id, doc_relationships.source_document AS doc_relationships_source_document, doc_relationships.target_document AS doc_relationships_target_document, doc_relationships.relationship_type AS doc_relationships_relationship_type, doc_relationships.topic AS doc_relationships_topic, doc_relationships.scope AS doc_relationships_scope, doc_relationships.meta_data AS doc_relationships_meta_data, doc_relationships.created_at AS doc_relationships_created_at, doc_relationships.updated_at AS doc_relationships_updated_at 
+FROM doc_relationships]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 945, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such table: doc_relationships
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/doc_relationships/repository.py", line 228, in get_all_relationships
+    all_orms = session.query(DocRelationshipORM).all()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2858, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2365, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2251, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1416, in execute
+    return meth(
+           ^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 523, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1638, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1843, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1983, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2352, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 945, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such table: doc_relationships
+[SQL: SELECT doc_relationships.id AS doc_relationships_id, doc_relationships.source_document AS doc_relationships_source_document, doc_relationships.target_document AS doc_relationships_target_document, doc_relationships.relationship_type AS doc_relationships_relationship_type, doc_relationships.topic AS doc_relationships_topic, doc_relationships.scope AS doc_relationships_scope, doc_relationships.meta_data AS doc_relationships_meta_data, doc_relationships.created_at AS doc_relationships_created_at, doc_relationships.updated_at AS doc_relationships_updated_at 
+FROM doc_relationships]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+ERROR [dbp.core.lifecycle.doc_relationships] Failed to load relationships from repository: Error getting all relationships: (sqlite3.OperationalError) no such table: doc_relationships
+[SQL: SELECT doc_relationships.id AS doc_relationships_id, doc_relationships.source_document AS doc_relationships_source_document, doc_relationships.target_document AS doc_relationships_target_document, doc_relationships.relationship_type AS doc_relationships_relationship_type, doc_relationships.topic AS doc_relationships_topic, doc_relationships.scope AS doc_relationships_scope, doc_relationships.meta_data AS doc_relationships_meta_data, doc_relationships.created_at AS doc_relationships_created_at, doc_relationships.updated_at AS doc_relationships_updated_at 
+FROM doc_relationships]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 945, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such table: doc_relationships
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/doc_relationships/repository.py", line 228, in get_all_relationships
+    all_orms = session.query(DocRelationshipORM).all()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2858, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2365, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2251, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1416, in execute
+    return meth(
+           ^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 523, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1638, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1843, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1983, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2352, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 945, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such table: doc_relationships
+[SQL: SELECT doc_relationships.id AS doc_relationships_id, doc_relationships.source_document AS doc_relationships_source_document, doc_relationships.target_document AS doc_relationships_target_document, doc_relationships.relationship_type AS doc_relationships_relationship_type, doc_relationships.topic AS doc_relationships_topic, doc_relationships.scope AS doc_relationships_scope, doc_relationships.meta_data AS doc_relationships_meta_data, doc_relationships.created_at AS doc_relationships_created_at, doc_relationships.updated_at AS doc_relationships_updated_at 
+FROM doc_relationships]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/doc_relationships/component.py", line 189, in _load_relationships
+    relationships = self._repository.get_all_relationships()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/doc_relationships/repository.py", line 234, in get_all_relationships
+    raise RepositoryError(f"Error getting all relationships: {e}") from e
+dbp.doc_relationships.repository.RepositoryError: Error getting all relationships: (sqlite3.OperationalError) no such table: doc_relationships
+[SQL: SELECT doc_relationships.id AS doc_relationships_id, doc_relationships.source_document AS doc_relationships_source_document, doc_relationships.target_document AS doc_relationships_target_document, doc_relationships.relationship_type AS doc_relationships_relationship_type, doc_relationships.topic AS doc_relationships_topic, doc_relationships.scope AS doc_relationships_scope, doc_relationships.meta_data AS doc_relationships_meta_data, doc_relationships.created_at AS doc_relationships_created_at, doc_relationships.updated_at AS doc_relationships_updated_at 
+FROM doc_relationships]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+WARNI [dbp.core.lifecycle.scheduler] Failed to register change listener with File System Monitor.
+ERROR:    Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/starlette/routing.py", line 699, in lifespan
+    await receive()
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/uvicorn/lifespan/on.py", line 137, in receive
+    return await self.receive_queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/queues.py", line 158, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+WARNI [dbp.fs_monitor.base] LinuxFileSystemMonitor thread did not exit cleanly.

@@ -116,10 +116,20 @@ class MetadataExtractionComponent(Component):
 
     def initialize(self, context: InitializationContext):
         """
+        [Function intent]
         Initializes the metadata extraction component and its internal services.
-
+        
+        [Implementation details]
+        Uses the strongly-typed configuration for component setup.
+        Creates internal sub-components for metadata extraction.
+        Sets the _initialized flag when initialization succeeds.
+        
+        [Design principles]
+        Explicit initialization with strong typing.
+        Type-safe configuration access.
+        
         Args:
-            context: The initialization context providing config, logger, and registry access.
+            context: Initialization context with typed configuration and resources
         """
         if self._initialized:
             logger.warning(f"Component '{self.name}' already initialized.")
@@ -129,13 +139,12 @@ class MetadataExtractionComponent(Component):
         self.logger.info(f"Initializing component '{self.name}'...")
 
         try:
-            # Get necessary configuration (assuming it's nested under a relevant key)
-            # Adjust the key based on actual config structure
-            component_config = context.config.get(self.name, {}) # Get config specific to this component
-            aws_config = context.config.get('aws', {}) # Example: Get AWS specific config if needed
+            # Get strongly-typed configuration
+            config = context.get_typed_config()
+            component_config = getattr(config, self.name)
 
             # Get dependent components
-            db_manager = context.get_component("database").db_manager # Assuming db component exposes its manager
+            db_manager = context.get_component("database").get_manager() # Access manager through getter
 
             # Instantiate internal services, passing relevant config parts
             # TODO: Refine how config is passed (pass entire config or specific sub-sections?)

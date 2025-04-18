@@ -41,6 +41,10 @@
 # - All other files in src/dbp/mcp_server/
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-17T23:39:00Z : Updated to use strongly-typed configuration by CodeAssistant
+# * Modified initialize() to use InitializationContext with proper typing
+# * Updated configuration access to use context.get_typed_config() instead of string-based keys
+# * Added the required documentation sections for the initialize method
 # 2025-04-17T11:54:21Z : Added directory creation for required paths by CodeAssistant
 # * Integrated with fs_utils to ensure required directories exist
 # * Added validation of configuration values from config_manager
@@ -53,6 +57,7 @@
 ###############################################################################
 
 import logging
+import os
 from typing import List, Optional, Any
 
 # Core component imports
@@ -154,13 +159,22 @@ class MCPServerComponent(Component):
             "config_manager",      # Needed for default configuration values
         ]
 
-    def initialize(self, config: Any) -> None:
+    def initialize(self, context: InitializationContext) -> None:
         """
+        [Function intent]
         Initializes the MCP Server component, setting up the server instance,
         registries, handlers, and registering tools/resources.
-
+        
+        [Implementation details]
+        Uses the strongly-typed configuration for component setup.
+        Sets the _initialized flag when initialization succeeds.
+        
+        [Design principles]
+        Explicit initialization with strong typing.
+        Type-safe configuration access.
+        
         Args:
-            config: Configuration object with application settings
+            context: Initialization context with configuration and resources
         """
         if self._initialized:
             logger.warning(f"Component '{self.name}' already initialized.")
@@ -170,32 +184,26 @@ class MCPServerComponent(Component):
         self.logger.info(f"Initializing component '{self.name}'...")
 
         try:
-            # Get component-specific configuration
-            mcp_config = config.get(self.name, {}) # Assumes dict-like config
+            # Get component-specific configuration using typed config
+            config = context.get_typed_config()
+            mcp_config = config.mcp_server
 
             # Create adapter to access other components safely
-            from ..core.system import ComponentSystem
-            system = ComponentSystem.get_instance()
-            self._adapter = SystemComponentAdapter(system, config, self.logger.getChild("adapter"))
+            context_for_adapter = context  # Use the provided context directly
+            self._adapter = SystemComponentAdapter(context_for_adapter, self.logger.getChild("adapter"))
 
             # Instantiate MCP sub-components
-            auth_provider = AuthenticationProvider(config=mcp_config, logger_override=self.logger.getChild("auth")) if mcp_config.get('auth_enabled') else None
+            auth_provider = AuthenticationProvider(config=mcp_config, logger_override=self.logger.getChild("auth")) if mcp_config.auth_enabled else None
             error_handler = ErrorHandler(logger_override=self.logger.getChild("error_handler"))
             tool_registry = ToolRegistry(logger_override=self.logger.getChild("tool_registry"))
             resource_provider = ResourceProvider(logger_override=self.logger.getChild("resource_provider"))
 
-            # Get configuration values from config manager
-            from ..core.system import ComponentSystem
-            import os
-            system = ComponentSystem.get_instance()
-            config_manager = system.get_component("config_manager")
-            
-            # Get base directory and derived paths (with template substitution)
-            base_dir = config_manager.get('general.base_dir')
-            logs_dir = config_manager.get('mcp_server.logs_dir')
-            pid_file = config_manager.get('mcp_server.pid_file')
-            cli_config_file = config_manager.get('mcp_server.cli_config_file')
-            db_path = config_manager.get('database.path')
+            # Get configuration values using typed configuration
+            base_dir = config.general.base_dir
+            logs_dir = config.mcp_server.logs_dir
+            pid_file = config.mcp_server.pid_file
+            cli_config_file = config.mcp_server.cli_config_file
+            db_path = config.database.path
             
             if not base_dir or not logs_dir or not pid_file or not cli_config_file or not db_path:
                 missing = []
@@ -241,11 +249,11 @@ class MCPServerComponent(Component):
             
             # Create the MCP server instance with FastAPI/Uvicorn
             self._server = MCPServer(
-                host=config_manager.get('mcp_server.host'),
-                port=int(config_manager.get('mcp_server.port')),
-                name=config_manager.get('mcp_server.server_name'),
-                description=config_manager.get('mcp_server.server_description'),
-                version=config_manager.get('mcp_server.server_version'),
+                host=config.mcp_server.host,
+                port=int(config.mcp_server.port),
+                name=config.mcp_server.server_name,
+                description=config.mcp_server.server_description,
+                version=config.mcp_server.server_version,
                 tool_registry=tool_registry,
                 resource_provider=resource_provider,
                 auth_provider=auth_provider,
@@ -255,14 +263,14 @@ class MCPServerComponent(Component):
             
             # Set the server configuration for FastAPI/Uvicorn settings
             self._server.config = {
-                "workers": config_manager.get('mcp_server.workers'),
-                "enable_cors": config_manager.get('mcp_server.enable_cors'),
-                "cors_origins": config_manager.get('mcp_server.cors_origins'),
-                "cors_methods": config_manager.get('mcp_server.cors_methods'),
-                "cors_headers": config_manager.get('mcp_server.cors_headers'),
-                "cors_allow_credentials": config_manager.get('mcp_server.cors_allow_credentials'),
-                "keep_alive": config_manager.get('mcp_server.keep_alive'),
-                "graceful_shutdown_timeout": config_manager.get('mcp_server.graceful_shutdown_timeout')
+                "workers": config.mcp_server.workers,
+                "enable_cors": config.mcp_server.enable_cors,
+                "cors_origins": config.mcp_server.cors_origins,
+                "cors_methods": config.mcp_server.cors_methods,
+                "cors_headers": config.mcp_server.cors_headers,
+                "cors_allow_credentials": config.mcp_server.cors_allow_credentials,
+                "keep_alive": config.mcp_server.keep_alive,
+                "graceful_shutdown_timeout": config.mcp_server.graceful_shutdown_timeout
             }
 
             # Register tools and resources
@@ -271,10 +279,6 @@ class MCPServerComponent(Component):
 
             self._initialized = True
             self.logger.info(f"Component '{self.name}' initialized successfully.")
-
-            # Optionally start the server immediately after initialization?
-            # Or provide a separate start method? Let's use a separate start method.
-            # self.start_server()
 
         except KeyError as e:
              self.logger.error(f"Initialization failed: Missing dependency component '{e}'. Ensure it's registered.")

@@ -207,13 +207,6 @@ def main() -> int:
             # Create CLI args for the lifecycle manager
             cli_args = []
             
-            # Set MCP server config values
-            cli_args.append("--mcp-server.host=" + args.host)
-            cli_args.append("--mcp-server.port=" + str(args.port))
-            cli_args.append("--mcp-server.server-name=dbp-mcp-server")
-            cli_args.append("--mcp-server.server-description=MCP Server for DBP")
-            cli_args.append("--mcp-server.server-version=1.0.0")
-            cli_args.append("--mcp-server.auth-enabled=false")
             
             # Create and initialize the lifecycle manager
             lifecycle = LifecycleManager(cli_args)

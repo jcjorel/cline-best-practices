@@ -34,6 +34,10 @@
 # - src/dbp/fs_monitor/factory.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-17T23:22:30Z : Updated to use strongly-typed configuration by CodeAssistant
+# * Refactored configuration access to use type-safe get_typed_config() method
+# * Enhanced config access for both component configuration and project settings
+# * Improved type safety with direct attribute access to configuration properties
 # 2025-04-16T20:04:42Z : Initial creation of FileSystemMonitorComponent by CodeAssistant
 # * Implemented Component protocol methods and integration with fs_monitor factory
 # 2025-04-16T23:47:26Z : Fixed component dependencies by CodeAssistant
@@ -156,8 +160,9 @@ class FileSystemMonitorComponent(Component):
         self.logger.info(f"Initializing component '{self.name}'...")
         
         try:
-            # Get monitor configuration - strict approach, no fallbacks
-            config = context.config.get(self.name)
+            # Get monitor configuration using strongly-typed config access
+            typed_config = context.get_typed_config()
+            config = typed_config.fs_monitor
             if not config:
                 error_msg = f"Missing configuration section for '{self.name}'"
                 self.logger.error(error_msg)
@@ -173,8 +178,8 @@ class FileSystemMonitorComponent(Component):
             self._change_queue = queue_component.get_queue()
             self.logger.info("Using queue from change_queue component")
             
-            # Get project root from configuration with no fallbacks
-            project_root = context.config.get('project.root_path')
+            # Get project root from typed configuration
+            project_root = typed_config.project.root_path
             if project_root is None:
                 error_msg = "Project root path not found in configuration"
                 self.logger.error(error_msg)

@@ -34,12 +34,19 @@
 # - doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-17T23:18:30Z : Added strong typing to Component.initialize() method by CodeAssistant
+# * Updated initialize() method signature to use typed InitializationContext parameter
+# * Enhanced Component documentation to reflect strong typing support
+# * Improved method signature for better IDE support and type checking
+# 2025-04-17T23:10:30Z : Enhanced InitializationContext with typed configuration by CodeAssistant
+# * Added typed_config field to provide access to strongly-typed configuration
+# * Added get_typed_config() method for type-safe configuration access
+# * Improved documentation with more detailed function intent and design principles
+# * Added forward references for proper type annotations
 # 2025-04-17T08:54:49Z : Added get_debug_info method for better diagnostics by CodeAssistant
 # * Implemented debug information gathering for component failure analysis
 # * Enhanced Component base class with diagnostic capabilities
 # * Added documentation for new debugging methods
-# 2025-04-15T09:47:05Z : Initial creation of component interfaces by CodeAssistant
-# * Defined Component protocol and InitializationContext dataclass.
 # 2025-04-16T15:45:16Z : Replaced with simplified Component implementation by CodeAssistant
 # * Implemented minimal Component interface with simplified lifecycle methods
 ###############################################################################
@@ -48,12 +55,13 @@ import logging
 import inspect
 import sys
 import traceback
-from typing import Any, Dict, List, TypeVar, Optional, TYPE_CHECKING
-from dataclasses import dataclass
+from typing import Any, Dict, List, TypeVar, Optional, Union, TYPE_CHECKING
+from dataclasses import dataclass, field
 
 # Type definitions
 if TYPE_CHECKING:
     from .system import ComponentSystem  # Forward reference
+    from ..config.config_schema import AppConfig  # Forward reference for type annotations
 
 # Type variable for the concrete component type
 T = TypeVar('T', bound='Component')
@@ -62,24 +70,64 @@ T = TypeVar('T', bound='Component')
 class InitializationContext:
     """
     [Class intent]
-    Compatibility class for supporting components that haven't been migrated
-    to the simplified KISS initialization pattern yet.
+    Context object passed to components during initialization that provides
+    access to necessary resources and configuration.
     
     [Implementation details]
-    Contains the basic fields that were included in the original InitializationContext.
-    This is a bridge to ease the transition to the simplified component model.
+    Contains the configuration manager reference, logger instance, and typed configuration object.
+    Provides methods to access other components and retrieve strongly-typed configuration.
     
     [Design principles]
-    Backward compatibility while transitioning to simpler architecture.
+    Dependency injection for component initialization.
+    Strong typing for configuration access.
     """
-    config: Any
+    config: Any  # For backward compatibility
     logger: logging.Logger
+    typed_config: Optional['AppConfig'] = None  # New field for strongly-typed configuration
     
     def get_component(self, name: str) -> Any:
-        """Compatibility method to access other components."""
+        """
+        [Function intent]
+        Provides access to other initialized components by name.
+        
+        [Implementation details]
+        Retrieves components from the ComponentSystem singleton.
+        
+        [Design principles]
+        Component dependency resolution without direct coupling.
+        
+        Args:
+            name: Name of the component to retrieve
+            
+        Returns:
+            The requested component instance or None if not found
+        """
         from .system import ComponentSystem
         system = ComponentSystem.get_instance()
         return system.get_component(name) if system else None
+    
+    def get_typed_config(self) -> 'AppConfig':
+        """
+        [Function intent]
+        Provides access to the strongly-typed configuration model.
+        
+        [Implementation details]
+        Returns the stored typed_config if available, otherwise returns
+        a default AppConfig instance.
+        
+        [Design principles]
+        Type safety for configuration access.
+        
+        Returns:
+            AppConfig: The strongly-typed configuration model
+        """
+        if self.typed_config is None:
+            # This should not happen if the context is properly initialized,
+            # but we provide a fallback for robustness
+            from ..config.config_schema import AppConfig
+            return AppConfig()
+        
+        return self.typed_config
 
 class Component:
     """
@@ -93,10 +141,14 @@ class Component:
     declaration properties. Initialization status is tracked via a simple boolean
     flag that component implementations must set.
     
+    Components receive a strongly-typed InitializationContext object during initialization
+    that provides access to configuration, logger, and other system resources.
+    
     [Design principles]
     Single responsibility for component lifecycle management.
     Simple dependency declaration with explicit dependencies list.
     Clear initialization status tracking with _initialized flag.
+    Strong typing for component initialization.
     """
     
     def __init__(self):
@@ -169,10 +221,10 @@ class Component:
         """
         return self._initialized
     
-    def initialize(self, config: Any) -> None:
+    def initialize(self, context: 'InitializationContext') -> None:
         """
         [Function intent]
-        Initializes the component with configuration and prepares it for use.
+        Initializes the component with context information and prepares it for use.
         
         [Implementation details]
         Must be implemented by concrete component classes.
@@ -180,9 +232,10 @@ class Component:
         
         [Design principles]
         Explicit initialization with clear success/failure indication.
+        Strong typing for context parameter.
         
         Args:
-            config: Configuration object with application settings
+            context: Initialization context with configuration and resources
             
         Raises:
             NotImplementedError: If not implemented by concrete component

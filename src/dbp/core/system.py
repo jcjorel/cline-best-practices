@@ -34,6 +34,10 @@
 # - doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-17T23:12:30Z : Added typed configuration to initialization context by CodeAssistant
+# * Updated initialization to use typed configuration from ConfigurationManager
+# * Now using component-specific child loggers for better log clarity
+# * Enhanced type safety through strongly-typed configuration access
 # 2025-04-17T08:41:14Z : Enhanced component initialization error logging by CodeAssistant
 # * Added detailed error logging for component initialization failures
 # * Improved error context capture for initialization exceptions
@@ -45,9 +49,6 @@
 # 2025-04-16T23:28:00Z : Fixed config provider in initialization context by CodeAssistant
 # * Modified InitializationContext to use config_manager component instead of raw config
 # * Added safety check to ensure config_manager component exists before initialization
-# 2025-04-16T23:18:00Z : Fixed component initialization context by CodeAssistant
-# * Added proper InitializationContext creation in initialize_all method
-# * Fixed logger access in components by passing correct context object
 ###############################################################################
 
 import logging
@@ -275,9 +276,13 @@ class ComponentSystem:
                     self._rollback()
                     return False
                 
+                # Get the typed configuration - throw on error
+                typed_config = config_manager.get_typed_config()
+                
                 context = InitializationContext(
                     config=config_manager,
-                    logger=self.logger
+                    logger=self.logger.getChild(component.name),  # Use child logger
+                    typed_config=typed_config  # Include typed configuration
                 )
                 
                 # Add logging for initialization context

@@ -116,11 +116,21 @@ class MemoryCacheComponent(Component):
 
     def initialize(self, context: InitializationContext):
         """
+        [Function intent]
         Initializes the memory cache component, including storage, indexes,
         eviction strategy, query engine, synchronizer, and performs initial load.
 
+        [Implementation details]
+        Uses the strongly-typed configuration for component setup.
+        Creates internal sub-components for the memory cache system.
+        Sets the _initialized flag when initialization succeeds.
+        
+        [Design principles]
+        Explicit initialization with strong typing.
+        Type-safe configuration access.
+        
         Args:
-            context: The initialization context providing config, logger, and registry access.
+            context: Initialization context with typed configuration and resources
         """
         if self._initialized:
             logger.warning(f"Component '{self.name}' already initialized.")
@@ -130,18 +140,15 @@ class MemoryCacheComponent(Component):
         self.logger.info(f"Initializing component '{self.name}'...")
 
         try:
-            # Get necessary configuration
-            # Assuming cache config is under 'memory_cache' key in the main config
-            cache_config = context.config.get(self.name, {}) # Use .get for safety
+            # Get strongly-typed configuration
+            config = context.get_typed_config()
+            cache_config = getattr(config, self.name)
 
             # Get dependent components
             db_component = context.get_component("database")
             # Access the DatabaseManager instance from the database component
-            # This assumes the DatabaseComponent exposes its manager instance.
-            # Adjust if the DatabaseComponent provides sessions differently.
-            if not hasattr(db_component, 'db_manager') or not isinstance(db_component.db_manager, DatabaseManager):
-                 raise TypeError("Database component does not expose a valid 'db_manager' attribute.")
-            db_manager = db_component.db_manager
+            # Use the get_manager() method rather than accessing _db_manager directly
+            db_manager = db_component.get_manager()
 
             # Instantiate internal cache services
             index_manager = IndexManager(logger_override=self.logger.getChild("index_manager"))
@@ -182,9 +189,9 @@ class MemoryCacheComponent(Component):
             self._initialized = False
             raise RuntimeError(f"Failed to initialize {self.name}") from e
 
-    def _create_eviction_strategy(self, cache_config: Dict[str, Any]) -> EvictionStrategy:
+    def _create_eviction_strategy(self, cache_config) -> EvictionStrategy:
         """Creates the configured eviction strategy instance."""
-        strategy_name = cache_config.get('eviction_strategy', 'lru').lower() # Default to lru
+        strategy_name = cache_config.eviction_policy.lower() # Access direct attribute
         self.logger.info(f"Creating eviction strategy: {strategy_name}")
         if strategy_name == "lru":
             return LRUEvictionStrategy(config=cache_config, logger_override=self.logger.getChild("eviction_lru"))

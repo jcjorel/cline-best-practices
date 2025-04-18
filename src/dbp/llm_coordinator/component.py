@@ -44,6 +44,11 @@
 # - All other files in src/dbp/llm_coordinator/
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-17T23:34:30Z : Updated to use strongly-typed configuration by CodeAssistant
+# * Updated initialize() method signature to use InitializationContext
+# * Refactored configuration access to use type-safe get_typed_config() method
+# * Added support for strongly-typed configuration in sub-components
+# * Improved type safety for configuration access
 # 2025-04-16T17:33:57Z : Fixed component initialization configuration access by CodeAssistant
 # * Modified initialize method to properly access configuration through the config_manager component
 # * Updated configuration passing to sub-components
@@ -139,35 +144,49 @@ class LLMCoordinatorComponent(Component):
         # Add other dependencies if internal tools require them (e.g., database, memory_cache).
         return ["config_manager"] # Using the correct name for the config manager component
 
-    def initialize(self, config: Any) -> None:
+    def initialize(self, context: InitializationContext) -> None:
         """
         Initializes the LLM Coordinator component and its sub-components.
 
         Args:
-            config: Configuration object with application settings
+            context: The initialization context with configuration and resources
         """
         if self._initialized:
             logger.warning(f"Component '{self.name}' already initialized.")
             return
 
-        self.logger = logging.getLogger(f"dbp.{self.name}")
+        self.logger = context.logger
         self.logger.info(f"Initializing component '{self.name}'...")
 
         try:
-            # Get component-specific configuration through config_manager
-            from ..core.system import ComponentSystem
-            system = ComponentSystem.get_instance()
-            config_manager = system.get_component("config_manager")
+            # Get component-specific configuration using strongly-typed config
+            typed_config = context.get_typed_config()
+            coordinator_config = typed_config.llm_coordinator
+            
+            # For backwards compatibility, also get the legacy config format
+            config_manager = context.get_component("config_manager")
             default_config = config_manager.get_default_config(self.name)
             
-            # Instantiate sub-components
-            self._request_handler = RequestHandler(config=default_config, logger_override=self.logger.getChild("request_handler"))
-            self._tool_registry = ToolRegistry(config=default_config, logger_override=self.logger.getChild("tool_registry"))
-            # JobManager needs the ToolRegistry to potentially execute tools (though execution engine does it here)
-            self._job_manager = JobManager(config=default_config, tool_registry=self._tool_registry, logger_override=self.logger.getChild("job_manager"))
-            self._response_formatter = ResponseFormatter(logger_override=self.logger.getChild("response_formatter"))
+            # Instantiate sub-components with strongly-typed config when possible
+            self._request_handler = RequestHandler(
+                config=default_config,  # Keep default for now until subcomponent is updated
+                logger_override=self.logger.getChild("request_handler")
+            )
+            self._tool_registry = ToolRegistry(
+                config=default_config,  # Keep default for now until subcomponent is updated
+                logger_override=self.logger.getChild("tool_registry")
+            )
+            # JobManager needs the ToolRegistry to potentially execute tools
+            self._job_manager = JobManager(
+                config=default_config,  # Keep default for now until subcomponent is updated
+                tool_registry=self._tool_registry, 
+                logger_override=self.logger.getChild("job_manager")
+            )
+            self._response_formatter = ResponseFormatter(
+                logger_override=self.logger.getChild("response_formatter")
+            )
             self._coordinator_llm = CoordinatorLLM(
-                config=default_config.get('coordinator_llm', {}),  # Pass specific sub-config
+                config=coordinator_config.coordinator_llm,  # Use strongly-typed configuration 
                 tool_registry=self._tool_registry,
                 logger_override=self.logger.getChild("coordinator_llm")
             )

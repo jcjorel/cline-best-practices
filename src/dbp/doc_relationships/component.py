@@ -140,17 +140,15 @@ class DocRelationshipsComponent(Component):
         self.logger.info(f"Initializing component '{self.name}'...")
 
         try:
-            # Get component-specific configuration
-            component_config = context.config.get(self.name, {}) # Assumes dict-like config
+            # Get strongly-typed configuration
+            config = context.get_typed_config()
 
             # Get dependent components
             db_component = context.get_component("database")
             metadata_component = context.get_component("metadata_extraction") # Needed for analyzer
 
-            # Ensure db_component provides DatabaseManager access
-            if not hasattr(db_component, 'db_manager') or not isinstance(db_component.db_manager, DatabaseManager):
-                 raise TypeError("Database component does not expose a valid 'db_manager' attribute.")
-            db_manager = db_component.db_manager
+            # Get database manager using the method instead of accessing attribute
+            db_manager = db_component.get_manager()
 
             # Instantiate sub-components
             self._repository = RelationshipRepository(db_manager=db_manager, logger_override=self.logger.getChild("repository"))

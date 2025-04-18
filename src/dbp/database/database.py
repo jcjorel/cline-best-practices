@@ -167,42 +167,35 @@ class DatabaseComponent(Component):
         """
         return ["config_manager"]
 
-    def initialize(self, context: Any) -> None:
+    def initialize(self, context: InitializationContext) -> None:
         """
         [Function intent]
         Initializes the database component with the application configuration.
         
         [Implementation details]
-        Creates and initializes the DatabaseManager with configuration.
+        Creates and initializes the DatabaseManager with typed configuration.
         Sets _initialized flag to indicate successful initialization.
         
         [Design principles]
         Clean initialization with proper error handling.
+        Type-safe configuration access.
         
         Args:
-            context: InitializationContext object containing configuration
+            context: Initialization context with typed configuration and resources
         
         Raises:
             RuntimeError: If database initialization fails
         """
+        self.logger = logging.getLogger(f"dbp.{self.name}")
         self.logger.info(f"Initializing component '{self.name}'...")
         
         try:
-            # Get the config_manager component from the context
-            from ..core.system import ComponentSystem
-            system = ComponentSystem.get_instance()
-            if not system:
-                self.logger.error("Failed to get ComponentSystem instance")
-                raise RuntimeError("ComponentSystem not initialized")
-                
-            config_manager = system.get_component("config_manager")
-            if not config_manager:
-                self.logger.error("Failed to get config_manager component")
-                raise RuntimeError("config_manager component not found")
+            # Get the strongly-typed configuration directly
+            typed_config = context.get_typed_config()
             
             # Create database manager if it doesn't exist
             if not self._db_manager:
-                self._db_manager = DatabaseManager(config_manager)
+                self._db_manager = DatabaseManager(typed_config)
                 
             # Initialize the database
             self._db_manager.initialize()
@@ -340,26 +333,26 @@ class DatabaseManager:
             logger.warning("Database already initialized.")
             return
 
-        db_type = self.config.get('database.type', 'sqlite')
+        # Access configuration using direct attribute access for strongly-typed config
+        db_type = self.config.database.type
         logger.info(f"Initializing database with type: {db_type}")
 
         # Log detailed configuration for debugging
         try:
-            # Use the config manager's get method directly for each database setting
+            # Access database configuration through attributes directly
             db_config = {
-                'database.type': self.config.get('database.type', 'sqlite'),
-                'database.path': self.config.get('database.path', '~/.dbp/metadata.db'),
-                'database.max_connections': self.config.get('database.max_connections', 4),
-                'database.connection_timeout': self.config.get('database.connection_timeout', 5),
-                'database.use_wal_mode': self.config.get('database.use_wal_mode', True),
-                'database.vacuum_threshold': self.config.get('database.vacuum_threshold', 20),
-                'database.echo_sql': self.config.get('database.echo_sql', False)
+                'database.type': self.config.database.type,
+                'database.path': self.config.database.path,
+                'database.max_connections': self.config.database.max_connections,
+                'database.connection_timeout': self.config.database.connection_timeout,
+                'database.use_wal_mode': self.config.database.use_wal_mode,
+                'database.vacuum_threshold': self.config.database.vacuum_threshold,
+                'database.echo_sql': self.config.database.echo_sql
             }
             
-            # Add PostgreSQL config if present
-            connection_string = self.config.get('database.connection_string', None)
-            if connection_string:
-                db_config['database.connection_string'] = connection_string
+            # Add PostgreSQL config if attribute exists
+            if hasattr(self.config.database, 'connection_string'):
+                db_config['database.connection_string'] = self.config.database.connection_string
                 
             logger.debug(f"Database configuration: {db_config}")
         except Exception as e:
@@ -471,7 +464,7 @@ class DatabaseManager:
         logger.error(f"  SQLAlchemy version: {sqlalchemy.__version__}")
         
         # Log database type and path
-        db_type = self.config.get('database.type', 'sqlite')
+        db_type = self.config.database.type
         logger.error(f"  Database type: {db_type}")
         
         if db_type == 'sqlite' and self.db_path:
@@ -534,7 +527,7 @@ class DatabaseManager:
 
     def _initialize_sqlite(self):
         """Initializes the SQLite database engine."""
-        db_path_config = self.config.get('database.path', '~/.dbp/metadata.db')
+        db_path_config = self.config.database.path
         db_path = os.path.expanduser(db_path_config)
         db_dir = os.path.dirname(db_path)
         
@@ -568,8 +561,8 @@ class DatabaseManager:
             raise
 
         # Create engine with connection pooling and WAL mode settings
-        pool_size = self.config.get('database.max_connections', 4)
-        timeout = self.config.get('database.connection_timeout', 5)
+        pool_size = self.config.database.max_connections
+        timeout = self.config.database.connection_timeout
         
         # Log configuration values
         logger.info(f"SQLite configuration: pool_size={pool_size}, timeout={timeout}")
@@ -585,7 +578,7 @@ class DatabaseManager:
                 max_overflow=2, # Allow 2 extra connections beyond pool_size
                 pool_timeout=timeout,
                 # connect_args={'timeout': timeout} # This might cause issues with standard SQLite driver
-                echo=self.config.get('database.echo_sql', False) # Optional SQL logging
+                echo=self.config.database.echo_sql # Optional SQL logging
             )
             logger.debug(f"SQLAlchemy engine created for SQLite with pool size {pool_size}.")
         except Exception as e:
@@ -595,7 +588,7 @@ class DatabaseManager:
             raise
 
         # Enable WAL mode for better concurrency and safety
-        if self.config.get('database.use_wal_mode', True):
+        if self.config.database.use_wal_mode:
             try:
                 from sqlalchemy import text
                 with self.engine.connect() as conn:
@@ -797,14 +790,14 @@ class DatabaseManager:
 
     def _initialize_postgresql(self):
         """Initializes the PostgreSQL database engine."""
-        connection_string = self.config.get('database.connection_string')
+        connection_string = self.config.database.connection_string
         logger.info("Initializing PostgreSQL database.")
 
         if not connection_string:
             raise ValueError("PostgreSQL connection string ('database.connection_string') not provided in configuration.")
 
-        pool_size = self.config.get('database.max_connections', 4)
-        timeout = self.config.get('database.connection_timeout', 5)
+        pool_size = self.config.database.max_connections
+        timeout = self.config.database.connection_timeout
 
         self.engine = create_engine(
             connection_string,
@@ -816,7 +809,7 @@ class DatabaseManager:
             connect_args={
                 'connect_timeout': timeout # PostgreSQL specific connection timeout
             },
-            echo=self.config.get('database.echo_sql', False) # Optional SQL logging
+            echo=self.config.database.echo_sql # Optional SQL logging
         )
         logger.debug(f"SQLAlchemy engine created for PostgreSQL with pool size {pool_size}.")
 
@@ -905,7 +898,7 @@ class DatabaseManager:
 
     def vacuum(self):
         """Performs VACUUM operation on SQLite database if needed."""
-        if self.config.get('database.type') != 'sqlite':
+        if self.config.database.type != 'sqlite':
             logger.debug("Vacuum operation skipped (not SQLite).")
             return
 
@@ -928,10 +921,10 @@ class DatabaseManager:
 
     def check_vacuum_needed(self):
         """Checks if SQLite database fragmentation exceeds the configured threshold."""
-        if self.config.get('database.type') != 'sqlite':
+        if self.config.database.type != 'sqlite':
             return False
 
-        threshold = self.config.get('database.vacuum_threshold', 20) # Default 20%
+        threshold = self.config.database.vacuum_threshold # Using attribute access
         if not (0 < threshold <= 100):
              logger.warning(f"Invalid vacuum threshold {threshold}, using default 20.")
              threshold = 20

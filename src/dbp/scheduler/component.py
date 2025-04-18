@@ -43,13 +43,15 @@
 # - src/dbp/metadata_extraction/component.py (Dependency)
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-17T23:25:15Z : Updated to use strongly-typed configuration by CodeAssistant
+# * Refactored configuration access to use type-safe get_typed_config() method
+# * Replaced string-based configuration lookup with direct attribute access
+# * Enhanced type safety for configuration properties
 # 2025-04-16T18:38:53Z : Changed component name from "background_scheduler" to "scheduler" by CodeAssistant
 # * Updated name property to return "scheduler" to match the system's expected name
 # 2025-04-16T18:33:41Z : Renamed component class from BackgroundTaskSchedulerComponent to SchedulerComponent by CodeAssistant
 # * Updated class name to match the expected name in the component system
 # * Updated all related error messages to use the new name
-# 2025-04-15T10:04:25Z : Initial creation of BackgroundTaskSchedulerComponent by CodeAssistant
-# * Implemented Component protocol methods, initialization of internal parts, and control methods.
 ###############################################################################
 
 import logging
@@ -137,9 +139,9 @@ class SchedulerComponent(Component):
         self.logger.info(f"Initializing component '{self.name}'...")
 
         try:
-            # Get scheduler-specific configuration
-            # Using context.config.get assumes config manager provides dict-like access
-            scheduler_config = context.config.get(self.name, {}) # Get config specific to this component
+            # Get scheduler-specific configuration using strongly-typed config
+            typed_config = context.get_typed_config()
+            scheduler_config = typed_config.scheduler  # Get config specific to this component
 
             # Get dependent components from the registry via context
             fs_monitor_component = context.get_component("fs_monitor")
@@ -182,7 +184,7 @@ class SchedulerComponent(Component):
             self.logger.info(f"Component '{self.name}' initialized.")
 
             # Start the controller automatically if enabled in config
-            if scheduler_config.get('enabled', True):
+            if scheduler_config.enabled:
                  self.start()
             else:
                  self.logger.info("Scheduler is disabled in configuration. Not starting automatically.")

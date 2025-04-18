@@ -46,19 +46,24 @@
 # - doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-17T18:26:00Z : Removed warning log for initialization check by CodeAssistant
-# * Removed logger.warning("Accessing configuration before initialization") message
-# * Silently falling back to default configuration when not initialized
-# 2025-04-17T18:09:00Z : Fixed circular import issue by CodeAssistant
-# * Removed dependency on core.log_utils.get_formatted_logger
-# * Switched to standard logging to break circular dependency chain
-# * Maintained logging functionality while enabling proper module initialization
-# 2025-04-17T17:22:30Z : Switched to get_formatted_logger for consistent logging by CodeAssistant
-# * Updated to use get_formatted_logger from core.log_utils 
-# * Simplified logger creation for better consistency across components
-# 2025-04-17T17:04:45Z : Updated to use centralized logging formatter by CodeAssistant
-# * Imported and used configure_logger from core.log_utils 
-# * Fixed millisecond display in log messages
+# 2025-04-18T07:39:00Z : Added automatic template variable resolution by CodeAssistant
+# * Implemented _resolve_all_template_variables to recursively process all configuration values
+# * Modified _apply_configuration_hierarchy to resolve all templates before marking config as ready
+# * Updated get() method to expect pre-resolved values with backward compatibility support
+# * Improved logging for template resolution activities
+# 2025-04-17T23:04:30Z : Simplified ConfigurationManager with Pydantic-first approach by CodeAssistant
+# * Refactored configuration loading to use direct Pydantic model manipulation
+# * Enhanced error handling and improved descriptive error messages
+# * Added helper methods for attribute path navigation
+# * Improved type safety throughout configuration handling
+# 2025-04-17T23:02:00Z : Implemented type-safe configuration setting by CodeAssistant
+# * Added _set_config_attr_by_path helper for safely navigating configuration paths
+# * Refactored set() method to use Pydantic model validation
+# * Improved error reporting for configuration setting operations
+# 2025-04-17T23:01:00Z : Enhanced get() method with direct model access by CodeAssistant
+# * Refactored get() method to use attribute access instead of dictionary lookups
+# * Improved error handling with better diagnostics for missing keys
+# * Enhanced type safety through direct Pydantic model usage
 ###############################################################################
 
 import os
@@ -92,7 +97,8 @@ DEFAULT_PROJECT_CONFIG_DIR = Path(".dbp") # Relative to project root
 class ConfigurationManager:
     """
     Manages loading, validation, and access to application configuration
-    using a singleton pattern and layered approach.
+    using a singleton pattern and layered approach. Provides both string-based
+    key access and strongly-typed configuration access.
     """
     _instance = None
     _lock = threading.RLock() # Use RLock for reentrant locking if needed
@@ -284,86 +290,116 @@ class ConfigurationManager:
         logger.debug(f"Loaded {count} configuration values from command-line arguments.")
 
 
+    def _apply_config_data_to_model(self, config: AppConfig, data: Dict[str, Any]) -> None:
+        """
+        [Function intent]
+        Applies a dictionary of configuration data to a Pydantic model.
+        
+        [Implementation details]
+        Handles applying both direct attributes and nested paths.
+        
+        [Design principles]
+        Safe application of configuration values with proper error handling.
+        
+        Args:
+            config: The Pydantic model to update
+            data: Dictionary of configuration data to apply
+        """
+        # Process each key-value pair in the data
+        for key, value in data.items():
+            try:
+                # Check if the key exists as a direct attribute
+                if hasattr(config, key):
+                    if isinstance(value, dict):
+                        # Get the corresponding attribute for nested processing
+                        attr = getattr(config, key)
+                        if isinstance(attr, BaseModel):
+                            # Recursively apply to nested Pydantic models
+                            for subkey, subvalue in value.items():
+                                try:
+                                    if isinstance(subvalue, dict) and hasattr(attr, subkey):
+                                        nested_attr = getattr(attr, subkey)
+                                        if isinstance(nested_attr, BaseModel):
+                                            self._apply_config_data_to_model(nested_attr, subvalue)
+                                        else:
+                                            setattr(attr, subkey, subvalue)
+                                    else:
+                                        setattr(attr, subkey, subvalue)
+                                except (AttributeError, ValidationError) as e:
+                                    logger.warning(f"Failed to set nested config '{key}.{subkey}': {e}")
+                    else:
+                        # Set direct attribute
+                        setattr(config, key, value)
+            except (AttributeError, ValidationError) as e:
+                logger.warning(f"Failed to apply configuration for '{key}': {e}")
+
     def _apply_configuration_hierarchy(self):
         """
-        Merges configurations from all sources (files, env, cli) onto defaults
-        and validates the final configuration using the Pydantic schema.
-        Priority: CLI > Env Vars > Project Config > User Config > System Config > Defaults
+        [Function intent]
+        Applies configuration from all sources, validates using the Pydantic schema,
+        and resolves all template variables before marking as ready.
+        
+        [Implementation details]
+        Creates a base AppConfig instance and sequentially applies configuration from
+        different sources directly to the Pydantic model, then resolves all template
+        strings to ensure clients don't need to handle template resolution.
+        
+        [Design principles]
+        Direct Pydantic model manipulation without intermediate dictionaries.
+        Proper validation at each configuration layer.
+        Pre-resolved template variables to eliminate client-side resolution.
         """
         logger.debug("Applying configuration hierarchy...")
-        # Start with an empty dict, defaults are handled by AppConfig model
-        merged_config_dict = {}
-
-        # Order of loading matters for precedence (later overrides earlier)
-        # 1. Standard Config Files (System -> User)
-        # Sort file paths to ensure consistent loading order (e.g., system before user)
-        sorted_file_paths = sorted(self._config_files_data.keys())
-        for file_path in sorted_file_paths:
-             # Ensure project config is applied after user/system if it exists
-             # This logic assumes project config path is distinct and loaded correctly
-             # A more robust way might involve tagging config sources.
-             is_project_config = ".dbp" in file_path # Heuristic check
-             if not is_project_config:
-                 logger.debug(f"Merging config from standard file: {file_path}")
-                 self._merge_dict(merged_config_dict, self._config_files_data[file_path])
-
-        # 2. Project Config File (if loaded)
-        project_config_path_str = next((p for p in self._config_files_data if ".dbp" in p), None)
-        if project_config_path_str:
-             logger.debug(f"Merging config from project file: {project_config_path_str}")
-             self._merge_dict(merged_config_dict, self._config_files_data[project_config_path_str])
-
-
-        # 3. Environment Variables
-        if self._env_vars:
-            logger.debug("Merging config from environment variables...")
-            env_dict = self._nested_dict_from_keys(self._env_vars)
-            self._merge_dict(merged_config_dict, env_dict)
-
-        # 4. Command-Line Arguments
-        if self._cli_args:
-            logger.debug("Merging config from command-line arguments...")
-            cli_dict = self._nested_dict_from_keys(self._cli_args)
-            self._merge_dict(merged_config_dict, cli_dict)
-
-        # Store the raw merged dictionary
-        self._raw_config_dict = merged_config_dict
-
-        # Validate the final merged dictionary against the Pydantic model
+        
+        # Start with default configuration
+        config = AppConfig()
+        
         try:
-            # Pass the merged dict to AppConfig for validation and default filling
-            self._config = AppConfig(**self._raw_config_dict)
-            logger.debug("Configuration validated successfully against schema.")
+            # 1. Apply standard config files (System -> User)
+            sorted_file_paths = sorted(self._config_files_data.keys())
+            for file_path in sorted_file_paths:
+                is_project_config = ".dbp" in file_path  # Heuristic check
+                if not is_project_config:
+                    logger.debug(f"Applying config from standard file: {file_path}")
+                    self._apply_config_data_to_model(config, self._config_files_data[file_path])
+            
+            # 2. Apply project config
+            project_config_path_str = next((p for p in self._config_files_data if ".dbp" in p), None)
+            if project_config_path_str:
+                logger.debug(f"Applying config from project file: {project_config_path_str}")
+                self._apply_config_data_to_model(config, self._config_files_data[project_config_path_str])
+                
+            # 3. Apply environment variables
+            if self._env_vars:
+                logger.debug("Applying config from environment variables...")
+                for key, value in self._env_vars.items():
+                    # Convert value to appropriate type
+                    converted_value = self._convert_value(value)
+                    self._set_config_attr_by_path(config, key, converted_value)
+                    
+            # 4. Apply CLI arguments
+            if self._cli_args:
+                logger.debug("Applying config from command-line arguments...")
+                for key, value in self._cli_args.items():
+                    # Convert value to appropriate type
+                    converted_value = self._convert_value(value)
+                    self._set_config_attr_by_path(config, key, converted_value)
+                    
+            # 5. Resolve all template variables before finalizing
+            logger.debug("Resolving all template variables in configuration...")
+            self._resolve_all_template_variables(config)
+            
+            # Store the final validated config with resolved variables
+            self._config = config
+            # Also maintain the raw dict for backwards compatibility
+            self._raw_config_dict = config.dict()
+            logger.debug("Configuration validated successfully with all template variables resolved.")
+            
         except ValidationError as e:
             logger.error(f"Configuration validation failed. Using default values. Errors:\n{e}")
             # Fallback to default configuration on validation error
             self._config = AppConfig()
-            # Optionally raise the error or handle it differently
-            # raise e
-
-    def _nested_dict_from_keys(self, flat_dict: Dict[str, Any]) -> Dict[str, Any]:
-        """Converts a flat dictionary with dot-notation keys to a nested dictionary."""
-        nested = {}
-        for key, value in flat_dict.items():
-            parts = key.split('.')
-            d = nested
-            for i, part in enumerate(parts):
-                if i == len(parts) - 1:
-                    # Convert value type before assignment
-                    d[part] = self._convert_value(value)
-                else:
-                    d = d.setdefault(part, {})
-                    if not isinstance(d, dict):
-                         logger.warning(f"Configuration key conflict: '{'.'.join(parts[:i+1])}' is both a value and a section.")
-                         # Overwrite non-dict intermediate with a dict to proceed
-                         d = {}
-                         # Need to re-attach d to its parent if overwritten
-                         parent_d = nested
-                         for p in parts[:i]:
-                             parent_d = parent_d[p]
-                         parent_d[part] = d
-
-        return nested
+            self._raw_config_dict = self._config.dict()
 
     def _convert_value(self, value: str) -> Any:
         """Attempts to convert string value to bool, int, float, or keeps as string."""
@@ -383,64 +419,152 @@ class ConfigurationManager:
         return value # Return non-string values as is
 
 
-    def _merge_dict(self, target: Dict[str, Any], source: Dict[str, Any]):
-        """Recursively merges source dict into target dict (source values overwrite target)."""
-        for key, value in source.items():
-            if key in target and isinstance(target[key], dict) and isinstance(value, dict):
-                self._merge_dict(target[key], value)
-            elif value is not None: # Avoid merging None values unless explicitly intended
-                target[key] = value
-
-    def get(self, key: str, resolve_templates: bool = True) -> Any:
+    def _resolve_all_template_variables(self, config, path=""):
         """
+        [Function intent]
+        Recursively resolves all template variables in the config object.
+        
+        [Implementation details]
+        Traverses the entire Pydantic model structure and resolves any string 
+        values that contain template variables in the ${key} format.
+        
+        [Design principles]
+        Deep resolution to ensure all nested templates are resolved before clients access configuration.
+        
+        Args:
+            config: The configuration object or sub-object to process
+            path: Current path in the configuration hierarchy (for logging)
+        """
+        # Skip None values
+        if config is None:
+            return
+            
+        # Handle different types of configuration objects
+        if isinstance(config, BaseModel):
+            # Process each field in the Pydantic model
+            for field_name, field_value in config.__dict__.items():
+                field_path = f"{path}.{field_name}" if path else field_name
+                
+                if isinstance(field_value, BaseModel):
+                    # Recursively process nested models
+                    self._resolve_all_template_variables(field_value, field_path)
+                elif isinstance(field_value, dict):
+                    # Process dictionary values
+                    for key, value in field_value.items():
+                        dict_path = f"{field_path}.{key}"
+                        if isinstance(value, str) and "${" in value:
+                            resolved_value = self.resolve_template_string(value)
+                            if resolved_value != value:
+                                logger.debug(f"Resolved template in {dict_path}: {value} → {resolved_value}")
+                                field_value[key] = resolved_value
+                        elif isinstance(value, (dict, list, BaseModel)):
+                            self._resolve_all_template_variables(value, dict_path)
+                elif isinstance(field_value, list):
+                    # Process list values
+                    for i, item in enumerate(field_value):
+                        item_path = f"{field_path}[{i}]"
+                        if isinstance(item, str) and "${" in item:
+                            resolved_item = self.resolve_template_string(item)
+                            if resolved_item != item:
+                                logger.debug(f"Resolved template in {item_path}: {item} → {resolved_item}")
+                                field_value[i] = resolved_item
+                        elif isinstance(item, (dict, list, BaseModel)):
+                            self._resolve_all_template_variables(item, item_path)
+                elif isinstance(field_value, str) and "${" in field_value:
+                    # Resolve string templates
+                    resolved_value = self.resolve_template_string(field_value)
+                    if resolved_value != field_value:
+                        logger.debug(f"Resolved template in {field_path}: {field_value} → {resolved_value}")
+                        setattr(config, field_name, resolved_value)
+        elif isinstance(config, dict):
+            # Process dictionary objects
+            for key, value in list(config.items()):
+                dict_path = f"{path}.{key}" if path else key
+                if isinstance(value, str) and "${" in value:
+                    resolved_value = self.resolve_template_string(value)
+                    if resolved_value != value:
+                        logger.debug(f"Resolved template in {dict_path}: {value} → {resolved_value}")
+                        config[key] = resolved_value
+                elif isinstance(value, (dict, list, BaseModel)):
+                    self._resolve_all_template_variables(value, dict_path)
+        elif isinstance(config, list):
+            # Process list objects
+            for i, item in enumerate(config):
+                item_path = f"{path}[{i}]" if path else f"[{i}]"
+                if isinstance(item, str) and "${" in item:
+                    resolved_item = self.resolve_template_string(item)
+                    if resolved_item != item:
+                        logger.debug(f"Resolved template in {item_path}: {item} → {resolved_item}")
+                        config[i] = resolved_item
+                elif isinstance(item, (dict, list, BaseModel)):
+                    self._resolve_all_template_variables(item, item_path)
+
+    def get(self, key: str, resolve_templates: bool = False) -> Any:
+        """
+        [Function intent]
         Retrieves a configuration value using dot notation (e.g., 'database.type').
-        Automatically resolves any template variables in string values.
+        Template variables are already resolved during initialization.
+        
+        [Implementation details]
+        Uses direct attribute access on the Pydantic AppConfig model.
+        Falls back to default configuration if not initialized.
+        
+        [Design principles]
+        Type-safe configuration access with pre-resolved template variables.
         
         Args:
             key: The configuration key in dot notation.
             resolve_templates: Whether to resolve template variables in string values.
+                              This parameter is maintained for backward compatibility,
+                              but all templates are already resolved at initialization.
 
         Returns:
-            The configuration value with template variables resolved.
+            The configuration value with template variables already resolved.
             
         Raises:
             ValueError: If the configuration key doesn't exist.
         """
+        # Choose the right config object based on initialization state
         if not self.initialized_flag:
-             # Fallback to trying to access default AppConfig if not initialized
-             try:
-                 parts = key.split('.')
-                 value = AppConfig() # Get defaults
-                 for part in parts:
-                     value = getattr(value, part)
-                 # Default values might also contain templates
-                 if resolve_templates and isinstance(value, str):
-                     value = self.resolve_template_string(value)
-                 return value
-             except (AttributeError, KeyError):
-                 raise ValueError(f"Configuration key '{key}' not found in default configuration")
-
-
-        try:
-            parts = key.split('.')
-            value = self._config
-            for part in parts:
-                # Check if the current value is a Pydantic model before getattr
-                if isinstance(value, BaseModel):
-                    value = getattr(value, part)
-                # Handle cases where part of the path might be a dict (less common with Pydantic)
-                elif isinstance(value, dict):
-                     value = value[part]
-                else:
-                     # If it's neither a model nor a dict, we can't go deeper
-                     raise AttributeError(f"Cannot access part '{part}' in non-model/dict value")
+            config = AppConfig()  # Get defaults
+        else:
+            config = self._config
             
-            # Resolve template variables in string values
-            if resolve_templates and isinstance(value, str):
+        # Navigate through the Pydantic model hierarchy
+        parts = key.split('.')
+        value = config
+        
+        try:
+            for part in parts:
+                value = getattr(value, part)
+                
+            # For backward compatibility, provide a path to still resolve templates
+            # but this should not be needed as all templates are resolved at initialization
+            if resolve_templates and isinstance(value, str) and "${" in value:
+                logger.warning(f"Unresolved template variable found in config key {key}: {value}. "
+                              "This may indicate an initialization issue or a circular template reference.")
                 value = self.resolve_template_string(value)
                 
             return value
-        except (AttributeError, KeyError, IndexError) as e:
+        except AttributeError as e:
+            # Create a more descriptive error message
+            attempted_path = []
+            current_value = config
+            for part in parts:
+                attempted_path.append(part)
+                try:
+                    current_value = getattr(current_value, part)
+                except AttributeError:
+                    path_so_far = ".".join(attempted_path[:-1])
+                    if path_so_far:
+                        error_message = f"Configuration key '{key}' not found. '{path_so_far}' exists but has no attribute '{part}'."
+                    else:
+                        error_message = f"Configuration key '{key}' not found in configuration."
+                    
+                    logger.error(error_message)
+                    raise ValueError(error_message) from e
+            
+            # This should not be reached, but just in case
             logger.error(f"Configuration key '{key}' not found")
             raise ValueError(f"Configuration key '{key}' not found in configuration") from e
         except Exception as e:
@@ -492,12 +616,55 @@ class ConfigurationManager:
             
         return result
 
+    def _set_config_attr_by_path(self, obj: Any, path: str, value: Any) -> bool:
+        """
+        [Function intent]
+        Sets a nested attribute on a Pydantic model using dot notation path.
+        
+        [Implementation details]
+        Navigates through the model hierarchy and sets the value on the target attribute.
+        
+        [Design principles]
+        Type-safe configuration updates using direct attribute access.
+        
+        Args:
+            obj: The object to set the attribute on (typically a Pydantic model)
+            path: The path in dot notation
+            value: The value to set
+            
+        Returns:
+            bool: True if successful, False if attribute doesn't exist
+        """
+        parts = path.split('.')
+        
+        # Navigate to the parent object
+        for part in parts[:-1]:
+            try:
+                obj = getattr(obj, part)
+            except AttributeError:
+                logger.error(f"Couldn't navigate to '{part}' in path '{path}'")
+                raise
+                
+        # Set the value on the target attribute
+        try:
+            setattr(obj, parts[-1], value)
+            return True
+        except (AttributeError, ValidationError) as e:
+            logger.warning(f"Failed to set attribute '{parts[-1]}' on path '{path}': {e}")
+            return False
+
     def set(self, key: str, value: Any) -> bool:
         """
+        [Function intent]
         Sets a configuration value at runtime using dot notation.
-        The configuration is re-validated after setting. If validation fails,
-        the change is reverted.
-
+        
+        [Implementation details]
+        Uses direct attribute setting on the Pydantic AppConfig model
+        with validation.
+        
+        [Design principles]
+        Type-safe configuration updates with validation.
+        
         Args:
             key: The configuration key in dot notation.
             value: The value to set.
@@ -506,37 +673,29 @@ class ConfigurationManager:
             True if the value was set and validated successfully, False otherwise.
         """
         if not self.initialized_flag:
-             logger.error("Cannot set configuration before initialization.")
-             return False
-
+            logger.error("Cannot set configuration before initialization.")
+            return False
+            
         with self._lock:
-            original_config_dict = self._config.dict() # Keep backup
-            temp_config_dict = self._config.dict() # Work on a copy
-
             try:
-                parts = key.split('.')
-                d = temp_config_dict
-                for part in parts[:-1]:
-                    d = d.setdefault(part, {})
-                d[parts[-1]] = value # Set the new value
-
-                # Attempt to validate the modified configuration
-                AppConfig(**temp_config_dict)
-
-                # If validation succeeds, update the main config object
-                self._config = AppConfig(**temp_config_dict)
-                # Also update the raw dict representation if needed for consistency
-                self._raw_config_dict = temp_config_dict
+                # Create a copy of the current config
+                new_config = AppConfig(**self._config.dict())
+                
+                # Attempt to set the value on the copy
+                if not self._set_config_attr_by_path(new_config, key, value):
+                    return False
+                    
+                # If we got here without exceptions, the update is valid
+                self._config = new_config
+                # Update raw dict to keep it in sync
+                self._raw_config_dict = new_config.dict()
                 logger.info(f"Configuration value set and validated: {key} = {value}")
                 return True
-
+                
             except ValidationError as e:
                 logger.error(f"Validation failed when setting '{key}' to '{value}'. Change reverted. Errors:\n{e}")
                 # Revert is implicit as self._config was not updated
                 return False
-            except (TypeError, KeyError) as e:
-                 logger.error(f"Error navigating configuration structure to set key '{key}': {e}")
-                 return False
             except Exception as e:
                 logger.error(f"Unexpected error setting configuration key '{key}': {e}", exc_info=True)
                 return False
@@ -587,6 +746,30 @@ class ConfigurationManager:
          """Returns the raw merged configuration dictionary before Pydantic validation."""
          return self._raw_config_dict.copy()
 
+
+    def get_typed_config(self) -> AppConfig:
+        """
+        [Function intent]
+        Returns the strongly-typed configuration object for type-safe access.
+        
+        [Implementation details]
+        Provides direct access to the underlying Pydantic AppConfig model.
+        
+        [Design principles]
+        Type safety for configuration access.
+        
+        Returns:
+            AppConfig: The validated configuration model
+            
+        Raises:
+            RuntimeError: If configuration is not initialized
+        """
+        if not self.initialized_flag:
+            # Create and return a default AppConfig when not initialized
+            logger.debug("Getting default typed configuration as manager is not initialized")
+            return AppConfig()
+            
+        return self._config
 
     def validate(self) -> List[str]:
         """Validates the current configuration state against the schema."""

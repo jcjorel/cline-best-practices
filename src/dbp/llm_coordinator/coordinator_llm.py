@@ -136,7 +136,7 @@ class CoordinatorLLM:
         self.bedrock_manager = bedrock_manager or self._initialize_bedrock_manager()
         
         # Default model name
-        self.model_name = self.config.get("model_name", "nova-lite")
+        self.model_name = getattr(self.config, "model_name")
         
         # Model client will be retrieved lazily when needed
         self._model_client = None
@@ -153,9 +153,9 @@ class CoordinatorLLM:
         Returns:
             BedrockClientManager: The configured manager singleton instance
         """
-        # Extract Bedrock-specific configuration
-        bedrock_config = self.config.get("bedrock", {})
-        region = bedrock_config.get("region") or os.getenv('AWS_REGION', 'us-east-1')
+        # Extract Bedrock-specific configuration from strongly-typed config
+        bedrock_config = self.config.bedrock
+        region = getattr(bedrock_config, "region", None) or os.getenv('AWS_REGION', 'us-east-1')
         
         # We'll reuse the coordinator's prompt manager to avoid duplication
         
@@ -363,7 +363,7 @@ class CoordinatorLLM:
         })
         
         # Use mock response if model client not available
-        use_mock = self.config.get("use_mock_response", False)
+        use_mock = getattr(self.config, "use_mock_response")
         
         if use_mock:
             self.logger.warning({
@@ -384,9 +384,9 @@ class CoordinatorLLM:
             client = self._get_model_client()
             
             # Set invocation parameters from config or defaults
-            temperature = self.config.get("temperature", 0.7)
-            max_tokens = self.config.get("max_tokens", 2000)
-            top_p = self.config.get("top_p", 0.9)
+            temperature = getattr(self.config, "temperature")
+            max_tokens = getattr(self.config, "max_tokens")
+            top_p = getattr(self.config, "top_p")
             
             # Invoke the model
             response = client.invoke_model(

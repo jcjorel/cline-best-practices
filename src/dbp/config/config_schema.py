@@ -258,13 +258,19 @@ class InitializationConfig(BaseModel):
 
 # --- LLM Coordinator Configuration ---
 
+class BedrockConfig(BaseModel):
+    """AWS Bedrock client configuration."""
+    region: Optional[str] = Field(default=None, description="AWS region for Bedrock API calls")
+
 class CoordinatorLLMConfig(BaseModel):
     """Configuration specific to the Coordinator LLM instance."""
     model_id: str = Field(default=COORDINATOR_LLM_DEFAULTS["model_id"], description="AWS Bedrock model ID for the coordinator LLM (e.g., amazon.titan-text-lite-v1, anthropic.claude-3-sonnet-20240229-v1:0)")
+    model_name: str = Field(default=COORDINATOR_LLM_DEFAULTS["model_name"], description="Friendly name for the model (e.g., nova-lite)")
     temperature: float = Field(default=COORDINATOR_LLM_DEFAULTS["temperature"], ge=0.0, le=1.0, description="Temperature parameter for LLM generation (0.0 for deterministic)")
     max_tokens: int = Field(default=COORDINATOR_LLM_DEFAULTS["max_tokens"], ge=1, le=8192, description="Maximum tokens for LLM response") # Adjusted max based on typical limits
     prompt_templates_dir: str = Field(default=COORDINATOR_LLM_DEFAULTS["prompt_templates_dir"], description="Directory containing prompt templates for the coordinator")
     response_format: str = Field(default=COORDINATOR_LLM_DEFAULTS["response_format"], description="Expected response format from coordinator LLM ('json' or 'text')")
+    bedrock: BedrockConfig = Field(default_factory=BedrockConfig, description="AWS Bedrock configuration")
 
     @validator('response_format')
     def validate_response_format(cls, v):
@@ -346,6 +352,21 @@ class ConsistencyAnalysisConfig(BaseModel):
     background_check_interval_minutes: int = Field(default=CONSISTENCY_ANALYSIS_DEFAULTS["background_check_interval_minutes"], ge=5, le=1440, description="Interval in minutes for periodic background consistency checks.")
     max_inconsistencies_per_report: int = Field(default=CONSISTENCY_ANALYSIS_DEFAULTS["max_inconsistencies_per_report"], ge=10, le=10000, description="Maximum number of inconsistencies to include in a single report.")
 
+# --- Metadata Extraction Configuration ---
+
+class MetadataExtractionConfig(BaseModel):
+    """Configuration for the Metadata Extraction component."""
+    # Add basic configuration fields needed for metadata extraction
+    model_id: str = Field(default="amazon.titan-text-lite-v1", description="AWS Bedrock model ID for metadata extraction")
+    temperature: float = Field(default=0.0, ge=0.0, le=1.0, description="Temperature parameter for LLM generation (0.0 for deterministic)")
+    max_tokens: int = Field(default=4096, ge=1, le=8192, description="Maximum tokens for LLM response")
+    max_file_size_kb: int = Field(default=1024, ge=1, le=10240, description="Maximum file size in KB to process")
+    extraction_timeout_seconds: int = Field(default=30, ge=5, le=300, description="Timeout for extraction operations in seconds")
+    batch_size: int = Field(default=10, ge=1, le=100, description="Number of files to process in a batch")
+    max_retries: int = Field(default=3, ge=0, le=10, description="Maximum number of retry attempts for failed operations")
+    retry_delay: float = Field(default=1.0, ge=0.1, le=10.0, description="Delay in seconds between retry attempts")
+    enabled: bool = Field(default=True, description="Enable metadata extraction")
+
 # --- Recommendation Generator Configuration ---
 
 class RecommendationGeneratorConfig(BaseModel):
@@ -355,6 +376,33 @@ class RecommendationGeneratorConfig(BaseModel):
     auto_apply_recommendations: bool = Field(default=RECOMMENDATION_GENERATOR_DEFAULTS["auto_apply_recommendations"], description="If true, automatically apply generated recommendations without user confirmation (Use with caution!).")
     max_recommendations_per_batch: int = Field(default=RECOMMENDATION_GENERATOR_DEFAULTS["max_recommendations_per_batch"], ge=1, le=1000, description="Maximum number of recommendations to generate in a single batch.")
     # Add strategy-specific configs if needed, e.g., nested models
+
+# --- AWS Configuration ---
+
+class AWSConfig(BaseModel):
+    """Configuration for AWS services."""
+    region: Optional[str] = Field(default="us-east-1", description="AWS region for API calls")
+    endpoint_url: Optional[str] = Field(default=None, description="Optional custom endpoint URL for AWS services")
+    credentials_profile: Optional[str] = Field(default=None, description="AWS credentials profile name")
+
+# --- Memory Cache Configuration ---
+
+class MemoryCacheConfig(BaseModel):
+    """Configuration for the Memory Cache component."""
+    enabled: bool = Field(default=True, description="Enable in-memory caching")
+    max_size_mb: int = Field(default=512, ge=10, le=4096, description="Maximum memory size in MB for cache")
+    ttl_seconds: int = Field(default=3600, ge=60, le=86400, description="Time-to-live for cache entries in seconds")
+    cleanup_interval_seconds: int = Field(default=300, ge=30, le=3600, description="Interval for cleaning expired entries")
+    persist_to_disk: bool = Field(default=True, description="Persist cache to disk between runs")
+    eviction_policy: str = Field(default="lru", description="Cache eviction policy when max size is reached")
+    
+    @validator('eviction_policy')
+    def validate_eviction_policy(cls, v):
+        allowed = ["lru", "lfu", "fifo", "random"]
+        if v not in allowed:
+            logger.warning(f"Invalid eviction policy '{v}'. Defaulting to 'lru'. Allowed: {allowed}")
+            return "lru"
+        return v
 
 # --- MCP Server Integration Configuration ---
 
@@ -429,9 +477,12 @@ class AppConfig(BaseModel):
     llm_coordinator: LLMCoordinatorConfig = Field(default_factory=LLMCoordinatorConfig, description="LLM Coordinator settings")
     internal_tools: InternalToolsConfig = Field(default_factory=InternalToolsConfig, description="Internal LLM Tools settings")
     consistency_analysis: ConsistencyAnalysisConfig = Field(default_factory=ConsistencyAnalysisConfig, description="Consistency Analysis settings")
+    metadata_extraction: MetadataExtractionConfig = Field(default_factory=MetadataExtractionConfig, description="Metadata Extraction settings")
     recommendation_generator: RecommendationGeneratorConfig = Field(default_factory=RecommendationGeneratorConfig, description="Recommendation Generator settings")
+    memory_cache: MemoryCacheConfig = Field(default_factory=MemoryCacheConfig, description="Memory Cache settings")
     mcp_server: MCPServerConfig = Field(default_factory=MCPServerConfig, description="MCP Server Integration settings")
     cli: CLIConfig = Field(default_factory=CLIConfig, description="CLI-specific settings")
+    aws: AWSConfig = Field(default_factory=AWSConfig, description="AWS service configuration settings")
 
 
     class Config:

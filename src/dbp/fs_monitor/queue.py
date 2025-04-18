@@ -50,7 +50,7 @@ import logging
 import heapq
 from typing import List, Set, Dict, Any, Optional
 import copy
-from ..core.component import Component
+from ..core.component import Component, InitializationContext
 
 # Assuming base.py and filter.py are accessible
 try:
@@ -377,19 +377,20 @@ class ChangeQueueComponent(Component):
         """
         return ["config_manager"]
     
-    def initialize(self, config: Any) -> None:
+    def initialize(self, context: InitializationContext) -> None:
         """
         [Function intent]
         Initializes the change queue with the provided configuration.
         
         [Implementation details]
-        Creates a ChangeDetectionQueue instance and optionally sets up a filter.
+        Creates a ChangeDetectionQueue instance with typed configuration and optionally sets up a filter.
         
         [Design principles]
         Explicit initialization with clear success/failure indication.
+        Type-safe configuration access.
         
         Args:
-            config: Configuration object with queue settings
+            context: Initialization context with typed configuration and resources
             
         Raises:
             RuntimeError: If initialization fails
@@ -402,16 +403,17 @@ class ChangeQueueComponent(Component):
         self.logger.info(f"Initializing component '{self.name}'...")
         
         try:
-            # Get component-specific configuration through config_manager
-            from ..core.system import ComponentSystem
-            system = ComponentSystem.get_instance()
-            config_manager = system.get_component("config_manager")
+            # Get the strongly-typed configuration
+            config = context.get_typed_config()
             
             # Create and initialize the queue
-            self._queue = ChangeDetectionQueue(config_manager)
+            self._queue = ChangeDetectionQueue(config)
             
             # Attempt to set up a filter if the filter component is available
             try:
+                # Get the component system
+                from ..core.system import ComponentSystem
+                system = ComponentSystem.get_instance()
                 filter_component = system.get_component("filter")
                 if filter_component and filter_component.is_initialized:
                     self.logger.info("Setting up event filtering with filter component")

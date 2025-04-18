@@ -102,9 +102,9 @@ class ChangeDetectionQueue:
         self._lock = RLock() # Lock for thread safety
         self._event_available = Event() # Signal when items are added to _queue
 
-        # Get config values with defaults
-        self._delay_seconds = float(self.config.get('scheduler.delay_seconds', 10.0))
-        self._max_delay_seconds = float(self.config.get('scheduler.max_delay_seconds', 120.0))
+        # Get config values directly from typed config
+        self._delay_seconds = float(self.config.delay_seconds)
+        self._max_delay_seconds = float(self.config.max_delay_seconds)
 
         if self._delay_seconds <= 0:
              self.logger.warning("Scheduler delay_seconds must be positive. Using default 10.0.")

@@ -108,11 +108,22 @@ class InternalToolsComponent(Component):
 
     def initialize(self, context: InitializationContext):
         """
+        [Function intent]
         Initializes the Internal Tools component, including the execution engine,
         and registers the tools with the LLM Coordinator.
-
+        
+        [Implementation details]
+        Uses the strongly-typed configuration for component setup.
+        Creates the execution engine that provides internal tool functionality.
+        Registers tools with the LLM Coordinator's tool registry.
+        Sets the _initialized flag when initialization succeeds.
+        
+        [Design principles]
+        Explicit initialization with strong typing.
+        Type-safe configuration access.
+        
         Args:
-            context: The initialization context.
+            context: Initialization context with typed configuration and resources
         """
         if self._initialized:
             logger.warning(f"Component '{self.name}' already initialized.")
@@ -122,8 +133,9 @@ class InternalToolsComponent(Component):
         self.logger.info(f"Initializing component '{self.name}'...")
 
         try:
-            # Get internal tools specific configuration
-            tools_config = context.config.get(self.name, {}) # Assumes dict-like config
+            # Get strongly-typed configuration
+            config = context.get_typed_config()
+            tools_config = getattr(config, self.name)
 
             # Get dependent LLM Coordinator component to access its registry
             llm_coordinator_comp = context.get_component("llm_coordinator")

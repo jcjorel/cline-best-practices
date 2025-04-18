@@ -38,6 +38,10 @@
 # - src/dbp/config/config_manager.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-17T23:29:30Z : Enhanced with strongly-typed configuration access by CodeAssistant
+# * Updated initialize() method signature to use InitializationContext
+# * Added get_typed_config() method for direct access to typed configuration
+# * Improved type safety for configuration access
 # 2025-04-17T12:56:00Z : Added Git root path initialization by CodeAssistant
 # * Added detection and setting of project.root_path from Git root directory
 # * Added error handling when Git root cannot be found
@@ -46,9 +50,6 @@
 # * Implemented resolve_template_string method for ${key} variable substitution
 # * Enhanced get method to support template resolution in configuration values
 # * Added support for nested templates with recursion depth limit
-# 2025-04-16T01:25:43Z : Initial creation by CodeAssistant
-# * Created ConfigManagerComponent implementing Component protocol
-# * Wrapped ConfigurationManager singleton
 ###############################################################################
 
 import logging
@@ -91,14 +92,14 @@ class ConfigManagerComponent(Component):
         # No dependencies - this should be one of the first components initialized
         return []
 
-    def initialize(self, config: Any) -> None:
+    def initialize(self, context: InitializationContext) -> None:
         """
         Initializes the ConfigManagerComponent.
         If the ConfigurationManager is not already initialized, initializes it.
         Sets the project root path from Git repository root.
         
         Args:
-            config: Configuration object with application settings
+            context: The initialization context with configuration and resources
         """
         self.logger = logging.getLogger(f"dbp.{self.name}")
         self.logger.info(f"Initializing component '{self.name}'...")
@@ -165,6 +166,22 @@ class ConfigManagerComponent(Component):
         """
         return self._config_manager.set(key, value)
         
+    def get_typed_config(self):
+        """
+        [Function intent]
+        Returns the strongly-typed configuration object for type-safe access.
+        
+        [Implementation details]
+        Delegates to the ConfigurationManager's get_typed_config method.
+        
+        [Design principles]
+        Type safety for configuration access.
+        
+        Returns:
+            AppConfig: The validated configuration model
+        """
+        return self._config_manager.get_typed_config()
+    
     def get_default_config(self, section: str) -> Dict[str, Any]:
         """
         Returns the default configuration for a specific section.
