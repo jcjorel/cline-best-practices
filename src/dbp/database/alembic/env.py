@@ -83,13 +83,23 @@ def get_url():
     [Implementation details]
     Attempts to get configuration from the component system if available,
     falls back to environment variables or default sqlite path if needed.
+    Prioritizes the database URL from alembic.ini when invoked directly.
     
     [Design principles]
     Flexibility in configuration sources with sensible defaults.
+    Respects direct alembic.ini configuration for direct CLI invocation.
     
     Returns:
         str: A SQLAlchemy connection URL
     """
+    # Check if running directly via alembic command and use config from .ini file
+    # This is critical for direct CLI invocation to work properly
+    if config and hasattr(config, 'get_main_option'):
+        ini_url = config.get_main_option('sqlalchemy.url')
+        if ini_url:
+            print(f"Using database URL from alembic.ini: {ini_url}")
+            return ini_url
+            
     try:
         # Try to get configuration from the application's component system
         from dbp.core.system import ComponentSystem
@@ -113,12 +123,14 @@ def get_url():
     # Fallback to environment variables
     url = os.environ.get("DBP_DATABASE_URL")
     if url:
+        print(f"Using database URL from DBP_DATABASE_URL environment variable")
         return url
         
     # Ultimate fallback - use a default sqlite database
     default_path = os.path.expanduser("~/.dbp/metadata.db")
     # Ensure directory exists
     os.makedirs(os.path.dirname(default_path), exist_ok=True)
+    print(f"Using default database URL: sqlite:///{default_path}")
     return f"sqlite:///{default_path}"
 
 
@@ -165,13 +177,17 @@ def run_migrations_online() -> None:
     
     [Design principles]
     Efficient and reliable database migration with proper connection handling.
+    Improved diagnostics to troubleshoot migration issues.
     
     In this scenario we need to create an Engine
     and associate a connection with the context.
     """
     # Override the URL in the alembic.ini
     config_section = config.get_section(config.config_ini_section)
-    config_section['sqlalchemy.url'] = get_url()
+    url = get_url()
+    config_section['sqlalchemy.url'] = url
+    
+    print(f"Running migrations on database URL: {url}")
     
     connectable = engine_from_config(
         config_section,
@@ -180,13 +196,24 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
+        # Check if alembic_version table exists and its state
+        try:
+            result = connection.execute("SELECT version_num FROM alembic_version")
+            versions = [row[0] for row in result]
+            print(f"Current alembic versions: {versions}")
+        except Exception as e:
+            print(f"No alembic_version table found or other error: {e}")
+            print("This is expected for a fresh database.")
+        
         context.configure(
             connection=connection, 
             target_metadata=target_metadata
         )
 
         with context.begin_transaction():
+            print("Starting migrations transaction...")
             context.run_migrations()
+            print("Migrations completed successfully.")
 
 
 if context.is_offline_mode():

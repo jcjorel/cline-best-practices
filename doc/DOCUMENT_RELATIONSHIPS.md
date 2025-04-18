@@ -32,6 +32,8 @@ graph TD
     CONSIST_ANALYSIS[src/dbp/consistency_analysis]
     DOC_REL_COMP[src/dbp/doc_relationships]
     META_EXTRACT[src/dbp/metadata_extraction]
+    DATABASE[src/dbp/database]
+    ALEMBIC_MGR[src/dbp/database/alembic_manager.py]
     
     %% Other Resources
     LLM_PROMPTS[doc/llm/prompts/]
@@ -90,6 +92,7 @@ graph TD
     CONFIG_COMP --> MCP_SERVER
     DOC_REL_COMP --> CONSIST_ANALYSIS
     META_EXTRACT --> LLM_COORD_COMP
+    DATABASE --> ALEMBIC_MGR
     
     %% Apply styles
     class DESIGN_DECISIONS,DESIGN,PR_FAQ rootNode
@@ -98,6 +101,12 @@ graph TD
     class LLM_PROMPTS resource
     class SCHEDULER,FS_MONITOR,MCP_SERVER,CONFIG_COMP,LLM_COORD_COMP,CONSIST_ANALYSIS,DOC_REL_COMP,META_EXTRACT codeComp
 ```
+
+## Database Documentation Relationships
+- **DATABASE** (src/dbp/database/database.py) provides database connection management
+- **ALEMBIC_MGR** (src/dbp/database/alembic_manager.py) handles schema migrations
+- DATABASE depends on ALEMBIC_MGR for schema management
+- Both depend on DESIGN_DECISIONS.md for the "Dedicated AlembicManager" design decision
 
 ## Code Analysis Documentation Relationships
 
@@ -171,7 +180,10 @@ This graph structure helps the system determine the correct order for propagatin
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: LLM-Based Metadata Extraction - Scope: Metadata extraction approach
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: LLM-Based Language Detection - Scope: Language detection approach
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Use Alembic for Database Schema Management - Scope: Database migration strategy
+- Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Dedicated AlembicManager for Database Schema Migration - Scope: Database implementation
 - Impacts: [src/dbp/database/models.py] - Topic: Implementation - Scope: Database schema
+- Impacts: [src/dbp/database/database.py] - Topic: Implementation - Scope: Database connection management
+- Impacts: [src/dbp/database/alembic_manager.py] - Topic: Implementation - Scope: Schema migration
 - Impacts: [src/dbp/metadata_extraction/data_structures.py] - Topic: Implementation - Scope: Metadata structures
 
 ## DOCUMENT_RELATIONSHIPS.md
@@ -263,6 +275,12 @@ When documentation files are updated:
 - Impacts: [src/dbp/llm_coordinator/coordinator_llm.py] - Topic: Implementation - Scope: LLM prompt handling
 
 ## Code Component Relationships
+
+## src/dbp/database
+- Depends on: [DATA_MODEL.md](#data_modelmd) - Topic: Implementation - Scope: Database structure and schema management
+- Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Implementation - Scope: Database architecture and migration strategy
+- Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Implementation - Scope: Dedicated AlembicManager design decision
+- Impacts: None
 
 ## src/dbp/scheduler
 - Depends on: [design/BACKGROUND_TASK_SCHEDULER.md](#designbackground_task_schedulermd) - Topic: Implementation - Scope: Task scheduler architecture

@@ -2,6 +2,8 @@
 
 This file tracks all changes made to documentation markdown files in this directory.
 
+2025-04-18T10:59:00Z : [DATA_MODEL.md] Updated database implementation section to reflect separation of Alembic migration functionality
+2025-04-18T10:36:30Z : [CONFIGURATION.md] Added documentation for database.verbose_migrations configuration option
 2025-04-17T18:58:46Z : [CONFIGURATION.md] Removed duplicate AppConfig definitions in config schema
 2025-04-17T18:44:00Z : [DESIGN_DECISIONS.md] Added strict configuration access design decision
 2025-04-17T17:37:50Z : [DESIGN_DECISIONS.md] Added standardized log format design decision

@@ -21,7 +21,7 @@
 # - Supports configurable database backends (SQLite default, PostgreSQL).
 # - Ensures thread-safe database access using scoped sessions.
 # - Implements connection pooling for efficiency.
-# - Handles schema creation and basic version checking.
+# - Delegates schema management to AlembicManager.
 # - Provides context manager for session handling (commit/rollback).
 # - Includes retry logic for transient operational errors.
 # - Design Decision: Centralized Database Manager (2025-04-13)
@@ -30,12 +30,15 @@
 # - Design Decision: Support SQLite and PostgreSQL (2025-04-13)
 #   * Rationale: Offers flexibility for different deployment scenarios (simple local vs. robust server).
 #   * Alternatives considered: SQLite only (rejected for scalability concerns), PostgreSQL only (rejected for lack of simple default).
+# - Design Decision: Separated Migration Functionality (2025-04-18)
+#   * Rationale: Reduces code complexity by isolating Alembic-specific migration code in a dedicated class.
+#   * Alternatives considered: Keeping migration code in database.py (rejected due to large file size and complexity).
 ###############################################################################
 # [Source file constraints]
 # - Requires configuration object providing database settings.
 # - Depends on SQLAlchemy library.
 # - Assumes `models.py` defines the `Base` and `SchemaVersion` model.
-# - Schema migration beyond initial creation is handled externally (e.g., Alembic).
+# - Schema migration is handled by AlembicManager.
 ###############################################################################
 # [Reference documentation]
 # - doc/DATA_MODEL.md
@@ -43,6 +46,11 @@
 # - doc/CONFIGURATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-18T10:54:00Z : Refactored to use AlembicManager for migrations by CodeAssistant
+# * Extracted Alembic migration code to dedicated AlembicManager class
+# * Added proper function documentation for all methods
+# * Updated database initialization to use AlembicManager
+# * Reduced file size and complexity
 # 2025-04-18T09:31:00Z : Modified Alembic to throw errors without fallbacks by CodeAssistant
 # * Removed fallback behavior in ImportError and OperationalError cases 
 # * Enforced strict dependency on Alembic for database schema management
@@ -52,10 +60,6 @@
 # * Fixed error: "Configuration key 'database.url' not found"
 # * Implemented database type-specific URL construction for SQLite and PostgreSQL
 # 2025-04-17T10:55:37Z : Fixed Alembic configuration handling by CodeAssistant
-# * Updated _run_alembic_migrations method to safely handle Alembic configuration
-# * Resolved AttributeError: 'Config' object has no attribute 'sections'
-# * Implemented robust error handling for Alembic configuration access
-# 2025-04-17T10:47:23Z : Updated DatabaseManager to use config_manager properly by CodeAssistant
 ###############################################################################
 
 import os
@@ -64,8 +68,6 @@ import time
 import shutil
 import sqlite3
 import traceback
-import sys
-from pathlib import Path
 from contextlib import contextmanager
 from typing import List, Any, Dict, Optional
 from ..core.component import Component, InitializationContext
@@ -73,6 +75,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.pool import QueuePool
 from sqlalchemy.exc import SQLAlchemyError, OperationalError
+
+# Import AlembicManager for schema management
+from .alembic_manager import AlembicManager
 
 # Assuming models.py is in the same directory or accessible via python path
 try:
@@ -308,8 +313,22 @@ class DatabaseManager:
 
     def initialize(self):
         """
+        [Function intent]
         Initializes the database connection, engine, session factory, and schema.
         Must be called before accessing sessions.
+        
+        [Implementation details]
+        Sets up the database engine based on configuration, creates session factory,
+        and runs schema migrations using AlembicManager.
+        
+        [Design principles]
+        Clear initialization flow with proper error handling and logging.
+        Delegates schema management to specialized AlembicManager.
+        
+        Raises:
+            SQLAlchemyError: For database connection or configuration issues
+            ValueError: For invalid configuration values
+            RuntimeError: For schema initialization failures
         """
         if self.initialized:
             logger.warning("Database already initialized.")
@@ -355,8 +374,13 @@ class DatabaseManager:
             # Mark as initialized so we can use sessions in schema initialization
             self.initialized = True
 
-            # Initialize schema using Alembic
-            self._run_alembic_migrations()
+            # Initialize schema using AlembicManager
+            alembic_manager = AlembicManager(
+                self.config, 
+                self.engine, 
+                self.get_session
+            )
+            alembic_manager.run_migrations()
 
             logger.info("Database initialized successfully.")
 
@@ -592,187 +616,7 @@ class DatabaseManager:
                 logger.error(traceback.format_exc())
 
 
-    def _run_alembic_migrations(self):
-        """
-        Runs Alembic migrations to create and/or update the database schema.
 
-        [Function intent]
-        Uses Alembic to handle database schema creation and migrations.
-        
-        [Implementation details]
-        Executes Alembic commands to create tables if they don't exist and
-        apply all pending migrations to bring the schema up to date.
-        
-        [Design principles]
-        Database schema should be managed through migrations rather than
-        direct table creation to ensure consistency across environments.
-        """
-        logger.info("Running Alembic migrations to initialize/update the database schema...")
-        try:
-            # Import alembic modules here to avoid unnecessary dependencies
-            # if the feature is not used
-            logger.debug("Importing Alembic modules...")
-            try:
-                from alembic import command
-                from alembic.config import Config
-                import importlib.resources
-                logger.debug("Alembic modules imported successfully")
-            except ImportError as e:
-                logger.error(f"Failed to import Alembic modules: {e}")
-                logger.error("Make sure Alembic is installed. Try: pip install alembic")
-                raise RuntimeError(f"Failed to import Alembic: {e}")
-            
-            # Access config through the config manager to get Alembic settings
-            logger.debug("Getting ComponentSystem instance...")
-            from ..core.system import ComponentSystem
-            system = ComponentSystem.get_instance()
-            if not system:
-                logger.error("Failed to get ComponentSystem instance - it may not be initialized")
-                raise RuntimeError("ComponentSystem not initialized")
-                
-            logger.debug("Getting config_manager component...")
-            config_manager = system.get_component("config_manager")
-            if not config_manager:
-                logger.error("Failed to get config_manager component")
-                raise RuntimeError("config_manager component not found")
-                
-            logger.debug("Config manager retrieved successfully")
-            
-            # Get alembic.ini location from global config
-            alembic_ini_path = config_manager.get('database.alembic_ini_path')
-            logger.debug(f"Using alembic.ini path: {alembic_ini_path}")
-            
-            # Use module-specific Alembic migrations directory
-            module_alembic_dir = os.path.join(os.path.dirname(__file__), 'alembic')
-            logger.debug(f"Using module-specific Alembic directory: {module_alembic_dir}")
-            
-            # Verify that the required Alembic files exist
-            if not os.path.exists(alembic_ini_path):
-                raise FileNotFoundError(f"Alembic config file not found: {alembic_ini_path}")
-                
-            if not os.path.isdir(module_alembic_dir):
-                raise FileNotFoundError(f"Module Alembic directory not found: {module_alembic_dir}")
-            
-            # Load Alembic configuration
-            logger.debug(f"Loading Alembic configuration from: {alembic_ini_path}")
-            alembic_cfg = Config(alembic_ini_path)
-            
-            # Configure Alembic with database URL from global config
-            # Construct database URL based on database type and configuration
-            db_url = None
-            try:
-                db_type = config_manager.get('database.type')
-                if db_type == 'sqlite':
-                    db_path = config_manager.get('database.path')
-                    db_url = f"sqlite:///{db_path}"
-                    logger.debug(f"Constructed SQLite URL: {db_url}")
-                elif db_type == 'postgresql':
-                    conn_string = config_manager.get('database.connection_string')
-                    if conn_string:
-                        db_url = conn_string
-                        logger.debug(f"Using PostgreSQL connection string")
-                    else:
-                        logger.warning("PostgreSQL selected but no connection_string provided")
-            except Exception as e:
-                logger.warning(f"Failed to construct database URL from config: {e}")
-                
-            if db_url:
-                logger.debug(f"Using constructed database URL: {db_url}")
-                alembic_cfg.set_main_option('sqlalchemy.url', db_url)
-            elif hasattr(self.engine, 'url'):
-                # Fall back to engine URL if available
-                engine_url = str(self.engine.url)
-                logger.debug(f"Using engine URL: {engine_url}")
-                alembic_cfg.set_main_option('sqlalchemy.url', engine_url)
-            else:
-                logger.error("No database URL available for Alembic")
-                raise ValueError("No database URL available for Alembic")
-            
-            # Configure Alembic to use our module-specific migrations directory
-            logger.debug("Setting Alembic script_location to module-specific alembic directory")
-            alembic_cfg.set_main_option('script_location', module_alembic_dir)
-            
-            # Ensure other required config options are set
-            alembic_cfg.set_main_option('prepend_sys_path', '.')
-            
-            # Log main Alembic configuration options for debugging
-            logger.debug("Alembic configuration:")
-            main_section = alembic_cfg.config_ini_section
-            logger.debug(f"  Main section: {main_section}")
-            
-            # Try to safely log configuration options
-            try:
-                if hasattr(alembic_cfg, 'get_section') and callable(alembic_cfg.get_section):
-                    section_items = alembic_cfg.get_section(main_section)
-                    if section_items:
-                        for key, value in section_items.items():
-                            logger.debug(f"    {key} = {value}")
-                elif hasattr(alembic_cfg, 'get_main_option') and callable(alembic_cfg.get_main_option):
-                    logger.debug(f"    sqlalchemy.url = {alembic_cfg.get_main_option('sqlalchemy.url')}")
-            except Exception as e:
-                logger.warning(f"Could not log detailed Alembic configuration: {e}")
-            
-            # Ensure schema exists first (stamp head if this is a new database)
-            try:
-                from sqlalchemy import text
-                logger.info("Running database migrations...")
-                
-                with self.get_session() as session:
-                    # Simple check to see if alembic_version table exists
-                    # by attempting to create a transaction
-                    logger.debug("Testing database connection...")
-                    session.execute(text("SELECT 1"))
-                    logger.debug("Database connection successful")
-                
-                # Run the migration to bring database up to date
-                logger.info("Upgrading database schema to latest version...")
-                try:
-                    command.upgrade(alembic_cfg, "head")
-                    logger.info("Database migrations completed successfully.")
-                    
-                    # Verify that migrations were applied correctly
-                    with self.get_session() as session:
-                        version_result = session.execute(text("SELECT version_num FROM alembic_version")).fetchone()
-                        if version_result:
-                            logger.info(f"Current alembic version after migration: {version_result[0]}")
-                        else:
-                            logger.error("Alembic version table exists but contains no version information")
-                            raise RuntimeError("Database migration incomplete: missing version information")
-                    
-                except Exception as e:
-                    logger.error(f"Alembic upgrade failed: {e}")
-                    logger.error(traceback.format_exc())
-                    
-                    # Try to capture alembic version information for diagnostic purposes
-                    try:
-                        with self.get_session() as session:
-                            version_result = session.execute(text("SELECT version_num FROM alembic_version")).fetchone()
-                            if version_result:
-                                logger.error(f"Current alembic version before failure: {version_result[0]}")
-                    except Exception:
-                        logger.error("Could not determine current alembic version")
-                    
-                    # Always throw the error without any fallback
-                    raise RuntimeError(f"Database migration failed: {e}") from e
-                
-            except OperationalError as e:
-                # Table doesn't exist, but we won't create tables directly as fallback
-                logger.error(f"Database error during migration: {e}")
-                logger.error("Alembic encountered an operational error - cannot proceed")
-                logger.error("Make sure the database is properly configured and accessible")
-                raise RuntimeError(f"Alembic operational error: {e}") from e
-                
-        except ImportError as e:
-            logger.error(f"Alembic not available: {e}")
-            logger.error("Alembic is required for schema management - cannot proceed without it")
-            raise RuntimeError(f"Failed to initialize database: Alembic not available: {e}") from e
-        except Exception as e:
-            logger.error(f"Failed to run database migrations: {e}")
-            logger.error(f"Error type: {type(e).__name__}")
-            logger.error(traceback.format_exc())
-            # This is a critical error that should bubble up
-            raise RuntimeError(f"Failed to initialize database schema: {e}") from e
-        logger.info("Alembic migrations completed successfully.")
 
     def _initialize_postgresql(self):
         """Initializes the PostgreSQL database engine."""

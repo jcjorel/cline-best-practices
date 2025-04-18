@@ -103,6 +103,9 @@ This approach provides several benefits:
 | `database.connection_timeout` | Database connection timeout in seconds | `5` | `1-30` |
 | `database.max_connections` | Maximum number of concurrent database connections | `4` | `1-16` |
 | `database.use_wal_mode` | Use Write-Ahead Logging mode for SQLite | `true` | `true, false` |
+| `database.echo_sql` | Log SQL statements executed by SQLAlchemy | `false` | `true, false` |
+| `database.alembic_ini_path` | Path to the Alembic configuration file | `"alembic.ini"` | Valid file path |
+| `database.verbose_migrations` | Enable detailed logging during database migrations | `true` | `true, false` |
 
 ### Recommendation Lifecycle Settings
 

@@ -106,6 +106,7 @@ DATABASE_DEFAULTS = {
     "use_wal_mode": True,
     "echo_sql": False,
     "alembic_ini_path": "alembic.ini",
+    "verbose_migrations": True,  # When True, enables detailed logging for database migrations
 }
 
 # Recommendation settings
@@ -123,6 +124,7 @@ INITIALIZATION_DEFAULTS = {
     "retry_delay_seconds": 5,
     "verification_level": "normal",
     "startup_mode": "normal",
+    "watchdog_timeout": 20,  # Timeout in seconds for the initialization watchdog
 }
 
 # LLM Coordinator settings - Coordinator LLM
@@ -197,6 +199,36 @@ MCP_SERVER_DEFAULTS = {
     "cors_allow_credentials": False,
     "keep_alive": 5,
     "graceful_shutdown_timeout": 10,
+}
+
+# Metadata Extraction settings
+METADATA_EXTRACTION_DEFAULTS = {
+    "model_id": "amazon.titan-text-lite-v1",
+    "temperature": 0.0,
+    "max_tokens": 4096,
+    "max_file_size_kb": 1024,
+    "extraction_timeout_seconds": 30,
+    "batch_size": 10,
+    "max_retries": 3,
+    "retry_delay": 1.0,
+    "enabled": True,
+}
+
+# Memory Cache settings
+MEMORY_CACHE_DEFAULTS = {
+    "enabled": True,
+    "max_size_mb": 512,
+    "ttl_seconds": 3600,
+    "cleanup_interval_seconds": 300,
+    "persist_to_disk": True,
+    "eviction_policy": "lru",
+}
+
+# AWS settings
+AWS_DEFAULTS = {
+    "region": "us-east-1",
+    "endpoint_url": None,
+    "credentials_profile": None,
 }
 
 # === CLI-specific settings ===

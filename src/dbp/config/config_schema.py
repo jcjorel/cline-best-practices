@@ -40,6 +40,11 @@
 # - doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-18T10:42:33Z : Removed hardcoded defaults and referenced default_config.py by CodeAssistant
+# * Added missing default dictionaries in default_config.py: METADATA_EXTRACTION_DEFAULTS, MEMORY_CACHE_DEFAULTS, AWS_DEFAULTS
+# * Updated MetadataExtractionConfig, MemoryCacheConfig, and AWSConfig to reference the default values
+# * Updated imports to include the new default dictionaries
+# * Ensured all configuration classes use centralized defaults from default_config.py
 # 2025-04-17T18:57:30Z : Removed duplicate AppConfig class definitions by CodeAssistant
 # * Removed two duplicate incomplete AppConfig class definitions
 # * Kept only the final complete AppConfig class definition
@@ -53,11 +58,6 @@
 # * Added missing alembic_ini_path field to DatabaseConfig class
 # * Fixed "Configuration key 'database.alembic_ini_path' not found" error
 # * Enabled successful execution of database migrations during server startup
-# 2025-04-17T16:04:00Z : Added GeneralConfig class and fixed missing configuration by CodeAssistant
-# * Changed imports to use CLI_SERVER_CONNECTION_DEFAULTS instead of SERVER_DEFAULTS
-# * Changed imports to use CLI_OUTPUT_DEFAULTS instead of OUTPUT_DEFAULTS
-# * Changed imports to use CLI_HISTORY_DEFAULTS instead of HISTORY_DEFAULTS
-# * Updated all model field references to use the new config key names
 ###############################################################################
 
 from pydantic import BaseModel, Field, validator, DirectoryPath, FilePath
@@ -86,6 +86,9 @@ from .default_config import (
     RECOMMENDATION_GENERATOR_DEFAULTS,
     MCP_SERVER_DEFAULTS,
     CLI_DEFAULTS,
+    METADATA_EXTRACTION_DEFAULTS,
+    MEMORY_CACHE_DEFAULTS,
+    AWS_DEFAULTS,
 )
 
 logger = logging.getLogger(__name__)
@@ -205,6 +208,7 @@ class DatabaseConfig(BaseModel):
     use_wal_mode: bool = Field(default=DATABASE_DEFAULTS["use_wal_mode"], description="Use Write-Ahead Logging mode for SQLite (recommended)")
     echo_sql: bool = Field(default=DATABASE_DEFAULTS["echo_sql"], description="Log SQL statements executed by SQLAlchemy")
     alembic_ini_path: str = Field(default=DATABASE_DEFAULTS["alembic_ini_path"], description="Path to the Alembic configuration file for database migrations")
+    verbose_migrations: bool = Field(default=DATABASE_DEFAULTS["verbose_migrations"], description="Enable detailed logging during database migrations")
 
     @validator('path', pre=True, always=True)
     def expand_path(cls, v):
@@ -237,6 +241,7 @@ class InitializationConfig(BaseModel):
     retry_delay_seconds: int = Field(default=INITIALIZATION_DEFAULTS["retry_delay_seconds"], ge=1, le=30, description="Delay between initialization retry attempts")
     verification_level: str = Field(default=INITIALIZATION_DEFAULTS["verification_level"], description="Level of verification during initialization ('minimal', 'normal', 'thorough')")
     startup_mode: str = Field(default=INITIALIZATION_DEFAULTS["startup_mode"], description="System startup mode ('normal', 'maintenance', 'recovery', 'minimal')")
+    watchdog_timeout: int = Field(default=INITIALIZATION_DEFAULTS["watchdog_timeout"], ge=5, le=300, description="Timeout in seconds for the initialization watchdog")
 
     @validator('verification_level')
     def validate_verification_level(cls, v):
@@ -357,15 +362,15 @@ class ConsistencyAnalysisConfig(BaseModel):
 class MetadataExtractionConfig(BaseModel):
     """Configuration for the Metadata Extraction component."""
     # Add basic configuration fields needed for metadata extraction
-    model_id: str = Field(default="amazon.titan-text-lite-v1", description="AWS Bedrock model ID for metadata extraction")
-    temperature: float = Field(default=0.0, ge=0.0, le=1.0, description="Temperature parameter for LLM generation (0.0 for deterministic)")
-    max_tokens: int = Field(default=4096, ge=1, le=8192, description="Maximum tokens for LLM response")
-    max_file_size_kb: int = Field(default=1024, ge=1, le=10240, description="Maximum file size in KB to process")
-    extraction_timeout_seconds: int = Field(default=30, ge=5, le=300, description="Timeout for extraction operations in seconds")
-    batch_size: int = Field(default=10, ge=1, le=100, description="Number of files to process in a batch")
-    max_retries: int = Field(default=3, ge=0, le=10, description="Maximum number of retry attempts for failed operations")
-    retry_delay: float = Field(default=1.0, ge=0.1, le=10.0, description="Delay in seconds between retry attempts")
-    enabled: bool = Field(default=True, description="Enable metadata extraction")
+    model_id: str = Field(default=METADATA_EXTRACTION_DEFAULTS["model_id"], description="AWS Bedrock model ID for metadata extraction")
+    temperature: float = Field(default=METADATA_EXTRACTION_DEFAULTS["temperature"], ge=0.0, le=1.0, description="Temperature parameter for LLM generation (0.0 for deterministic)")
+    max_tokens: int = Field(default=METADATA_EXTRACTION_DEFAULTS["max_tokens"], ge=1, le=8192, description="Maximum tokens for LLM response")
+    max_file_size_kb: int = Field(default=METADATA_EXTRACTION_DEFAULTS["max_file_size_kb"], ge=1, le=10240, description="Maximum file size in KB to process")
+    extraction_timeout_seconds: int = Field(default=METADATA_EXTRACTION_DEFAULTS["extraction_timeout_seconds"], ge=5, le=300, description="Timeout for extraction operations in seconds")
+    batch_size: int = Field(default=METADATA_EXTRACTION_DEFAULTS["batch_size"], ge=1, le=100, description="Number of files to process in a batch")
+    max_retries: int = Field(default=METADATA_EXTRACTION_DEFAULTS["max_retries"], ge=0, le=10, description="Maximum number of retry attempts for failed operations")
+    retry_delay: float = Field(default=METADATA_EXTRACTION_DEFAULTS["retry_delay"], ge=0.1, le=10.0, description="Delay in seconds between retry attempts")
+    enabled: bool = Field(default=METADATA_EXTRACTION_DEFAULTS["enabled"], description="Enable metadata extraction")
 
 # --- Recommendation Generator Configuration ---
 
@@ -381,20 +386,20 @@ class RecommendationGeneratorConfig(BaseModel):
 
 class AWSConfig(BaseModel):
     """Configuration for AWS services."""
-    region: Optional[str] = Field(default="us-east-1", description="AWS region for API calls")
-    endpoint_url: Optional[str] = Field(default=None, description="Optional custom endpoint URL for AWS services")
-    credentials_profile: Optional[str] = Field(default=None, description="AWS credentials profile name")
+    region: Optional[str] = Field(default=AWS_DEFAULTS["region"], description="AWS region for API calls")
+    endpoint_url: Optional[str] = Field(default=AWS_DEFAULTS["endpoint_url"], description="Optional custom endpoint URL for AWS services")
+    credentials_profile: Optional[str] = Field(default=AWS_DEFAULTS["credentials_profile"], description="AWS credentials profile name")
 
 # --- Memory Cache Configuration ---
 
 class MemoryCacheConfig(BaseModel):
     """Configuration for the Memory Cache component."""
-    enabled: bool = Field(default=True, description="Enable in-memory caching")
-    max_size_mb: int = Field(default=512, ge=10, le=4096, description="Maximum memory size in MB for cache")
-    ttl_seconds: int = Field(default=3600, ge=60, le=86400, description="Time-to-live for cache entries in seconds")
-    cleanup_interval_seconds: int = Field(default=300, ge=30, le=3600, description="Interval for cleaning expired entries")
-    persist_to_disk: bool = Field(default=True, description="Persist cache to disk between runs")
-    eviction_policy: str = Field(default="lru", description="Cache eviction policy when max size is reached")
+    enabled: bool = Field(default=MEMORY_CACHE_DEFAULTS["enabled"], description="Enable in-memory caching")
+    max_size_mb: int = Field(default=MEMORY_CACHE_DEFAULTS["max_size_mb"], ge=10, le=4096, description="Maximum memory size in MB for cache")
+    ttl_seconds: int = Field(default=MEMORY_CACHE_DEFAULTS["ttl_seconds"], ge=60, le=86400, description="Time-to-live for cache entries in seconds")
+    cleanup_interval_seconds: int = Field(default=MEMORY_CACHE_DEFAULTS["cleanup_interval_seconds"], ge=30, le=3600, description="Interval for cleaning expired entries")
+    persist_to_disk: bool = Field(default=MEMORY_CACHE_DEFAULTS["persist_to_disk"], description="Persist cache to disk between runs")
+    eviction_policy: str = Field(default=MEMORY_CACHE_DEFAULTS["eviction_policy"], description="Cache eviction policy when max size is reached")
     
     @validator('eviction_policy')
     def validate_eviction_policy(cls, v):
