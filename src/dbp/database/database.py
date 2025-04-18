@@ -43,6 +43,10 @@
 # - doc/CONFIGURATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-18T08:15:00Z : Fixed database URL configuration in Alembic setup by CodeAssistant
+# * Modified _run_alembic_migrations to construct database URL from configuration
+# * Fixed error: "Configuration key 'database.url' not found"
+# * Implemented database type-specific URL construction for SQLite and PostgreSQL
 # 2025-04-17T10:55:37Z : Fixed Alembic configuration handling by CodeAssistant
 # * Updated _run_alembic_migrations method to safely handle Alembic configuration
 # * Resolved AttributeError: 'Config' object has no attribute 'sections'
@@ -52,28 +56,6 @@
 # * Added robust error handling for configuration access
 # * Fixed AttributeError: 'ConfigManagerComponent' object has no attribute 'items'
 # 2025-04-17T10:05:04Z : Fixed initialization context handling by CodeAssistant
-# * Updated DatabaseComponent.initialize to properly handle InitializationContext
-# * Added proper component system lookup for config_manager
-# * Fixed AttributeError: 'InitializationContext' object has no attribute 'get'
-# 2025-04-17T09:55:22Z : Added DatabaseComponent class by CodeAssistant
-# * Created Component implementation that wraps DatabaseManager
-# * Implemented component lifecycle methods (initialize, shutdown)
-# * Added methods to access database functionality through component
-# 2025-04-17T08:41:14Z : Enhanced database initialization error logging by CodeAssistant
-# * Added detailed logging for database errors during startup and migration steps
-# * Improved error capture in _run_alembic_migrations method for better debugging
-# * Added filesystem access verification and detailed SQLite configuration logging
-# 2025-04-16T18:01:22Z : Fixed SQLAlchemy SQL execution by CodeAssistant
-# * Updated SQL execution to use SQLAlchemy's text() function
-# * Resolved "Textual SQL expression should be explicitly declared as text" error
-# 2025-04-16T17:52:39Z : Enhanced Alembic integration with config manager by CodeAssistant
-# * Fixed Alembic configuration to use config_manager for settings
-# * Added proper error handling to prevent NoneType errors
-# * Ensured Alembic section has required defaults if missing
-# 2025-04-16T17:47:00Z : Fixed database initialization issues by CodeAssistant
-# * Updated initialize method to set initialized=true before schema operations
-# * Added proper Alembic migration support for schema management
-# * Fixed class duplication issue in the file
 ###############################################################################
 
 import os
@@ -676,14 +658,26 @@ class DatabaseManager:
             alembic_cfg = Config(alembic_ini_path)
             
             # Configure Alembic with database URL from global config
+            # Construct database URL based on database type and configuration
             db_url = None
             try:
-                db_url = config_manager.get('database.url')
+                db_type = config_manager.get('database.type')
+                if db_type == 'sqlite':
+                    db_path = config_manager.get('database.path')
+                    db_url = f"sqlite:///{db_path}"
+                    logger.debug(f"Constructed SQLite URL: {db_url}")
+                elif db_type == 'postgresql':
+                    conn_string = config_manager.get('database.connection_string')
+                    if conn_string:
+                        db_url = conn_string
+                        logger.debug(f"Using PostgreSQL connection string")
+                    else:
+                        logger.warning("PostgreSQL selected but no connection_string provided")
             except Exception as e:
-                logger.warning(f"Failed to get database.url from config_manager: {e}")
+                logger.warning(f"Failed to construct database URL from config: {e}")
                 
             if db_url:
-                logger.debug(f"Using database URL from config: {db_url}")
+                logger.debug(f"Using constructed database URL: {db_url}")
                 alembic_cfg.set_main_option('sqlalchemy.url', db_url)
             elif hasattr(self.engine, 'url'):
                 # Fall back to engine URL if available

@@ -8196,3 +8196,214 @@ ERROR:    Traceback (most recent call last):
 asyncio.exceptions.CancelledError
 
 WARNI [dbp.fs_monitor.base] LinuxFileSystemMonitor thread did not exit cleanly.
+
+
+--- SERVER START ATTEMPT AT 2025-04-18 09:14:40 ---
+
+2025-04-18 09:14:41,597 - root - DEBUG - Application logging initialized at level debug with consistent formatting
+2025-04-18 09:14:41,597 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-18 09:14:41,597 - dbp.mcp_server.__main__ - DEBUG - Arguments: Namespace(host='localhost', port=6231, log_level='debug', log_file=None, startup_timeout=30, startup_check=True)
+2025-04-18 09:14:41,598 - dbp.mcp_server.__main__ - DEBUG - Successfully imported MCPServerComponent
+2025-04-18 09:14:41,598 - dbp.mcp_server.__main__ - DEBUG - Environment: {'Python version': '3.12.3 (main, Feb  4 2025, 14:48:35) [GCC 13.3.0]', 'Working directory': '/home/jcjorel/cline-best-practices', 'Module path': '/home/jcjorel/cline-best-practices/src/dbp/mcp_server/__main__.py', 'PATH': '/home/jcjorel/.vscode-server/extensions/ms-python.python-2025.4.0-linux-x64/python_files/deactivate/bash:/home/jcjorel/cline-best-practices/venv/bin:/home/jcjorel/.vscode-server/extensions/ms-python.python-2025.4.0-linux-x64/python_files/deactivate/bash:/home/jcjorel/cline-best-practices/venv/bin:/home/jcjorel/.vscode-server/bin/17baf841131aa23349f217ca7c570c76ee87b957/bin/remote-cli:/home/jcjorel/.local/bin:/home/jcjorel/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/java8path:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/javapath:/mnt/c/Program Files/Microsoft/jdk-11.0.16.101-hotspot/bin:/mnt/c/Program Files/itacsvc:/mnt/c/WINDOWS/system32:/mnt/c/WINDOWS:/mnt/c/WINDOWS/System32/Wbem:/mnt/c/WINDOWS/System32/WindowsPowerShell/v1.0/:/mnt/c/WINDOWS/System32/OpenSSH/:/mnt/c/Program Files/Microchip/xc16/v2.10/bin:/mnt/c/Program Files/dotnet/:/mnt/c/Program Files (x86)/IVI Foundation/VISA/WinNT/Bin/:/mnt/c/Program Files/IVI Foundation/VISA/Win64/Bin/:/mnt/c/Program Files (x86)/IVI Foundation/VISA/WinNT/Bin:/mnt/c/Program Files/PuTTY/:/mnt/c/Program Files (x86)/ACMEGuardian/:/mnt/c/FPC/3.2.2/bin/i386-Win32:/mnt/c/Program Files (x86)/Quarantine/:/mnt/c/Program Files/Oracle/VirtualBox:/mnt/c/Program Files/GitDefender/bin:/mnt/c/Program Files/Amazon/FOPAzureADMAnagementApp/:/mnt/c/Users/jcjorel/AppData/Local/Programs/Python/Python313/Scripts/:/mnt/c/Users/jcjorel/AppData/Local/Programs/Python/Python313/:/mnt/c/Wincupl/WINCUPL/EXE:/mnt/c/Wincupl/WINCUPL/FITTERS:/mnt/c/Users/jcjorel/AppData/Local/Programs/Git/cmd:/mnt/c/Users/jcjorel/AppData/Local/GitDefender/bin:/mnt/c/Users/jcjorel/AppData/Local/Programs/Microsoft VS Code/bin:/mnt/c/Users/jcjorel/.dotnet/tools:/snap/bin:/usr/local/bin:/usr/local/bin', 'PYTHONPATH': ''}
+2025-04-18 09:14:41,598 - dbp.mcp_server.__main__ - DEBUG - FastAPI version: 0.115.12
+2025-04-18 09:14:41,598 - dbp.mcp_server.__main__ - DEBUG - Uvicorn available: uvicorn
+2025-04-18 09:14:41,598 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-18 09:14:41,598 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-18 09:14:41,598 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-18 09:14:41,598 - dbp.mcp_server.__main__ - DEBUG - Successfully imported tool classes
+2025-04-18 09:14:41,598 - dbp.mcp_server.__main__ - DEBUG - Successfully imported resource classes
+2025-04-18 09:14:41,598 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-18 09:14:41,598 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-18 09:14:41,599 - dbp.config.config_manager - INFO - Initializing configuration...
+2025-04-18 09:14:41,600 - dbp.config.config_manager - INFO - Configuration initialized successfully.
+2025-04-18 09:14:41,600 - dbp.core.lifecycle - INFO - Registering components...
+2025-04-18 09:14:41,600 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-18 09:14:41,600 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-18 09:14:41,608 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-18 09:14:41,611 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-18 09:14:41,613 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-18 09:14:41,613 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-18 09:14:41,613 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-18 09:14:41,613 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database']
+2025-04-18 09:14:41,613 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-18 09:14:41,613 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction']
+2025-04-18 09:14:41,613 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['database', 'consistency_analysis', 'llm_coordinator']
+2025-04-18 09:14:41,616 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['fs_monitor', 'metadata_extraction']
+2025-04-18 09:14:41,616 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-18 09:14:41,616 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-18 09:14:41,616 - dbp.core.lifecycle - INFO - Registered llm_coordinator component - Manage query processing
+2025-04-18 09:14:41,616 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator', 'doc_relationships', 'llm_coordinator', 'metadata_extraction', 'memory_cache', 'config_manager']
+2025-04-18 09:14:41,616 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-18 09:14:41,616 - dbp.core.lifecycle - INFO - Initializing 13 components
+2025-04-18 09:14:41,616 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-18 09:14:41,616 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, filter, database, metadata_extraction, memory_cache, doc_relationships, consistency_analysis, llm_coordinator, recommendation_generator, change_queue, mcp_server, fs_monitor, scheduler
+2025-04-18 09:14:41,616 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-18 09:14:41,616 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-18 09:14:41,616 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-18 09:14:41,616 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-18 09:14:41,658 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-18 09:14:41,659 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-18 09:14:41,659 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-18 09:14:41,659 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-18 09:14:41,659 - dbp.core.lifecycle - INFO - Initializing component 'filter'...
+2025-04-18 09:14:41,659 - dbp.core.lifecycle - INFO - Initializing component 'filter' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-18 09:14:41,659 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-18 09:14:41,660 - dbp.filter - INFO - Initializing component 'filter'...
+2025-04-18 09:14:41,778 - dbp.fs_monitor.filter - INFO - Found 3 .gitignore files.
+2025-04-18 09:14:41,779 - dbp.fs_monitor.filter - INFO - GitIgnoreFilter initialized with 45 patterns.
+2025-04-18 09:14:41,779 - dbp.filter - INFO - Component 'filter' initialized successfully.
+2025-04-18 09:14:41,779 - dbp.core.lifecycle - INFO - Component 'filter' initialized successfully
+2025-04-18 09:14:41,779 - dbp.core.lifecycle - INFO - Initializing component 'database'...
+2025-04-18 09:14:41,779 - dbp.core.lifecycle - INFO - Initializing component 'database' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-18 09:14:41,779 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-18 09:14:41,779 - dbp.database - INFO - Initializing component 'database'...
+2025-04-18 09:14:41,779 - dbp.database.database - INFO - Initializing database with type: sqlite
+2025-04-18 09:14:41,779 - dbp.database.database - INFO - Initializing SQLite database at: .dbp/database.sqlite
+2025-04-18 09:14:41,779 - dbp.database.database - INFO - SQLite configuration: pool_size=4, timeout=5
+2025-04-18 09:14:41,779 - dbp.database.database - INFO - SQLite path: absolute=/home/jcjorel/cline-best-practices/.dbp/database.sqlite, normalized=.dbp/database.sqlite
+2025-04-18 09:14:41,795 - dbp.database.database - INFO - Enabling SQLite WAL mode...
+2025-04-18 09:14:41,797 - dbp.database.database - INFO - SQLite WAL mode enabled. Current journal mode: wal
+2025-04-18 09:14:41,797 - dbp.database.database - INFO - Running Alembic migrations to initialize/update the database schema...
+2025-04-18 09:14:42,056 - dbp.database.database - INFO - Running database migrations...
+2025-04-18 09:14:42,057 - dbp.database.database - INFO - Upgrading database schema to latest version...
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+WARNI [dbp.core.lifecycle.doc_relationships] Could not get FileAccessService from metadata_component for RelationshipAnalyzer. Analysis might be limited.
+ERROR [dbp.core.lifecycle.doc_relationships.repository] Error getting all relationships: (sqlite3.OperationalError) no such table: doc_relationships
+[SQL: SELECT doc_relationships.id AS doc_relationships_id, doc_relationships.source_document AS doc_relationships_source_document, doc_relationships.target_document AS doc_relationships_target_document, doc_relationships.relationship_type AS doc_relationships_relationship_type, doc_relationships.topic AS doc_relationships_topic, doc_relationships.scope AS doc_relationships_scope, doc_relationships.meta_data AS doc_relationships_meta_data, doc_relationships.created_at AS doc_relationships_created_at, doc_relationships.updated_at AS doc_relationships_updated_at 
+FROM doc_relationships]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 945, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such table: doc_relationships
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/doc_relationships/repository.py", line 228, in get_all_relationships
+    all_orms = session.query(DocRelationshipORM).all()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2858, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2365, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2251, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1416, in execute
+    return meth(
+           ^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 523, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1638, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1843, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1983, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2352, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 945, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such table: doc_relationships
+[SQL: SELECT doc_relationships.id AS doc_relationships_id, doc_relationships.source_document AS doc_relationships_source_document, doc_relationships.target_document AS doc_relationships_target_document, doc_relationships.relationship_type AS doc_relationships_relationship_type, doc_relationships.topic AS doc_relationships_topic, doc_relationships.scope AS doc_relationships_scope, doc_relationships.meta_data AS doc_relationships_meta_data, doc_relationships.created_at AS doc_relationships_created_at, doc_relationships.updated_at AS doc_relationships_updated_at 
+FROM doc_relationships]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+ERROR [dbp.core.lifecycle.doc_relationships] Failed to load relationships from repository: Error getting all relationships: (sqlite3.OperationalError) no such table: doc_relationships
+[SQL: SELECT doc_relationships.id AS doc_relationships_id, doc_relationships.source_document AS doc_relationships_source_document, doc_relationships.target_document AS doc_relationships_target_document, doc_relationships.relationship_type AS doc_relationships_relationship_type, doc_relationships.topic AS doc_relationships_topic, doc_relationships.scope AS doc_relationships_scope, doc_relationships.meta_data AS doc_relationships_meta_data, doc_relationships.created_at AS doc_relationships_created_at, doc_relationships.updated_at AS doc_relationships_updated_at 
+FROM doc_relationships]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 945, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such table: doc_relationships
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/doc_relationships/repository.py", line 228, in get_all_relationships
+    all_orms = session.query(DocRelationshipORM).all()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2858, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2365, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2251, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1416, in execute
+    return meth(
+           ^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 523, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1638, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1843, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1983, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2352, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 945, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such table: doc_relationships
+[SQL: SELECT doc_relationships.id AS doc_relationships_id, doc_relationships.source_document AS doc_relationships_source_document, doc_relationships.target_document AS doc_relationships_target_document, doc_relationships.relationship_type AS doc_relationships_relationship_type, doc_relationships.topic AS doc_relationships_topic, doc_relationships.scope AS doc_relationships_scope, doc_relationships.meta_data AS doc_relationships_meta_data, doc_relationships.created_at AS doc_relationships_created_at, doc_relationships.updated_at AS doc_relationships_updated_at 
+FROM doc_relationships]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/doc_relationships/component.py", line 189, in _load_relationships
+    relationships = self._repository.get_all_relationships()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/doc_relationships/repository.py", line 234, in get_all_relationships
+    raise RepositoryError(f"Error getting all relationships: {e}") from e
+dbp.doc_relationships.repository.RepositoryError: Error getting all relationships: (sqlite3.OperationalError) no such table: doc_relationships
+[SQL: SELECT doc_relationships.id AS doc_relationships_id, doc_relationships.source_document AS doc_relationships_source_document, doc_relationships.target_document AS doc_relationships_target_document, doc_relationships.relationship_type AS doc_relationships_relationship_type, doc_relationships.topic AS doc_relationships_topic, doc_relationships.scope AS doc_relationships_scope, doc_relationships.meta_data AS doc_relationships_meta_data, doc_relationships.created_at AS doc_relationships_created_at, doc_relationships.updated_at AS doc_relationships_updated_at 
+FROM doc_relationships]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+ERROR [dbp.core.lifecycle.fs_monitor.fs_monitor] Failed to register change listener: 'ChangeDetectionQueue' object has no attribute 'register_listener'
+WARNI [dbp.core.lifecycle.scheduler] Failed to register change listener with File System Monitor.
+WARNI [dbp.fs_monitor.base] LinuxFileSystemMonitor thread did not exit cleanly.
+ERROR:    Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/starlette/routing.py", line 699, in lifespan
+    await receive()
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/uvicorn/lifespan/on.py", line 137, in receive
+    return await self.receive_queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/queues.py", line 158, in get
+    await getter
+asyncio.exceptions.CancelledError
+

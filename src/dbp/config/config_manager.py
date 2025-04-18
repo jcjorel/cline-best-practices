@@ -46,6 +46,16 @@
 # - doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-18T09:14:00Z : Fixed template variable recursion issue in resolve_template_string by CodeAssistant
+# * Made resolve_template_string completely independent from get() method to avoid recursion
+# * Implemented direct attribute access for template variable resolution
+# * Fixed infinite recursion during configuration initialization when templates reference each other
+# * Improved robustness by avoiding circular dependencies between template resolution and configuration access
+# 2025-04-18T08:33:00Z : Enhanced template variable resolution to handle nested templates by CodeAssistant
+# * Refactored _resolve_all_template_variables to use multiple passes for complete resolution
+# * Added _resolve_templates_single_pass method to track changes and enable incremental resolution
+# * Fixed issue with templated variables inside other templated variables not being resolved
+# * Improved debug logging to show resolution progress across multiple passes
 # 2025-04-18T07:39:00Z : Added automatic template variable resolution by CodeAssistant
 # * Implemented _resolve_all_template_variables to recursively process all configuration values
 # * Modified _apply_configuration_hierarchy to resolve all templates before marking config as ready
@@ -419,26 +429,71 @@ class ConfigurationManager:
         return value # Return non-string values as is
 
 
-    def _resolve_all_template_variables(self, config, path=""):
+    def _resolve_all_template_variables(self, config, path="", max_passes=5):
         """
         [Function intent]
-        Recursively resolves all template variables in the config object.
+        Recursively resolves all template variables in the config object, including nested templates.
         
         [Implementation details]
         Traverses the entire Pydantic model structure and resolves any string 
-        values that contain template variables in the ${key} format.
+        values that contain template variables in the ${key} format. Uses multiple passes
+        to handle nested template references (templates inside templates).
         
         [Design principles]
         Deep resolution to ensure all nested templates are resolved before clients access configuration.
+        Multiple passes to handle nested template references properly.
+        Comprehensive approach that ensures complete resolution of deeply nested variables.
         
         Args:
             config: The configuration object or sub-object to process
             path: Current path in the configuration hierarchy (for logging)
+            max_passes: Maximum number of resolution passes to handle nested templates
         """
         # Skip None values
         if config is None:
             return
+        
+        # Make multiple passes to handle nested template references
+        total_changes = 0
+        for pass_num in range(max_passes):
+            logger.debug(f"Template resolution pass {pass_num+1}/{max_passes}")
+            changes_made = self._resolve_templates_single_pass(config, path, pass_num+1)
+            total_changes += 1 if changes_made else 0
             
+            # If no changes were made in this pass, we've resolved everything
+            if not changes_made:
+                logger.debug(f"No more templates to resolve after pass {pass_num+1}")
+                break
+        
+        # Check if we possibly have unresolved templates after all passes
+        if total_changes >= max_passes:
+            logger.warning(f"Reached maximum template resolution passes ({max_passes}). Some templates may remain unresolved.")
+            # Perform one final deep scan to identify any remaining unresolved templates
+            self._check_for_unresolved_templates(config)
+            
+    def _check_for_unresolved_templates(self, config, path=""):
+        """
+        [Function intent]
+        Scans the configuration for any remaining unresolved template variables and logs warnings.
+        
+        [Implementation details]
+        Traverses the entire configuration structure, looking for strings containing '${' patterns
+        that indicate unresolved template variables. Records detailed paths for debugging.
+        
+        [Design principles]
+        Comprehensive error detection to assist with debugging template resolution issues.
+        Provides clear diagnostic information without disrupting configuration loading.
+        
+        Args:
+            config: The configuration object or sub-object to check
+            path: Current path in the configuration hierarchy (for logging)
+        """
+        if config is None:
+            return
+        
+        # Track unresolved templates found
+        unresolved_templates = []
+        
         # Handle different types of configuration objects
         if isinstance(config, BaseModel):
             # Process each field in the Pydantic model
@@ -447,7 +502,85 @@ class ConfigurationManager:
                 
                 if isinstance(field_value, BaseModel):
                     # Recursively process nested models
-                    self._resolve_all_template_variables(field_value, field_path)
+                    self._check_for_unresolved_templates(field_value, field_path)
+                elif isinstance(field_value, dict):
+                    # Process dictionary values
+                    for key, value in field_value.items():
+                        dict_path = f"{field_path}.{key}"
+                        if isinstance(value, str) and "${" in value:
+                            unresolved_templates.append(f"{dict_path}: {value}")
+                        elif isinstance(value, (dict, list, BaseModel)):
+                            self._check_for_unresolved_templates(value, dict_path)
+                elif isinstance(field_value, list):
+                    # Process list values
+                    for i, item in enumerate(field_value):
+                        item_path = f"{field_path}[{i}]"
+                        if isinstance(item, str) and "${" in item:
+                            unresolved_templates.append(f"{item_path}: {item}")
+                        elif isinstance(item, (dict, list, BaseModel)):
+                            self._check_for_unresolved_templates(item, item_path)
+                elif isinstance(field_value, str) and "${" in field_value:
+                    # Record unresolved string templates
+                    unresolved_templates.append(f"{field_path}: {field_value}")
+        elif isinstance(config, dict):
+            # Process dictionary objects
+            for key, value in list(config.items()):
+                dict_path = f"{path}.{key}" if path else key
+                if isinstance(value, str) and "${" in value:
+                    unresolved_templates.append(f"{dict_path}: {value}")
+                elif isinstance(value, (dict, list, BaseModel)):
+                    self._check_for_unresolved_templates(value, dict_path)
+        elif isinstance(config, list):
+            # Process list objects
+            for i, item in enumerate(config):
+                item_path = f"{path}[{i}]" if path else f"[{i}]"
+                if isinstance(item, str) and "${" in item:
+                    unresolved_templates.append(f"{item_path}: {item}")
+                elif isinstance(item, (dict, list, BaseModel)):
+                    self._check_for_unresolved_templates(item, item_path)
+        
+        # Log any unresolved templates found
+        if unresolved_templates:
+            for template in unresolved_templates:
+                logger.warning(f"Unresolved template variable found: {template}")
+            
+            # Log potential circular references if appropriate
+            if len(unresolved_templates) > 1:
+                logger.warning("Multiple unresolved templates detected. Check for potential circular references.")
+                
+    def _resolve_templates_single_pass(self, config, path="", pass_num=1):
+        """
+        [Function intent]
+        Performs a single pass of template variable resolution across the configuration object.
+        
+        [Implementation details]
+        Helper method for _resolve_all_template_variables that processes one level of
+        template resolution and tracks whether any changes were made.
+        
+        [Design principles]
+        Separation of concerns for clearer code structure.
+        Tracks changes to determine if additional passes are needed.
+        
+        Args:
+            config: The configuration object or sub-object to process
+            path: Current path in the configuration hierarchy (for logging)
+            pass_num: Current resolution pass number (for logging)
+            
+        Returns:
+            bool: True if any templates were resolved, False otherwise
+        """
+        changes_made = False
+        
+        # Handle different types of configuration objects
+        if isinstance(config, BaseModel):
+            # Process each field in the Pydantic model
+            for field_name, field_value in config.__dict__.items():
+                field_path = f"{path}.{field_name}" if path else field_name
+                
+                if isinstance(field_value, BaseModel):
+                    # Recursively process nested models
+                    sub_changes = self._resolve_templates_single_pass(field_value, field_path, pass_num)
+                    changes_made = changes_made or sub_changes
                 elif isinstance(field_value, dict):
                     # Process dictionary values
                     for key, value in field_value.items():
@@ -455,10 +588,12 @@ class ConfigurationManager:
                         if isinstance(value, str) and "${" in value:
                             resolved_value = self.resolve_template_string(value)
                             if resolved_value != value:
-                                logger.debug(f"Resolved template in {dict_path}: {value} → {resolved_value}")
+                                logger.debug(f"Pass {pass_num}: Resolved template in {dict_path}: {value} → {resolved_value}")
                                 field_value[key] = resolved_value
+                                changes_made = True
                         elif isinstance(value, (dict, list, BaseModel)):
-                            self._resolve_all_template_variables(value, dict_path)
+                            sub_changes = self._resolve_templates_single_pass(value, dict_path, pass_num)
+                            changes_made = changes_made or sub_changes
                 elif isinstance(field_value, list):
                     # Process list values
                     for i, item in enumerate(field_value):
@@ -466,16 +601,19 @@ class ConfigurationManager:
                         if isinstance(item, str) and "${" in item:
                             resolved_item = self.resolve_template_string(item)
                             if resolved_item != item:
-                                logger.debug(f"Resolved template in {item_path}: {item} → {resolved_item}")
+                                logger.debug(f"Pass {pass_num}: Resolved template in {item_path}: {item} → {resolved_item}")
                                 field_value[i] = resolved_item
+                                changes_made = True
                         elif isinstance(item, (dict, list, BaseModel)):
-                            self._resolve_all_template_variables(item, item_path)
+                            sub_changes = self._resolve_templates_single_pass(item, item_path, pass_num)
+                            changes_made = changes_made or sub_changes
                 elif isinstance(field_value, str) and "${" in field_value:
                     # Resolve string templates
                     resolved_value = self.resolve_template_string(field_value)
                     if resolved_value != field_value:
-                        logger.debug(f"Resolved template in {field_path}: {field_value} → {resolved_value}")
+                        logger.debug(f"Pass {pass_num}: Resolved template in {field_path}: {field_value} → {resolved_value}")
                         setattr(config, field_name, resolved_value)
+                        changes_made = True
         elif isinstance(config, dict):
             # Process dictionary objects
             for key, value in list(config.items()):
@@ -483,10 +621,12 @@ class ConfigurationManager:
                 if isinstance(value, str) and "${" in value:
                     resolved_value = self.resolve_template_string(value)
                     if resolved_value != value:
-                        logger.debug(f"Resolved template in {dict_path}: {value} → {resolved_value}")
+                        logger.debug(f"Pass {pass_num}: Resolved template in {dict_path}: {value} → {resolved_value}")
                         config[key] = resolved_value
+                        changes_made = True
                 elif isinstance(value, (dict, list, BaseModel)):
-                    self._resolve_all_template_variables(value, dict_path)
+                    sub_changes = self._resolve_templates_single_pass(value, dict_path, pass_num)
+                    changes_made = changes_made or sub_changes
         elif isinstance(config, list):
             # Process list objects
             for i, item in enumerate(config):
@@ -494,10 +634,14 @@ class ConfigurationManager:
                 if isinstance(item, str) and "${" in item:
                     resolved_item = self.resolve_template_string(item)
                     if resolved_item != item:
-                        logger.debug(f"Resolved template in {item_path}: {item} → {resolved_item}")
+                        logger.debug(f"Pass {pass_num}: Resolved template in {item_path}: {item} → {resolved_item}")
                         config[i] = resolved_item
+                        changes_made = True
                 elif isinstance(item, (dict, list, BaseModel)):
-                    self._resolve_all_template_variables(item, item_path)
+                    sub_changes = self._resolve_templates_single_pass(item, item_path, pass_num)
+                    changes_made = changes_made or sub_changes
+        
+        return changes_made
 
     def get(self, key: str, resolve_templates: bool = False) -> Any:
         """
@@ -508,9 +652,11 @@ class ConfigurationManager:
         [Implementation details]
         Uses direct attribute access on the Pydantic AppConfig model.
         Falls back to default configuration if not initialized.
+        Forces initialization if accessed before initialized.
         
         [Design principles]
         Type-safe configuration access with pre-resolved template variables.
+        Self-initializing on first access to ensure templates are always resolved.
         
         Args:
             key: The configuration key in dot notation.
@@ -524,11 +670,13 @@ class ConfigurationManager:
         Raises:
             ValueError: If the configuration key doesn't exist.
         """
-        # Choose the right config object based on initialization state
+        # If not initialized, initialize first to ensure template variables are resolved
         if not self.initialized_flag:
-            config = AppConfig()  # Get defaults
-        else:
-            config = self._config
+            logger.info(f"Configuration accessed via get('{key}') before initialization. Initializing now.")
+            self.initialize()
+            
+        # Use the initialized config
+        config = self._config
             
         # Navigate through the Pydantic model hierarchy
         parts = key.split('.')
@@ -538,9 +686,8 @@ class ConfigurationManager:
             for part in parts:
                 value = getattr(value, part)
                 
-            # For backward compatibility, provide a path to still resolve templates
-            # but this should not be needed as all templates are resolved at initialization
-            if resolve_templates and isinstance(value, str) and "${" in value:
+            # Ensure any unresolved templates are resolved (this should be rare after our initialization fix)
+            if isinstance(value, str) and "${" in value:
                 logger.warning(f"Unresolved template variable found in config key {key}: {value}. "
                               "This may indicate an initialization issue or a circular template reference.")
                 value = self.resolve_template_string(value)
@@ -573,8 +720,16 @@ class ConfigurationManager:
             
     def resolve_template_string(self, template_str: str, max_depth: int = 10) -> str:
         """
+        [Function intent]
         Resolves a string containing template variables in the format ${key},
         where key is a configuration key in dot notation.
+        
+        [Implementation details]
+        Accesses configuration values directly without using get() to avoid recursion.
+        Works completely autonomously with direct attribute access.
+        
+        [Design principles]
+        Independent template resolution that never triggers auto-initialization.
         
         Args:
             template_str: The string containing template variables.
@@ -591,13 +746,26 @@ class ConfigurationManager:
         # Define regex pattern for ${key} syntax
         pattern = r'\${([^}]+)}'
         
-        # Function to replace each match with its value
+        # Function to replace each match with its value using direct attribute access
         def replace_var(match):
             key = match.group(1)  # Extract the key from ${key}
             try:
-                value = self.get(key, resolve_templates=False)  # Get raw value without template resolution
-            except ValueError:
-                logger.warning(f"Template variable '${{{key}}}' not found in configuration")
+                # Use direct attribute navigation to avoid get() recursion
+                parts = key.split('.')
+                # Use current configuration model that's being built
+                value = self._config  
+                
+                # Navigate through the model hierarchy
+                for part in parts:
+                    if isinstance(value, BaseModel):
+                        value = getattr(value, part)
+                    elif isinstance(value, dict) and part in value:
+                        value = value[part]
+                    else:
+                        raise AttributeError(f"Cannot access '{part}' in path '{key}'")
+                    
+            except (AttributeError, KeyError):
+                logger.debug(f"Template variable '${{{key}}}' not found during resolution")
                 return f"${{{key}}}"  # Return the original template if not found
                 
             # Convert non-string values to string
@@ -736,15 +904,42 @@ class ConfigurationManager:
 
 
     def as_dict(self) -> Dict[str, Any]:
-        """Returns the current validated configuration as a dictionary."""
+        """
+        [Function intent]
+        Returns the current validated configuration as a dictionary.
+        
+        [Implementation details]
+        Auto-initializes if accessed before the manager is explicitly initialized.
+        
+        [Design principles]
+        Self-initializing to ensure resolved template variables.
+        
+        Returns:
+            Dict[str, Any]: Dictionary representation of the configuration
+        """
         if not self.initialized_flag:
-             logger.warning("Configuration not initialized. Returning default dictionary.")
-             return AppConfig().dict()
+             logger.info("Getting configuration dictionary before initialization. Initializing now.")
+             self.initialize()
         return self._config.dict()
 
     def get_raw_merged_config(self) -> Dict[str, Any]:
-         """Returns the raw merged configuration dictionary before Pydantic validation."""
-         return self._raw_config_dict.copy()
+        """
+        [Function intent]
+        Returns the raw merged configuration dictionary before Pydantic validation.
+        
+        [Implementation details]
+        Ensures the configuration manager is initialized before returning the raw config.
+        
+        [Design principles]
+        Self-initializing to ensure all configuration is loaded when accessed.
+        
+        Returns:
+            Dict[str, Any]: Raw merged configuration dictionary
+        """
+        if not self.initialized_flag:
+            logger.info("Getting raw configuration before initialization. Initializing now.")
+            self.initialize()
+        return self._raw_config_dict.copy()
 
 
     def get_typed_config(self) -> AppConfig:
@@ -754,25 +949,40 @@ class ConfigurationManager:
         
         [Implementation details]
         Provides direct access to the underlying Pydantic AppConfig model.
+        Auto-initializes if accessed before explicitly initialized.
         
         [Design principles]
         Type safety for configuration access.
+        Self-initializing to ensure template variables are always resolved.
         
         Returns:
-            AppConfig: The validated configuration model
-            
-        Raises:
-            RuntimeError: If configuration is not initialized
+            AppConfig: The validated configuration model with all template variables resolved
         """
+        # Initialize if not already initialized to ensure template resolution
         if not self.initialized_flag:
-            # Create and return a default AppConfig when not initialized
-            logger.debug("Getting default typed configuration as manager is not initialized")
-            return AppConfig()
+            logger.info("Getting typed configuration before initialization. Initializing now.")
+            self.initialize()
             
         return self._config
 
     def validate(self) -> List[str]:
-        """Validates the current configuration state against the schema."""
+        """
+        [Function intent]
+        Validates the current configuration state against the schema.
+        
+        [Implementation details]
+        Auto-initializes if accessed before the manager is explicitly initialized.
+        
+        [Design principles]
+        Self-initializing to ensure configuration is loaded before validation.
+        
+        Returns:
+            List[str]: Empty list if valid, list of error messages if invalid
+        """
+        if not self.initialized_flag:
+            logger.info("Validating configuration before initialization. Initializing now.")
+            self.initialize()
+            
         try:
             AppConfig(**self._config.dict())
             logger.info("Current configuration is valid.")

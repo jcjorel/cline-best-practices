@@ -223,3 +223,8 @@ Warning: Could not get database configuration from component system: 'ComponentS
 --- SERVER START ATTEMPT AT 2025-04-18 07:33:20 ---
 
 Warning: Could not get database configuration from component system: 'ComponentSystem' object has no attribute 'is_initialized'
+
+
+--- SERVER START ATTEMPT AT 2025-04-18 09:14:40 ---
+
+Warning: Could not get database configuration from component system: 'ComponentSystem' object has no attribute 'is_initialized'
