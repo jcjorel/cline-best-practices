@@ -38,6 +38,9 @@
 # - src/dbp/fs_monitor/base.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-18T17:12:00Z : Fixed LinuxFileSystemMonitor thread exit issue by CodeAssistant
+# * Modified _monitor_loop to use timeout_s=1.0 and yield_nones=True for proper thread termination
+# * Ensures monitor thread can properly shut down when stop() is called
 # 2025-04-15T09:41:20Z : Initial creation of LinuxFileSystemMonitor by CodeAssistant
 # * Implemented start, stop, add/remove directory, and event handling loop using inotify.
 ###############################################################################
@@ -270,12 +273,12 @@ class LinuxFileSystemMonitor(FileSystemMonitor):
         logger.debug("Starting inotify event loop...")
         while self.running:
             try:
-                # Read events from inotify. event_gen blocks until events occur or timeout.
-                # Using yield_nones=False and no timeout means it blocks indefinitely until an event.
-                for event in self._inotify.event_gen(yield_nones=False):
+                # Read events from inotify. event_gen WITH timeout so it can check self.running periodically
+                # Using yield_nones=True and a timeout allows checking self.running flag regularly
+                for event in self._inotify.event_gen(yield_nones=True, timeout_s=1.0):
                     if not self.running: # Check running flag after potentially blocking
                         break
-                    if event is None: # Should not happen with yield_nones=False, but check anyway
+                    if event is None: # Skip None events (timeouts)
                         continue
 
                     # event is a tuple: (header, type_names, watch_path, filename)
