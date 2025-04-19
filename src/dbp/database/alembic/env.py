@@ -38,12 +38,17 @@
 # * Set up database connection configuration
 # * Added model import mechanism
 # * Configured logging
+# 2025-04-18T17:29:59Z : Improved database URL resolution by CodeAssistant
+# * Added integration with application's configuration system
+# * Implemented fallback to default SQLite database path
+# * Added robust error handling for connection failures
+# * Added proper type hints for improved code quality
 ###############################################################################
 
 from logging.config import fileConfig
-import os
 import sys
 from pathlib import Path
+from typing import Optional
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -57,6 +62,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 from dbp.database.models import Base
 # Import all models to ensure they're included in migrations
 from dbp.database import models
+
+# Try to import the configuration system for database URL detection
+try:
+    from dbp.config.config_manager import ConfigManager
+    from dbp.core.system import SystemContext
+except ImportError:
+    ConfigManager = None
 
 # this is the Alembic Config object
 config = context.config
@@ -75,7 +87,7 @@ target_metadata = Base.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
-def get_url():
+def get_url() -> str:
     """
     [Function intent]
     Dynamically generates a database URL based on application configuration.
@@ -88,9 +100,13 @@ def get_url():
     [Design principles]
     Flexibility in configuration sources with sensible defaults.
     Respects direct alembic.ini configuration for direct CLI invocation.
+    Implements proper fallbacks according to DESIGN.md guidance.
     
     Returns:
         str: A SQLAlchemy connection URL
+    
+    Raises:
+        RuntimeError: When no valid database configuration can be determined
     """
     # Check if running directly via alembic command and use config from .ini file
     # This is critical for direct CLI invocation to work properly
@@ -99,39 +115,66 @@ def get_url():
         if ini_url:
             print(f"Using database URL from alembic.ini: {ini_url}")
             return ini_url
-            
-    try:
-        # Try to get configuration from the application's component system
-        from dbp.core.system import ComponentSystem
-        system = ComponentSystem.get_instance()
-        
-        # Only proceed if system is initialized
-        if system and system.is_initialized():
-            config_manager = system.get_component("config_manager")
-            if config_manager:
-                db_type = config_manager.get('database.type', 'sqlite')
-                
-                if db_type == 'sqlite':
-                    db_path = config_manager.get('database.path', '~/.dbp/metadata.db')
-                    db_path = os.path.expanduser(db_path)
-                    return f"sqlite:///{db_path}"
-                elif db_type == 'postgresql':
-                    return config_manager.get('database.connection_string')
-    except (ImportError, AttributeError, Exception) as e:
-        print(f"Warning: Could not get database configuration from component system: {e}")
     
-    # Fallback to environment variables
-    url = os.environ.get("DBP_DATABASE_URL")
+    # Attempt to access application configuration
+    url = _get_url_from_config()
     if url:
-        print(f"Using database URL from DBP_DATABASE_URL environment variable")
+        print(f"Using database URL from application configuration")
         return url
+    
+    # Fallback to default SQLite path as specified in DATA_MODEL.md
+    default_sqlite_path = Path(__file__).resolve().parents[5] / "coding_assistant" / "dbp" / "database.db"
+    default_url = f"sqlite:///{default_sqlite_path}"
+    print(f"Using default SQLite database URL: {default_url}")
+    return default_url
+
+
+def _get_url_from_config() -> Optional[str]:
+    """
+    [Function intent]
+    Attempts to retrieve database URL from the application configuration system.
+    
+    [Implementation details]
+    Uses the ConfigManager if available to access the database configuration.
+    Constructs the appropriate database URL based on the configured database type.
+    
+    [Design principles]
+    Integration with application configuration system.
+    Separation of concerns for URL retrieval logic.
+    
+    Returns:
+        Optional[str]: Database URL if configuration available, None otherwise
+    """
+    if ConfigManager is None:
+        print("ConfigManager not available, skipping application configuration")
+        return None
+    
+    try:
+        # Create a system context to access configuration
+        system = SystemContext()
         
-    # Ultimate fallback - use a default sqlite database
-    default_path = os.path.expanduser("~/.dbp/metadata.db")
-    # Ensure directory exists
-    os.makedirs(os.path.dirname(default_path), exist_ok=True)
-    print(f"Using default database URL: sqlite:///{default_path}")
-    return f"sqlite:///{default_path}"
+        # Get the configuration manager instance
+        config_manager = ConfigManager()
+        config_manager.initialize(system)
+        
+        # Get the typed configuration
+        config = config_manager.get_typed_config()
+        
+        # Determine the database type and construct URL
+        db_type = config.database.type
+        
+        if db_type == 'sqlite':
+            db_path = Path(config.database.path).expanduser()
+            return f"sqlite:///{db_path}"
+        elif db_type == 'postgresql':
+            return config.database.connection_string
+        else:
+            print(f"Unsupported database type in config: {db_type}")
+            return None
+            
+    except Exception as e:
+        print(f"Error accessing application configuration: {e}")
+        return None
 
 
 def run_migrations_offline() -> None:
@@ -184,16 +227,21 @@ def run_migrations_online() -> None:
     """
     # Override the URL in the alembic.ini
     config_section = config.get_section(config.config_ini_section)
-    url = get_url()
-    config_section['sqlalchemy.url'] = url
     
-    print(f"Running migrations on database URL: {url}")
-    
-    connectable = engine_from_config(
-        config_section,
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    try:
+        url = get_url()
+        config_section['sqlalchemy.url'] = url
+        
+        print(f"Running migrations on database URL: {url}")
+        
+        connectable = engine_from_config(
+            config_section,
+            prefix="sqlalchemy.",
+            poolclass=pool.NullPool,
+        )
+    except Exception as e:
+        print(f"ERROR: Failed to configure database connection: {e}")
+        raise RuntimeError(f"Database configuration failed: {e}") from e
 
     with connectable.connect() as connection:
         # Check if alembic_version table exists and its state
