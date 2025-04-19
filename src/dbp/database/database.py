@@ -46,6 +46,10 @@
 # - doc/CONFIGURATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-19T23:52:00Z : Added dependency injection support by CodeAssistant
+# * Updated initialize() method to accept dependencies parameter
+# * Added support for obtaining configuration either from injected dependencies or context
+# * Enhanced method documentation to follow three-section format
 # 2025-04-18T10:54:00Z : Refactored to use AlembicManager for migrations by CodeAssistant
 # * Extracted Alembic migration code to dedicated AlembicManager class
 # * Added proper function documentation for all methods
@@ -59,7 +63,6 @@
 # * Modified _run_alembic_migrations to construct database URL from configuration
 # * Fixed error: "Configuration key 'database.url' not found"
 # * Implemented database type-specific URL construction for SQLite and PostgreSQL
-# 2025-04-17T10:55:37Z : Fixed Alembic configuration handling by CodeAssistant
 ###############################################################################
 
 import os
@@ -154,21 +157,24 @@ class DatabaseComponent(Component):
         """
         return ["config_manager"]
 
-    def initialize(self, context: InitializationContext) -> None:
+    def initialize(self, context: InitializationContext, dependencies: Optional[Dict[str, Component]] = None) -> None:
         """
         [Function intent]
         Initializes the database component with the application configuration.
         
         [Implementation details]
         Creates and initializes the DatabaseManager with typed configuration.
+        Uses directly injected dependencies if provided, falling back to context.get_component().
         Sets _initialized flag to indicate successful initialization.
         
         [Design principles]
         Clean initialization with proper error handling.
         Type-safe configuration access.
+        Dependency injection for improved testability.
         
         Args:
             context: Initialization context with typed configuration and resources
+            dependencies: Optional dictionary of pre-resolved dependencies {name: component_instance}
         
         Raises:
             RuntimeError: If database initialization fails
@@ -177,8 +183,14 @@ class DatabaseComponent(Component):
         self.logger.info(f"Initializing component '{self.name}'...")
         
         try:
-            # Get the strongly-typed configuration directly
-            typed_config = context.get_typed_config()
+            # Get typed configuration either from dependencies or context
+            if dependencies:
+                self.logger.debug("Using injected dependencies")
+                config_manager = self.get_dependency(dependencies, "config_manager")
+                typed_config = config_manager.get_typed_config()
+            else:
+                self.logger.debug("Using context.get_component() to fetch dependencies")
+                typed_config = context.get_typed_config()
             
             # Create database manager if it doesn't exist
             if not self._db_manager:

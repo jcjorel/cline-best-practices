@@ -42,11 +42,20 @@
 # - All other files in src/dbp/consistency_analysis/
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T01:21:25Z : Completed dependency injection refactoring by CodeAssistant
+# * Removed dependencies property
+# * Made dependencies parameter required in initialize method
+# * Removed conditional logic for backwards compatibility
+# 2025-04-20T00:09:49Z : Added dependency injection support by CodeAssistant
+# * Updated initialize() method to accept dependencies parameter
+# * Added dictionary-based dependency retrieval with validation
+# * Enhanced method documentation for dependency injection
 # 2025-04-15T10:32:00Z : Initial creation of ConsistencyAnalysisComponent by CodeAssistant
 # * Implemented Component protocol, initialization, analyzer registration, and public API methods.
 ###############################################################################
 
 import logging
+from datetime import datetime, timezone
 from typing import List, Optional, Any, Dict
 
 # Core component imports
@@ -126,14 +135,7 @@ class ConsistencyAnalysisComponent(Component):
         """Returns the unique name of the component."""
         return "consistency_analysis"
 
-    @property
-    def dependencies(self) -> List[str]:
-        """Returns the list of component names this component depends on."""
-        # Needs database for storing results, doc relationships for context,
-        # and metadata extraction for analyzing code/doc content.
-        return ["database", "doc_relationships", "metadata_extraction"]
-
-    def initialize(self, context: InitializationContext):
+    def initialize(self, context: InitializationContext, dependencies: Dict[str, Component]) -> None:
         """
         [Function intent]
         Initializes the Consistency Analysis component and its sub-components.
@@ -145,10 +147,12 @@ class ConsistencyAnalysisComponent(Component):
         
         [Design principles]
         Explicit initialization with strong typing.
+        Dependency injection for improved performance and testability.
         Type-safe configuration access.
         
         Args:
             context: Initialization context with typed configuration and resources
+            dependencies: Dictionary of pre-resolved dependencies {name: component_instance}
         """
         if self._initialized:
             logger.warning(f"Component '{self.name}' already initialized.")
@@ -162,10 +166,11 @@ class ConsistencyAnalysisComponent(Component):
             config = context.get_typed_config()
             component_config = getattr(config, self.name)
 
-            # Get dependent components
-            db_component = context.get_component("database")
-            doc_relationships_component = context.get_component("doc_relationships")
-            metadata_extraction_component = context.get_component("metadata_extraction")
+            # Get dependent components using dependency injection
+            self.logger.debug("Using injected dependencies")
+            db_component = self.get_dependency(dependencies, "database")
+            doc_relationships_component = self.get_dependency(dependencies, "doc_relationships")
+            metadata_extraction_component = self.get_dependency(dependencies, "metadata_extraction")
 
             # Get database manager using the method instead of accessing attribute
             db_manager = db_component.get_manager()

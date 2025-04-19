@@ -34,6 +34,14 @@
 # - src/dbp/fs_monitor/factory.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T01:41:39Z : Completed dependency injection refactoring by CodeAssistant
+# * Removed dependencies property
+# * Made dependencies parameter required in initialize method
+# * Removed conditional logic for backwards compatibility
+# 2025-04-19T23:56:00Z : Added dependency injection support by CodeAssistant
+# * Updated initialize() method to accept dependencies parameter
+# * Modified initialization to use injected dependencies when available
+# * Improved dependency resolution with explicit error handling
 # 2025-04-17T23:22:30Z : Updated to use strongly-typed configuration by CodeAssistant
 # * Refactored configuration access to use type-safe get_typed_config() method
 # * Enhanced config access for both component configuration and project settings
@@ -102,25 +110,7 @@ class FileSystemMonitorComponent(Component):
         """
         return "fs_monitor"
     
-    @property
-    def dependencies(self) -> List[str]:
-        """
-        [Function intent]
-        Returns the list of component names this component depends on.
-        
-        [Implementation details]
-        Returns list of dependencies.
-        
-        [Design principles]
-        Explicit dependency declaration.
-        
-        Returns:
-            List[str]: List of component dependencies
-        """
-        # Depends on config for settings and queue for event delivery
-        return ["config_manager", "change_queue"]
-    
-    def initialize(self, context: InitializationContext) -> None:
+    def initialize(self, context: InitializationContext, dependencies: Dict[str, Component]) -> None:
         """
         [Function intent]
         Initializes the file system monitor component.
@@ -135,6 +125,7 @@ class FileSystemMonitorComponent(Component):
         
         Args:
             context: The initialization context
+            dependencies: Dictionary of pre-resolved dependencies {name: component_instance}
         """
         if self._initialized:
             self.logger.warning("FileSystemMonitorComponent already initialized")
@@ -160,23 +151,30 @@ class FileSystemMonitorComponent(Component):
         self.logger.info(f"Initializing component '{self.name}'...")
         
         try:
-            # Get monitor configuration using strongly-typed config access
-            typed_config = context.get_typed_config()
+            # Get configuration and dependencies
+            self.logger.debug("Using injected dependencies")
+            # Get config from the config_manager component in dependencies
+            config_manager = self.get_dependency(dependencies, "config_manager")
+            typed_config = config_manager.get_typed_config()
+            
+            # Get change queue component from dependencies
+            queue_component = self.get_dependency(dependencies, "change_queue")
+            
+            # Validate configuration
             config = typed_config.fs_monitor
             if not config:
                 error_msg = f"Missing configuration section for '{self.name}'"
                 self.logger.error(error_msg)
                 raise RuntimeError(error_msg)
             
-            # Get change queue component - strict approach
-            queue_component = context.get_component("change_queue")
-            if not queue_component or not hasattr(queue_component, 'get_queue'):
-                error_msg = "Queue component not found or missing get_queue method"
+            # Validate change queue component
+            if not hasattr(queue_component, 'get_queue'):
+                error_msg = "Queue component missing get_queue method"
                 self.logger.error(error_msg)
                 raise RuntimeError(error_msg)
                 
             self._change_queue = queue_component.get_queue()
-            self.logger.info("Using queue from change_queue component")
+            self.logger.info("Change queue component successfully initialized")
             
             # Get project root from typed configuration
             project_root = typed_config.project.root_path

@@ -43,6 +43,14 @@
 # - src/dbp/metadata_extraction/component.py (Dependency)
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T01:30:44Z : Completed dependency injection refactoring by CodeAssistant
+# * Removed dependencies property
+# * Made dependencies parameter required in initialize method
+# * Removed conditional logic for backwards compatibility
+# 2025-04-20T00:21:46Z : Added dependency injection support by CodeAssistant
+# * Updated initialize() method to accept dependencies parameter
+# * Added dependency validation for required components
+# * Enhanced method documentation for dependency injection pattern
 # 2025-04-17T23:25:15Z : Updated to use strongly-typed configuration by CodeAssistant
 # * Refactored configuration access to use type-safe get_typed_config() method
 # * Replaced string-based configuration lookup with direct attribute access
@@ -116,20 +124,24 @@ class SchedulerComponent(Component):
         """Returns the unique name of the component."""
         return "scheduler"
 
-    @property
-    def dependencies(self) -> List[str]:
-        """Returns the list of component names this component depends on."""
-        # Needs fs_monitor to get changes and metadata_extraction to process them.
-        # Also implicitly depends on config.
-        return ["fs_monitor", "metadata_extraction"]
-
-    def initialize(self, context: InitializationContext):
+    def initialize(self, context: InitializationContext, dependencies: Dict[str, Component]) -> None:
         """
+        [Function intent]
         Initializes the background task scheduler component, setting up the
         queue, worker pool, status reporter, and controller.
-
+        
+        [Implementation details]
+        Uses the strongly-typed configuration for component setup.
+        Creates and connects internal scheduler parts.
+        Sets up file change listener with the fs_monitor component.
+        
+        [Design principles]
+        Explicit initialization with strong typing.
+        Dependency injection for improved performance and testability.
+        
         Args:
-            context: The initialization context.
+            context: Initialization context with typed configuration and resources
+            dependencies: Dictionary of pre-resolved dependencies {name: component_instance}
         """
         if self._initialized:
             logger.warning(f"Component '{self.name}' already initialized.")
@@ -143,9 +155,10 @@ class SchedulerComponent(Component):
             typed_config = context.get_typed_config()
             scheduler_config = typed_config.scheduler  # Get config specific to this component
 
-            # Get dependent components from the registry via context
-            fs_monitor_component = context.get_component("fs_monitor")
-            metadata_extraction_component = context.get_component("metadata_extraction")
+            # Get dependent components using dependency injection
+            self.logger.debug("Using injected dependencies")
+            fs_monitor_component = self.get_dependency(dependencies, "fs_monitor")
+            metadata_extraction_component = self.get_dependency(dependencies, "metadata_extraction")
 
             # --- Instantiate scheduler parts ---
             # NOTE: The plan suggests creating a new queue here and registering a listener.

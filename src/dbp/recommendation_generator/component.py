@@ -42,11 +42,20 @@
 # - All other files in src/dbp/recommendation_generator/
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T01:27:55Z : Completed dependency injection refactoring by CodeAssistant
+# * Removed dependencies property
+# * Made dependencies parameter required in initialize method
+# * Removed conditional logic for backwards compatibility
+# 2025-04-20T00:16:15Z : Added dependency injection support by CodeAssistant
+# * Updated initialize() method to accept dependencies parameter
+# * Added dependency validation for required components
+# * Enhanced method documentation for dependency injection pattern
 # 2025-04-15T10:43:30Z : Initial creation of RecommendationGeneratorComponent by CodeAssistant
 # * Implemented Component protocol, initialization, strategy registration, and public API.
 ###############################################################################
 
 import logging
+from datetime import datetime, timezone
 from typing import List, Optional, Any, Dict
 
 # Core component imports
@@ -63,7 +72,7 @@ except ImportError:
 
 # Imports for internal services
 try:
-    from .data_models import Recommendation, RecommendationFeedback
+    from .data_models import Recommendation, RecommendationFeedback, RecommendationStatus
     from .repository import RecommendationRepository, RepositoryError, RecommendationNotFoundError
     from .strategy import (
         RecommendationStrategy, DocumentationLinkFixStrategy, DocumentationTerminologyStrategy,
@@ -123,13 +132,7 @@ class RecommendationGeneratorComponent(Component):
         """Returns the unique name of the component."""
         return "recommendation_generator"
 
-    @property
-    def dependencies(self) -> List[str]:
-        """Returns the list of component names this component depends on."""
-        # Needs database, consistency analysis results, and potentially LLM coordinator
-        return ["database", "consistency_analysis", "llm_coordinator"]
-
-    def initialize(self, context: InitializationContext):
+    def initialize(self, context: InitializationContext, dependencies: Dict[str, Component]) -> None:
         """
         [Function intent]
         Initializes the Recommendation Generator component and its sub-components.
@@ -141,10 +144,12 @@ class RecommendationGeneratorComponent(Component):
         
         [Design principles]
         Explicit initialization with strong typing.
+        Dependency injection for improved performance and testability.
         Type-safe configuration access.
         
         Args:
             context: Initialization context with typed configuration and resources
+            dependencies: Dictionary of pre-resolved dependencies {name: component_instance}
         """
         if self._initialized:
             logger.warning(f"Component '{self.name}' already initialized.")
@@ -158,10 +163,11 @@ class RecommendationGeneratorComponent(Component):
             config = context.get_typed_config()
             component_config = getattr(config, self.name)
 
-            # Get dependent components
-            db_component = context.get_component("database")
-            self.consistency_component = context.get_component("consistency_analysis") # Keep ref if needed
-            self.llm_component = context.get_component("llm_coordinator") # Keep ref
+            # Get dependent components using dependency injection
+            self.logger.debug("Using injected dependencies")
+            db_component = self.get_dependency(dependencies, "database")
+            self.consistency_component = self.get_dependency(dependencies, "consistency_analysis")
+            self.llm_component = self.get_dependency(dependencies, "llm_coordinator")
 
             # Get database manager using the method instead of accessing attribute
             db_manager = db_component.get_manager()

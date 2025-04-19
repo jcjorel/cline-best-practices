@@ -1,61 +1,51 @@
 #!/bin/bash
 
-# Script to analyze component dependencies and detect potential issues
-# This script scans the Python code for component dependencies and checks for potential issues
+# This script verifies that all components in the system properly follow
+# the new component dependency declaration pattern.
 
-echo "=== DBP Component Dependency Analyzer ==="
-echo "Scanning component files..."
+echo "Checking components for proper dependency implementation..."
+echo "========================================================"
 
-# Define directories to search
-SRC_DIR="src/dbp"
-COMPONENT_PATTERN="class.*Component"
+# Search for initialize method implementations that still use context.get_component
+echo "1. Checking for components still using context.get_component()..."
+grep -r "context\.get_component" --include="*.py" src/dbp/*/component*.py
 
-# Find all component classes
-echo -e "\n=== Found Components ==="
-grep -r "$COMPONENT_PATTERN" --include="*.py" $SRC_DIR | sort
+if [ $? -eq 0 ]; then
+  echo "❌ Found components still using context.get_component() - these need to be updated!"
+else
+  echo "✅ No components using context.get_component() - good!"
+fi
 
-# Find all component name declarations
-echo -e "\n=== Component Names ==="
-grep -r "def name" --include="*.py" --after-context=3 $SRC_DIR | grep "return" | sort
+# Search for any remaining dependencies properties
+echo ""
+echo "2. Checking for components still implementing dependencies property..."
+grep -r "@property" -A 2 -B 2 --include="*.py" src/dbp/*/component*.py | grep "dependencies"
 
-# Find all dependency declarations
-echo -e "\n=== Component Dependencies ==="
-grep -r "def dependencies" --include="*.py" --after-context=5 $SRC_DIR | grep -E "return|dependencies" | sort
+if [ $? -eq 0 ]; then
+  echo "❌ Found components still implementing dependencies property - these need to be updated!"
+else
+  echo "✅ No components with dependencies property - good!"
+fi
 
-# Search for potential circular dependencies
-echo -e "\n=== Potential Circular Dependencies ==="
-for file in $(find $SRC_DIR -name "*.py" -type f); do
-    component=$(grep -l "class.*Component" $file)
-    if [ -n "$component" ]; then
-        component_name=$(grep -A 3 "def name" $file | grep "return" | sed -E 's/.*return "([^"]+)".*/\1/')
-        if [ -n "$component_name" ]; then
-            dependencies=$(grep -A 5 "def dependencies" $file | grep -E "return \[" | sed -E 's/.*return \[(.*)\].*/\1/')
-            if grep -q "$component_name" <(echo "$dependencies"); then
-                echo "WARNING: Possible self-dependency in $file"
-                echo "  Component: $component_name"
-                echo "  Dependencies: $dependencies"
-            fi
-        fi
-    fi
-done
+# Check for initialize methods without dependencies parameter
+echo ""
+echo "3. Checking for initialize methods without dependencies parameter..."
+grep -r "def initialize" -A 2 --include="*.py" src/dbp/*/component*.py | grep -v "dependencies"
 
-# Look for dependency mismatches
-echo -e "\n=== Checking for Component Name Mismatches ==="
-# Extract all component names
-component_names=$(grep -r "def name" --include="*.py" --after-context=3 $SRC_DIR | grep "return" | sed -E 's/.*return "([^"]+)".*/\1/' | sort)
+if [ $? -eq 0 ]; then
+  echo "❌ Found initialize methods that might not accept dependencies parameter - verify these!"
+else
+  echo "✅ All initialize methods appear to accept dependencies parameter - good!"
+fi
 
-# Check each dependency
-for file in $(find $SRC_DIR -name "*.py" -type f); do
-    component=$(grep -l "class.*Component" $file)
-    if [ -n "$component" ]; then
-        dependencies=$(grep -A 5 "def dependencies" $file | grep -E "return \[" | sed -E 's/.*return \[(.*)\].*/\1/' | tr ',' '\n' | sed -E 's/[" ]//g')
-        for dep in $dependencies; do
-            if ! echo "$component_names" | grep -q "^$dep$"; then
-                component_name=$(grep -A 3 "def name" $file | grep "return" | sed -E 's/.*return "([^"]+)".*/\1/')
-                echo "WARNING: Component '$component_name' depends on '$dep' which might not exist"
-            fi
-        done
-    fi
-done
+# Check that components follow the dependency injection pattern
+echo ""
+echo "4. Checking for proper dependency injection pattern usage..."
+echo "Sample of initialize methods that use get_dependency correctly:"
+grep -r "self.get_dependency" --include="*.py" src/dbp/*/component*.py | head -n 5
 
-echo -e "\nAnalysis complete. See above for potential issues."
+echo ""
+echo "Verification complete. Please review any findings above."
+echo "Components should follow the pattern:"
+echo "def initialize(self, context: InitializationContext, dependencies: Dict[str, Component]) -> None:"
+echo "    component = self.get_dependency(dependencies, \"component_name\")"

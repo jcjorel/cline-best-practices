@@ -44,6 +44,14 @@
 # - All other files in src/dbp/llm_coordinator/
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T01:33:21Z : Completed dependency injection refactoring by CodeAssistant
+# * Removed dependencies property
+# * Made dependencies parameter required in initialize method
+# * Removed conditional logic for backwards compatibility
+# 2025-04-20T00:25:54Z : Added dependency injection support by CodeAssistant
+# * Updated initialize() method to accept dependencies parameter
+# * Added dependency validation for config_manager component
+# * Enhanced method documentation for dependency injection pattern
 # 2025-04-17T23:34:30Z : Updated to use strongly-typed configuration by CodeAssistant
 # * Updated initialize() method signature to use InitializationContext
 # * Refactored configuration access to use type-safe get_typed_config() method
@@ -135,21 +143,23 @@ class LLMCoordinatorComponent(Component):
         """Returns the unique name of the component."""
         return "llm_coordinator"
 
-    @property
-    def dependencies(self) -> List[str]:
-        """Returns the list of component names this component depends on."""
-        # Depends on config (via context) and potentially background scheduler if jobs
-        # need to be run truly in the background managed by the central scheduler.
-        # For now, assuming JobManager uses its own threading.
-        # Add other dependencies if internal tools require them (e.g., database, memory_cache).
-        return ["config_manager"] # Using the correct name for the config manager component
-
-    def initialize(self, context: InitializationContext) -> None:
+    def initialize(self, context: InitializationContext, dependencies: Dict[str, Component]) -> None:
         """
+        [Function intent]
         Initializes the LLM Coordinator component and its sub-components.
-
+        
+        [Implementation details]
+        Uses the strongly-typed configuration for component setup.
+        Creates internal coordinator parts (request handler, LLM, tool registry, job manager, formatter).
+        Registers internal LLM tools with the registry.
+        
+        [Design principles]
+        Explicit initialization with strong typing.
+        Dependency injection for improved performance and testability.
+        
         Args:
-            context: The initialization context with configuration and resources
+            context: Initialization context with typed configuration and resources
+            dependencies: Dictionary of pre-resolved dependencies {name: component_instance}
         """
         if self._initialized:
             logger.warning(f"Component '{self.name}' already initialized.")
@@ -163,8 +173,8 @@ class LLMCoordinatorComponent(Component):
             typed_config = context.get_typed_config()
             coordinator_config = typed_config.llm_coordinator
             
-            # For backwards compatibility, also get the legacy config format
-            config_manager = context.get_component("config_manager")
+            self.logger.debug("Using injected dependencies")
+            config_manager = self.get_dependency(dependencies, "config_manager")
             default_config = config_manager.get_default_config(self.name)
             
             # Instantiate sub-components with strongly-typed config when possible

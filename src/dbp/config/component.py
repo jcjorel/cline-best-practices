@@ -38,6 +38,14 @@
 # - src/dbp/config/config_manager.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T01:44:31Z : Completed dependency injection refactoring by CodeAssistant
+# * Removed dependencies property
+# * Made dependencies parameter required in initialize method
+# * Updated parameter documentation for consistency
+# 2025-04-19T23:49:00Z : Added dependency injection support by CodeAssistant
+# * Updated initialize() method to accept dependencies parameter 
+# * Enhanced method documentation using three-section format
+# * Updated typing imports for consistency
 # 2025-04-17T23:29:30Z : Enhanced with strongly-typed configuration access by CodeAssistant
 # * Updated initialize() method signature to use InitializationContext
 # * Added get_typed_config() method for direct access to typed configuration
@@ -53,7 +61,7 @@
 ###############################################################################
 
 import logging
-from typing import List, Optional, Dict, Any
+from typing import Dict, List, Optional, Any
 
 # Import core component types
 from ..core.component import Component, InitializationContext
@@ -86,20 +94,24 @@ class ConfigManagerComponent(Component):
         """Returns the unique name of the component."""
         return "config_manager"
 
-    @property
-    def dependencies(self) -> List[str]:
-        """Returns the list of component names this component depends on."""
-        # No dependencies - this should be one of the first components initialized
-        return []
-
-    def initialize(self, context: InitializationContext) -> None:
+    def initialize(self, context: InitializationContext, dependencies: Dict[str, Component]) -> None:
         """
+        [Function intent]
         Initializes the ConfigManagerComponent.
         If the ConfigurationManager is not already initialized, initializes it.
         Sets the project root path from Git repository root.
         
+        [Implementation details]
+        Initializes the logger and ConfigurationManager.
+        Sets the project root path from Git repository root.
+        
+        [Design principles]
+        Early initialization with no dependencies.
+        Consistent interface with other components.
+        
         Args:
             context: The initialization context with configuration and resources
+            dependencies: Dictionary of pre-resolved dependencies (not used by this component)
         """
         self.logger = logging.getLogger(f"dbp.{self.name}")
         self.logger.info(f"Initializing component '{self.name}'...")

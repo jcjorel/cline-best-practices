@@ -43,15 +43,21 @@
 # - All other files in src/dbp/metadata_extraction/
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T01:17:51Z : Completed dependency injection refactoring by CodeAssistant
+# * Removed dependencies property
+# * Made dependencies parameter required in initialize method
+# * Removed conditional logic for backwards compatibility
+# 2025-04-20T00:06:45Z : Added dependency injection support by CodeAssistant
+# * Updated initialize() method to accept dependencies parameter
+# * Added dictionary-based dependency injection pattern
+# * Enhanced method documentation for dependency handling
 # 2025-04-16T12:40:00Z : Updated to use centralized LLMPromptManager by Cline
 # * Switched to import LLMPromptManager from dbp.llm instead of local module
 # * Removed dependency on local prompts.py module that was deprecated
-# 2025-04-15T09:55:45Z : Initial creation of MetadataExtractionComponent by CodeAssistant
-# * Implemented Component protocol methods and initialization of internal services.
 ###############################################################################
 
 import logging
-from typing import List, Optional, Any
+from typing import Dict, List, Optional, Any
 
 # Core component imports
 try:
@@ -106,15 +112,7 @@ class MetadataExtractionComponent(Component):
         """Returns the unique name of the component."""
         return "metadata_extraction"
 
-    @property
-    def dependencies(self) -> List[str]:
-        """Returns the list of component names this component depends on."""
-        # Depends on database for writing results and config for settings.
-        # Assuming config is accessed via context, not a separate component dependency here.
-        # If BedrockClient needs specific AWS config component, add it here.
-        return ["database"] # Add other dependencies like 'llm_coordinator' if needed by BedrockClient indirectly
-
-    def initialize(self, context: InitializationContext):
+    def initialize(self, context: InitializationContext, dependencies: Dict[str, Component]) -> None:
         """
         [Function intent]
         Initializes the metadata extraction component and its internal services.
@@ -126,10 +124,12 @@ class MetadataExtractionComponent(Component):
         
         [Design principles]
         Explicit initialization with strong typing.
+        Dependency injection for improved performance and testability.
         Type-safe configuration access.
         
         Args:
             context: Initialization context with typed configuration and resources
+            dependencies: Dictionary of pre-resolved dependencies {name: component_instance}
         """
         if self._initialized:
             logger.warning(f"Component '{self.name}' already initialized.")
@@ -143,8 +143,12 @@ class MetadataExtractionComponent(Component):
             config = context.get_typed_config()
             component_config = getattr(config, self.name)
 
-            # Get dependent components
-            db_manager = context.get_component("database").get_manager() # Access manager through getter
+            # Get dependent components using dependency injection
+            self.logger.debug("Using injected dependencies")
+            db_component = self.get_dependency(dependencies, "database")
+
+            # Get database manager using the method
+            db_manager = db_component.get_manager()
 
             # Instantiate internal services, passing relevant config parts
             # TODO: Refine how config is passed (pass entire config or specific sub-sections?)

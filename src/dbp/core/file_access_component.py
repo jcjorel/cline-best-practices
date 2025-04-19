@@ -32,12 +32,15 @@
 # - src/dbp/core/file_access.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-19T23:46:00Z : Added dependency injection support by CodeAssistant
+# * Updated initialize() method to accept dependencies parameter
+# * Enhanced documentation for dependency injection pattern
 # 2025-04-18T15:41:30Z : Initial creation of FileAccessComponent by CodeAssistant
 # * Implemented Component protocol methods and FileAccessService integration
 ###############################################################################
 
 import logging
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from .component import Component, InitializationContext
 from .file_access import FileAccessService
@@ -109,19 +112,22 @@ class FileAccessComponent(Component):
         # Only depends on config_manager for configuration
         return ["config_manager"]
     
-    def initialize(self, context: InitializationContext) -> None:
+    def initialize(self, context: InitializationContext, dependencies: Optional[Dict[str, Component]] = None) -> None:
         """
         [Function intent]
         Initializes the file access component.
         
         [Implementation details]
         Creates the FileAccessService with the provided configuration.
+        Uses directly injected dependencies if provided, falling back to context.get_component().
         
         [Design principles]
         Simple initialization with configuration-based behavior.
+        Dependency injection for improved testability.
         
         Args:
             context: The initialization context
+            dependencies: Optional dictionary of pre-resolved dependencies {name: component_instance}
         """
         if self._initialized:
             self.logger.warning("FileAccessComponent already initialized")
@@ -133,7 +139,7 @@ class FileAccessComponent(Component):
             
             self.logger.info(f"Initializing component '{self.name}'...")
             
-            # Get configuration
+            # Get configuration from context
             config = context.get_typed_config()
             
             # Create the file access service

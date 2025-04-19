@@ -42,6 +42,14 @@
 # - All other files in src/dbp/memory_cache/
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T01:13:35Z : Completed component dependency refactoring by CodeAssistant
+# * Removed dependencies property method
+# * Made dependencies parameter required in initialize method
+# * Removed conditional logic for backwards compatibility
+# 2025-04-19T23:59:00Z : Added dependency injection support by CodeAssistant
+# * Updated initialize() method to accept dependencies parameter
+# * Modified initialization to use injected dependencies when available
+# * Added support for config_manager dependency and improved error handling
 # 2025-04-15T10:00:45Z : Initial creation of MemoryCacheComponent by CodeAssistant
 # * Implemented Component protocol methods and initialization of cache services.
 ###############################################################################
@@ -108,13 +116,7 @@ class MemoryCacheComponent(Component):
         """Returns the unique name of the component."""
         return "memory_cache"
 
-    @property
-    def dependencies(self) -> List[str]:
-        """Returns the list of component names this component depends on."""
-        # Depends on the database component to load initial data and sync
-        return ["database"]
-
-    def initialize(self, context: InitializationContext):
+    def initialize(self, context: InitializationContext, dependencies: Dict[str, Component]) -> None:
         """
         [Function intent]
         Initializes the memory cache component, including storage, indexes,
@@ -128,9 +130,11 @@ class MemoryCacheComponent(Component):
         [Design principles]
         Explicit initialization with strong typing.
         Type-safe configuration access.
+        Dependency injection for improved testability.
         
         Args:
             context: Initialization context with typed configuration and resources
+            dependencies: Dictionary of pre-resolved dependencies {name: component_instance}
         """
         if self._initialized:
             logger.warning(f"Component '{self.name}' already initialized.")
@@ -140,12 +144,22 @@ class MemoryCacheComponent(Component):
         self.logger.info(f"Initializing component '{self.name}'...")
 
         try:
-            # Get strongly-typed configuration
-            config = context.get_typed_config()
-            cache_config = getattr(config, self.name)
+            # Get configuration and dependencies
+            self.logger.debug("Using injected dependencies")
+            # Get config from the config_manager component in dependencies
+            config_manager = self.get_dependency(dependencies, "config_manager") 
+            config = config_manager.get_typed_config()
+            
+            # Get database component from dependencies
+            db_component = self.get_dependency(dependencies, "database")
 
-            # Get dependent components
-            db_component = context.get_component("database")
+            # Get cache configuration
+            cache_config = getattr(config, self.name)
+            if not cache_config:
+                error_msg = f"Missing configuration section for '{self.name}'"
+                self.logger.error(error_msg)
+                raise RuntimeError(error_msg)
+            
             # Access the DatabaseManager instance from the database component
             # Use the get_manager() method rather than accessing _db_manager directly
             db_manager = db_component.get_manager()

@@ -41,6 +41,14 @@
 # - All other files in src/dbp/mcp_server/
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T01:35:42Z : Completed dependency injection refactoring by CodeAssistant
+# * Removed dependencies property
+# * Made dependencies parameter required in initialize method
+# * Updated documentation for dependency injection pattern
+# 2025-04-20T00:31:26Z : Added dependency injection support by CodeAssistant
+# * Updated initialize() method to accept dependencies parameter
+# * Enhanced method documentation for dependency injection
+# * Updated import statements to include Dict type
 # 2025-04-17T23:39:00Z : Updated to use strongly-typed configuration by CodeAssistant
 # * Modified initialize() to use InitializationContext with proper typing
 # * Updated configuration access to use context.get_typed_config() instead of string-based keys
@@ -58,7 +66,7 @@
 
 import logging
 import os
-from typing import List, Optional, Any
+from typing import Dict, List, Optional, Any
 
 # Core component imports
 try:
@@ -145,21 +153,7 @@ class MCPServerComponent(Component):
         """Returns the unique name of the component."""
         return "mcp_server"
 
-    @property
-    def dependencies(self) -> List[str]:
-        """Returns the list of component names this component depends on."""
-        # Depends on all components whose functionality is exposed via tools/resources
-        return [
-            "consistency_analysis",
-            "recommendation_generator",
-            "doc_relationships",
-            "llm_coordinator",
-            "metadata_extraction", # Needed by adapter/resources
-            "memory_cache",        # Needed by adapter/resources
-            "config_manager",      # Needed for default configuration values
-        ]
-
-    def initialize(self, context: InitializationContext) -> None:
+    def initialize(self, context: InitializationContext, dependencies: Dict[str, Component]) -> None:
         """
         [Function intent]
         Initializes the MCP Server component, setting up the server instance,
@@ -171,10 +165,12 @@ class MCPServerComponent(Component):
         
         [Design principles]
         Explicit initialization with strong typing.
+        Dependency injection for improved performance and testability.
         Type-safe configuration access.
         
         Args:
             context: Initialization context with configuration and resources
+            dependencies: Dictionary of pre-resolved dependencies {name: component_instance}
         """
         if self._initialized:
             logger.warning(f"Component '{self.name}' already initialized.")

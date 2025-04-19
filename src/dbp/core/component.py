@@ -34,6 +34,15 @@
 # - doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T00:35:54Z : Removed deprecated dependencies property by CodeAssistant
+# * Removed dependencies property as part of Phase 3 cleanup
+# * Updated get_debug_info to remove reference to dependencies
+# * Completed transition to centralized dependency declaration
+# 2025-04-19T23:31:00Z : Added dependency injection support to Component by CodeAssistant
+# * Updated initialize() method signature to accept dependencies parameter
+# * Added get_dependency() helper method for safe dependency access
+# * Updated dependencies property documentation to mark as deprecated
+# * Enhanced method documentation for dependency injection
 # 2025-04-17T23:18:30Z : Added strong typing to Component.initialize() method by CodeAssistant
 # * Updated initialize() method signature to use typed InitializationContext parameter
 # * Enhanced Component documentation to reflect strong typing support
@@ -47,8 +56,6 @@
 # * Implemented debug information gathering for component failure analysis
 # * Enhanced Component base class with diagnostic capabilities
 # * Added documentation for new debugging methods
-# 2025-04-16T15:45:16Z : Replaced with simplified Component implementation by CodeAssistant
-# * Implemented minimal Component interface with simplified lifecycle methods
 ###############################################################################
 
 import logging
@@ -187,24 +194,6 @@ class Component:
         raise NotImplementedError("Component must implement name property")
     
     @property
-    def dependencies(self) -> List[str]:
-        """
-        [Function intent]
-        Returns a list of component names that this component depends on.
-        
-        [Implementation details]
-        Default implementation returns an empty list (no dependencies).
-        Override in concrete components to declare dependencies.
-        
-        [Design principles]
-        Explicit dependency declaration for clear initialization order.
-        
-        Returns:
-            List[str]: List of component names this component depends on
-        """
-        return []
-    
-    @property
     def is_initialized(self) -> bool:
         """
         [Function intent]
@@ -221,21 +210,48 @@ class Component:
         """
         return self._initialized
     
-    def initialize(self, context: 'InitializationContext') -> None:
+    def get_dependency(self, dependencies: Dict[str, 'Component'], name: str) -> Any:
         """
         [Function intent]
-        Initializes the component with context information and prepares it for use.
+        Safely access a dependency by name from the provided dependencies dictionary.
+        
+        [Implementation details]
+        Returns the dependency if found, otherwise raises KeyError.
+        
+        [Design principles]
+        Safe dependency access with clear error messages.
+        
+        Args:
+            dependencies: Dictionary of dependencies {name: component_instance}
+            name: Name of the dependency to retrieve
+            
+        Returns:
+            The requested dependency component
+            
+        Raises:
+            KeyError: If the dependency is not found
+        """
+        if name not in dependencies:
+            raise KeyError(f"Required dependency '{name}' not found in provided dependencies")
+        return dependencies[name]
+    
+    def initialize(self, context: 'InitializationContext', dependencies: Optional[Dict[str, 'Component']] = None) -> None:
+        """
+        [Function intent]
+        Initializes the component with context information and resolved dependencies.
         
         [Implementation details]
         Must be implemented by concrete component classes.
+        If dependencies are provided, they should be used directly instead of fetching via context.
         MUST set self._initialized = True when initialization succeeds.
         
         [Design principles]
         Explicit initialization with clear success/failure indication.
-        Strong typing for context parameter.
+        Direct dependency injection for improved performance and testability.
         
         Args:
             context: Initialization context with configuration and resources
+            dependencies: Optional dictionary of pre-resolved dependencies {name: component_instance}
             
         Raises:
             NotImplementedError: If not implemented by concrete component
@@ -281,7 +297,6 @@ class Component:
             "class_name": self.__class__.__name__,
             "module": self.__class__.__module__,
             "initialized": self._initialized,
-            "dependencies": self.dependencies,
             "has_logger": self.logger is not None
         }
         

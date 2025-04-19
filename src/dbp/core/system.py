@@ -34,6 +34,15 @@
 # - doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T00:38:24Z : Removed backward compatibility code by CodeAssistant
+# * Updated register method to require explicit dependencies parameter
+# * Removed code that accessed component.dependencies directly
+# * Made the dependency declaration fully centralized
+# 2025-04-19T23:36:00Z : Added dependency injection support to ComponentSystem by CodeAssistant
+# * Updated register method to accept explicit dependencies parameter
+# * Added dependencies dictionary to store component dependencies
+# * Modified dependency validation to use stored dependencies
+# * Enhanced initialization to resolve and pass dependencies to components
 # 2025-04-17T23:12:30Z : Added typed configuration to initialization context by CodeAssistant
 # * Updated initialization to use typed configuration from ConfigurationManager
 # * Now using component-specific child loggers for better log clarity
@@ -42,13 +51,6 @@
 # * Added detailed error logging for component initialization failures
 # * Improved error context capture for initialization exceptions
 # * Added component state reporting in initialization error messages
-# 2025-04-16T23:32:00Z : Enhanced error logging levels by CodeAssistant
-# * Changed debug logging to error/info for critical initialization steps
-# * Improved visibility of component initialization context information
-# * Fixed logging level for rollback operations
-# 2025-04-16T23:28:00Z : Fixed config provider in initialization context by CodeAssistant
-# * Modified InitializationContext to use config_manager component instead of raw config
-# * Added safety check to ensure config_manager component exists before initialization
 ###############################################################################
 
 import logging
@@ -124,23 +126,26 @@ class ComponentSystem:
         self.logger = logger
         self.components: Dict[str, Component] = {}  # name -> component
         self._initialized: List[str] = []  # Initialization order for shutdown
+        self.dependencies: Dict[str, List[str]] = {}  # name -> list of dependency names
         
         # Set singleton instance
         ComponentSystem._instance = self
     
-    def register(self, component: Component) -> None:
+    def register(self, component: Component, dependencies: List[str]) -> None:
         """
         [Function intent]
-        Registers a component with the system by name.
+        Registers a component with the system by name and defines its dependencies.
         
         [Implementation details]
         Stores the component in the components dictionary with its name as key.
+        Stores the dependencies for use during initialization.
         
         [Design principles]
-        Simple dictionary-based registration with clear errors.
+        Simple dictionary-based registration with explicit dependency declaration.
         
         Args:
             component: Component instance to register
+            dependencies: List of dependency names
             
         Raises:
             ValueError: If a component with the same name is already registered
@@ -150,9 +155,9 @@ class ComponentSystem:
             raise ValueError(f"Component '{name}' already registered")
         
         # Enhanced logging for component registration
-        dependencies = component.dependencies
         self.logger.info(f"Registering component: '{name}' with dependencies: {dependencies}")
         self.components[name] = component
+        self.dependencies[name] = dependencies
     
     def get_component(self, name: str) -> Optional[Component]:
         """
@@ -180,7 +185,7 @@ class ComponentSystem:
         Validates that all component dependencies are registered.
         
         [Implementation details]
-        Checks each component's dependencies against registered components.
+        Checks dependencies from the dependencies dictionary against registered components.
         
         [Design principles]
         Early validation with clear error reporting.
@@ -193,8 +198,8 @@ class ComponentSystem:
         
         self.logger.debug(f"Validating dependencies. Registered components: {registered_components}")
         
-        for name, component in self.components.items():
-            for dep_name in component.dependencies:
+        for name, deps in self.dependencies.items():
+            for dep_name in deps:
                 if dep_name not in self.components:
                     error_msg = f"Component '{name}' depends on '{dep_name}' which is not registered"
                     self.logger.error(error_msg)
@@ -265,8 +270,6 @@ class ComponentSystem:
                 # Enhanced logging before initialization
                 self.logger.info(f"Initializing component '{name}'...")
                 self.logger.debug(f"Component '{name}' class: {component.__class__.__name__}")
-                if hasattr(component, 'dependencies'):
-                    self.logger.debug(f"Component '{name}' dependencies: {component.dependencies}")
                 
                 # Create the initialization context
                 # Components expect a config manager with get() method, not the raw config
@@ -289,8 +292,28 @@ class ComponentSystem:
                 self.logger.info(f"Initializing component '{name}' with context type: {type(context)}")
                 self.logger.info(f"Context attributes: config={type(context.config)}, logger={type(context.logger)}")
                 
-                # Initialize the component with proper context
-                component.initialize(context)
+                # Resolve dependencies for this component
+                component_deps = self.dependencies.get(name, [])
+                resolved_deps = {}
+                
+                for dep_name in component_deps:
+                    dep_component = self.components.get(dep_name)
+                    if not dep_component:
+                        self.logger.error(f"Dependency '{dep_name}' not found for component '{name}'")
+                        self._rollback()
+                        return False
+                    if not dep_component.is_initialized:
+                        self.logger.error(f"Dependency '{dep_name}' for component '{name}' is not initialized")
+                        self._rollback()
+                        return False
+                    resolved_deps[dep_name] = dep_component
+                
+                # Add logging for dependencies
+                if resolved_deps:
+                    self.logger.info(f"Resolved {len(resolved_deps)} dependencies for component '{name}'")
+                
+                # Initialize with dependencies
+                component.initialize(context, resolved_deps)
                 
                 # Verify initialization flag with more detailed diagnostics
                 if not component.is_initialized:
@@ -375,8 +398,7 @@ class ComponentSystem:
             component_found = False
             
             for name in list(remaining):
-                component = self.components[name]
-                deps = set(component.dependencies)
+                deps = set(self.dependencies.get(name, []))
                 
                 # If all dependencies are initialized
                 if deps.issubset(initialized):
@@ -392,7 +414,7 @@ class ComponentSystem:
                 # Try to identify the circular dependency
                 cycle = []
                 for name in remaining:
-                    cycle.append(f"{name} -> [{', '.join(self.components[name].dependencies)}]")
+                    cycle.append(f"{name} -> [{', '.join(self.dependencies.get(name, []))}]")
                 raise CircularDependencyError(f"Circular dependency detected among: {', '.join(cycle)}")
         
         return result

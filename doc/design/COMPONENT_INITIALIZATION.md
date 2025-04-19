@@ -69,15 +69,28 @@ class Component:
         raise NotImplementedError("Component must implement name property")
     
     @property
-    def dependencies(self) -> list[str]:
-        # Default implementation returns empty list (no dependencies)
-        return []
-    
-    @property
     def is_initialized(self) -> bool:
         return self._initialized
     
-    def initialize(self, config: Any) -> None:
+    def get_dependency(self, dependencies: Dict[str, 'Component'], name: str) -> Any:
+        """
+        Safely access a dependency by name from the provided dependencies dictionary.
+        
+        Args:
+            dependencies: Dictionary of dependencies {name: component_instance}
+            name: Name of the dependency to retrieve
+            
+        Returns:
+            The requested dependency component
+            
+        Raises:
+            KeyError: If the dependency is not found
+        """
+        if name not in dependencies:
+            raise KeyError(f"Required dependency '{name}' not found in provided dependencies")
+        return dependencies[name]
+    
+    def initialize(self, context: InitializationContext, dependencies: Dict[str, 'Component']) -> None:
         # Must be implemented by concrete components
         # MUST set self._initialized = True when initialization succeeds
         raise NotImplementedError("Component must implement initialize method")
@@ -86,6 +99,48 @@ class Component:
         # Must be implemented by concrete components
         # MUST set self._initialized = False when shutdown completes
         raise NotImplementedError("Component must implement shutdown method")
+```
+
+## Centralized Component Registration
+
+The system now uses a centralized component registration approach to make dependencies more visible and maintainable:
+
+1. Components are registered with the `ComponentRegistry` with explicit dependency declarations
+2. Dependencies are resolved and injected during component initialization
+3. Component implementation can use the injected dependencies directly
+
+### Component Registration
+
+Components are registered with the `ComponentRegistry` by specifying:
+- The component class
+- An explicit list of dependency component names
+- An optional enabled flag
+
+```python
+# Example: Registering a component with explicit dependencies
+registry.register_component(
+    component_class=DatabaseComponent, 
+    dependencies=["config_manager"],
+    enabled=True
+)
+```
+
+### Component Initialization
+
+Components now receive their dependencies directly during initialization:
+
+```python
+def initialize(self, context: InitializationContext, dependencies: Dict[str, Component]) -> None:
+    # Access dependencies directly from the dependencies dictionary
+    config_manager = self.get_dependency(dependencies, "config_manager")
+    
+    # Use the dependencies
+    connection_string = config_manager.get('database.connection_string')
+    
+    # Continue initialization
+    self.connection = sqlite3.connect(connection_string)
+    
+    self._initialized = True
 ```
 
 ## Initialization Process
@@ -143,17 +198,30 @@ class DatabaseComponent(Component):
     def name(self) -> str:
         return "database"
     
-    @property
-    def dependencies(self) -> list[str]:
-        return ["config_manager"]
-    
-    def initialize(self, config: Any) -> None:
-        self.logger = logging.getLogger(f"DBP.{self.name}")
+    def initialize(self, context: InitializationContext, dependencies: Dict[str, Component]) -> None:
+        """
+        [Function intent]
+        Initializes the database component.
+        
+        [Implementation details]
+        Uses the provided configuration to establish a database connection.
+        
+        [Design principles]
+        Explicit initialization with dependency injection.
+        """
+        self.logger = context.logger
         self.logger.info("Initializing database connection")
+        
+        # Get configuration from the config manager dependency
+        config_manager = self.get_dependency(dependencies, "config_manager")
+        
+        # Get typed configuration
+        typed_config = context.get_typed_config()
+        db_config = typed_config.database
         
         # Simplified initialization
         try:
-            self.connection = sqlite3.connect(config.database.path)
+            self.connection = sqlite3.connect(db_config.path)
             self._initialized = True
             self.logger.info("Database initialized")
         except Exception as e:
@@ -161,10 +229,36 @@ class DatabaseComponent(Component):
             raise
     
     def shutdown(self) -> None:
+        """
+        [Function intent]
+        Shuts down the database component.
+        
+        [Implementation details]
+        Closes the database connection if it exists.
+        
+        [Design principles]
+        Clean resource management.
+        """
         if hasattr(self, 'connection'):
             self.logger.info("Closing database connection")
             self.connection.close()
         self._initialized = False
+```
+
+### Component Registration Example
+
+```python
+# In the application startup code:
+registry = ComponentRegistry()
+
+# Register components with explicit dependencies
+registry.register_component(ConfigManagerComponent, dependencies=[])
+registry.register_component(DatabaseComponent, dependencies=["config_manager"])
+registry.register_component(MemoryCacheComponent, dependencies=["database"])
+registry.register_component(MetadataExtractionComponent, dependencies=["database", "memory_cache"])
+
+# Register components with the system
+registry.register_with_system(component_system)
 ```
 
 ## Component System Implementation

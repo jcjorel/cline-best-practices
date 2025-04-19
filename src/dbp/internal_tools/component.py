@@ -42,12 +42,16 @@
 # - All other files in src/dbp/internal_tools/
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T01:49:11Z : Completed dependency injection refactoring by CodeAssistant
+# * Added dependencies parameter to initialize method
+# * Converted to use get_dependency() for dependency resolution
+# * Updated imports and documentation for dependency injection
 # 2025-04-15T10:15:55Z : Initial creation of InternalToolsComponent by CodeAssistant
 # * Implemented Component protocol methods, initialization of internal parts, and tool registration logic.
 ###############################################################################
 
 import logging
-from typing import List, Optional, Any
+from typing import Dict, List, Optional, Any
 
 # Core component imports
 try:
@@ -98,15 +102,7 @@ class InternalToolsComponent(Component):
         """Returns the unique name of the component."""
         return "internal_tools"
 
-    @property
-    def dependencies(self) -> List[str]:
-        """Returns the list of component names this component depends on."""
-        # Depends on the LLM Coordinator to register tools with its registry.
-        # Also implicitly depends on config.
-        # Add other dependencies if the execution engine or its parts need them (e.g., database, cache).
-        return ["llm_coordinator"]
-
-    def initialize(self, context: InitializationContext):
+    def initialize(self, context: InitializationContext, dependencies: Dict[str, Component]) -> None:
         """
         [Function intent]
         Initializes the Internal Tools component, including the execution engine,
@@ -124,6 +120,7 @@ class InternalToolsComponent(Component):
         
         Args:
             context: Initialization context with typed configuration and resources
+            dependencies: Dictionary of pre-resolved dependencies {name: component_instance}
         """
         if self._initialized:
             logger.warning(f"Component '{self.name}' already initialized.")
@@ -137,8 +134,8 @@ class InternalToolsComponent(Component):
             config = context.get_typed_config()
             tools_config = getattr(config, self.name)
 
-            # Get dependent LLM Coordinator component to access its registry
-            llm_coordinator_comp = context.get_component("llm_coordinator")
+            # Get dependent LLM Coordinator component to access its registry using dependency injection
+            llm_coordinator_comp = self.get_dependency(dependencies, "llm_coordinator")
             if not isinstance(llm_coordinator_comp, LLMCoordinatorComponent):
                  # This check might fail if using placeholder types
                  self.logger.warning("LLM Coordinator component type mismatch or placeholder used.")

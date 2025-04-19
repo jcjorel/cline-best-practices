@@ -42,6 +42,14 @@
 # - All other files in src/dbp/doc_relationships/
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T01:24:15Z : Completed dependency injection refactoring by CodeAssistant
+# * Removed dependencies property
+# * Made dependencies parameter required in initialize method
+# * Removed conditional logic for backwards compatibility
+# 2025-04-20T00:13:01Z : Added dependency injection support by CodeAssistant
+# * Updated initialize() method to accept dependencies parameter
+# * Implemented dependency retrieval with validation
+# * Enhanced method documentation for dependency injection pattern
 # 2025-04-15T10:24:40Z : Initial creation of DocRelationshipsComponent by CodeAssistant
 # * Implemented Component protocol methods, initialization of sub-components, and public API.
 ###############################################################################
@@ -117,20 +125,23 @@ class DocRelationshipsComponent(Component):
         """Returns the unique name of the component."""
         return "doc_relationships"
 
-    @property
-    def dependencies(self) -> List[str]:
-        """Returns the list of component names this component depends on."""
-        # Depends on database for persistence.
-        # File access for reading document contents
-        # Metadata extraction for additional document information
-        return ["database", "metadata_extraction", "file_access"]
-
-    def initialize(self, context: InitializationContext):
+    def initialize(self, context: InitializationContext, dependencies: Dict[str, Component]) -> None:
         """
+        [Function intent]
         Initializes the Documentation Relationships component and its sub-components.
-
+        
+        [Implementation details]
+        Uses the strongly-typed configuration for component setup.
+        Creates internal sub-components and loads existing relationships.
+        Sets the _initialized flag when initialization succeeds.
+        
+        [Design principles]
+        Explicit initialization with strong typing.
+        Dependency injection for improved performance and testability.
+        
         Args:
-            context: The initialization context.
+            context: Initialization context with typed configuration and resources
+            dependencies: Dictionary of pre-resolved dependencies {name: component_instance}
         """
         if self._initialized:
             logger.warning(f"Component '{self.name}' already initialized.")
@@ -143,10 +154,11 @@ class DocRelationshipsComponent(Component):
             # Get strongly-typed configuration
             config = context.get_typed_config()
 
-            # Get dependent components
-            db_component = context.get_component("database")
-            metadata_component = context.get_component("metadata_extraction") # Needed for analyzer
-            file_access_component = context.get_component("file_access") # For file access service
+            # Get dependent components using dependency injection
+            self.logger.debug("Using injected dependencies")
+            db_component = self.get_dependency(dependencies, "database")
+            metadata_component = self.get_dependency(dependencies, "metadata_extraction")
+            file_access_component = self.get_dependency(dependencies, "file_access")
 
             # Get database manager using the method instead of accessing attribute
             db_manager = db_component.get_manager()
