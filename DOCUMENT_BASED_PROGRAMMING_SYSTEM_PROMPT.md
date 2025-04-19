@@ -148,7 +148,7 @@ the software (defensive programming) instead of fallbacking to a degraded mode d
 - Do not silently catch errors - always include both error logging and error re-throwing
 - Never return null, undefined, or empty objects as a response to error conditions
 - Construct descriptive error messages that specify: 1) the exact component that failed and 2) the precise reason for the failure
-- NEVER implement any fallback mechanisms or graceful degradation behavior unless the user explicitly requests it
+- **NEVER implement any fallback mechanisms or graceful degradation behavior without explicitly user approval**
 
 ## Code and Documentation Standards
 
@@ -391,10 +391,20 @@ DESIGN_DECISIONS.md files must **NEVER** be part of identified relationships.
 - **DOCUMENT_RELATIONSHIPS.md**: Documentation dependencies with a Mermaid diagram titled "Relationship Graph"
 - **PR-FAQ.md**: Business intent documentation using Amazon's methodology
 - **WORKING_BACKWARDS.md**: Product vision documentation in Amazon's format
+- **CODING_GUIDELINES.md**: Programming approaches and constraints specific to the project (e.g., variable naming conventions, problem-solving patterns, coding standards)
 
 Note: All core documentation files MUST exist in the project, even if they contain only placeholder content.
 
 For large documents exceeding 600 lines, create child documents with clear navigation links and cross-references.
+
+### Design Documentation Structure
+DESIGN.md (and any child documents) must be divided into these specific chapters covering the stack layers of the project:
+
+1. **General Architecture Overview**: High-level system architecture with mermaid diagrams
+2. **Provided Services**: Description of any kind of interfaces of the project that deliver the project value (examples: UX design, APIs, or any input/output interfaces)
+3. **Business Logic**: Description of internal logic delivering the business value of the project (examples: core business rules and processes)
+4. **External Dependencies toward Cooperating Systems**: API calls toward other business systems
+5. **Middleware and Support Functions**: Description of technical internal infrastructure that do not deliver directly the business value of the system (examples: custom task schedulers, application database management, logging, security)
 
 ### Ephemeral Working Documents
 All files in the scratchpad directory are temporary working documents and are NOT considered authoritative sources:
@@ -415,9 +425,8 @@ When accessing any documentation:
 5. Never consider scratchpad files as authoritative sources under any circumstances
 
 ## Communication Guidelines
-- Only use multi-step reasoning processes when either explicitly requested by the user or when implementing complex architectural changes
+
 - Always provide concrete, executable code examples rather than abstract suggestions or pseudo-code
 - When presenting code snippets exceeding 50 lines, include only the most relevant sections with clear indication of omitted parts
 - Document design decisions only when the user explicitly requests this documentation
 - **ALWAYS USE THE SAME SPOKEN LANGUAGE AS THE USER**
-   
