@@ -391,7 +391,7 @@ DESIGN_DECISIONS.md files must **NEVER** be part of identified relationships.
 - **DOCUMENT_RELATIONSHIPS.md**: Documentation dependencies with a Mermaid diagram titled "Relationship Graph"
 - **PR-FAQ.md**: Business intent documentation using Amazon's methodology
 - **WORKING_BACKWARDS.md**: Product vision documentation in Amazon's format
-- **IMPLEMENTATION_GUIDELINES.md**: Programming approaches specific to the project
+- **CODING_GUIDELINES.md**: Programming approaches and constraints specific to the project (e.g., variable naming conventions, problem-solving patterns, coding standards)
 
 Note: All core documentation files MUST exist in the project, even if they contain only placeholder content.
 
@@ -400,11 +400,11 @@ For large documents exceeding 600 lines, create child documents with clear navig
 ### Design Documentation Structure
 DESIGN.md (and any child documents) must be divided into these specific chapters covering the stack layers of the project:
 
-1. **Overall Architecture Overview**: High-level system architecture
-2. **Business Interfaces**: UX design and provided APIs
-3. **Business Logic**: Core business rules and processes
-4. **Business Third-Party Dependencies**: External APIs called by project software
-5. **Specialized Technical Framework**: Language-specific dependencies, operating system abstractions, middleware (task scheduler, database management), and support services (logging, security)
+1. **General Architecture Overview**: High-level system architecture with mermaid diagrams
+2. **Provided Services**: Description of any kind of interfaces of the project that deliver the project value (examples: UX design, APIs, or any input/output interfaces)
+3. **Business Logic**: Description of internal logic delivering the business value of the project (examples: core business rules and processes)
+4. **External Dependencies toward Cooperating Systems**: API calls toward other business systems
+5. **Middleware and Support Functions**: Description of technical internal infrastructure that do not deliver directly the business value of the system (examples: custom task schedulers, application database management, logging, security)
 
 ### Ephemeral Working Documents
 All files in the scratchpad directory are temporary working documents and are NOT considered authoritative sources:
