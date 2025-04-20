@@ -35,6 +35,11 @@
 # - src/dbp/mcp_server/server.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T23:43:45Z : Added explicit server startup timeout logging by CodeAssistant
+# * Added explicit check and error message when server startup times out
+# * Improved diagnostic output with clear TIMEOUT prefix for easier log searching
+# * Enhanced error messaging to indicate the server process is running but unresponsive
+# * Added guidance for troubleshooting deadlocks during initialization
 # 2025-04-17T16:16:00Z : Removed duplicate log path information by CodeAssistant
 # * Modified _dump_server_error_logs method to avoid displaying redundant log file paths
 # * Improved logging clarity by removing repetitive file path information
@@ -44,11 +49,6 @@
 # * Fixed "attempted relative import beyond top-level package" error
 # * Improved import compatibility across different execution environments
 # 2025-04-17T15:49:00Z : Fixed startup configuration access by CodeAssistant
-# * Modified server startup to properly access base_dir from GENERAL_DEFAULTS
-# * Updated startup_timeout to use initialization.timeout_seconds from configuration
-# * Added better logging of signal file path and timeout settings
-# * Fixed server startup failures due to missing 'general.base_dir' key
-# 2025-04-17T13:52:00Z : Added validation for missing configuration values by CodeAssistant
 # * Implemented proper error checking for required configuration values
 # * Added explicit ValueError throws when configuration is missing
 # * Updated method documentation to reflect stricter validation requirements
@@ -387,6 +387,17 @@ class ServerCommandHandler(BaseCommandHandler):
                         
                     # Wait a bit before checking again
                     time.sleep(0.5)
+                
+                # Check if timeout was reached
+                if not startup_signal_file.exists():
+                    self.output.error(f"TIMEOUT: Server startup timed out after {startup_timeout}s")
+                    self.output.error("The server process is running but didn't create the startup signal file.")
+                    self.output.info("This may indicate a deadlock or slowness during initialization.")
+                    # Show logs to help diagnose the issue
+                    self._dump_server_error_logs(stderr_log)
+                    self.output.info(f"Full server logs available at:")
+                    self.output.info(f"  - Stdout: {stdout_log}")
+                    self.output.info(f"  - Stderr: {stderr_log}")
                 
                 # Check server responsiveness
                 self.output.info("Verifying server responsiveness...")

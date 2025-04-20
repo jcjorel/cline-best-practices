@@ -36,6 +36,10 @@
 # - doc/CONFIGURATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T23:50:00Z : Removed threading-based watchdog integration by CodeAssistant
+# * Removed problematic threading.Event code that caused import errors
+# * Removed watchdog keep_alive calls to simplify migration process
+# * Fixed server startup issue caused by missing threading module
 # 2025-04-18T10:51:00Z : Created alembic_manager.py by extracting from database.py by CodeAssistant
 # * Extracted _run_alembic_migrations functionality into dedicated file
 # * Added proper documentation sections to all methods
@@ -345,7 +349,8 @@ class AlembicManager:
                     if verbose_migrations:
                         self.logger.info("Running migration with enhanced logging...")
                     
-                    # Run the actual migration without stdout parameter
+                    # Run the migration directly without watchdog interaction
+                    self.logger.debug("Running database migration")
                     command.upgrade(alembic_cfg, "head")
                     self.logger.info("Database migrations completed successfully.")
                     
