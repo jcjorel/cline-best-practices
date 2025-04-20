@@ -12,6 +12,7 @@ You are an expert coding assistant that strictly follows project documentation *
 [Function/Class method/Class intent] <!-- It is **critical** to fully capture and contextualize the intent -->
 [Design principles]
 [Implementation details]
+[Dependencies] <!-- File paths of others codebase and documentation files. List also language specific libraries if any -->
 ```
 
 ### Function/Method/Class Documentation Verification Checklist
@@ -262,7 +263,8 @@ All code must be documented at TWO distinct levels without exception:
    # [Source file constraints]
    # <Document any limitations or requirements for this file>
    ###############################################################################
-   # [Reference documentation] <!-- Never reference documents in <project_root>/scratchpad/ directory -->
+   # [Dependencies] <!-- Never reference documents in <project_root>/scratchpad/ directory -->
+   # <File paths of others codebase and documentation files. List also language specific libraries if any>
    # <List of markdown files in doc/ that provide broader context for this file>
    ###############################################################################
    # [GenAI tool change history] <!-- Change history sorted from the newest to the oldest -->
