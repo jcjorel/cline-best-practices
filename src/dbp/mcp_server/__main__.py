@@ -37,6 +37,20 @@
 # - doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T03:52:00Z : Fixed startup timeout parameter to use configuration values by CodeAssistant
+# * Updated startup-timeout parameter to use timeout_seconds from configuration
+# * Eliminated last hardcoded default value in argument parser
+# * Ensured consistent default values across all CLI parameters
+# 2025-04-20T03:48:00Z : Updated argument parser to use ConfigurationManager by CodeAssistant
+# * Modified parse_arguments() to get default values from ConfigurationManager
+# * Added strict exception handling for configuration access
+# * Made default argument values consistent with system-wide configuration
+# * Improved help text to show correct default values from configuration
+# 2025-04-20T03:32:00Z : Enhanced process diagnostics for deadlock detection by CodeAssistant
+# * Implemented deep stack inspection to better identify waiting conditions
+# * Added detection and analysis of thread wait states
+# * Added detailed local variable capture for waiting threads
+# * Enhanced stack trace formatting with waiting condition markers
 # 2025-04-18T14:01:00Z : Fixed truncated WARNING log level display by CodeAssistant
 # * Imported get_formatted_logger and MillisecondFormatter from core.log_utils
 # * Modified exit_handler to use get_formatted_logger instead of direct StreamHandler
@@ -51,9 +65,6 @@
 # * Added signal handlers for SIGTERM, SIGINT, and other termination signals
 # * Added traceback capture for detailed exit reason logging
 # * Modified main() to use the exit handler for all termination cases
-# 2025-04-17T17:17:45Z : Integrated with centralized application logging by CodeAssistant
-# * Replaced local setup_logging with centralized setup_application_logging
-# * Ensured consistent log formatting across all components
 ###############################################################################
 
 import argparse
@@ -69,6 +80,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List, Tuple
 
 from ..core.log_utils import setup_application_logging, get_formatted_logger, MillisecondFormatter
+from ..config.default_config import INITIALIZATION_DEFAULTS
 
 # Global logger
 logger = None
@@ -206,24 +218,33 @@ def stop_watchdog():
 def get_process_diagnostics():
     """
     [Function intent]
-    Gathers detailed diagnostics about the current process state.
+    Gathers detailed diagnostics about the current process state, with enhanced detection
+    of deadlocks and waiting conditions for any type of blocking scenario.
     
     [Implementation details]
-    Collects information about threads, system resources, and stack traces
-    to help diagnose where the process might be stuck.
+    Collects comprehensive information about threads, system resources, stack traces,
+    thread states, waiting conditions, and potential deadlocks. Analyzes each thread's
+    stack frames to identify functions that are likely blocking or waiting.
     
     [Design principles]
-    Comprehensive diagnostics for deadlock identification.
+    - Comprehensive diagnostics for any type of deadlock identification
+    - Deep stack inspection to locate waiting and blocked threads
+    - Detailed local variable analysis in critical frames
+    - Non-intrusive diagnostics that don't interfere with process state
     
     Returns:
         Dict with diagnostic information about the process state
     """
     diagnostics = {}
     
-    # Get thread information
+    # Get detailed thread information
     thread_info = []
+    thread_map = {}  # Map thread IDs to thread objects
+    
     for thread in threading.enumerate():
-        thread_info.append(f"{thread.name} (daemon={thread.daemon}, alive={thread.is_alive()})")
+        thread_info.append(f"{thread.name} (id={thread.ident}, daemon={thread.daemon}, alive={thread.is_alive()})")
+        thread_map[thread.ident] = thread
+        
     diagnostics["Active Threads"] = thread_info
     
     # Get system resources
@@ -233,37 +254,277 @@ def get_process_diagnostics():
         
         diagnostics["CPU Usage"] = f"{process.cpu_percent()}%"
         diagnostics["Memory Usage"] = f"{process.memory_info().rss / (1024*1024):.1f} MB"
-        diagnostics["Open Files"] = len(process.open_files())
-        diagnostics["Open Connections"] = len(process.connections())
+        open_files_count = len(process.open_files())
+        open_conns_count = len(process.connections())
+        diagnostics["Open Files"] = open_files_count
+        diagnostics["Open Connections"] = open_conns_count
+        
+        # Get more details about open files and connections that might be related to deadlocks
+        if open_files_count > 0:
+            open_files = process.open_files()
+            file_details = [f"{f.path} (mode: {f.mode})" for f in open_files[:20]]  # Limit to 20 files
+            if len(open_files) > 20:
+                file_details.append(f"... and {len(open_files) - 20} more files")
+            diagnostics["Open File Details"] = file_details
+            
+        if open_conns_count > 0:
+            connections = process.connections()
+            conn_details = []
+            for conn in connections[:20]:  # Limit to 20 connections
+                conn_details.append(f"{conn.laddr}→{conn.raddr if conn.raddr else 'N/A'} ({conn.status})")
+            if len(connections) > 20:
+                conn_details.append(f"... and {len(connections) - 20} more connections")
+            diagnostics["Connection Details"] = conn_details
     except (ImportError, Exception) as e:
         diagnostics["Resource Info"] = f"Unable to get system resources: {str(e)}"
     
-    # Get stack traces for all threads
+    # Enhanced thread stack trace collection with waiting condition detection
     try:
         import sys
+        import inspect
+        
         stack_traces = []
         frame_dict = sys._current_frames()
+        waiting_threads = []
+        blocking_threads = []
+        main_thread_trace = None
+        
+        # Special keywords that suggest a thread might be waiting
+        waiting_keywords = [
+            'wait', 'acquire', 'lock', 'join', 'get', 'sleep', 
+            'select', 'poll', 'recv', 'read', 'accept', '_waiters',
+            'condition', 'event', 'queue', 'barrier', 'timeout'
+        ]
+        
         for thread_id, frame in frame_dict.items():
             thread_name = "Unknown"
-            for thread in threading.enumerate():
-                if thread.ident == thread_id:
-                    thread_name = thread.name
-                    break
-                    
+            is_main_thread = False
+            
+            # Get the thread object if available
+            thread_obj = thread_map.get(thread_id)
+            if thread_obj:
+                thread_name = thread_obj.name
+                is_main_thread = thread_id == threading.main_thread().ident
+            
+            # Start building the stack trace
             stack_trace = []
-            stack_trace.append(f"Thread {thread_name} (id: {thread_id}):")
+            stack_trace.append(f"Thread {thread_name} (id: {thread_id}" + 
+                              (", MAIN THREAD" if is_main_thread else "") + "):")
             
-            for filename, lineno, name, line in traceback.extract_stack(frame):
-                stack_trace.append(f"  File '{filename}', line {lineno}, in {name}")
-                if line:
-                    stack_trace.append(f"    {line.strip()}")
+            # First pass to analyze if this thread is waiting or blocking
+            is_waiting = False
+            wait_info = {}
             
-            stack_traces.append("\n".join(stack_trace))
+            # Walk frames to look for waiting indicators
+            current_frame = frame
+            while current_frame:
+                frame_info = inspect.getframeinfo(current_frame)
+                func_name = frame_info.function
+                filename = frame_info.filename
+                
+                # Look for common waiting patterns in function names
+                if any(keyword in func_name.lower() for keyword in waiting_keywords):
+                    is_waiting = True
+                    wait_info = {
+                        'function': func_name,
+                        'file': filename,
+                        'line': frame_info.lineno,
+                    }
+                    
+                    # Capture interesting local variables that might help diagnose the wait
+                    wait_locals = {}
+                    for var_name in ['timeout', 'block', 'blocking', 'queue', 'lock', 'condition',
+                                    'event', 'self', 'obj', 'future', 'task', 'waiter']:
+                        if var_name in current_frame.f_locals:
+                            var_val = current_frame.f_locals[var_name]
+                            # Get a safe string representation
+                            try:
+                                if hasattr(var_val, '__class__'):
+                                    wait_locals[var_name] = f"{var_val.__class__.__name__}: {str(var_val)[:100]}"
+                                else:
+                                    wait_locals[var_name] = str(var_val)[:100]
+                            except Exception:
+                                wait_locals[var_name] = f"<error getting value>"
+                    
+                    if wait_locals:
+                        wait_info['locals'] = wait_locals
+                    
+                    # Additional context for asyncio waits
+                    if 'asyncio' in filename:
+                        wait_info['type'] = 'asyncio'
+                    
+                    break
+                
+                current_frame = current_frame.f_back
+            
+            if is_waiting:
+                waiting_threads.append({
+                    'thread_id': thread_id,
+                    'thread_name': thread_name,
+                    'wait_info': wait_info
+                })
+            
+            # Now extract the full stack trace with enhanced details
+            frames = []
+            current_frame = frame
+            frame_index = 0
+            
+            while current_frame:
+                frame_info = inspect.getframeinfo(current_frame)
+                frames.append((frame_info, current_frame))
+                current_frame = current_frame.f_back
+                frame_index += 1
+                
+                # Prevent deep recursion in case of very deep stacks
+                if frame_index > 100:  # Limit to reasonable depth
+                    frames.append((None, None))  # Sentinel for truncation
+                    break
+            
+            # Process frames (in reverse to show from oldest to newest call)
+            for i, (frame_info, f_obj) in enumerate(reversed(frames)):
+                if frame_info is None:  # Handle truncated stack
+                    stack_trace.append("  ... frames truncated ...")
+                    continue
+                    
+                # Basic frame information
+                filename = frame_info.filename
+                lineno = frame_info.lineno
+                function = frame_info.function
+                code_line = frame_info.code_context[0].strip() if frame_info.code_context else "<no source>"
+                
+                # Add special markers for interesting frames
+                markers = []
+                
+                # Highlight waiting/blocking frames
+                if any(keyword in function.lower() for keyword in waiting_keywords):
+                    markers.append("WAITING")
+                
+                # Highlight potential deadlock-related modules
+                for module in ['threading', 'multiprocessing', 'asyncio', 'queue', 'socket']:
+                    if module in filename:
+                        markers.append(module.upper())
+                        break
+                
+                marker_str = f" [{', '.join(markers)}]" if markers else ""
+                
+                # Add the frame to the stack trace
+                stack_trace.append(f"  Frame {i}: {filename}:{lineno} in {function}{marker_str}")
+                stack_trace.append(f"    {code_line}")
+                
+                # For interesting frames (like ones that might be involved in waiting),
+                # add more details about the local variables
+                if markers or i < 3:  # Show details for waiting frames or top frames
+                    if f_obj and f_obj.f_locals:
+                        # Get key locals that might help diagnose issues
+                        important_locals = {}
+                        
+                        # First look for variables with interesting names
+                        for var_name, var_val in f_obj.f_locals.items():
+                            if var_name.startswith('__'):
+                                continue  # Skip internal vars
+                                
+                            if any(keyword in var_name.lower() for keyword in 
+                                  ['lock', 'queue', 'event', 'condition', 'future', 'task', 'waiter', 
+                                   'timeout', 'thread', 'connection']):
+                                try:
+                                    val_str = str(var_val)[:200]  # Limit string length
+                                    important_locals[var_name] = val_str
+                                except Exception:
+                                    important_locals[var_name] = "<error getting value>"
+                        
+                        # Always include 'self' for method calls
+                        if 'self' in f_obj.f_locals and len(important_locals) < 10:
+                            try:
+                                self_obj = f_obj.f_locals['self']
+                                important_locals['self'] = f"{self_obj.__class__.__name__}"
+                                
+                                # For some common types, add more detail
+                                if hasattr(self_obj, '__dict__'):
+                                    for attr_name, attr_val in vars(self_obj).items():
+                                        if len(important_locals) >= 15:
+                                            break  # Limit the number of attributes
+                                        if attr_name.startswith('_'):
+                                            continue  # Skip private attributes
+                                        try:
+                                            important_locals[f"self.{attr_name}"] = str(attr_val)[:100]
+                                        except Exception:
+                                            pass
+                            except Exception:
+                                important_locals['self'] = "<error getting value>"
+                        
+                        # Add the locals to the stack trace if we found any
+                        if important_locals:
+                            stack_trace.append(f"    Local variables:")
+                            for var_name, var_val in important_locals.items():
+                                stack_trace.append(f"      {var_name} = {var_val}")
+            
+            # Save the trace
+            full_trace = "\n".join(stack_trace)
+            stack_traces.append(full_trace)
+            
+            # Keep track of main thread trace separately
+            if is_main_thread:
+                main_thread_trace = full_trace
         
+        # Save all traces, but ensure main thread is first if present
+        if main_thread_trace:
+            # Remove main thread from the list if present
+            stack_traces = [trace for trace in stack_traces if not trace.startswith(f"Thread MainThread")]
+            # Add it to the beginning
+            stack_traces.insert(0, main_thread_trace)
+            
         diagnostics["Stack Traces"] = stack_traces
+        
+        # Add summary of waiting threads if any were found
+        if waiting_threads:
+            diagnostics["Waiting Threads Summary"] = [
+                f"{w['thread_name']} (id: {w['thread_id']}) waiting in {w['wait_info'].get('function', 'unknown')}" 
+                for w in waiting_threads
+            ]
+            
+            # Detailed wait information
+            wait_details = []
+            for w in waiting_threads:
+                info = w['wait_info']
+                details = [f"Thread {w['thread_name']} (id: {w['thread_id']})"]
+                details.append(f"  Function: {info.get('function', 'unknown')}")
+                details.append(f"  File: {info.get('file', 'unknown')}:{info.get('line', '?')}")
+                
+                if 'locals' in info:
+                    details.append("  Context variables:")
+                    for name, value in info['locals'].items():
+                        details.append(f"    {name} = {value}")
+                        
+                wait_details.append("\n".join(details))
+                
+            diagnostics["Detailed Wait Information"] = wait_details
+            
     except Exception as e:
-        diagnostics["Stack Traces"] = f"Unable to get stack traces: {str(e)}"
+        error_trace = traceback.format_exc()
+        diagnostics["Stack Traces"] = f"Unable to get enhanced stack traces: {str(e)}"
+        diagnostics["Stack Trace Error"] = error_trace
     
+    # Get information about other running processes that might be related
+    try:
+        import psutil
+        
+        # Get information about Python processes
+        python_processes = []
+        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+            try:
+                if 'python' in proc.name().lower():
+                    if proc.pid != os.getpid():  # Skip our own process
+                        cmd = ' '.join(proc.cmdline()) if proc.cmdline() else 'Unknown'
+                        python_processes.append(f"PID {proc.pid}: {cmd}")
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+                
+        if python_processes:
+            diagnostics["Related Python Processes"] = python_processes
+    except Exception:
+        # Not critical, just skip if unavailable
+        pass
+        
     return diagnostics
 
 def exit_handler(signum=None, frame=None, reason=None, source=None, exception=None):
@@ -428,29 +689,58 @@ def parse_arguments() -> argparse.Namespace:
     
     [Implementation details]
     Sets up argument parser with options for host, port, logging, startup verification,
-    and watchdog functionality for deadlock detection.
+    and watchdog functionality for deadlock detection. Gets default values from
+    ConfigurationManager to ensure consistency with system configuration.
     
     [Design principles]
-    Provides sensible defaults while allowing customization.
-    Includes options for system monitoring and fault detection.
+    Requires ConfigurationManager for default values to ensure configuration consistency.
+    Provides consistent command line interface for server settings.
+    Throws exception if configuration values cannot be retrieved.
+    
+    Raises:
+        RuntimeError: If default values cannot be retrieved from ConfigurationManager
     """
+    # Get default values from ConfigurationManager - throw if unavailable
+    try:
+        from ..config.config_manager import ConfigurationManager
+        config_mgr = ConfigurationManager()
+        
+        # Initialize ConfigurationManager if not already initialized
+        if not config_mgr.initialized_flag:
+            config_mgr.initialize()
+            
+        typed_config = config_mgr.get_typed_config()
+        
+        # Get default values from configuration
+        watchdog_timeout = typed_config.initialization.watchdog_timeout
+        server_host = typed_config.mcp_server.host
+        server_port = typed_config.mcp_server.port
+        
+    except Exception as e:
+        error_msg = f"Failed to get default values from ConfigurationManager: {str(e)}"
+        # If logger is initialized, log the error
+        if 'logger' in globals() and logger is not None:
+            logger.critical(error_msg)
+        # Always raise the exception
+        raise RuntimeError(error_msg) from e
+    
     parser = argparse.ArgumentParser(description='MCP Server for Document-Based Programming')
     
-    parser.add_argument('--host', type=str, default='localhost',
-                        help='Host address to bind to')
-    parser.add_argument('--port', type=int, default=6231,
-                        help='Port number to listen on')
+    parser.add_argument('--host', type=str, default=server_host,
+                        help=f'Host address to bind to (default: {server_host})')
+    parser.add_argument('--port', type=int, default=server_port,
+                        help=f'Port number to listen on (default: {server_port})')
     parser.add_argument('--log-level', type=str, default='info',
                         choices=['debug', 'info', 'warning', 'error'],
                         help='Logging level')
     parser.add_argument('--log-file', type=str,
                         help='Path to log file')
-    parser.add_argument('--startup-timeout', type=int, default=30,
-                        help='Timeout in seconds to wait for server startup')
+    parser.add_argument('--startup-timeout', type=int, default=typed_config.initialization.timeout_seconds,
+                        help=f'Timeout in seconds to wait for server startup (default: {typed_config.initialization.timeout_seconds})')
     parser.add_argument('--startup-check', action='store_true',
                         help='Perform health check after starting to verify server is responsive')
-    parser.add_argument('--watchdog-timeout', type=int, default=60,
-                        help='Watchdog timeout in seconds (default: 60)')
+    parser.add_argument('--watchdog-timeout', type=int, default=watchdog_timeout,
+                        help=f'Watchdog timeout in seconds (default: {watchdog_timeout})')
     
     return parser.parse_args()
 
