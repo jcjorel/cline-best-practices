@@ -48,7 +48,7 @@ HST provides structured context data through a hierarchy of HSTC.md files locate
 2. When user requests "Update HSTC":
    - Locate all HSTC_REQUIRES_UPDATE.md files or directories without a HSTC.md file
    - Update affected HSTC.md entries with new file header information **or** perform full files scan if HSTC.md does not exist
-   - Check if all local files are listed in a HSTC.md, update missing entries if any
+   - **Ensure that all local files are listed in a HSTC.md**, update missing entries if any
    - Delete the HSTC_REQUIRES_UPDATE.md file
    - Recursively update parent HSTC.md files up to project root
 
