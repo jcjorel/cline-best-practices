@@ -37,6 +37,11 @@
 # - doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T19:23:00Z : Fixed watchdog deadlock detection by CodeAssistant
+# * Modified watchdog behavior to remain active during application lifetime
+# * Removed code that was stopping watchdog after component initialization
+# * Ensured watchdog can detect deadlocks in all operations including Alembic migrations 
+# * Added detailed logging for watchdog status changes
 # 2025-04-20T10:53:00Z : Moved watchdog implementation to dedicated core module by CodeAssistant
 # * Extracted watchdog functionality to src/dbp/core/watchdog.py
 # * Implemented watchdog with condition variables for better responsiveness
@@ -51,11 +56,6 @@
 # * Added strict exception handling for configuration access
 # * Made default argument values consistent with system-wide configuration
 # * Improved help text to show correct default values from configuration
-# 2025-04-20T03:32:00Z : Enhanced process diagnostics for deadlock detection by CodeAssistant
-# * Implemented deep stack inspection to better identify waiting conditions
-# * Added detection and analysis of thread wait states
-# * Added detailed local variable capture for waiting threads
-# * Enhanced stack trace formatting with waiting condition markers
 ###############################################################################
 
 import argparse
@@ -477,10 +477,12 @@ def main() -> int:
                 
             logger.info("All components started successfully")
             
-            # Component initialization is complete, stop the watchdog
-            # It has served its purpose of detecting deadlocks during initialization
-            logger.info("Component initialization completed successfully, stopping watchdog")
-            stop_watchdog()
+            # Component initialization is complete
+            logger.info("Component initialization completed successfully")
+            
+            # IMPORTANT: Do not stop the watchdog - keep it running to detect deadlocks during operation
+            # The keep_alive function needs to be called periodically by long-running operations
+            logger.info("Watchdog will remain active to monitor for deadlocks during operation")
                 
             # Access the MCP server component directly to start the server
             # (since LifecycleManager doesn't do that automatically)

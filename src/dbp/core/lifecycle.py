@@ -34,6 +34,11 @@
 # - doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T19:21:00Z : Added watchdog keepalive calls by CodeAssistant
+# * Added keepalive before and after component registration
+# * Added keepalive at the start of the initialization process
+# * Fixed issue with watchdog not detecting deadlocks during component initialization
+# * Maintained KISS approach with simple, strategic keepalive calls
 # 2025-04-19T23:43:00Z : Added ComponentRegistry integration by CodeAssistant
 # * Added ComponentRegistry import and initialization
 # * Replaced _register_components with _register_components_with_registry
@@ -46,9 +51,6 @@
 # 2025-04-17T17:28:22Z : Standardized log format for consistency by CodeAssistant
 # * Ensured log format follows standard: 2025-04-17 17:24:30,221 - dbp.core.lifecycle - <LOGLEVEL> - <message>
 # * Verified that _setup_logging is using the centralized formatter from log_utils
-# 2025-04-17T17:03:30Z : Updated to use centralized log formatter by CodeAssistant
-# * Modified _setup_logging to use MillisecondFormatter from log_utils
-# * Added proper handling of milliseconds in log timestamps
 ###############################################################################
 
 import logging
@@ -129,6 +131,10 @@ class LifecycleManager:
         
         # Register components from registry with the system
         self.registry.register_with_system(self.system)
+        
+        # Update watchdog keepalive after component registration
+        from .watchdog import keep_alive
+        keep_alive()
 
         # Setup signal handling for graceful shutdown
         self._setup_signal_handlers()
@@ -243,6 +249,10 @@ class LifecycleManager:
         Selective component registration based on configuration.
         Clear separation between component definition and dependency declaration.
         """
+        from .watchdog import keep_alive
+        
+        # Update watchdog keepalive before starting component registration
+        keep_alive()
         logger.info("Registering components with registry...")
         
         # Get component enablement configuration
@@ -382,6 +392,10 @@ class LifecycleManager:
         Returns:
             bool: True if startup succeeded, False otherwise
         """
+        # Update watchdog keepalive before starting initialization
+        from .watchdog import keep_alive
+        keep_alive()
+
         with self._lock:
             if self._is_running:
                 logger.warning("Application is already running")

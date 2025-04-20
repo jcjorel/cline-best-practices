@@ -34,6 +34,10 @@
 # - doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T19:15:00Z : Added watchdog keepalive to prevent deadlocks by CodeAssistant
+# * Added keep_alive call before each component initialization
+# * Ensured watchdog doesn't trigger false alarms during long component initializations
+# * Fixed issue where watchdog wasn't properly updated between initializations
 # 2025-04-20T00:38:24Z : Removed backward compatibility code by CodeAssistant
 # * Updated register method to require explicit dependencies parameter
 # * Removed code that accessed component.dependencies directly
@@ -47,10 +51,6 @@
 # * Updated initialization to use typed configuration from ConfigurationManager
 # * Now using component-specific child loggers for better log clarity
 # * Enhanced type safety through strongly-typed configuration access
-# 2025-04-17T08:41:14Z : Enhanced component initialization error logging by CodeAssistant
-# * Added detailed error logging for component initialization failures
-# * Improved error context capture for initialization exceptions
-# * Added component state reporting in initialization error messages
 ###############################################################################
 
 import logging
@@ -270,6 +270,14 @@ class ComponentSystem:
                 # Enhanced logging before initialization
                 self.logger.info(f"Initializing component '{name}'...")
                 self.logger.debug(f"Component '{name}' class: {component.__class__.__name__}")
+                
+                # Update watchdog keepalive to prevent false deadlock detection during initialization
+                try:
+                    from .watchdog import keep_alive
+                    keep_alive()
+                    self.logger.debug(f"Updated watchdog keepalive before initializing '{name}'")
+                except ImportError:
+                    self.logger.debug(f"Watchdog module not available, skipping keepalive")
                 
                 # Create the initialization context
                 # Components expect a config manager with get() method, not the raw config
