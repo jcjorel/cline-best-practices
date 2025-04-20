@@ -2,18 +2,75 @@
 
 This document describes the architectural principles, components, and design decisions for the Documentation-Based Programming system, which treats documentation as the single source of truth in a project.
 
-## Code Analysis Approach
+## 1. General Architecture Overview
 
-1. **Claude 3.7 Sonnet-Based Analysis**: The system uses Claude 3.7 Sonnet LLM to analyze codebase files and extract metadata.
-2. **Metadata Extraction Capabilities**:
-   - Extract header sections from source files
-   - Retrieve function lists with associated documentation sections
-   - Determine file coding language
-3. **Analysis Method**: Claude's natural language understanding is used to perform semantic analysis of code structures without relying on keyword-based parsing.
-4. **LLM-Based Language Detection**: No programmatic language detection is needed as the LLM performs language detection inherently through its understanding of code structures and patterns.
-5. **Parsing Prohibition**: Keyword-based parsing will never be used in any part of the application.
+The Documentation-Based Programming system is built around the concept of documentation as the single source of truth, with architectural components designed to maintain consistency between documentation and code.
 
-## Core Architecture Principles
+### System Architecture Diagram
+
+```mermaid
+graph TD
+    subgraph "User Interfaces"
+        CLI["Python CLI Client"]
+        REC["Recommendation Interface"]
+    end
+    
+    subgraph "Business Logic"
+        METADATA["Metadata Extraction"]
+        CONSISTENCY["Consistency Analysis"]
+        RECOMMENDATION["Recommendation Generator"]
+    end
+    
+    subgraph "External Systems"
+        BEDROCK["AWS Bedrock"]
+        OTHER["Other External Services"]
+    end
+    
+    subgraph "Middleware & Support"
+        MONITOR["Documentation Monitoring"]
+        DB["Database"]
+        SCHEDULER["Task Scheduler"]
+        SECURITY["Security Layer"]
+        COMPONENT["Component System"]
+        MCP["MCP Server"]
+    end
+    
+    CLI --> METADATA
+    CLI --> MCP
+    REC --> RECOMMENDATION
+    
+    METADATA --> CONSISTENCY
+    CONSISTENCY --> RECOMMENDATION
+    
+    MCP --> BEDROCK
+    
+    METADATA --> MONITOR
+    METADATA --> DB
+    CONSISTENCY --> DB
+    RECOMMENDATION --> DB
+    
+    MONITOR --> SCHEDULER
+    DB --> COMPONENT
+    MCP --> COMPONENT
+    SCHEDULER --> COMPONENT
+```
+
+### Stack Layers
+
+```mermaid
+graph TB
+    UI["User Interfaces<br>(CLI Client, Recommendation Interface)"]
+    BL["Business Logic<br>(Metadata Extraction, Consistency Analysis, Recommendation Generation)"]
+    EXT["External Dependencies<br>(AWS Bedrock, Other Services)"]
+    MID["Middleware & Support Functions<br>(Monitoring, Database, Scheduling, Security, Component System)"]
+    
+    UI --> BL
+    BL --> EXT
+    BL --> MID
+    MID --> EXT
+```
+
+### Core Architecture Principles
 
 1. **Documentation as Source of Truth**: Documentation takes precedence over code itself for understanding project intent.
 2. **Automatic Consistency Maintenance**: System actively ensures consistency between documentation and code.
@@ -22,7 +79,7 @@ This document describes the architectural principles, components, and design dec
 5. **Reasonable Default Values**: System provides carefully selected default values for all configurable parameters while allowing customization.
 6. **Simplified Component Management**: System uses a minimalist component lifecycle approach focused on clarity and maintainability.
 
-## Implementation Principles
+### Implementation Principles
 
 1. **Avoid Manual Parsing**: Leverage Python libraries for parsing structured data (dates, times, etc.) rather than implementing custom parsers.
    - **Rationale**: Reduces maintenance burden and improves adaptability
@@ -68,9 +125,18 @@ This document describes the architectural principles, components, and design dec
     - **Type Safety**: Preserves Pydantic's type checking benefits throughout the codebase
     - **Explicit Behavior**: All component behavior is directly tied to explicitly accessed configuration
 
-## System Components
+### Out of Scope
 
-### 1. Python CLI Client
+- **Code Execution**: System does not execute code on developer's behalf
+- **Security Testing**: No security vulnerability scanning capability
+- **Performance Profiling**: No code performance analysis
+- **External Integration**: No integrations with external systems/APIs
+
+## 2. Provided Services
+
+This section describes the interfaces that deliver the project's value to users.
+
+### Python CLI Client
 
 - **Component Purpose**: Provide a simple command-line interface for interacting with MCP servers
 - **Implementation Strategy**: Lightweight Python CLI tool with minimal dependencies
@@ -85,45 +151,83 @@ This document describes the architectural principles, components, and design dec
   - **Rationale**: Enables easy addition of new commands without modifying core client logic, supports both interactive and script-based usage, provides consistent user experience across different operations
   - **Key Implications**: Command handlers can be developed independently, help documentation is auto-generated from command metadata, users benefit from consistent parameter handling
 
-### 2. Documentation Monitoring
+### Recommendation Interface
 
-- **Component Purpose**: Detect changes in documentation and code files
-- **Implementation Strategy**: 
-  - Lightweight file system watcher with debounced updates
-  - Persistent SQLite database for metadata storage
-  - Background Task Scheduler for continuous monitoring and metadata extraction
-- **Performance Constraints**: <5% CPU and <100MB RAM usage
-- **Response Time**: Changes detected in real-time, processing initiated after 10-second delay (configurable)
-- **Background Processing**:
-  - Uses Amazon Nova Lite to extract metadata from codebase files
-  - Maintains in-memory metadata cache synchronized with SQLite database
-  - Performs extraction only for files missing from database or with changes
-  - Initial scan processes all files to populate metadata database
-  - After initial scan, transitions to event-based monitoring using system-specific APIs:
-    - `inotify()` on Linux/WSL environments
-    - `FSEvents` on macOS
-    - `ReadDirectoryChangesW` on Windows
-  - Reacts to file change events by re-extracting metadata for modified files
-  - Progress information returned as part of MCP server tool responses
-- **Dynamic File Exclusion Strategy**:
-  - System automatically scans for and respects all .gitignore files throughout the codebase
-  - Additionally excludes two mandatory patterns regardless of .gitignore contents:
-    - `<project_root>/scratchpad/` directory and its contents
-    - Any file or directory with "deprecated" in the path
-  - When .gitignore files are modified:
-    - Database is purged of existing metadata records that fall under newly added exclusions
-    - Files in paths that are no longer excluded (removed from .gitignore) are automatically indexed
-  - This approach ensures the indexing scope always remains in sync with Git-committable content
-  - Rationale: Leverages developer-defined exclusions while maintaining database consistency
-- **Design Decision (2025-04-13)**: Implement a persistent SQLite database for metadata storage
-  - **Rationale**: Provides persistence across application restarts, reduces repeated metadata extraction, improves performance with incremental updates
-  - **Key Implications**: Faster startup times after initial indexing, reduced CPU usage for large codebases, requires database schema migration strategy
-- **Design Decision (2025-04-14)**: Implement a dedicated Background Task Scheduler
-  - **Rationale**: Ensures continuous monitoring with minimal resource usage, provides thread-safe metadata access, and enables efficient metadata extraction
-  - **Key Implications**: Improved responsiveness, better concurrency handling, more efficient resource utilization
-  - **For detailed implementation specifics**: See [Background Task Scheduler](design/BACKGROUND_TASK_SCHEDULER.md)
+The system provides a file-based recommendation interface through the `PENDING_RECOMMENDATION.md` file.
 
-### 2. Consistency Analysis Engine
+#### Recommendation Workflow
+
+1. **Detection**: System detects documentation or code changes
+2. **Analysis**: Changes analyzed for consistency impacts
+3. **Generation**: Single recommendation generated directly as `PENDING_RECOMMENDATION.md`
+4. **Developer Review**: Developer reviews and sets ACCEPT/REJECT/AMEND
+5. **Processing**: System processes the developer decision:
+   - ACCEPT: Implements recommendation automatically
+   - REJECT: Removes recommendation
+   - AMEND: Regenerates recommendation with developer feedback
+6. **Invalidation**: Any codebase change automatically invalidates and removes the pending recommendation
+
+#### Developer Feedback System
+
+- **Component Purpose**: Capture and process developer decisions on recommendations
+- **Implementation Strategy**: File-based feedback mechanism with ACCEPT/REJECT/AMEND options
+- **Processing Logic**: Immediate response to feedback file changes
+- **Amendment Handling**: Regeneration of recommendations based on developer guidance
+- **Design Decision**: Use file modifications as the primary feedback mechanism
+  - **Rationale**: File-based approach integrates seamlessly with existing developer workflows and version control systems without requiring additional UI components
+  - **Key Implications**: All recommendation interactions visible in version control history, creating an audit trail of documentation decisions
+
+### MCP Server REST APIs
+
+The MCP server exposes the following tools to MCP clients:
+
+1. **dbp_general_query**
+   - **Purpose**: Retrieve various types of codebase metadata
+   - **Implementation**: Uses the LLM coordination architecture described in Section 3
+   - **Processing**: Coordinator LLM determines which internal tools are required based on query
+   - **Response**: Consolidated results from all executed internal tools
+
+2. **dbp_commit_message**
+   - **Purpose**: Generate comprehensive commit messages
+   - **Identifies and summarizes all changes since the last commit
+   - **Provides context-aware descriptions of modifications
+   - **Includes impact analysis for structural changes
+
+Please see [API.md](API.md) for detailed API specifications.
+
+### Service Quality and Expectations
+
+- **Response Time**:
+  - CLI operations: <100ms for local operations
+  - MCP queries: <3s for simple queries, <10s for complex analysis
+  - Recommendation generation: <15s for complete processing
+
+- **Reliability Metrics**:
+  - 99.9% uptime for local processing components
+  - <0.1% error rate for metadata extraction
+  - 100% consistency in recommendation processing
+
+- **Scalability Considerations**:
+  - Support for codebases up to 100,000 files
+  - Automatic resource throttling for large projects
+  - Progressive indexing for initial processing
+
+## 3. Business Logic
+
+This section describes the internal logic that delivers the core business value of the project.
+
+### Code Analysis Approach
+
+1. **Claude 3.7 Sonnet-Based Analysis**: The system uses Claude 3.7 Sonnet LLM to analyze codebase files and extract metadata.
+2. **Metadata Extraction Capabilities**:
+   - Extract header sections from source files
+   - Retrieve function lists with associated documentation sections
+   - Determine file coding language
+3. **Analysis Method**: Claude's natural language understanding is used to perform semantic analysis of code structures without relying on keyword-based parsing.
+4. **LLM-Based Language Detection**: No programmatic language detection is needed as the LLM performs language detection inherently through its understanding of code structures and patterns.
+5. **Parsing Prohibition**: Keyword-based parsing will never be used in any part of the application.
+
+### Consistency Analysis
 
 - **Component Purpose**: Analyze relationships between documentation and code
 - **Implementation Strategy**: In-memory graph representation of document relationships
@@ -136,7 +240,17 @@ This document describes the architectural principles, components, and design dec
   - **Rationale**: Ensures consistent and predictable system resource usage, prevents resource spikes, simplifies debugging and error isolation, and allows for cleaner implementation of the processing queue
   - **Key Implications**: Processing large codebases will take longer, effective prioritization is required, and progress indicators should clearly show queue position
 
-### 3. Recommendation Generator
+```mermaid
+graph LR
+    CHANGE[File Change] --> DETECT[Change Detection]
+    DETECT --> EXTRACT[Metadata Extraction]
+    EXTRACT --> ANALYZE[Consistency Analysis]
+    ANALYZE --> GENERATE[Recommendation Generation]
+    ANALYZE --> IMPACT[Impact Analysis]
+    IMPACT --> DOC_UPDATE[Documentation Update Requirements]
+```
+
+### Recommendation Generation
 
 - **Component Purpose**: Create actionable recommendations to maintain documentation consistency
 - **Implementation Strategy**: Template-based recommendation generation with contextual awareness
@@ -145,107 +259,26 @@ This document describes the architectural principles, components, and design dec
   - Code refactoring to align with documentation
   - Inconsistency resolution between documentation files
 - **File Management**: Single active recommendation file
-- **Design Decision**: Implement a single active recommendation approach
-  - **Rationale**: Simplifies the recommendation workflow and focuses developer attention on one consistency issue at a time
-  - **Key Implications**: Developers must process recommendations in the order presented, but can use AMEND to adjust inappropriate recommendations
 
-### 4. Developer Feedback System
-
-- **Component Purpose**: Capture and process developer decisions on recommendations
-- **Implementation Strategy**: File-based feedback mechanism with ACCEPT/REJECT/AMEND options
-- **Processing Logic**: Immediate response to feedback file changes
-- **Amendment Handling**: Regeneration of recommendations based on developer guidance
-- **Design Decision**: Use file modifications as the primary feedback mechanism
-  - **Rationale**: File-based approach integrates seamlessly with existing developer workflows and version control systems without requiring additional UI components
-  - **Key Implications**: All recommendation interactions visible in version control history, creating an audit trail of documentation decisions
-
-## Component Initialization System
-
-The system implements a minimalist component management approach with:
-
-1. **Simple Component Interface**: Clear lifecycle methods with explicit initialization and shutdown
-2. **Direct Component Registry**: Dictionary-based registry without complex dependency resolution
-3. **Two-Step Process**: Validation followed by initialization for reliable startup
-4. **Straightforward Error Handling**: Clear error messages with fail-fast behavior
-5. **Explicit Component Dependencies**: Direct declaration of dependencies without complex resolution algorithms
-
-The system also implements a selective component enablement mechanism:
-
-1. **Configuration-Based Enablement**: Components can be individually enabled or disabled through configuration
-2. **Default Configuration**: Essential components (config_manager, file_access, database, llm_coordinator, mcp_server) are enabled by default
-3. **Resource Conservation**: Non-essential components are disabled by default to minimize resource usage
-4. **LLM-Focused Operation**: Default configuration optimizes for LLM coordinator functionality with minimal footprint
-5. **On-Demand Activation**: Additional components can be enabled via configuration as needed
-
-Key principles of this approach:
-- Explicit behavior over implicit mechanisms
-- Direct component access over layers of abstraction
-- Clear error reporting over sophisticated recovery
-- Simplicity over feature-rich complexity
-
-## File Structure
-
-```
-<project_root>/
-├── coding_assistant/
-│   ├── GENAI_HEADER_TEMPLATE.txt      # Template for file headers
-│   └── dbp/                           # Documentation-Based Programming artifacts
-│       └── PENDING_RECOMMENDATION.md  # Single active recommendation awaiting review
-└── doc/
-    ├── DESIGN.md                     # This file - architectural principles
-    ├── DATA_MODEL.md                 # Database structures and relationships
-    ├── DOCUMENT_RELATIONSHIPS.md     # Documentation dependency graph
-    ├── PR-FAQ.md                     # Product requirements as press release and FAQ
-    └── WORKING_BACKWARDS.md          # Product vision and customer experience
+```mermaid
+graph TD
+    ANALYSIS[Consistency Analysis] --> DETECT{Inconsistency Detected}
+    DETECT -->|Yes| GENERATE[Generate Recommendation]
+    DETECT -->|No| MONITOR[Continue Monitoring]
+    GENERATE --> FILE[Create PENDING_RECOMMENDATION.md]
+    FILE --> REVIEW[Developer Review]
+    REVIEW --> DECISION{Developer Decision}
+    DECISION -->|Accept| IMPLEMENT[Implement Changes]
+    DECISION -->|Reject| DISCARD[Discard Recommendation]
+    DECISION -->|Amend| REGENERATE[Regenerate with Feedback]
+    IMPLEMENT --> MONITOR
+    DISCARD --> MONITOR
+    REGENERATE --> FILE
 ```
 
-## Recommendation Workflow
-
-1. **Detection**: System detects documentation or code changes
-2. **Analysis**: Changes analyzed for consistency impacts
-3. **Generation**: Single recommendation generated directly as `PENDING_RECOMMENDATION.md`
-4. **Developer Review**: Developer reviews and sets ACCEPT/REJECT/AMEND
-5. **Processing**: System processes the developer decision:
-   - ACCEPT: Implements recommendation automatically
-   - REJECT: Removes recommendation
-   - AMEND: Regenerates recommendation with developer feedback
-6. **Invalidation**: Any codebase change automatically invalidates and removes the pending recommendation
-
-## Security and Data Handling
-
-The Documentation-Based Programming system implements comprehensive security measures to protect source code and documentation. Key security features include:
-
-- Local processing with no external data transmission
-- Complete isolation between indexed projects
-- Resource usage limits and intelligent throttling
-- Filesystem permission enforcement
-- SQLite database protected by filesystem permissions
-
-For detailed security information, architecture, and principles, see [SECURITY.md](SECURITY.md).
-
-## Out of Scope
-
-- **Code Execution**: System does not execute code on developer's behalf
-- **Security Testing**: No security vulnerability scanning capability
-- **Performance Profiling**: No code performance analysis
-- **External Integration**: No integrations with external systems/APIs
-
-## MCP Server Implementation
+### MCP Request Processing
 
 The MCP server provides essential tools through a sophisticated LLM coordination architecture that enables efficient processing of queries and requests.
-
-> **Detailed Design Documentation**: For comprehensive implementation details, see the following design documents:
-> - [LLM Coordination Architecture](design/LLM_COORDINATION.md): Detailed coordination patterns and job management
-> - [Internal LLM Tools](design/INTERNAL_LLM_TOOLS.md): Specialized tools for different context types
-> - [Enhanced Data Models](design/MCP_SERVER_ENHANCED_DATA_MODEL.md): Advanced data models with budget management
-
-### 1. LLM Coordination Architecture
-
-The system implements a hierarchical LLM coordination pattern:
-
-1. **Coordinator LLM**: An instance of Amazon Nova Lite with a dedicated system prompt manages incoming requests
-2. **Internal Tool LLMs**: Specialized LLM instances handle specific context types and processing tasks
-3. **Asynchronous Job Management**: Parallel execution of multiple internal tools for improved performance
 
 #### Request Processing Workflow
 
@@ -326,56 +359,222 @@ All LLM instances have access to:
   - **Returns**: JSON with file metadata and content
   - **Usage**: Allows LLMs to dynamically retrieve additional context
 
-### 2. MCP-Exposed Tools
+## 4. External Dependencies toward Cooperating Systems
 
-The system exposes the following tools to MCP clients:
+This section describes the system's integration with external services and APIs.
 
-1. **dbp_general_query**
-   - **Purpose**: Retrieve various types of codebase metadata
-   - **Implementation**: Uses the LLM coordination architecture described above
-   - **Processing**: Coordinator LLM determines which internal tools are required based on query
-   - **Response**: Consolidated results from all executed internal tools
+### AWS Bedrock Integration
 
-2. **dbp_commit_message**
-   - **Purpose**: Generate comprehensive commit messages
-   - **Identifies and summarizes all changes since the last commit
-   - **Provides context-aware descriptions of modifications
-   - **Includes impact analysis for structural changes
-
-### 3. Budget and Resource Management
-
-To ensure responsible resource utilization:
-
-1. **Per-Tool Cost Budgeting**:
-   - Each internal tool execution has a maximum cost budget
-   - When budget is reached, the LLM is instructed to conclude the task
-   - Responses include "incomplete result" markers with appropriate metadata
-   - Response metadata includes budget utilization information
-
-2. **Timeout Management**:
-   - Each tool execution has a maximum allowed execution time
-   - Timeouts trigger graceful termination of the tool execution
-   - LLM is instructed to provide partial results with timeout indication
-   - Coordination ensures overall system stability despite individual timeouts
-
-### 4. Implementation Strategy
+The system integrates with AWS Bedrock for LLM services with the following approach:
 
 - **Model Selection**: Different tasks utilize appropriate models:
   - Amazon Nova Lite for request coordination and simple queries
   - Claude 3.x models for more complex analysis tasks
-- **External Prompt Template Files**: LLM prompts for internal tools are not hardcoded in the server but read directly from doc/llm/prompts/ with no fallback mechanism
-  - **Rationale**: Separates prompt content from code to enable prompt engineering without code changes
-  - **Implementation**: Server reads prompt templates from documentation directory at runtime
-  - **Benefits**: Maintains prompt version control within documentation, enables prompt optimization without code changes
-- **MCP Server Interface Consistency**: There must not be a single difference between starting MCP server from command line or from Cline editor MCP client
-  - **Rationale**: Ensures consistent behavior across all client access methods
-  - **Implementation**: Shared initialization code path, unified configuration handling
-  - **Benefits**: Simplifies testing, eliminates potential inconsistencies between environments
-- **AWS Bedrock Integration**: Initially implemented with placeholder functions
+- **Implementation Strategy**: Initially implemented with placeholder functions
   - Actual AWS Bedrock model interactions to be implemented separately
   - Standardized input and response validation in place (currently as placeholders)
 
-### 5. LLM Client Architecture
+### Integration with Cline's Context Management
+
+The Documentation-Based Programming system integrates with Cline's context management in the following ways:
+- Provides context enrichment for LLM interactions
+- Complements MCP Server architecture
+- Enhances Anthropic Claude prompt effectiveness
+
+### External API Dependencies
+
+The system relies on the following external APIs:
+- AWS Bedrock API for LLM services
+- Local filesystem APIs for file monitoring
+- Operating system-specific monitoring APIs:
+  - `inotify()` on Linux/WSL environments
+  - `FSEvents` on macOS
+  - `ReadDirectoryChangesW` on Windows
+
+### Integration Patterns
+
+- **Authentication Approaches**:
+  - AWS credentials management via standard AWS SDK mechanisms
+  - Local filesystem access using standard OS permissions
+  
+- **Error Handling Strategy**:
+  - Explicit error reporting for all external API failures
+  - Retry logic with exponential backoff for transient failures
+  - Graceful degradation when external services are unavailable
+  
+- **Rate Limiting Considerations**:
+  - Token budget management for LLM API calls
+  - Intelligent batching of similar requests
+  - Throttling mechanism for excessive requests
+  
+- **Fallback Strategies**:
+  - Service unavailability reporting with clear error messages
+  - Local caching of critical data to reduce API dependency
+  - Progressive enhancement approach for non-critical features
+
+### External System Communication Flow
+
+```mermaid
+sequenceDiagram
+    participant App as DBP Application
+    participant Bedrock as AWS Bedrock
+    participant OS as OS File APIs
+    
+    App->>Bedrock: LLM Request (metadata extraction)
+    Bedrock-->>App: LLM Response
+    
+    App->>OS: File Monitoring Registration
+    OS-->>App: Change Notifications
+    
+    App->>Bedrock: LLM Request (analysis)
+    Bedrock-->>App: LLM Response
+    
+    App->>OS: File Update
+    OS-->>App: Operation Result
+```
+
+## 5. Middleware and Support Functions
+
+This section describes the technical internal infrastructure that supports the system's operation.
+
+### Component Initialization System
+
+The system implements a minimalist component management approach with:
+
+1. **Simple Component Interface**: Clear lifecycle methods with explicit initialization and shutdown
+2. **Centralized Component Registry**: Structured registry that allows registering components and declaring dependencies in one place
+3. **Two-Step Process**: Validation followed by initialization for reliable startup
+4. **Explicit Error Handling**: Immediate failure with clear error messages when dependency issues are detected
+5. **Direct Dependency Injection**: Dependencies are provided directly to components during initialization rather than requiring them to fetch dependencies themselves
+
+#### Component Registration and Dependency Management
+
+The centralized component registration mechanism provides several key benefits:
+
+1. **Improved Visibility**: Having all component dependencies declared in one place makes the system architecture more visible and easier to understand
+2. **Reduced Duplication**: Eliminates the need to declare dependencies in multiple places
+3. **Enhanced Testability**: Direct dependency injection makes components more testable by allowing easy mocking of dependencies
+4. **Simplified Component Implementation**: Components receive their dependencies directly without having to fetch them
+
+#### Dependency Validation Strategy
+
+The system implements explicit dependency validation with:
+
+1. **Immediate Validation**: Dependencies are verified during component initialization
+2. **Fail-Fast Behavior**: Any missing dependency triggers immediate initialization failure
+3. **Clear Error Messages**: Error messages identify exactly which component and which dependency caused the failure
+4. **Improved Diagnostics**: Dependency errors include the exact dependency name to simplify troubleshooting
+
+This approach ensures that dependency issues are caught early in the startup process rather than manifesting as runtime errors, significantly improving system reliability and debuggability.
+
+The system also implements a selective component enablement mechanism:
+
+1. **Configuration-Based Enablement**: Components can be individually enabled or disabled through configuration
+2. **Default Configuration**: Essential components (config_manager, file_access, database, llm_coordinator, mcp_server) are enabled by default
+3. **Resource Conservation**: Non-essential components are disabled by default to minimize resource usage
+4. **LLM-Focused Operation**: Default configuration optimizes for LLM coordinator functionality with minimal footprint
+5. **On-Demand Activation**: Additional components can be enabled via configuration as needed
+
+Key principles of this approach:
+- Explicit behavior over implicit mechanisms
+- Direct component access over layers of abstraction
+- Clear error reporting over sophisticated recovery
+- Simplicity over feature-rich complexity
+
+For detailed implementation specifics, see [Component Initialization](design/COMPONENT_INITIALIZATION.md).
+
+### Documentation Monitoring
+
+- **Component Purpose**: Detect changes in documentation and code files
+- **Implementation Strategy**: 
+  - Lightweight file system watcher with debounced updates
+  - Persistent SQLite database for metadata storage
+  - Background Task Scheduler for continuous monitoring and metadata extraction
+- **Performance Constraints**: <5% CPU and <100MB RAM usage
+- **Response Time**: Changes detected in real-time, processing initiated after 10-second delay (configurable)
+- **Background Processing**:
+  - Uses Amazon Nova Lite to extract metadata from codebase files
+  - Maintains in-memory metadata cache synchronized with SQLite database
+  - Performs extraction only for files missing from database or with changes
+  - Initial scan processes all files to populate metadata database
+  - After initial scan, transitions to event-based monitoring using system-specific APIs:
+    - `inotify()` on Linux/WSL environments
+    - `FSEvents` on macOS
+    - `ReadDirectoryChangesW` on Windows
+  - Reacts to file change events by re-extracting metadata for modified files
+  - Progress information returned as part of MCP server tool responses
+- **Dynamic File Exclusion Strategy**:
+  - System automatically scans for and respects all .gitignore files throughout the codebase
+  - Additionally excludes two mandatory patterns regardless of .gitignore contents:
+    - `<project_root>/scratchpad/` directory and its contents
+    - Any file or directory with "deprecated" in the path
+  - When .gitignore files are modified:
+    - Database is purged of existing metadata records that fall under newly added exclusions
+    - Files in paths that are no longer excluded (removed from .gitignore) are automatically indexed
+  - This approach ensures the indexing scope always remains in sync with Git-committable content
+  - Rationale: Leverages developer-defined exclusions while maintaining database consistency
+- **Design Decision (2025-04-13)**: Implement a persistent SQLite database for metadata storage
+  - **Rationale**: Provides persistence across application restarts, reduces repeated metadata extraction, improves performance with incremental updates
+  - **Key Implications**: Faster startup times after initial indexing, reduced CPU usage for large codebases, requires database schema migration strategy
+- **Design Decision (2025-04-14)**: Implement a dedicated Background Task Scheduler
+  - **Rationale**: Ensures continuous monitoring with minimal resource usage, provides thread-safe metadata access, and enables efficient metadata extraction
+  - **Key Implications**: Improved responsiveness, better concurrency handling, more efficient resource utilization
+  - **For detailed implementation specifics**: See [Background Task Scheduler](design/BACKGROUND_TASK_SCHEDULER.md)
+
+### Security and Data Handling
+
+The Documentation-Based Programming system implements comprehensive security measures to protect source code and documentation. Key security features include:
+
+- Local processing with no external data transmission
+- Complete isolation between indexed projects
+- Resource usage limits and intelligent throttling
+- Filesystem permission enforcement
+- SQLite database protected by filesystem permissions
+
+For detailed security information, architecture, and principles, see [SECURITY.md](SECURITY.md).
+
+### Database Implementation
+
+The system utilizes a SQLite database for persistent metadata storage with:
+
+- **Schema Management**: Alembic-based migrations for schema evolution
+- **Repository Pattern**: Data access abstraction through repository classes
+- **Connection Management**: Thread-safe connection pooling
+- **Transaction Handling**: Explicit transaction boundaries with proper error handling
+
+For detailed database structures and relationships, see [DATA_MODEL.md](DATA_MODEL.md).
+
+### Background Task Scheduler
+
+The Background Task Scheduler provides:
+
+- Thread pooling for concurrent task execution
+- Priority-based task scheduling
+- Graceful shutdown with task completion
+- Task cancellation support
+- Health monitoring and reporting
+
+For detailed implementation, see [Background Task Scheduler](design/BACKGROUND_TASK_SCHEDULER.md).
+
+### File System Structure
+
+```
+<project_root>/
+├── coding_assistant/
+│   ├── GENAI_HEADER_TEMPLATE.txt      # Template for file headers
+│   └── dbp/                           # Documentation-Based Programming artifacts
+│       └── PENDING_RECOMMENDATION.md  # Single active recommendation awaiting review
+└── doc/
+    ├── DESIGN.md                     # This file - architectural principles
+    ├── DATA_MODEL.md                 # Database structures and relationships
+    ├── DOCUMENT_RELATIONSHIPS.md     # Documentation dependency graph
+    ├── PR-FAQ.md                     # Product requirements as press release and FAQ
+    └── WORKING_BACKWARDS.md          # Product vision and customer experience
+```
+
+### MCP Server Internal Infrastructure
+
+#### LLM Client Architecture
 
 The system implements a unified architecture for Bedrock LLM clients that eliminates code duplication while maintaining model-specific behaviors:
 
@@ -396,8 +595,78 @@ The system implements a unified architecture for Bedrock LLM clients that elimin
 
 This architecture achieves approximately 50% reduction in model client implementation code while improving maintainability and making it easier to add support for new models.
 
-## Relationship to Other Components
+#### External Prompt Template Files
 
-- Integrates with Cline's context management
-- Complements MCP Server architecture
-- Enhances Anthropic Claude prompt effectiveness
+LLM prompts for internal tools are not hardcoded in the server but read directly from doc/llm/prompts/ with no fallback mechanism:
+- **Rationale**: Separates prompt content from code to enable prompt engineering without code changes
+- **Implementation**: Server reads prompt templates from documentation directory at runtime
+- **Benefits**: Maintains prompt version control within documentation, enables prompt optimization without code changes
+
+#### Budget and Resource Management
+
+To ensure responsible resource utilization:
+
+1. **Per-Tool Cost Budgeting**:
+   - Each internal tool execution has a maximum cost budget
+   - When budget is reached, the LLM is instructed to conclude the task
+   - Responses include "incomplete result" markers with appropriate metadata
+   - Response metadata includes budget utilization information
+
+2. **Timeout Management**:
+   - Each tool execution has a maximum allowed execution time
+   - Timeouts trigger graceful termination of the tool execution
+   - LLM is instructed to provide partial results with timeout indication
+   - Coordination ensures overall system stability despite individual timeouts
+
+### Middleware Component Relationships
+
+```mermaid
+graph TD
+    subgraph "Core Infrastructure"
+        CONFIG["Config Manager"]
+        REGISTRY["Component Registry"]
+        FS_ACCESS["File Access"]
+        LOG["Logging System"]
+    end
+    
+    subgraph "Data Management"
+        DB["Database"]
+        REPOS["Repositories"]
+        MODELS["Data Models"]
+        MIGRATIONS["Schema Migrations"]
+    end
+    
+    subgraph "Task Management"
+        SCHEDULER["Background Task Scheduler"]
+        QUEUES["Priority Queues"]
+        TASKS["Task Definitions"]
+        HEALTH["Health Monitor"]
+    end
+    
+    subgraph "File Monitoring"
+        WATCHER["File System Watcher"]
+        EXCLUSION["Exclusion Manager"]
+        EVENTS["Event Debouncer"]
+        OS_APIS["OS-Specific APIs"]
+    end
+    
+    CONFIG --> REGISTRY
+    REGISTRY --> FS_ACCESS
+    REGISTRY --> LOG
+    
+    DB --> REPOS
+    DB --> MODELS
+    DB --> MIGRATIONS
+    
+    SCHEDULER --> QUEUES
+    SCHEDULER --> TASKS
+    SCHEDULER --> HEALTH
+    
+    WATCHER --> EXCLUSION
+    WATCHER --> EVENTS
+    WATCHER --> OS_APIS
+    
+    CONFIG --> SCHEDULER
+    CONFIG --> WATCHER
+    FS_ACCESS --> WATCHER
+    REPOS --> SCHEDULER

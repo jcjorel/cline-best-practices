@@ -176,11 +176,11 @@ This graph structure helps the system determine the correct order for propagatin
 - Impacts: [src/dbp/core/lifecycle.py] - Topic: Implementation - Scope: Component lifecycle
 
 ## DATA_MODEL.md
-- Depends on: [DESIGN.md](#designmd) - Topic: System architecture - Scope: Entire system design
-- Depends on: [DESIGN.md](#designmd) - Topic: Code analysis approach - Scope: Metadata extraction structure
-- Depends on: [DESIGN.md](#designmd) - Topic: Security considerations - Scope: Data protection and access controls
-- Depends on: [DESIGN.md](#designmd) - Topic: Design decisions - Scope: Data handling approaches (moved from DESIGN_DECISIONS.md)
-- Depends on: [DESIGN.md](#designmd) - Topic: Python CLI Client - Scope: Client component design
+- Depends on: [DESIGN.md](#designmd) - Topic: General Architecture Overview - Scope: Entire system design
+- Depends on: [DESIGN.md](#designmd) - Topic: Business Logic - Code Analysis Approach - Scope: Metadata extraction structure
+- Depends on: [DESIGN.md](#designmd) - Topic: Middleware and Support Functions - Security and Data Handling - Scope: Data protection and access controls
+- Depends on: [DESIGN.md](#designmd) - Topic: General Architecture Overview - Implementation Principles - Scope: Data handling approaches (moved from DESIGN_DECISIONS.md)
+- Depends on: [DESIGN.md](#designmd) - Topic: Provided Services - Python CLI Client - Scope: Client component design
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: LLM-Based Metadata Extraction - Scope: Metadata extraction approach
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: LLM-Based Language Detection - Scope: Language detection approach
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Use Alembic for Database Schema Management - Scope: Database migration strategy
@@ -227,7 +227,7 @@ When documentation files are updated:
 ## Design Implementation Documents
 
 ## design/LLM_COORDINATION.md
-- Depends on: [DESIGN.md](#designmd) - Topic: MCP Server Implementation - Scope: LLM coordination architecture
+- Depends on: [DESIGN.md](#designmd) - Topic: Business Logic - MCP Request Processing - Scope: LLM coordination architecture
 - Depends on: [DATA_MODEL.md](#data_modelmd) - Topic: Data structures - Scope: Job tracking and request/response models
 - Depends on: [SECURITY.md](#securitymd) - Topic: Security measures - Scope: Multi-LLM security considerations
 - Impacts: [design/INTERNAL_LLM_TOOLS.md](#designinternal_llm_toolsmd) - Topic: Tool integration - Scope: Coordination architecture
@@ -236,7 +236,7 @@ When documentation files are updated:
 
 ## design/INTERNAL_LLM_TOOLS.md
 - Depends on: [design/LLM_COORDINATION.md](#designllm_coordinationmd) - Topic: Tool integration - Scope: Coordination architecture
-- Depends on: [DESIGN.md](#designmd) - Topic: Internal tools - Scope: Tool purposes and capabilities
+- Depends on: [DESIGN.md](#designmd) - Topic: Business Logic - MCP Request Processing - Internal LLM Tools - Scope: Tool purposes and capabilities
 - Depends on: [doc/llm/prompts/](#docllmprompts) - Topic: Prompt templates - Scope: LLM processing approach
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: External Prompt Template Files - Scope: Tool implementation
 - Impacts: [src/dbp/internal_tools/component.py] - Topic: Implementation - Scope: Internal LLM tool component
@@ -249,7 +249,7 @@ When documentation files are updated:
 - Impacts: [src/dbp/mcp_server/data_models.py] - Topic: Implementation - Scope: MCP server data structures
 
 ## design/COMPONENT_INITIALIZATION.md
-- Depends on: [DESIGN.md](#designmd) - Topic: System components - Scope: Component dependencies and structure
+- Depends on: [DESIGN.md](#designmd) - Topic: Middleware and Support Functions - Component Initialization System - Scope: Component dependencies and structure
 - Depends on: [DATA_MODEL.md](#data_modelmd) - Topic: Database structures - Scope: Database initialization
 - Depends on: [CONFIGURATION.md](#configurationmd) - Topic: Initialization parameters - Scope: Configuration options
 - Depends on: [SECURITY.md](#securitymd) - Topic: Security considerations - Scope: Secure initialization process
@@ -260,13 +260,13 @@ When documentation files are updated:
 - Impacts: [src/dbp/core/component.py] - Topic: Implementation - Scope: Component base class
 
 ## design/BACKGROUND_TASK_SCHEDULER.md
-- Depends on: [DESIGN.md](#designmd) - Topic: Documentation Monitoring - Scope: Background processing architecture
+- Depends on: [DESIGN.md](#designmd) - Topic: Middleware and Support Functions - Documentation Monitoring - Scope: Background processing architecture
 - Depends on: [DATA_MODEL.md](#data_modelmd) - Topic: Metadata Extraction Model - Scope: Metadata structure and storage
 - Depends on: [CONFIGURATION.md](#configurationmd) - Topic: Background Task Scheduler - Scope: Configuration parameters
 - Depends on: [SECURITY.md](#securitymd) - Topic: Security considerations - Scope: Data protection and permissions
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: Enhanced metadata extraction - Scope: MD5 digest storage
 - Depends on: [DESIGN_DECISIONS.md](#design_decisionsmd) - Topic: LLM-Based Metadata Extraction - Scope: Extraction process
-- Impacts: [DESIGN.md](#designmd) - Topic: Documentation Monitoring - Scope: Implementation details
+- Impacts: [DESIGN.md](#designmd) - Topic: Middleware and Support Functions - Documentation Monitoring - Scope: Implementation details
 - Impacts: [CONFIGURATION.md](#configurationmd) - Topic: Background Task Scheduler - Scope: Configuration parameters
 - Impacts: [design/COMPONENT_INITIALIZATION.md](#designcomponent_initializationmd) - Topic: Background processing - Scope: Task scheduling
 - Impacts: [src/dbp/scheduler/component.py] - Topic: Implementation - Scope: Task scheduler component
@@ -292,7 +292,7 @@ When documentation files are updated:
 - Impacts: None
 
 ## src/dbp/fs_monitor
-- Depends on: [DESIGN.md](#designmd) - Topic: Implementation - Scope: Filesystem monitoring strategy
+- Depends on: [DESIGN.md](#designmd) - Topic: Middleware and Support Functions - Documentation Monitoring - Scope: Filesystem monitoring strategy
 - Impacts: [src/dbp/scheduler] - Topic: Implementation - Scope: Event-based task scheduling
 
 ## src/dbp/mcp_server

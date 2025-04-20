@@ -59,6 +59,7 @@ This directory contains the database management components for the Document-Base
 - Needs access to a database engine and session manager.
 
 **Change History:**
+- 2025-04-20T23:50:00Z : Removed threading-based watchdog integration
 - 2025-04-18T10:51:00Z : Created alembic_manager.py by extracting from database.py
 
 ### Filename 'models.py':

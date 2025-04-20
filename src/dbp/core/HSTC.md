@@ -186,4 +186,5 @@ This directory contains core system components that provide foundational functio
 - Should capture sufficient debug information for post-mortem analysis
 
 **Change History:**
+- 2025-04-20T21:04:54Z : Enhanced watchdog to prioritize all thread stack traces on trigger
 - 2025-04-20T10:43:35Z : Created watchdog module with conditional variable mechanism

@@ -89,6 +89,12 @@ start the server in a separate terminal.
 - Server processes started in background mode need proper cleanup.
 - PID tracking is used to manage server processes.
 
+**Change History:**
+- 2025-04-20T23:43:45Z : Added explicit server startup timeout logging
+- 2025-04-17T16:16:00Z : Removed duplicate log path information
+- 2025-04-17T15:52:00Z : Fixed import error in server startup
+- 2025-04-17T15:49:00Z : Fixed startup configuration access
+
 ### Filename 'status.py':
 **Source file intent**: Implements the StatusCommandHandler for the 'status' CLI command, which allows
 users to check the status of the Documentation-Based Programming system,
