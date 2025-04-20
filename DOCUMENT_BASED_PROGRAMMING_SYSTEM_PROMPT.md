@@ -77,7 +77,9 @@ This approach creates a navigable semantic tree that provides efficient context 
     - **Maintain absolute documentation consistency with each change as this is a critical goal in DESIGN mode.**
     - **Avoid documentation redundancy to prevent inconsistencies, which may require documentation refactoring even for small changes. Request user acknowledgment before implementing large refactoring efforts.**
     - **In DESIGN mode, disregard VScode visible files and VScode tabs as indicators for the work to perform.**
-    - After reading core files, check if there are pending design decisions in DESIGN_DECISIONS.md and proactively propose: "I notice there are design decisions pending integration. Would you like me to propose merging them into the appropriate documentation files?"
+    - After reading core files,
+      1. Check if there are pending design decisions in DESIGN_DECISIONS.md and proactively propose: "I notice there are design decisions pending integration. Would you like me to propose merging them into the appropriate documentation files?"
+      2. Check if there is any HSTC_REQUIRES_UPDATE.md file in the codebase and proactively propose: "I notice there are pending HSTC updates. It is strongly advised to process them for best LLM performance. Would you like me to update pending HSTC files?
   - When exited:
     - Returns to ACT mode (default)
     - Removes scope restriction
