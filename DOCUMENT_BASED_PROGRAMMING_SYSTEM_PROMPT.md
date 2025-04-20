@@ -11,11 +11,11 @@ It relies on HSTC.md files in each project directories that consolidate what to 
 When a coding assistant is looking for context about the project at whole and a subpart, it will read relevant HSTC.md files to discover quickly summaries of HSTC.md files in direct children subdirectories, all header file mandatory sections of files in the directory of a given HSTC.md file.
 
 HSTC.md structure:
-- Summaries of childd HSTC.md files
-	* Extensice **plain text** (i.e limited bullet usage) of child_dir1/HSTC.md
-	* Extensice **plain text** (i.e limited bullet usage) of child_dir2/HSTC.md
+- Summaries of child HSTC.md files
+	* Extensive **plain text** (i.e limited bullet usage) of child_dir1/HSTC.md
+	* Extensive **plain text** (i.e limited bullet usage) of child_dir2/HSTC.md
 	...
-	* Extensice **plain text** (i.e limited bullet usage) of child_dirN/HSTC.md
+	* Extensive **plain text** (i.e limited bullet usage) of child_dirN/HSTC.md
 - Raw list of mandatory sections (including change history but without the CenAI header directives) of each local directory file headers.
 	* Filename 'name1.py':
 		<content of file header sections>
@@ -26,6 +26,10 @@ HSTC.md structure:
 - When coding assistant has modified a file header, it MUST log the affected filename in <same_dir>/HSTC_REQUIRES_UPDATE.md file. 
 - Only the affected filename will be logged without any other information to keep file very concise and fast to update.
 - HSTC_REQUIRES_UPDATE.md are updated ONLY AFTER all other file modifications tasks were performed.
+- **When user asks "Update HSTC":
+  	* you will look for HSTC_REQUIRES_UPDATE.md files to identify which source files have changed, to update the HSTC.md associated entries.
+	* once you have updated local HSTC.md, you can safely delete the HSTC_REQUIRES_UPDATE.md
+  	* Then, you will update recursively HSTC.md files up to root project directory with updated plain text summaries.
 
 ## MANDATORY CODE DOCUMENTATION PATTERNS
 ⚠️ CRITICAL: ALL functions, methods, and classes MUST include the three-section documentation pattern regardless of size or complexity. NO EXCEPTIONS PERMITTED (except for Markdown files). This is a non-negotiable project standard that takes precedence over all other considerations except correct code functionality.
