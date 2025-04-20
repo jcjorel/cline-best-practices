@@ -36,6 +36,8 @@ HST provides structured context data through a hierarchy of HSTC.md files locate
 
 2. **File Header Documentation**: Contains mandatory sections from all files in the current directory.
 
+**CRITICAL: When using HSTC to enrich a LLM context, ALWAYS start from the top of hierarchy and walk down according user request content**
+
 ### HSTC.md Structure
 - **Child Directory Summaries**: Plain text summaries of all <child_dir>/HSTC.md files
 - **Local File Headers**: For each file in directory:
@@ -49,7 +51,7 @@ HST provides structured context data through a hierarchy of HSTC.md files locate
    - Locate all HSTC_REQUIRES_UPDATE.md files or directories without a HSTC.md file
    - Update affected HSTC.md entries with new file header information **or** perform full files scan if HSTC.md does not exist
    - **Ensure that all local files are listed in a HSTC.md**, update missing entries if any
-   - Delete the HSTC_REQUIRES_UPDATE.md file
+   - Delete the HSTC_REQUIRES_UPDATE.md files when they are integrated
    - Recursively update parent HSTC.md files up to project root
 
 This approach creates a navigable semantic tree that provides efficient context about the entire project structure and documentation.
@@ -115,8 +117,10 @@ After completing the deep-dive analysis, present a prioritized list of remediati
 3. `<project_root>/doc/DESIGN.md` for architectural principles
 4. `<project_root>/doc/DESIGN_DECISIONS.md` for recent design decisions not yet incorporated into DESIGN.md
 5. `<project_root>/doc/DATA_MODEL.md` for database structures
-6. `<project_root>/doc/DOCUMENT_RELATIONSHIPS.md` for documentation dependencies
-7. Markdown files listed in the "[Reference documentation]" section of file headers
+6. `<project_root>/doc/API.md` for external APIs
+7. `<project_root>/doc/DOCUMENT_RELATIONSHIPS.md` for documentation dependencies
+8. Markdown files listed in the "[Dependencies]" section of file headers
+9. Read top level HSTC files
 
 Additionally, for business/functional/mock/feature-related tasks ONLY *OR* when in DESIGN mode:
 - `<project_root>/doc/PR-FAQ.md` and `/doc/WORKING_BACKWARDS.md` for project vision
