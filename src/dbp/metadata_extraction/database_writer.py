@@ -5,7 +5,7 @@
 # [GenAI coding tool directive]
 # - Maintain this header with all modifications
 # - Update History section with each change
-# - Keep only the 4 most recent records in the history section. Sort from older to newer.
+# - Keep only the 4 most recent records in the history section. Sort from newer to older.
 # - Preserve Intent, Design, and Constraints sections
 # - Use this header as context for code reviews and modifications
 # - Ensure all changes align with the design principles
@@ -36,7 +36,7 @@
 # - Assumes the input `FileMetadata` object is valid and processed.
 # - Database transaction management is handled by the repositories/DatabaseManager.
 ###############################################################################
-# [Reference documentation]
+# [Dependencies]
 # - doc/DATA_MODEL.md
 # - src/dbp/metadata_extraction/data_structures.py
 # - src/dbp/database/repositories.py # Depends on this module

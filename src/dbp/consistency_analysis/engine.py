@@ -5,7 +5,7 @@
 # [GenAI coding tool directive]
 # - Maintain this header with all modifications
 # - Update History section with each change
-# - Keep only the 4 most recent records in the history section. Sort from older to newer.
+# - Keep only the 4 most recent records in the history section. Sort from newer to older.
 # - Preserve Intent, Design, and Constraints sections
 # - Use this header as context for code reviews and modifications
 # - Ensure all changes align with the design principles
@@ -32,7 +32,7 @@
 # - Relies on analyzers correctly implementing the `apply_rule` method.
 # - Performance depends on the number of rules and the complexity of the analyzers.
 ###############################################################################
-# [Reference documentation]
+# [Dependencies]
 # - doc/DESIGN.md
 # - src/dbp/consistency_analysis/registry.py
 # - src/dbp/consistency_analysis/analyzer.py

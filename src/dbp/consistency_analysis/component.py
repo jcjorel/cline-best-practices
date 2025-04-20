@@ -5,7 +5,7 @@
 # [GenAI coding tool directive]
 # - Maintain this header with all modifications
 # - Update History section with each change
-# - Keep only the 4 most recent records in the history section. Sort from older to newer.
+# - Keep only the 4 most recent records in the history section. Sort from newer to older.
 # - Preserve Intent, Design, and Constraints sections
 # - Use this header as context for code reviews and modifications
 # - Ensure all changes align with the design principles
@@ -36,7 +36,7 @@
 # - Assumes configuration is available via InitializationContext.
 # - Relies on placeholder implementations within the concrete analyzers.
 ###############################################################################
-# [Reference documentation]
+# [Dependencies]
 # - doc/DESIGN.md
 # - src/dbp/core/component.py
 # - All other files in src/dbp/consistency_analysis/

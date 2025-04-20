@@ -5,7 +5,7 @@
 # [GenAI coding tool directive]
 # - Maintain this header with all modifications
 # - Update History section with each change
-# - Keep only the 4 most recent records in the history section. Sort from older to newer.
+# - Keep only the 4 most recent records in the history section. Sort from newer to older.
 # - Preserve Intent, Design, and Constraints sections
 # - Use this header as context for code reviews and modifications
 # - Ensure all changes align with the design principles
@@ -33,7 +33,7 @@
 # - Input/output schemas must be kept consistent with tool functionality.
 # - Placeholder execution logic needs to be replaced with actual component interactions.
 ###############################################################################
-# [Reference documentation]
+# [Dependencies]
 # - doc/DESIGN.md
 # - doc/API.md
 # - src/dbp/mcp_server/mcp_protocols.py
@@ -510,7 +510,7 @@ class AnalyzeDocumentConsistencyTool(MCPTool):
                             {
                                 "document_path": "src/dbp/consistency_analysis/analyzer.py",
                                 "line_number": 22,
-                                "context": "# [Reference documentation]\n# - doc/DESIGN.md\n# - doc/ANALYSIS_RULES.md  # This file doesn't exist"
+                                "context": "# [Dependencies]\n# - doc/DESIGN.md\n# - doc/ANALYSIS_RULES.md  # This file doesn't exist"
                             }
                         ],
                         "recommendation": "Either create the referenced file at 'doc/ANALYSIS_RULES.md' or remove the reference."

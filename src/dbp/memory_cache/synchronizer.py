@@ -5,7 +5,7 @@
 # [GenAI coding tool directive]
 # - Maintain this header with all modifications
 # - Update History section with each change
-# - Keep only the 4 most recent records in the history section. Sort from older to newer.
+# - Keep only the 4 most recent records in the history section. Sort from newer to older.
 # - Preserve Intent, Design, and Constraints sections
 # - Use this header as context for code reviews and modifications
 # - Ensure all changes align with the design principles
@@ -33,7 +33,7 @@
 # - The efficiency of synchronization depends on database query performance and the volume of data.
 # - Incremental sync logic requires a mechanism to identify changes in the database (e.g., timestamps, version numbers). Placeholder implementation provided.
 ###############################################################################
-# [Reference documentation]
+# [Dependencies]
 # - doc/DATA_MODEL.md
 # - src/dbp/database/repositories.py
 # - src/dbp/database/models.py (Assumed ORM models)

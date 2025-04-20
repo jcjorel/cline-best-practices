@@ -5,7 +5,7 @@
 # [GenAI coding tool directive]
 # - Maintain this header with all modifications
 # - Update History section with each change
-# - Keep only the 4 most recent records in the history section. Sort from older to newer.
+# - Keep only the 4 most recent records in the history section. Sort from newer to older.
 # - Preserve Intent, Design, and Constraints sections
 # - Use this header as context for code reviews and modifications
 # - Ensure all changes align with the design principles
@@ -32,7 +32,7 @@
 # - The effectiveness of learning from feedback depends on the quality and quantity of feedback received and the sophistication of the analysis logic (currently basic).
 # - Statistics are stored in memory and lost on restart unless persisted.
 ###############################################################################
-# [Reference documentation]
+# [Dependencies]
 # - doc/DESIGN.md
 # - src/dbp/recommendation_generator/data_models.py
 ###############################################################################

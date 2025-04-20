@@ -5,7 +5,7 @@
 # [GenAI coding tool directive]
 # - Maintain this header with all modifications
 # - Update History section with each change
-# - Keep only the 4 most recent records in the history section. Sort from older to newer.
+# - Keep only the 4 most recent records in the history section. Sort from newer to older.
 # - Preserve Intent, Design, and Constraints sections
 # - Use this header as context for code reviews and modifications
 # - Ensure all changes align with the design principles
@@ -32,7 +32,7 @@
 # - Placeholder implementations return mock data and do not perform actual LLM calls.
 # - Depends on configuration classes (`NovaLiteConfig`, `ClaudeConfig`) being defined.
 ###############################################################################
-# [Reference documentation]
+# [Dependencies]
 # - doc/DESIGN.md
 # - doc/design/INTERNAL_LLM_TOOLS.md
 # - src/dbp/metadata_extraction/bedrock_client.py (Related, but potentially separate instances)

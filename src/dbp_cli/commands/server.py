@@ -5,7 +5,7 @@
 # [GenAI coding tool directive]
 # - Maintain this header with all modifications
 # - Update History section with each change
-# - Keep only the 4 most recent records in the history section. Sort from older to newer.
+# - Keep only the 4 most recent records in the history section. Sort from newer to older.
 # - Preserve Intent, Design, and Constraints sections
 # - Use this header as context for code reviews and modifications
 # - Ensure all changes align with the design principles
@@ -29,7 +29,7 @@
 # - Server processes started in background mode need proper cleanup.
 # - PID tracking is used to manage server processes.
 ###############################################################################
-# [Reference documentation]
+# [Dependencies]
 # - src/dbp_cli/commands/base.py
 # - src/dbp_cli/commands/status.py
 # - src/dbp/mcp_server/server.py

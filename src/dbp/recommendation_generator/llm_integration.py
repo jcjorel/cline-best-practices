@@ -5,7 +5,7 @@
 # [GenAI coding tool directive]
 # - Maintain this header with all modifications
 # - Update History section with each change
-# - Keep only the 4 most recent records in the history section. Sort from older to newer.
+# - Keep only the 4 most recent records in the history section. Sort from newer to older.
 # - Preserve Intent, Design, and Constraints sections
 # - Use this header as context for code reviews and modifications
 # - Ensure all changes align with the design principles
@@ -33,7 +33,7 @@
 # - Placeholder implementation needs replacement with actual coordinator interaction logic.
 # - Performance depends on the LLM Coordinator's job processing time.
 ###############################################################################
-# [Reference documentation]
+# [Dependencies]
 # - doc/DESIGN.md
 # - doc/design/INTERNAL_LLM_TOOLS.md (Defines LLM capabilities)
 # - src/dbp/llm_coordinator/component.py (Dependency)

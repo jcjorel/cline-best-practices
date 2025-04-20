@@ -5,7 +5,7 @@
 # [GenAI coding tool directive]
 # - Maintain this header with all modifications
 # - Update History section with each change
-# - Keep only the 4 most recent records in the history section. Sort from older to newer.
+# - Keep only the 4 most recent records in the history section. Sort from newer to older.
 # - Preserve Intent, Design, and Constraints sections
 # - Use this header as context for code reviews and modifications
 # - Ensure all changes align with the design principles
@@ -37,7 +37,7 @@
 # - Assumes API keys are passed in a specific header (`X-API-Key`).
 # - Permission matching logic is basic (exact match or wildcard).
 ###############################################################################
-# [Reference documentation]
+# [Dependencies]
 # - doc/DESIGN.md
 # - doc/SECURITY.md
 # - src/dbp/config/config_schema.py (MCPServerConfig, APIKeyEntry)

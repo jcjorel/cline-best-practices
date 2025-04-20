@@ -5,7 +5,7 @@
 # [GenAI coding tool directive]
 # - Maintain this header with all modifications
 # - Update History section with each change
-# - Keep only the 4 most recent records in the history section. Sort from older to newer.
+# - Keep only the 4 most recent records in the history section. Sort from newer to older.
 # - Preserve Intent, Design, and Constraints sections
 # - Use this header as context for code reviews and modifications
 # - Ensure all changes align with the design principles
@@ -31,7 +31,7 @@
 # - Keyring functionality depends on the optional `keyring` library and backend availability.
 # - Assumes the MCP server uses `X-API-Key` header for authentication.
 ###############################################################################
-# [Reference documentation]
+# [Dependencies]
 # - src/dbp_cli/config.py
 # - src/dbp_cli/exceptions.py
 ###############################################################################

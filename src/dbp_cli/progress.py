@@ -5,7 +5,7 @@
 # [GenAI coding tool directive]
 # - Maintain this header with all modifications
 # - Update History section with each change
-# - Keep only the 4 most recent records in the history section. Sort from older to newer.
+# - Keep only the 4 most recent records in the history section. Sort from newer to older.
 # - Preserve Intent, Design, and Constraints sections
 # - Use this header as context for code reviews and modifications
 # - Ensure all changes align with the design principles
@@ -25,7 +25,7 @@
 # - Assumes running in a TTY environment for correct display.
 # - Animation is basic and might not be suitable for all terminal types.
 ###############################################################################
-# [Reference documentation]
+# [Dependencies]
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T11:00:35Z : Initial creation of ProgressIndicator class by CodeAssistant
