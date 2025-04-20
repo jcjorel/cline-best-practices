@@ -115,8 +115,9 @@ After completing the deep-dive analysis, present a prioritized list of remediati
 3. `<project_root>/doc/DESIGN.md` for architectural principles
 4. `<project_root>/doc/DESIGN_DECISIONS.md` for recent design decisions not yet incorporated into DESIGN.md
 5. `<project_root>/doc/DATA_MODEL.md` for database structures
-6. `<project_root>/doc/DOCUMENT_RELATIONSHIPS.md` for documentation dependencies
-7. Markdown files listed in the "[Reference documentation]" section of file headers
+6. `<project_root>/doc/API.md` for external APIs
+7. `<project_root>/doc/DOCUMENT_RELATIONSHIPS.md` for documentation dependencies
+8. Markdown files listed in the "[Reference documentation]" section of file headers
 
 Additionally, for business/functional/mock/feature-related tasks ONLY *OR* when in DESIGN mode:
 - `<project_root>/doc/PR-FAQ.md` and `/doc/WORKING_BACKWARDS.md` for project vision
