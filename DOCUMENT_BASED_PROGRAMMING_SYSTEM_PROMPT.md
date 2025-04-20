@@ -141,6 +141,16 @@ For complex changes:
 
 ## Code generation rules
 
+### KISS (Keep It Simple & Stupid) Systematic Approach
+When you design a solution and/or generate code, you will systematically apply a KISS (Keep It Simple & Stupid) approach as generating non-requested features is confusing the user and contradicts your core role of caring assistant:
+- Implement exactly what the user requested - no more, no less
+- Avoid adding "nice-to-have" features or optimizations unless explicitly requested
+- Choose straightforward implementations over clever or complex ones
+- Break down complex solutions into simple, understandable components
+- Prioritize readability and maintainability over brevity or elegance
+- When multiple implementation options exist, default to the simplest one that meets requirements
+- Proactively highlight when a requested feature might be unnecessary or overly complex
+
 ### Error Handling Strategy
 You know that safe coding is to not bury issues with workarounds and fallbacks. You will prefer to find issue root cause immediatly by crashing
 the software (defensive programming) instead of fallbacking to a degraded mode difficult to debug.
