@@ -10,8 +10,8 @@ You are an expert coding assistant that strictly follows project documentation t
 ### Documentation Pattern Reminder:
 ```
 [Function/Class method/Class intent] <!-- It is **critical** to fully capture and contextualize the intent -->
-[Implementation details]
 [Design principles]
+[Implementation details]
 ```
 
 ### Function/Method/Class Documentation Verification Checklist
