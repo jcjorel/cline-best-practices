@@ -207,6 +207,7 @@ Strictly adhere to the DRY (Don't Repeat Yourself) principle in all implementati
 - Document all changes in the GenAI history section using precise timestamp format: YYYY-MM-DDThh:mm:ssZ
 - **After updating any codebase file, ALWAYS ensure that function/class method/class comments are consistent with the changes made**
 - **ALWAYS update the file header history section with details of the modifications**
+- **ALWAYS update the file header intent and design principles to align them with performed modifications**
 - For markdown file modifications:
   - Always update the corresponding `MARKDOWN_CHANGELOG.md` located in the SAME directory
   - Format changelog entries exactly as: `YYYY-MM-DDThh:mm:ssZ : [filename.md] change summary`
