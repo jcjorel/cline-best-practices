@@ -224,3 +224,41 @@ Migrations completed successfully.
 
 --- SERVER START ATTEMPT AT 2025-04-20 03:52:25 ---
 
+Using database URL from alembic.ini: sqlite:///.dbp/database.sqlite
+Running migrations on database URL: sqlite:///.dbp/database.sqlite
+No alembic_version table found or other error: Not an executable object: 'SELECT version_num FROM alembic_version'
+This is expected for a fresh database.
+Starting migrations transaction...
+Migrations completed successfully.
+
+
+--- SERVER START ATTEMPT AT 2025-04-20 04:03:34 ---
+
+
+
+--- SERVER START ATTEMPT AT 2025-04-20 04:04:40 ---
+
+Using database URL from alembic.ini: sqlite:///.dbp/database.sqlite
+Running migrations on database URL: sqlite:///.dbp/database.sqlite
+No alembic_version table found or other error: Not an executable object: 'SELECT version_num FROM alembic_version'
+This is expected for a fresh database.
+Starting migrations transaction...
+Migrations completed successfully.
+
+
+--- SERVER START ATTEMPT AT 2025-04-20 04:16:45 ---
+
+
+
+--- SERVER START ATTEMPT AT 2025-04-20 10:23:29 ---
+
+
+
+--- SERVER START ATTEMPT AT 2025-04-20 10:26:08 ---
+
+Using database URL from alembic.ini: sqlite:///.dbp/database.sqlite
+Running migrations on database URL: sqlite:///.dbp/database.sqlite
+No alembic_version table found or other error: Not an executable object: 'SELECT version_num FROM alembic_version'
+This is expected for a fresh database.
+Starting migrations transaction...
+Migrations completed successfully.

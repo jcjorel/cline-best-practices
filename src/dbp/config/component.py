@@ -38,6 +38,11 @@
 # - src/dbp/config/config_manager.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T10:21:00Z : Fixed initialization flag naming by CodeAssistant
+# * Updated attribute name from _is_initialized to _initialized for base class compatibility
+# * Added super().__init__() call in constructor to ensure proper initialization
+# * Fixed is_initialized property implementation to use standard attribute name
+# * Fixed shutdown method to use correct attribute name
 # 2025-04-20T01:44:31Z : Completed dependency injection refactoring by CodeAssistant
 # * Removed dependencies property
 # * Made dependencies parameter required in initialize method
@@ -84,7 +89,7 @@ class ConfigManagerComponent(Component):
             config_manager: Optional pre-initialized ConfigurationManager instance.
                            If None, uses the singleton instance.
         """
-        self._is_initialized = False
+        super().__init__()  # Initialize the base Component class properly
         # Use provided instance or get singleton
         self._config_manager = config_manager or ConfigurationManager()
         self.logger = logging.getLogger(f"{__name__}.{self.name}")
@@ -131,7 +136,7 @@ class ConfigManagerComponent(Component):
             self.logger.error("Failed to set project.root_path in configuration")
             raise RuntimeError("Failed to set project.root_path in configuration")
         
-        self._is_initialized = True
+        self._initialized = True
         self.logger.info(f"Component '{self.name}' initialized successfully.")
 
     def shutdown(self) -> None:
@@ -140,13 +145,13 @@ class ConfigManagerComponent(Component):
         No cleanup needed for ConfigurationManager.
         """
         self.logger.info(f"Shutting down component '{self.name}'...")
-        self._is_initialized = False
+        self._initialized = False
         self.logger.info(f"Component '{self.name}' shut down.")
 
     @property
     def is_initialized(self) -> bool:
         """Returns True if the component is initialized."""
-        return self._is_initialized
+        return self._initialized
 
     def get(self, key: str, resolve_templates: bool = True) -> Any:
         """

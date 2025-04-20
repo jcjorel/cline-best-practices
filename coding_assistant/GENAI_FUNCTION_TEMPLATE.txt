@@ -1,0 +1,160 @@
+# Function/Method/Class Documentation Templates
+
+This file provides templates for documenting functions, methods, and classes in various programming languages. These templates MUST be followed for all code in this project without exception.
+
+## Common Documentation Pattern
+
+All functions, methods, and classes MUST include the three-section documentation pattern regardless of size or complexity:
+
+```
+[Function/Class method/Class intent]
+[Design principles]
+[Implementation details]
+```
+
+These three sections MUST appear in this exact order.
+
+## Python Documentation Template
+
+```python
+def function_name(param1, param2, optional_param=None):
+    """
+    [Function intent]
+    Clear description of the function's purpose and role in the system.
+    
+    [Design principles]
+    Patterns and approaches used, along with rationale for design choices.
+    
+    [Implementation details]
+    Key technical implementation notes like algorithms used, processing flow, etc.
+    
+    Args:
+        param1 (type): Description of first parameter
+        param2 (type): Description of second parameter
+        optional_param (type, optional): Description of optional parameter. Defaults to None.
+        
+    Returns:
+        type: Description of return value
+        
+    Raises:
+        ExceptionType: When and why this exception is raised
+    """
+    # Implementation...
+```
+
+### Python Class Documentation Template
+
+```python
+class ClassName:
+    """
+    [Class intent]
+    Clear description of the class's purpose and role in the system.
+    
+    [Design principles]
+    Patterns and approaches used, along with rationale for design choices.
+    
+    [Implementation details]
+    Key technical implementation notes, inheritance details, etc.
+    """
+    
+    def __init__(self, param1, param2=None):
+        """
+        [Class method intent]
+        Initialize a new instance of the class.
+        
+        [Design principles]
+        Design decisions related to initialization.
+        
+        [Implementation details]
+        How parameters are stored and initial state is set up.
+        
+        Args:
+            param1 (type): Description of first parameter
+            param2 (type, optional): Description of second parameter. Defaults to None.
+        """
+        # Implementation...
+    
+    def method_name(self, param):
+        """
+        [Class method intent]
+        What this method does.
+        
+        [Design principles]
+        Why it was designed this way.
+        
+        [Implementation details]
+        How this method works.
+        
+        Args:
+            param (type): Description of parameter
+            
+        Returns:
+            type: Description of return value
+        """
+        # Implementation...
+```
+
+## Bash Documentation Template
+
+```bash
+#!/usr/bin/env bash
+
+# [Script intent]
+# Clear description of the script's purpose and role in the system.
+#
+# [Design principles]
+# Patterns and approaches used, along with rationale for design choices.
+#
+# [Implementation details]
+# Key technical implementation notes like algorithms used, processing flow, etc.
+#
+# Usage: script_name.sh [OPTIONS]
+# Options:
+#   -h, --help     Show usage information
+#   -v, --verbose  Enable verbose output
+#   -f FILE        Specify input file
+#
+# Environment Variables:
+#   ENV_VAR_NAME - Description of environment variable
+#
+# Exit Codes:
+#   0 - Success
+#   1 - General error
+#   2 - Invalid arguments
+
+# Function documentation
+# [Function intent]
+# Clear description of the function's purpose.
+#
+# [Design principles]
+# Why the function is designed this way.
+#
+# [Implementation details]
+# How the function works internally.
+#
+# Arguments:
+#   $1 - Description of first argument
+#   $2 - Description of second argument
+#
+# Outputs:
+#   Writes results to stdout or specific file
+#
+# Returns:
+#   0 on success, non-zero on error
+function function_name() {
+  # Implementation...
+  return 0
+}
+```
+
+---
+
+# Documentation Compliance Verification Checklist
+
+After implementing any function, method, class, or script, ALWAYS verify:
+
+1. ✓ Documentation includes all THREE required sections: "[Function/Class method/Class intent]", "[Design principles]", and "[Implementation details]" in that exact order
+2. ✓ Parameter and return documentation matches the actual function signature
+3. ✓ Exception/error documentation covers all possible error cases
+4. ✓ Comments match the actual implementation (no outdated documentation)
+5. ✓ Documentation uses the appropriate language-specific formatting shown above

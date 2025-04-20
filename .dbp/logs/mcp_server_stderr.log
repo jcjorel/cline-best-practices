@@ -5622,3 +5622,978 @@ INFO  [sqlalchemy.engine.Engine] COMMIT
 2025-04-20 03:52:26,150 - dbp.database.alembic_manager - INFO - Running migration with enhanced logging...
 INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
 INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+WARNI [dbp.fs_monitor.base] LinuxFileSystemMonitor thread did not exit cleanly.
+ERROR:    Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/starlette/routing.py", line 699, in lifespan
+    await receive()
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/uvicorn/lifespan/on.py", line 137, in receive
+    return await self.receive_queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/queues.py", line 158, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+WARNI [dbp.mcp_server.__main__] Server exit detected
+WARNI [dbp.mcp_server.__main__] Exit source: main() completion
+WARNI [dbp.mcp_server.__main__] Exit reason: Normal server shutdown
+WARNI [dbp.mcp_server.__main__] Server exit detected
+WARNI [dbp.mcp_server.__main__] Exit source: Python interpreter shutdown
+WARNI [dbp.mcp_server.__main__] Exit reason: Process exit via atexit
+
+
+--- SERVER START ATTEMPT AT 2025-04-20 04:03:34 ---
+
+2025-04-20 04:03:34,829 - root - DEBUG - Application logging initialized at level debug with consistent formatting
+2025-04-20 04:03:34,829 - dbp.mcp_server.__main__ - DEBUG - Using watchdog timeout from configuration: 20s
+2025-04-20 04:03:34,829 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for signal 15
+2025-04-20 04:03:34,830 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for signal 2
+2025-04-20 04:03:34,830 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 1
+2025-04-20 04:03:34,830 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 3
+2025-04-20 04:03:34,830 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 6
+2025-04-20 04:03:34,830 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 10
+2025-04-20 04:03:34,830 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 12
+2025-04-20 04:03:34,830 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for unhandled exceptions
+2025-04-20 04:03:34,830 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for normal process termination
+2025-04-20 04:03:34,830 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG SETUP: Initializing watchdog with 20s timeout
+2025-04-20 04:03:34,830 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG SETUP: Initial timestamp: 1745114614.830345
+2025-04-20 04:03:34,830 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG THREAD STARTED: with 20 second timeout
+2025-04-20 04:03:34,830 - dbp.mcp_server.__main__ - DEBUG - Process keepalive updated at 1745114614.8308995
+2025-04-20 04:03:34,831 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG THREAD INFO: id=140556502095552, name=watchdog_monitor, is_daemon=True
+2025-04-20 04:03:34,831 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-20 04:03:34,831 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG LOOP 1: Sleeping for 5s
+2025-04-20 04:03:34,831 - dbp.mcp_server.__main__ - DEBUG - Arguments: Namespace(host='localhost', port=6231, log_level='debug', log_file=None, startup_timeout=180, startup_check=True, watchdog_timeout=20)
+2025-04-20 04:03:34,832 - dbp.mcp_server.__main__ - DEBUG - Successfully imported MCPServerComponent
+2025-04-20 04:03:34,832 - dbp.mcp_server.__main__ - DEBUG - Environment: {'Python version': '3.12.3 (main, Feb  4 2025, 14:48:35) [GCC 13.3.0]', 'Working directory': '/home/jcjorel/cline-best-practices', 'Module path': '/home/jcjorel/cline-best-practices/src/dbp/mcp_server/__main__.py', 'PATH': '/home/jcjorel/.vscode-server/extensions/ms-python.python-2025.4.0-linux-x64/python_files/deactivate/bash:/home/jcjorel/cline-best-practices/venv/bin:/home/jcjorel/.vscode-server/extensions/ms-python.python-2025.4.0-linux-x64/python_files/deactivate/bash:/home/jcjorel/cline-best-practices/venv/bin:/home/jcjorel/.vscode-server/bin/17baf841131aa23349f217ca7c570c76ee87b957/bin/remote-cli:/home/jcjorel/.local/bin:/home/jcjorel/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/java8path:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/javapath:/mnt/c/Program Files/Microsoft/jdk-11.0.16.101-hotspot/bin:/mnt/c/Program Files/itacsvc:/mnt/c/WINDOWS/system32:/mnt/c/WINDOWS:/mnt/c/WINDOWS/System32/Wbem:/mnt/c/WINDOWS/System32/WindowsPowerShell/v1.0/:/mnt/c/WINDOWS/System32/OpenSSH/:/mnt/c/Program Files/Microchip/xc16/v2.10/bin:/mnt/c/Program Files/dotnet/:/mnt/c/Program Files (x86)/IVI Foundation/VISA/WinNT/Bin/:/mnt/c/Program Files/IVI Foundation/VISA/Win64/Bin/:/mnt/c/Program Files (x86)/IVI Foundation/VISA/WinNT/Bin:/mnt/c/Program Files/PuTTY/:/mnt/c/Program Files (x86)/ACMEGuardian/:/mnt/c/FPC/3.2.2/bin/i386-Win32:/mnt/c/Program Files (x86)/Quarantine/:/mnt/c/Program Files/Oracle/VirtualBox:/mnt/c/Program Files/GitDefender/bin:/mnt/c/Program Files/Amazon/FOPAzureADMAnagementApp/:/mnt/c/Users/jcjorel/AppData/Local/Programs/Python/Python313/Scripts/:/mnt/c/Users/jcjorel/AppData/Local/Programs/Python/Python313/:/mnt/c/Wincupl/WINCUPL/EXE:/mnt/c/Wincupl/WINCUPL/FITTERS:/mnt/c/Users/jcjorel/AppData/Local/Programs/Git/cmd:/mnt/c/Users/jcjorel/AppData/Local/GitDefender/bin:/mnt/c/Users/jcjorel/AppData/Local/Programs/Microsoft VS Code/bin:/mnt/c/Users/jcjorel/.dotnet/tools:/snap/bin:/usr/local/bin:/usr/local/bin', 'PYTHONPATH': ''}
+2025-04-20 04:03:34,832 - dbp.mcp_server.__main__ - DEBUG - FastAPI version: 0.115.12
+2025-04-20 04:03:34,832 - dbp.mcp_server.__main__ - DEBUG - Uvicorn available: uvicorn
+2025-04-20 04:03:34,832 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-20 04:03:34,832 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-20 04:03:34,832 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-20 04:03:34,832 - dbp.mcp_server.__main__ - DEBUG - Successfully imported tool classes
+2025-04-20 04:03:34,832 - dbp.mcp_server.__main__ - DEBUG - Successfully imported resource classes
+2025-04-20 04:03:34,832 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-20 04:03:34,833 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-20 04:03:34,833 - dbp.config.config_manager - WARNING - ConfigurationManager already initialized. Skipping re-initialization.
+2025-04-20 04:03:34,833 - dbp.core.lifecycle - INFO - Registering components with registry...
+2025-04-20 04:03:34,833 - dbp.core.lifecycle - INFO - Using component enablement configuration
+2025-04-20 04:03:34,833 - dbp.core.lifecycle - INFO - Registered component factory: 'config_manager' with dependencies: []
+2025-04-20 04:03:34,833 - dbp.core.lifecycle - INFO - Registered component class: 'file_access' with dependencies: []
+2025-04-20 04:03:34,833 - dbp.core.lifecycle - INFO - Registered component class: 'database' with dependencies: ['config_manager']
+2025-04-20 04:03:34,867 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-20 04:03:34,868 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-20 04:03:34,869 - dbp.core.lifecycle - INFO - Registered component class: 'change_queue' with dependencies: ['config_manager']
+2025-04-20 04:03:34,869 - dbp.core.lifecycle - INFO - Registered component class: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-20 04:03:34,869 - dbp.core.lifecycle - INFO - Registered component class: 'filter' with dependencies: ['config_manager']
+2025-04-20 04:03:34,869 - dbp.core.lifecycle - INFO - Registered component class: 'memory_cache' with dependencies: ['database', 'config_manager']
+2025-04-20 04:03:34,869 - dbp.core.lifecycle - INFO - Registered component class: 'metadata_extraction' with dependencies: ['database']
+2025-04-20 04:03:34,869 - dbp.core.lifecycle - INFO - Registered component class: 'doc_relationships' with dependencies: ['database', 'metadata_extraction', 'file_access']
+2025-04-20 04:03:34,869 - dbp.core.lifecycle - INFO - Registered component class: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-20 04:03:34,869 - dbp.core.lifecycle - INFO - Registered component class: 'recommendation_generator' with dependencies: ['consistency_analysis', 'database', 'llm_coordinator']
+2025-04-20 04:03:34,871 - dbp.core.lifecycle - INFO - Registered component class: 'scheduler' with dependencies: ['config_manager', 'fs_monitor', 'metadata_extraction']
+2025-04-20 04:03:34,871 - dbp.core.lifecycle - INFO - Registered component class: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-20 04:03:34,871 - dbp.core.lifecycle - INFO - Registered component class: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator']
+2025-04-20 04:03:34,871 - dbp.core.lifecycle - INFO - Registered 14 components with registry
+2025-04-20 04:03:34,871 - dbp.core.registry - INFO - Registering 14 components with system
+2025-04-20 04:03:34,871 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-20 04:03:34,871 - dbp.core.lifecycle - INFO - Registering component: 'file_access' with dependencies: []
+2025-04-20 04:03:34,871 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-20 04:03:34,871 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-20 04:03:34,871 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-20 04:03:34,871 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-20 04:03:34,871 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database', 'config_manager']
+2025-04-20 04:03:34,871 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-20 04:03:34,871 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction', 'file_access']
+2025-04-20 04:03:34,871 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-20 04:03:34,871 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['consistency_analysis', 'database', 'llm_coordinator']
+2025-04-20 04:03:34,871 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['config_manager', 'fs_monitor', 'metadata_extraction']
+2025-04-20 04:03:34,871 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-20 04:03:34,871 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator']
+2025-04-20 04:03:34,872 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-20 04:03:34,872 - dbp.core.lifecycle - INFO - Initializing 14 components
+2025-04-20 04:03:34,872 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-20 04:03:34,872 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, llm_coordinator, change_queue, fs_monitor, database, file_access, memory_cache, filter, metadata_extraction, doc_relationships, consistency_analysis, recommendation_generator, mcp_server, scheduler
+2025-04-20 04:03:34,872 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-20 04:03:34,872 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-20 04:03:34,872 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-20 04:03:34,872 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-20 04:03:34,873 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-20 04:03:34,873 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-20 04:03:34,873 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-20 04:03:34,873 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-20 04:03:34,873 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator'...
+2025-04-20 04:03:34,873 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-20 04:03:34,873 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-20 04:03:34,873 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'llm_coordinator'
+2025-04-20 04:03:34,873 - dbp.core.lifecycle.llm_coordinator - INFO - Initializing component 'llm_coordinator'...
+2025-04-20 04:03:34,874 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Getting Bedrock client manager instance', 'region': 'us-east-1', 'component': 'CoordinatorLLM'}
+2025-04-20 04:03:34,874 - dbp.core.lifecycle.llm_coordinator.coordinator_llm.bedrock - INFO - {'message': 'Bedrock client manager initialized', 'default_region': 'us-east-1', 'prompt_manager_configured': True}
+2025-04-20 04:03:34,874 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Bedrock client manager instance retrieved successfully', 'component': 'CoordinatorLLM'}
+2025-04-20 04:03:34,874 - dbp.llm_coordinator.component - WARNING - Using Placeholder InternalToolExecutionEngine
+2025-04-20 04:03:34,874 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_context' -> execute_codebase_context_tool
+2025-04-20 04:03:34,874 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_changelog_context' -> execute_codebase_changelog_tool
+2025-04-20 04:03:34,874 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_context' -> execute_documentation_context_tool
+2025-04-20 04:03:34,874 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_changelog_context' -> execute_documentation_changelog_tool
+2025-04-20 04:03:34,874 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_expert_architect_advice' -> execute_expert_architect_advice_tool
+2025-04-20 04:03:34,874 - dbp.core.lifecycle.llm_coordinator - INFO - Registered 5 internal tools.
+2025-04-20 04:03:34,874 - dbp.core.lifecycle.llm_coordinator - INFO - Component 'llm_coordinator' initialized successfully.
+2025-04-20 04:03:34,874 - dbp.core.lifecycle - INFO - Component 'llm_coordinator' initialized successfully
+2025-04-20 04:03:34,874 - dbp.core.lifecycle - INFO - Initializing component 'change_queue'...
+2025-04-20 04:03:34,874 - dbp.core.lifecycle - INFO - Initializing component 'change_queue' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-20 04:03:34,874 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-20 04:03:34,874 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'change_queue'
+2025-04-20 04:03:34,874 - dbp.change_queue - INFO - Initializing component 'change_queue'...
+2025-04-20 04:03:34,874 - dbp.change_queue - INFO - Component 'change_queue' initialized successfully.
+2025-04-20 04:03:34,874 - dbp.core.lifecycle - INFO - Component 'change_queue' initialized successfully
+2025-04-20 04:03:34,874 - dbp.core.lifecycle - INFO - Initializing component 'fs_monitor'...
+2025-04-20 04:03:34,874 - dbp.core.lifecycle - INFO - Initializing component 'fs_monitor' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-20 04:03:34,874 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-20 04:03:34,874 - dbp.core.lifecycle - INFO - Resolved 2 dependencies for component 'fs_monitor'
+2025-04-20 04:03:34,874 - dbp.core.lifecycle.fs_monitor.fs_monitor - INFO - Initializing component 'fs_monitor'...
+2025-04-20 04:03:34,874 - dbp.core.lifecycle.fs_monitor.fs_monitor - INFO - Change queue component successfully initialized
+2025-04-20 04:03:34,874 - dbp.core.lifecycle.fs_monitor.fs_monitor - INFO - Creating monitor for platform with project root: /home/jcjorel/cline-best-practices
+2025-04-20 04:03:34,874 - dbp.fs_monitor.factory - INFO - Creating File System Monitor...
+2025-04-20 04:03:34,936 - dbp.fs_monitor.filter - INFO - Found 3 .gitignore files.
+2025-04-20 04:03:34,937 - dbp.fs_monitor.filter - INFO - GitIgnoreFilter initialized with 37 patterns.
+2025-04-20 04:03:34,937 - dbp.fs_monitor.queue - INFO - Event filter set to: GitIgnoreFilter
+2025-04-20 04:03:34,937 - dbp.fs_monitor.factory - INFO - Detected Operating System: Linux
+2025-04-20 04:03:34,937 - dbp.fs_monitor.factory - INFO - Selected LinuxFileSystemMonitor (inotify).
+2025-04-20 04:03:34,937 - dbp.fs_monitor.base - INFO - Starting LinuxFileSystemMonitor...
+2025-04-20 04:03:34,937 - dbp.fs_monitor.linux - INFO - Linux file system monitor started successfully.
+2025-04-20 04:03:34,937 - dbp.core.lifecycle.fs_monitor.fs_monitor - INFO - File system monitoring started
+2025-04-20 04:03:34,937 - dbp.core.lifecycle.fs_monitor.fs_monitor - INFO - Component 'fs_monitor' initialized successfully
+2025-04-20 04:03:34,937 - dbp.core.lifecycle - INFO - Component 'fs_monitor' initialized successfully
+2025-04-20 04:03:34,937 - dbp.core.lifecycle - INFO - Initializing component 'database'...
+2025-04-20 04:03:34,938 - dbp.core.lifecycle - INFO - Initializing component 'database' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-20 04:03:34,938 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-20 04:03:34,938 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'database'
+2025-04-20 04:03:34,938 - dbp.database - INFO - Initializing component 'database'...
+2025-04-20 04:03:34,938 - dbp.database.database - INFO - Initializing database with type: sqlite
+2025-04-20 04:03:34,938 - dbp.database.database - INFO - Initializing SQLite database at: .dbp/database.sqlite
+2025-04-20 04:03:34,938 - dbp.database.database - INFO - SQLite configuration: pool_size=4, timeout=5
+2025-04-20 04:03:34,938 - dbp.database.database - INFO - SQLite path: absolute=/home/jcjorel/cline-best-practices/.dbp/database.sqlite, normalized=.dbp/database.sqlite
+2025-04-20 04:03:34,944 - dbp.database.database - INFO - Enabling SQLite WAL mode...
+2025-04-20 04:03:34,945 - dbp.database.database - INFO - SQLite WAL mode enabled. Current journal mode: wal
+2025-04-20 04:03:34,945 - dbp.database.alembic_manager - INFO - Running Alembic migrations to initialize/update the database schema...
+2025-04-20 04:03:34,945 - dbp.database.alembic_manager - INFO - Enhanced migration verbosity enabled
+2025-04-20 04:03:34,945 - dbp.database.alembic_manager - INFO - Verbose logging enabled for migration operations
+2025-04-20 04:03:35,034 - dbp.database.alembic_manager - INFO - Checking available migration versions...
+2025-04-20 04:03:35,035 - dbp.database.alembic_manager - INFO - Available migration heads: ['20250416_180000']
+2025-04-20 04:03:35,035 - dbp.database.alembic_manager - INFO - Total available revisions: 1
+2025-04-20 04:03:35,035 - dbp.database.alembic_manager - INFO - Latest available revisions:
+2025-04-20 04:03:35,035 - dbp.database.alembic_manager - INFO -   - 20250416_180000: Initial schema
+2025-04-20 04:03:35,035 - dbp.database.alembic_manager - INFO - Running database migrations...
+2025-04-20 04:03:35,035 - dbp.database.alembic_manager - INFO - Migration sequence:
+2025-04-20 04:03:35,035 - dbp.database.alembic_manager - INFO - 1. Testing database connection
+2025-04-20 04:03:35,035 - dbp.database.alembic_manager - INFO - 2. Running upgrade to latest version
+2025-04-20 04:03:35,035 - dbp.database.alembic_manager - INFO - 3. Verifying migration success
+INFO  [sqlalchemy.engine.Engine] BEGIN (implicit)
+2025-04-20 04:03:35,035 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+INFO  [sqlalchemy.engine.Engine] SELECT 1
+2025-04-20 04:03:35,036 - sqlalchemy.engine.Engine - INFO - SELECT 1
+INFO  [sqlalchemy.engine.Engine] [generated in 0.00011s] ()
+2025-04-20 04:03:35,036 - sqlalchemy.engine.Engine - INFO - [generated in 0.00011s] ()
+DEBUG [sqlalchemy.engine.Engine] Col ('1',)
+2025-04-20 04:03:35,036 - sqlalchemy.engine.Engine - DEBUG - Col ('1',)
+INFO  [sqlalchemy.engine.Engine] COMMIT
+2025-04-20 04:03:35,036 - sqlalchemy.engine.Engine - INFO - COMMIT
+INFO  [sqlalchemy.engine.Engine] BEGIN (implicit)
+2025-04-20 04:03:35,036 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+INFO  [sqlalchemy.engine.Engine] SELECT version_num FROM alembic_version
+2025-04-20 04:03:35,036 - sqlalchemy.engine.Engine - INFO - SELECT version_num FROM alembic_version
+INFO  [sqlalchemy.engine.Engine] [generated in 0.00009s] ()
+2025-04-20 04:03:35,036 - sqlalchemy.engine.Engine - INFO - [generated in 0.00009s] ()
+DEBUG [sqlalchemy.engine.Engine] Col ('version_num',)
+2025-04-20 04:03:35,037 - sqlalchemy.engine.Engine - DEBUG - Col ('version_num',)
+DEBUG [sqlalchemy.engine.Engine] Row ('20250416_180000',)
+2025-04-20 04:03:35,037 - sqlalchemy.engine.Engine - DEBUG - Row ('20250416_180000',)
+2025-04-20 04:03:35,037 - dbp.database.alembic_manager - INFO - Current version before migration: 20250416_180000
+INFO  [sqlalchemy.engine.Engine] SELECT name FROM sqlite_master WHERE type='table'
+2025-04-20 04:03:35,037 - sqlalchemy.engine.Engine - INFO - SELECT name FROM sqlite_master WHERE type='table'
+INFO  [sqlalchemy.engine.Engine] [generated in 0.00008s] ()
+2025-04-20 04:03:35,037 - sqlalchemy.engine.Engine - INFO - [generated in 0.00008s] ()
+DEBUG [sqlalchemy.engine.Engine] Col ('name',)
+2025-04-20 04:03:35,037 - sqlalchemy.engine.Engine - DEBUG - Col ('name',)
+DEBUG [sqlalchemy.engine.Engine] Row ('alembic_version',)
+2025-04-20 04:03:35,037 - sqlalchemy.engine.Engine - DEBUG - Row ('alembic_version',)
+DEBUG [sqlalchemy.engine.Engine] Row ('projects',)
+2025-04-20 04:03:35,037 - sqlalchemy.engine.Engine - DEBUG - Row ('projects',)
+DEBUG [sqlalchemy.engine.Engine] Row ('documents',)
+2025-04-20 04:03:35,037 - sqlalchemy.engine.Engine - DEBUG - Row ('documents',)
+DEBUG [sqlalchemy.engine.Engine] Row ('document_relationships',)
+2025-04-20 04:03:35,037 - sqlalchemy.engine.Engine - DEBUG - Row ('document_relationships',)
+DEBUG [sqlalchemy.engine.Engine] Row ('functions',)
+2025-04-20 04:03:35,037 - sqlalchemy.engine.Engine - DEBUG - Row ('functions',)
+DEBUG [sqlalchemy.engine.Engine] Row ('classes',)
+2025-04-20 04:03:35,037 - sqlalchemy.engine.Engine - DEBUG - Row ('classes',)
+DEBUG [sqlalchemy.engine.Engine] Row ('design_decisions',)
+2025-04-20 04:03:35,037 - sqlalchemy.engine.Engine - DEBUG - Row ('design_decisions',)
+DEBUG [sqlalchemy.engine.Engine] Row ('change_records',)
+2025-04-20 04:03:35,037 - sqlalchemy.engine.Engine - DEBUG - Row ('change_records',)
+DEBUG [sqlalchemy.engine.Engine] Row ('inconsistencies',)
+2025-04-20 04:03:35,037 - sqlalchemy.engine.Engine - DEBUG - Row ('inconsistencies',)
+DEBUG [sqlalchemy.engine.Engine] Row ('recommendations',)
+2025-04-20 04:03:35,037 - sqlalchemy.engine.Engine - DEBUG - Row ('recommendations',)
+DEBUG [sqlalchemy.engine.Engine] Row ('suggested_changes',)
+2025-04-20 04:03:35,037 - sqlalchemy.engine.Engine - DEBUG - Row ('suggested_changes',)
+DEBUG [sqlalchemy.engine.Engine] Row ('developer_decisions',)
+2025-04-20 04:03:35,037 - sqlalchemy.engine.Engine - DEBUG - Row ('developer_decisions',)
+DEBUG [sqlalchemy.engine.Engine] Row ('schema_version',)
+2025-04-20 04:03:35,037 - sqlalchemy.engine.Engine - DEBUG - Row ('schema_version',)
+DEBUG [sqlalchemy.engine.Engine] Row ('doc_relationships',)
+2025-04-20 04:03:35,038 - sqlalchemy.engine.Engine - DEBUG - Row ('doc_relationships',)
+DEBUG [sqlalchemy.engine.Engine] Row ('inconsistency_records',)
+2025-04-20 04:03:35,038 - sqlalchemy.engine.Engine - DEBUG - Row ('inconsistency_records',)
+DEBUG [sqlalchemy.engine.Engine] Row ('recommendation_records',)
+2025-04-20 04:03:35,038 - sqlalchemy.engine.Engine - DEBUG - Row ('recommendation_records',)
+DEBUG [sqlalchemy.engine.Engine] Row ('inconsistency_documents',)
+2025-04-20 04:03:35,038 - sqlalchemy.engine.Engine - DEBUG - Row ('inconsistency_documents',)
+DEBUG [sqlalchemy.engine.Engine] Row ('recommendation_inconsistencies',)
+2025-04-20 04:03:35,038 - sqlalchemy.engine.Engine - DEBUG - Row ('recommendation_inconsistencies',)
+2025-04-20 04:03:35,038 - dbp.database.alembic_manager - INFO - Existing tables before migration: ['alembic_version', 'projects', 'documents', 'document_relationships', 'functions', 'classes', 'design_decisions', 'change_records', 'inconsistencies', 'recommendations', 'suggested_changes', 'developer_decisions', 'schema_version', 'doc_relationships', 'inconsistency_records', 'recommendation_records', 'inconsistency_documents', 'recommendation_inconsistencies']
+INFO  [sqlalchemy.engine.Engine] COMMIT
+2025-04-20 04:03:35,038 - sqlalchemy.engine.Engine - INFO - COMMIT
+2025-04-20 04:03:35,038 - dbp.database.alembic_manager - INFO - Upgrading database schema to latest version...
+2025-04-20 04:03:35,038 - dbp.database.alembic_manager - INFO - Running migration with enhanced logging...
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+WARNI [dbp.mcp_server] MCP server is not running.
+
+
+--- SERVER START ATTEMPT AT 2025-04-20 04:04:40 ---
+
+2025-04-20 04:04:40,835 - root - DEBUG - Application logging initialized at level debug with consistent formatting
+2025-04-20 04:04:40,835 - dbp.mcp_server.__main__ - DEBUG - Using watchdog timeout from configuration: 20s
+2025-04-20 04:04:40,835 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for signal 15
+2025-04-20 04:04:40,835 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for signal 2
+2025-04-20 04:04:40,835 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 1
+2025-04-20 04:04:40,835 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 3
+2025-04-20 04:04:40,835 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 6
+2025-04-20 04:04:40,835 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 10
+2025-04-20 04:04:40,835 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 12
+2025-04-20 04:04:40,835 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for unhandled exceptions
+2025-04-20 04:04:40,835 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for normal process termination
+2025-04-20 04:04:40,835 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG SETUP: Initializing watchdog with 20s timeout
+2025-04-20 04:04:40,835 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG SETUP: Initial timestamp: 1745114680.8356616
+2025-04-20 04:04:40,835 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG THREAD STARTED: with 20 second timeout
+2025-04-20 04:04:40,835 - dbp.mcp_server.__main__ - DEBUG - Process keepalive updated at 1745114680.8358796
+2025-04-20 04:04:40,836 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG THREAD INFO: id=139649236993728, name=watchdog_monitor, is_daemon=True
+2025-04-20 04:04:40,836 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG LOOP 1: Sleeping for 5s
+2025-04-20 04:04:40,836 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-20 04:04:40,836 - dbp.mcp_server.__main__ - DEBUG - Arguments: Namespace(host='localhost', port=6231, log_level='debug', log_file=None, startup_timeout=180, startup_check=True, watchdog_timeout=20)
+2025-04-20 04:04:40,836 - dbp.mcp_server.__main__ - DEBUG - Successfully imported MCPServerComponent
+2025-04-20 04:04:40,836 - dbp.mcp_server.__main__ - DEBUG - Environment: {'Python version': '3.12.3 (main, Feb  4 2025, 14:48:35) [GCC 13.3.0]', 'Working directory': '/home/jcjorel/cline-best-practices', 'Module path': '/home/jcjorel/cline-best-practices/src/dbp/mcp_server/__main__.py', 'PATH': '/home/jcjorel/.vscode-server/extensions/ms-python.python-2025.4.0-linux-x64/python_files/deactivate/bash:/home/jcjorel/cline-best-practices/venv/bin:/home/jcjorel/.vscode-server/extensions/ms-python.python-2025.4.0-linux-x64/python_files/deactivate/bash:/home/jcjorel/cline-best-practices/venv/bin:/home/jcjorel/.vscode-server/bin/17baf841131aa23349f217ca7c570c76ee87b957/bin/remote-cli:/home/jcjorel/.local/bin:/home/jcjorel/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/java8path:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/javapath:/mnt/c/Program Files/Microsoft/jdk-11.0.16.101-hotspot/bin:/mnt/c/Program Files/itacsvc:/mnt/c/WINDOWS/system32:/mnt/c/WINDOWS:/mnt/c/WINDOWS/System32/Wbem:/mnt/c/WINDOWS/System32/WindowsPowerShell/v1.0/:/mnt/c/WINDOWS/System32/OpenSSH/:/mnt/c/Program Files/Microchip/xc16/v2.10/bin:/mnt/c/Program Files/dotnet/:/mnt/c/Program Files (x86)/IVI Foundation/VISA/WinNT/Bin/:/mnt/c/Program Files/IVI Foundation/VISA/Win64/Bin/:/mnt/c/Program Files (x86)/IVI Foundation/VISA/WinNT/Bin:/mnt/c/Program Files/PuTTY/:/mnt/c/Program Files (x86)/ACMEGuardian/:/mnt/c/FPC/3.2.2/bin/i386-Win32:/mnt/c/Program Files (x86)/Quarantine/:/mnt/c/Program Files/Oracle/VirtualBox:/mnt/c/Program Files/GitDefender/bin:/mnt/c/Program Files/Amazon/FOPAzureADMAnagementApp/:/mnt/c/Users/jcjorel/AppData/Local/Programs/Python/Python313/Scripts/:/mnt/c/Users/jcjorel/AppData/Local/Programs/Python/Python313/:/mnt/c/Wincupl/WINCUPL/EXE:/mnt/c/Wincupl/WINCUPL/FITTERS:/mnt/c/Users/jcjorel/AppData/Local/Programs/Git/cmd:/mnt/c/Users/jcjorel/AppData/Local/GitDefender/bin:/mnt/c/Users/jcjorel/AppData/Local/Programs/Microsoft VS Code/bin:/mnt/c/Users/jcjorel/.dotnet/tools:/snap/bin:/usr/local/bin:/usr/local/bin', 'PYTHONPATH': ''}
+2025-04-20 04:04:40,836 - dbp.mcp_server.__main__ - DEBUG - FastAPI version: 0.115.12
+2025-04-20 04:04:40,836 - dbp.mcp_server.__main__ - DEBUG - Uvicorn available: uvicorn
+2025-04-20 04:04:40,836 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-20 04:04:40,836 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-20 04:04:40,836 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-20 04:04:40,836 - dbp.mcp_server.__main__ - DEBUG - Successfully imported tool classes
+2025-04-20 04:04:40,836 - dbp.mcp_server.__main__ - DEBUG - Successfully imported resource classes
+2025-04-20 04:04:40,836 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-20 04:04:40,836 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-20 04:04:40,836 - dbp.config.config_manager - WARNING - ConfigurationManager already initialized. Skipping re-initialization.
+2025-04-20 04:04:40,836 - dbp.core.lifecycle - INFO - Registering components with registry...
+2025-04-20 04:04:40,836 - dbp.core.lifecycle - INFO - Using component enablement configuration
+2025-04-20 04:04:40,836 - dbp.core.lifecycle - INFO - Registered component factory: 'config_manager' with dependencies: []
+2025-04-20 04:04:40,836 - dbp.core.lifecycle - INFO - Registered component class: 'file_access' with dependencies: []
+2025-04-20 04:04:40,836 - dbp.core.lifecycle - INFO - Registered component class: 'database' with dependencies: ['config_manager']
+2025-04-20 04:04:40,865 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-20 04:04:40,866 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-20 04:04:40,867 - dbp.core.lifecycle - INFO - Registered component class: 'change_queue' with dependencies: ['config_manager']
+2025-04-20 04:04:40,867 - dbp.core.lifecycle - INFO - Registered component class: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-20 04:04:40,867 - dbp.core.lifecycle - INFO - Registered component class: 'filter' with dependencies: ['config_manager']
+2025-04-20 04:04:40,867 - dbp.core.lifecycle - INFO - Registered component class: 'memory_cache' with dependencies: ['database', 'config_manager']
+2025-04-20 04:04:40,867 - dbp.core.lifecycle - INFO - Registered component class: 'metadata_extraction' with dependencies: ['database']
+2025-04-20 04:04:40,867 - dbp.core.lifecycle - INFO - Registered component class: 'doc_relationships' with dependencies: ['database', 'metadata_extraction', 'file_access']
+2025-04-20 04:04:40,867 - dbp.core.lifecycle - INFO - Registered component class: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-20 04:04:40,867 - dbp.core.lifecycle - INFO - Registered component class: 'recommendation_generator' with dependencies: ['consistency_analysis', 'database', 'llm_coordinator']
+2025-04-20 04:04:40,868 - dbp.core.lifecycle - INFO - Registered component class: 'scheduler' with dependencies: ['config_manager', 'fs_monitor', 'metadata_extraction']
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Registered component class: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Registered component class: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator']
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Registered 14 components with registry
+2025-04-20 04:04:40,869 - dbp.core.registry - INFO - Registering 14 components with system
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Registering component: 'file_access' with dependencies: []
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database', 'config_manager']
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction', 'file_access']
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['consistency_analysis', 'database', 'llm_coordinator']
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['config_manager', 'fs_monitor', 'metadata_extraction']
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator']
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Initializing 14 components
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, filter, database, metadata_extraction, file_access, doc_relationships, change_queue, fs_monitor, consistency_analysis, memory_cache, scheduler, llm_coordinator, recommendation_generator, mcp_server
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-20 04:04:40,869 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-20 04:04:40,869 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-20 04:04:40,870 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-20 04:04:40,870 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-20 04:04:40,870 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-20 04:04:40,870 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-20 04:04:40,870 - dbp.core.lifecycle - INFO - Initializing component 'filter'...
+2025-04-20 04:04:40,870 - dbp.core.lifecycle - INFO - Initializing component 'filter' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-20 04:04:40,870 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-20 04:04:40,870 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'filter'
+2025-04-20 04:04:40,870 - dbp.filter - INFO - Initializing component 'filter'...
+2025-04-20 04:04:40,917 - dbp.fs_monitor.filter - INFO - Found 3 .gitignore files.
+2025-04-20 04:04:40,917 - dbp.fs_monitor.filter - INFO - GitIgnoreFilter initialized with 45 patterns.
+2025-04-20 04:04:40,917 - dbp.filter - INFO - Component 'filter' initialized successfully.
+2025-04-20 04:04:40,917 - dbp.core.lifecycle - INFO - Component 'filter' initialized successfully
+2025-04-20 04:04:40,917 - dbp.core.lifecycle - INFO - Initializing component 'database'...
+2025-04-20 04:04:40,917 - dbp.core.lifecycle - INFO - Initializing component 'database' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-20 04:04:40,917 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-20 04:04:40,917 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'database'
+2025-04-20 04:04:40,917 - dbp.database - INFO - Initializing component 'database'...
+2025-04-20 04:04:40,917 - dbp.database.database - INFO - Initializing database with type: sqlite
+2025-04-20 04:04:40,917 - dbp.database.database - INFO - Initializing SQLite database at: .dbp/database.sqlite
+2025-04-20 04:04:40,917 - dbp.database.database - INFO - SQLite configuration: pool_size=4, timeout=5
+2025-04-20 04:04:40,917 - dbp.database.database - INFO - SQLite path: absolute=/home/jcjorel/cline-best-practices/.dbp/database.sqlite, normalized=.dbp/database.sqlite
+2025-04-20 04:04:40,922 - dbp.database.database - INFO - Enabling SQLite WAL mode...
+2025-04-20 04:04:40,922 - dbp.database.database - INFO - SQLite WAL mode enabled. Current journal mode: wal
+2025-04-20 04:04:40,923 - dbp.database.alembic_manager - INFO - Running Alembic migrations to initialize/update the database schema...
+2025-04-20 04:04:40,923 - dbp.database.alembic_manager - INFO - Enhanced migration verbosity enabled
+2025-04-20 04:04:40,923 - dbp.database.alembic_manager - INFO - Verbose logging enabled for migration operations
+2025-04-20 04:04:40,982 - dbp.database.alembic_manager - INFO - Checking available migration versions...
+2025-04-20 04:04:40,982 - dbp.database.alembic_manager - INFO - Available migration heads: ['20250416_180000']
+2025-04-20 04:04:40,983 - dbp.database.alembic_manager - INFO - Total available revisions: 1
+2025-04-20 04:04:40,983 - dbp.database.alembic_manager - INFO - Latest available revisions:
+2025-04-20 04:04:40,983 - dbp.database.alembic_manager - INFO -   - 20250416_180000: Initial schema
+2025-04-20 04:04:40,983 - dbp.database.alembic_manager - INFO - Running database migrations...
+2025-04-20 04:04:40,983 - dbp.database.alembic_manager - INFO - Migration sequence:
+2025-04-20 04:04:40,983 - dbp.database.alembic_manager - INFO - 1. Testing database connection
+2025-04-20 04:04:40,983 - dbp.database.alembic_manager - INFO - 2. Running upgrade to latest version
+2025-04-20 04:04:40,983 - dbp.database.alembic_manager - INFO - 3. Verifying migration success
+INFO  [sqlalchemy.engine.Engine] BEGIN (implicit)
+2025-04-20 04:04:40,983 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+INFO  [sqlalchemy.engine.Engine] SELECT 1
+2025-04-20 04:04:40,983 - sqlalchemy.engine.Engine - INFO - SELECT 1
+INFO  [sqlalchemy.engine.Engine] [generated in 0.00007s] ()
+2025-04-20 04:04:40,983 - sqlalchemy.engine.Engine - INFO - [generated in 0.00007s] ()
+DEBUG [sqlalchemy.engine.Engine] Col ('1',)
+2025-04-20 04:04:40,983 - sqlalchemy.engine.Engine - DEBUG - Col ('1',)
+INFO  [sqlalchemy.engine.Engine] COMMIT
+2025-04-20 04:04:40,983 - sqlalchemy.engine.Engine - INFO - COMMIT
+INFO  [sqlalchemy.engine.Engine] BEGIN (implicit)
+2025-04-20 04:04:40,983 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+INFO  [sqlalchemy.engine.Engine] SELECT version_num FROM alembic_version
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - INFO - SELECT version_num FROM alembic_version
+INFO  [sqlalchemy.engine.Engine] [generated in 0.00005s] ()
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - INFO - [generated in 0.00005s] ()
+DEBUG [sqlalchemy.engine.Engine] Col ('version_num',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Col ('version_num',)
+DEBUG [sqlalchemy.engine.Engine] Row ('20250416_180000',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Row ('20250416_180000',)
+2025-04-20 04:04:40,984 - dbp.database.alembic_manager - INFO - Current version before migration: 20250416_180000
+INFO  [sqlalchemy.engine.Engine] SELECT name FROM sqlite_master WHERE type='table'
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - INFO - SELECT name FROM sqlite_master WHERE type='table'
+INFO  [sqlalchemy.engine.Engine] [generated in 0.00006s] ()
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - INFO - [generated in 0.00006s] ()
+DEBUG [sqlalchemy.engine.Engine] Col ('name',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Col ('name',)
+DEBUG [sqlalchemy.engine.Engine] Row ('alembic_version',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Row ('alembic_version',)
+DEBUG [sqlalchemy.engine.Engine] Row ('projects',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Row ('projects',)
+DEBUG [sqlalchemy.engine.Engine] Row ('documents',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Row ('documents',)
+DEBUG [sqlalchemy.engine.Engine] Row ('document_relationships',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Row ('document_relationships',)
+DEBUG [sqlalchemy.engine.Engine] Row ('functions',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Row ('functions',)
+DEBUG [sqlalchemy.engine.Engine] Row ('classes',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Row ('classes',)
+DEBUG [sqlalchemy.engine.Engine] Row ('design_decisions',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Row ('design_decisions',)
+DEBUG [sqlalchemy.engine.Engine] Row ('change_records',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Row ('change_records',)
+DEBUG [sqlalchemy.engine.Engine] Row ('inconsistencies',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Row ('inconsistencies',)
+DEBUG [sqlalchemy.engine.Engine] Row ('recommendations',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Row ('recommendations',)
+DEBUG [sqlalchemy.engine.Engine] Row ('suggested_changes',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Row ('suggested_changes',)
+DEBUG [sqlalchemy.engine.Engine] Row ('developer_decisions',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Row ('developer_decisions',)
+DEBUG [sqlalchemy.engine.Engine] Row ('schema_version',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Row ('schema_version',)
+DEBUG [sqlalchemy.engine.Engine] Row ('doc_relationships',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Row ('doc_relationships',)
+DEBUG [sqlalchemy.engine.Engine] Row ('inconsistency_records',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Row ('inconsistency_records',)
+DEBUG [sqlalchemy.engine.Engine] Row ('recommendation_records',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Row ('recommendation_records',)
+DEBUG [sqlalchemy.engine.Engine] Row ('inconsistency_documents',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Row ('inconsistency_documents',)
+DEBUG [sqlalchemy.engine.Engine] Row ('recommendation_inconsistencies',)
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - DEBUG - Row ('recommendation_inconsistencies',)
+2025-04-20 04:04:40,984 - dbp.database.alembic_manager - INFO - Existing tables before migration: ['alembic_version', 'projects', 'documents', 'document_relationships', 'functions', 'classes', 'design_decisions', 'change_records', 'inconsistencies', 'recommendations', 'suggested_changes', 'developer_decisions', 'schema_version', 'doc_relationships', 'inconsistency_records', 'recommendation_records', 'inconsistency_documents', 'recommendation_inconsistencies']
+INFO  [sqlalchemy.engine.Engine] COMMIT
+2025-04-20 04:04:40,984 - sqlalchemy.engine.Engine - INFO - COMMIT
+2025-04-20 04:04:40,984 - dbp.database.alembic_manager - INFO - Upgrading database schema to latest version...
+2025-04-20 04:04:40,985 - dbp.database.alembic_manager - INFO - Running migration with enhanced logging...
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+ERROR:    Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/starlette/routing.py", line 699, in lifespan
+    await receive()
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/uvicorn/lifespan/on.py", line 137, in receive
+    return await self.receive_queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/queues.py", line 158, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+WARNI [dbp.fs_monitor.base] LinuxFileSystemMonitor thread did not exit cleanly.
+WARNI [dbp.mcp_server.__main__] Server exit detected
+WARNI [dbp.mcp_server.__main__] Exit source: main() completion
+WARNI [dbp.mcp_server.__main__] Exit reason: Normal server shutdown
+WARNI [dbp.mcp_server.__main__] Server exit detected
+WARNI [dbp.mcp_server.__main__] Exit source: Python interpreter shutdown
+WARNI [dbp.mcp_server.__main__] Exit reason: Process exit via atexit
+
+
+--- SERVER START ATTEMPT AT 2025-04-20 04:16:45 ---
+
+2025-04-20 04:16:46,784 - root - DEBUG - Application logging initialized at level debug with consistent formatting
+2025-04-20 04:16:46,784 - dbp.mcp_server.__main__ - DEBUG - Using watchdog timeout from configuration: 20s
+2025-04-20 04:16:46,784 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for signal 15
+2025-04-20 04:16:46,784 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for signal 2
+2025-04-20 04:16:46,784 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 1
+2025-04-20 04:16:46,785 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 3
+2025-04-20 04:16:46,785 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 6
+2025-04-20 04:16:46,785 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 10
+2025-04-20 04:16:46,785 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 12
+2025-04-20 04:16:46,785 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for unhandled exceptions
+2025-04-20 04:16:46,785 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for normal process termination
+2025-04-20 04:16:46,785 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG SETUP: Initializing watchdog with 20s timeout
+2025-04-20 04:16:46,785 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG SETUP: Initial timestamp: 1745115406.7853699
+2025-04-20 04:16:46,785 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG THREAD STARTED: with 20 second timeout
+2025-04-20 04:16:46,786 - dbp.mcp_server.__main__ - DEBUG - Process keepalive updated at 1745115406.7861211
+2025-04-20 04:16:46,786 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG THREAD INFO: id=139900375852736, name=watchdog_monitor, is_daemon=True
+2025-04-20 04:16:46,786 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-20 04:16:46,787 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG LOOP 1: Sleeping for 5s
+2025-04-20 04:16:46,787 - dbp.mcp_server.__main__ - DEBUG - Arguments: Namespace(host='localhost', port=6231, log_level='debug', log_file=None, startup_timeout=180, startup_check=True, watchdog_timeout=20)
+2025-04-20 04:16:46,788 - dbp.mcp_server.__main__ - DEBUG - Successfully imported MCPServerComponent
+2025-04-20 04:16:46,788 - dbp.mcp_server.__main__ - DEBUG - Environment: {'Python version': '3.12.3 (main, Feb  4 2025, 14:48:35) [GCC 13.3.0]', 'Working directory': '/home/jcjorel/cline-best-practices', 'Module path': '/home/jcjorel/cline-best-practices/src/dbp/mcp_server/__main__.py', 'PATH': '/home/jcjorel/.vscode-server/extensions/ms-python.python-2025.4.0-linux-x64/python_files/deactivate/bash:/home/jcjorel/cline-best-practices/venv/bin:/home/jcjorel/.vscode-server/extensions/ms-python.python-2025.4.0-linux-x64/python_files/deactivate/bash:/home/jcjorel/cline-best-practices/venv/bin:/home/jcjorel/.vscode-server/bin/17baf841131aa23349f217ca7c570c76ee87b957/bin/remote-cli:/home/jcjorel/.local/bin:/home/jcjorel/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/java8path:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/javapath:/mnt/c/Program Files/Microsoft/jdk-11.0.16.101-hotspot/bin:/mnt/c/Program Files/itacsvc:/mnt/c/WINDOWS/system32:/mnt/c/WINDOWS:/mnt/c/WINDOWS/System32/Wbem:/mnt/c/WINDOWS/System32/WindowsPowerShell/v1.0/:/mnt/c/WINDOWS/System32/OpenSSH/:/mnt/c/Program Files/Microchip/xc16/v2.10/bin:/mnt/c/Program Files/dotnet/:/mnt/c/Program Files (x86)/IVI Foundation/VISA/WinNT/Bin/:/mnt/c/Program Files/IVI Foundation/VISA/Win64/Bin/:/mnt/c/Program Files (x86)/IVI Foundation/VISA/WinNT/Bin:/mnt/c/Program Files/PuTTY/:/mnt/c/Program Files (x86)/ACMEGuardian/:/mnt/c/FPC/3.2.2/bin/i386-Win32:/mnt/c/Program Files (x86)/Quarantine/:/mnt/c/Program Files/Oracle/VirtualBox:/mnt/c/Program Files/GitDefender/bin:/mnt/c/Program Files/Amazon/FOPAzureADMAnagementApp/:/mnt/c/Users/jcjorel/AppData/Local/Programs/Python/Python313/Scripts/:/mnt/c/Users/jcjorel/AppData/Local/Programs/Python/Python313/:/mnt/c/Wincupl/WINCUPL/EXE:/mnt/c/Wincupl/WINCUPL/FITTERS:/mnt/c/Users/jcjorel/AppData/Local/Programs/Git/cmd:/mnt/c/Users/jcjorel/AppData/Local/GitDefender/bin:/mnt/c/Users/jcjorel/AppData/Local/Programs/Microsoft VS Code/bin:/mnt/c/Users/jcjorel/.dotnet/tools:/snap/bin:/usr/local/bin:/usr/local/bin', 'PYTHONPATH': ''}
+2025-04-20 04:16:46,788 - dbp.mcp_server.__main__ - DEBUG - FastAPI version: 0.115.12
+2025-04-20 04:16:46,788 - dbp.mcp_server.__main__ - DEBUG - Uvicorn available: uvicorn
+2025-04-20 04:16:46,788 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-20 04:16:46,788 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-20 04:16:46,789 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-20 04:16:46,789 - dbp.mcp_server.__main__ - DEBUG - Successfully imported tool classes
+2025-04-20 04:16:46,789 - dbp.mcp_server.__main__ - DEBUG - Successfully imported resource classes
+2025-04-20 04:16:46,789 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-20 04:16:46,790 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-20 04:16:46,790 - dbp.config.config_manager - WARNING - ConfigurationManager already initialized. Skipping re-initialization.
+2025-04-20 04:16:46,790 - dbp.core.lifecycle - INFO - Registering components with registry...
+2025-04-20 04:16:46,790 - dbp.core.lifecycle - INFO - Using component enablement configuration
+2025-04-20 04:16:46,790 - dbp.core.lifecycle - INFO - Registered component factory: 'config_manager' with dependencies: []
+2025-04-20 04:16:46,790 - dbp.core.lifecycle - INFO - Registered component class: 'file_access' with dependencies: []
+2025-04-20 04:16:46,790 - dbp.core.lifecycle - INFO - Registered component class: 'database' with dependencies: ['config_manager']
+2025-04-20 04:16:46,826 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-20 04:16:46,827 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-20 04:16:46,827 - dbp.core.lifecycle - INFO - Registered component class: 'change_queue' with dependencies: ['config_manager']
+2025-04-20 04:16:46,828 - dbp.core.lifecycle - INFO - Registered component class: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-20 04:16:46,828 - dbp.core.lifecycle - INFO - Registered component class: 'filter' with dependencies: ['config_manager']
+2025-04-20 04:16:46,828 - dbp.core.lifecycle - INFO - Registered component class: 'memory_cache' with dependencies: ['database', 'config_manager']
+2025-04-20 04:16:46,828 - dbp.core.lifecycle - INFO - Registered component class: 'metadata_extraction' with dependencies: ['database']
+2025-04-20 04:16:46,828 - dbp.core.lifecycle - INFO - Registered component class: 'doc_relationships' with dependencies: ['database', 'metadata_extraction', 'file_access']
+2025-04-20 04:16:46,828 - dbp.core.lifecycle - INFO - Registered component class: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-20 04:16:46,828 - dbp.core.lifecycle - INFO - Registered component class: 'recommendation_generator' with dependencies: ['consistency_analysis', 'database', 'llm_coordinator']
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Registered component class: 'scheduler' with dependencies: ['config_manager', 'fs_monitor', 'metadata_extraction']
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Registered component class: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Registered component class: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator']
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Registered 14 components with registry
+2025-04-20 04:16:46,830 - dbp.core.registry - INFO - Registering 14 components with system
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Registering component: 'file_access' with dependencies: []
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database', 'config_manager']
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction', 'file_access']
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['consistency_analysis', 'database', 'llm_coordinator']
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['config_manager', 'fs_monitor', 'metadata_extraction']
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator']
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Initializing 14 components
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Component initialization order: file_access, config_manager, change_queue, fs_monitor, filter, llm_coordinator, database, memory_cache, metadata_extraction, scheduler, doc_relationships, consistency_analysis, recommendation_generator, mcp_server
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Initializing component 'file_access'...
+2025-04-20 04:16:46,830 - dbp.core.lifecycle - INFO - Initializing component 'file_access' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-20 04:16:46,831 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-20 04:16:46,831 - dbp.core.lifecycle.file_access.file_access - INFO - Initializing component 'file_access'...
+2025-04-20 04:16:46,831 - dbp.core.lifecycle.file_access.file_access - INFO - Component 'file_access' initialized successfully
+2025-04-20 04:16:46,831 - dbp.core.lifecycle - INFO - Component 'file_access' initialized successfully
+2025-04-20 04:16:46,831 - dbp.core.lifecycle - CRITICAL - A critical error occurred during system startup: 'ConfigManagerComponent' object has no attribute '_is_initialized'
+Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/src/dbp/core/lifecycle.py", line 394, in start
+    success = self.system.initialize_all()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/core/system.py", line 263, in initialize_all
+    if component.is_initialized:
+       ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jcjorel/cline-best-practices/src/dbp/config/component.py", line 149, in is_initialized
+    return self._is_initialized
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'ConfigManagerComponent' object has no attribute '_is_initialized'. Did you mean: 'is_initialized'?
+2025-04-20 04:16:46,832 - dbp.mcp_server.__main__ - CRITICAL - Failed to start components
+2025-04-20 04:16:46,832 - dbp.mcp_server.__main__ - ERROR - Error collecting diagnostic information: 'ConfigManagerComponent' object has no attribute '_is_initialized'
+2025-04-20 04:16:46,832 - dbp.mcp_server.__main__ - WARNING - Server exit detected
+2025-04-20 04:16:46,832 - dbp.mcp_server.__main__ - WARNING - Exit source: LifecycleManager.start()
+2025-04-20 04:16:46,832 - dbp.mcp_server.__main__ - WARNING - Exit reason: Failed to start components
+2025-04-20 04:16:46,832 - dbp.mcp_server.__main__ - WARNING - Server exit detected
+2025-04-20 04:16:46,832 - dbp.mcp_server.__main__ - WARNING - Exit source: Python interpreter shutdown
+2025-04-20 04:16:46,832 - dbp.mcp_server.__main__ - WARNING - Exit reason: Process exit via atexit
+
+
+--- SERVER START ATTEMPT AT 2025-04-20 10:23:29 ---
+
+2025-04-20 10:23:30,165 - root - DEBUG - Application logging initialized at level debug with consistent formatting
+2025-04-20 10:23:30,165 - dbp.mcp_server.__main__ - DEBUG - Using watchdog timeout from configuration: 20s
+2025-04-20 10:23:30,165 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for signal 15
+2025-04-20 10:23:30,165 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for signal 2
+2025-04-20 10:23:30,165 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 1
+2025-04-20 10:23:30,165 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 3
+2025-04-20 10:23:30,165 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 6
+2025-04-20 10:23:30,165 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 10
+2025-04-20 10:23:30,165 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 12
+2025-04-20 10:23:30,165 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for unhandled exceptions
+2025-04-20 10:23:30,165 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for normal process termination
+2025-04-20 10:23:30,165 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG SETUP: Initializing watchdog with 20s timeout
+2025-04-20 10:23:30,165 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG SETUP: Initial timestamp: 1745137410.1658237
+2025-04-20 10:23:30,166 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG THREAD STARTED: with 20 second timeout
+2025-04-20 10:23:30,166 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG THREAD INFO: id=140214846428864, name=watchdog_monitor, is_daemon=True
+2025-04-20 10:23:30,166 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG LOOP 1: Sleeping for 5s
+2025-04-20 10:23:30,166 - dbp.mcp_server.__main__ - DEBUG - Process keepalive updated at 1745137410.1664965
+2025-04-20 10:23:30,166 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-20 10:23:30,166 - dbp.mcp_server.__main__ - DEBUG - Arguments: Namespace(host='localhost', port=6231, log_level='debug', log_file=None, startup_timeout=180, startup_check=True, watchdog_timeout=20)
+2025-04-20 10:23:30,166 - dbp.mcp_server.__main__ - DEBUG - Successfully imported MCPServerComponent
+2025-04-20 10:23:30,166 - dbp.mcp_server.__main__ - DEBUG - Environment: {'Python version': '3.12.3 (main, Feb  4 2025, 14:48:35) [GCC 13.3.0]', 'Working directory': '/home/jcjorel/cline-best-practices', 'Module path': '/home/jcjorel/cline-best-practices/src/dbp/mcp_server/__main__.py', 'PATH': '/home/jcjorel/.vscode-server/extensions/ms-python.python-2025.4.0-linux-x64/python_files/deactivate/bash:/home/jcjorel/cline-best-practices/venv/bin:/home/jcjorel/.vscode-server/extensions/ms-python.python-2025.4.0-linux-x64/python_files/deactivate/bash:/home/jcjorel/cline-best-practices/venv/bin:/home/jcjorel/.vscode-server/bin/17baf841131aa23349f217ca7c570c76ee87b957/bin/remote-cli:/home/jcjorel/.local/bin:/home/jcjorel/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/java8path:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/javapath:/mnt/c/Program Files/Microsoft/jdk-11.0.16.101-hotspot/bin:/mnt/c/Program Files/itacsvc:/mnt/c/WINDOWS/system32:/mnt/c/WINDOWS:/mnt/c/WINDOWS/System32/Wbem:/mnt/c/WINDOWS/System32/WindowsPowerShell/v1.0/:/mnt/c/WINDOWS/System32/OpenSSH/:/mnt/c/Program Files/Microchip/xc16/v2.10/bin:/mnt/c/Program Files/dotnet/:/mnt/c/Program Files (x86)/IVI Foundation/VISA/WinNT/Bin/:/mnt/c/Program Files/IVI Foundation/VISA/Win64/Bin/:/mnt/c/Program Files (x86)/IVI Foundation/VISA/WinNT/Bin:/mnt/c/Program Files/PuTTY/:/mnt/c/Program Files (x86)/ACMEGuardian/:/mnt/c/FPC/3.2.2/bin/i386-Win32:/mnt/c/Program Files (x86)/Quarantine/:/mnt/c/Program Files/Oracle/VirtualBox:/mnt/c/Program Files/GitDefender/bin:/mnt/c/Program Files/Amazon/FOPAzureADMAnagementApp/:/mnt/c/Users/jcjorel/AppData/Local/Programs/Python/Python313/Scripts/:/mnt/c/Users/jcjorel/AppData/Local/Programs/Python/Python313/:/mnt/c/Wincupl/WINCUPL/EXE:/mnt/c/Wincupl/WINCUPL/FITTERS:/mnt/c/Users/jcjorel/AppData/Local/Programs/Git/cmd:/mnt/c/Users/jcjorel/AppData/Local/GitDefender/bin:/mnt/c/Users/jcjorel/AppData/Local/Programs/Microsoft VS Code/bin:/mnt/c/Users/jcjorel/.dotnet/tools:/snap/bin:/usr/local/bin:/usr/local/bin', 'PYTHONPATH': ''}
+2025-04-20 10:23:30,166 - dbp.mcp_server.__main__ - DEBUG - FastAPI version: 0.115.12
+2025-04-20 10:23:30,166 - dbp.mcp_server.__main__ - DEBUG - Uvicorn available: uvicorn
+2025-04-20 10:23:30,166 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-20 10:23:30,167 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-20 10:23:30,167 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-20 10:23:30,167 - dbp.mcp_server.__main__ - DEBUG - Successfully imported tool classes
+2025-04-20 10:23:30,167 - dbp.mcp_server.__main__ - DEBUG - Successfully imported resource classes
+2025-04-20 10:23:30,167 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-20 10:23:30,167 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-20 10:23:30,167 - dbp.config.config_manager - WARNING - ConfigurationManager already initialized. Skipping re-initialization.
+2025-04-20 10:23:30,167 - dbp.core.lifecycle - INFO - Registering components with registry...
+2025-04-20 10:23:30,167 - dbp.core.lifecycle - INFO - Using component enablement configuration
+2025-04-20 10:23:30,167 - dbp.core.lifecycle - INFO - Registered component factory: 'config_manager' with dependencies: []
+2025-04-20 10:23:30,167 - dbp.core.lifecycle - INFO - Registered component class: 'file_access' with dependencies: []
+2025-04-20 10:23:30,167 - dbp.core.lifecycle - INFO - Registered component class: 'database' with dependencies: ['config_manager']
+2025-04-20 10:23:30,203 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-20 10:23:30,204 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-20 10:23:30,205 - dbp.core.lifecycle - INFO - Registered component class: 'change_queue' with dependencies: ['config_manager']
+2025-04-20 10:23:30,205 - dbp.core.lifecycle - INFO - Registered component class: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-20 10:23:30,205 - dbp.core.lifecycle - INFO - Registered component class: 'filter' with dependencies: ['config_manager']
+2025-04-20 10:23:30,205 - dbp.core.lifecycle - INFO - Registered component class: 'memory_cache' with dependencies: ['database', 'config_manager']
+2025-04-20 10:23:30,205 - dbp.core.lifecycle - INFO - Registered component class: 'metadata_extraction' with dependencies: ['database']
+2025-04-20 10:23:30,205 - dbp.core.lifecycle - INFO - Registered component class: 'doc_relationships' with dependencies: ['database', 'metadata_extraction', 'file_access']
+2025-04-20 10:23:30,205 - dbp.core.lifecycle - INFO - Registered component class: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-20 10:23:30,205 - dbp.core.lifecycle - INFO - Registered component class: 'recommendation_generator' with dependencies: ['consistency_analysis', 'database', 'llm_coordinator']
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Registered component class: 'scheduler' with dependencies: ['config_manager', 'fs_monitor', 'metadata_extraction']
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Registered component class: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Registered component class: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator']
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Registered 14 components with registry
+2025-04-20 10:23:30,207 - dbp.core.registry - INFO - Registering 14 components with system
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Registering component: 'file_access' with dependencies: []
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database', 'config_manager']
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction', 'file_access']
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['consistency_analysis', 'database', 'llm_coordinator']
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['config_manager', 'fs_monitor', 'metadata_extraction']
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator']
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Initializing 14 components
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Component initialization order: file_access, config_manager, change_queue, fs_monitor, llm_coordinator, filter, database, memory_cache, metadata_extraction, doc_relationships, consistency_analysis, scheduler, recommendation_generator, mcp_server
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Initializing component 'file_access'...
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Initializing component 'file_access' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-20 10:23:30,207 - dbp.core.lifecycle.file_access.file_access - INFO - Initializing component 'file_access'...
+2025-04-20 10:23:30,207 - dbp.core.lifecycle.file_access.file_access - INFO - Component 'file_access' initialized successfully
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Component 'file_access' initialized successfully
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-20 10:23:30,207 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-20 10:23:30,207 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-20 10:23:30,209 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-20 10:23:30,209 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-20 10:23:30,209 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-20 10:23:30,209 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-20 10:23:30,209 - dbp.core.lifecycle - INFO - Initializing component 'change_queue'...
+2025-04-20 10:23:30,209 - dbp.core.lifecycle - INFO - Initializing component 'change_queue' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-20 10:23:30,209 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-20 10:23:30,209 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'change_queue'
+2025-04-20 10:23:30,209 - dbp.change_queue - INFO - Initializing component 'change_queue'...
+2025-04-20 10:23:30,209 - dbp.change_queue - INFO - Component 'change_queue' initialized successfully.
+2025-04-20 10:23:30,209 - dbp.core.lifecycle - INFO - Component 'change_queue' initialized successfully
+2025-04-20 10:23:30,209 - dbp.core.lifecycle - INFO - Initializing component 'fs_monitor'...
+2025-04-20 10:23:30,209 - dbp.core.lifecycle - INFO - Initializing component 'fs_monitor' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-20 10:23:30,209 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-20 10:23:30,209 - dbp.core.lifecycle - INFO - Resolved 2 dependencies for component 'fs_monitor'
+2025-04-20 10:23:30,209 - dbp.core.lifecycle.fs_monitor.fs_monitor - INFO - Initializing component 'fs_monitor'...
+2025-04-20 10:23:30,209 - dbp.core.lifecycle.fs_monitor.fs_monitor - INFO - Change queue component successfully initialized
+2025-04-20 10:23:30,209 - dbp.core.lifecycle.fs_monitor.fs_monitor - INFO - Creating monitor for platform with project root: /home/jcjorel/cline-best-practices
+2025-04-20 10:23:30,209 - dbp.fs_monitor.factory - INFO - Creating File System Monitor...
+2025-04-20 10:23:30,257 - dbp.fs_monitor.filter - INFO - Found 3 .gitignore files.
+2025-04-20 10:23:30,257 - dbp.fs_monitor.filter - INFO - GitIgnoreFilter initialized with 37 patterns.
+2025-04-20 10:23:30,257 - dbp.fs_monitor.queue - INFO - Event filter set to: GitIgnoreFilter
+2025-04-20 10:23:30,257 - dbp.fs_monitor.factory - INFO - Detected Operating System: Linux
+2025-04-20 10:23:30,257 - dbp.fs_monitor.factory - INFO - Selected LinuxFileSystemMonitor (inotify).
+2025-04-20 10:23:30,257 - dbp.fs_monitor.base - INFO - Starting LinuxFileSystemMonitor...
+2025-04-20 10:23:30,258 - dbp.fs_monitor.linux - INFO - Linux file system monitor started successfully.
+2025-04-20 10:23:30,258 - dbp.core.lifecycle.fs_monitor.fs_monitor - INFO - File system monitoring started
+2025-04-20 10:23:30,258 - dbp.core.lifecycle.fs_monitor.fs_monitor - INFO - Component 'fs_monitor' initialized successfully
+2025-04-20 10:23:30,258 - dbp.core.lifecycle - INFO - Component 'fs_monitor' initialized successfully
+2025-04-20 10:23:30,258 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator'...
+2025-04-20 10:23:30,258 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-20 10:23:30,258 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-20 10:23:30,258 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'llm_coordinator'
+2025-04-20 10:23:30,258 - dbp.core.lifecycle.llm_coordinator - INFO - Initializing component 'llm_coordinator'...
+2025-04-20 10:23:30,259 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Getting Bedrock client manager instance', 'region': 'us-east-1', 'component': 'CoordinatorLLM'}
+2025-04-20 10:23:30,259 - dbp.core.lifecycle.llm_coordinator.coordinator_llm.bedrock - INFO - {'message': 'Bedrock client manager initialized', 'default_region': 'us-east-1', 'prompt_manager_configured': True}
+2025-04-20 10:23:30,259 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Bedrock client manager instance retrieved successfully', 'component': 'CoordinatorLLM'}
+2025-04-20 10:23:30,259 - dbp.llm_coordinator.component - WARNING - Using Placeholder InternalToolExecutionEngine
+2025-04-20 10:23:30,259 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_context' -> execute_codebase_context_tool
+2025-04-20 10:23:30,259 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_changelog_context' -> execute_codebase_changelog_tool
+2025-04-20 10:23:30,259 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_context' -> execute_documentation_context_tool
+2025-04-20 10:23:30,259 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_changelog_context' -> execute_documentation_changelog_tool
+2025-04-20 10:23:30,259 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_expert_architect_advice' -> execute_expert_architect_advice_tool
+2025-04-20 10:23:30,259 - dbp.core.lifecycle.llm_coordinator - INFO - Registered 5 internal tools.
+2025-04-20 10:23:30,259 - dbp.core.lifecycle.llm_coordinator - INFO - Component 'llm_coordinator' initialized successfully.
+2025-04-20 10:23:30,259 - dbp.core.lifecycle - INFO - Component 'llm_coordinator' initialized successfully
+2025-04-20 10:23:30,259 - dbp.core.lifecycle - INFO - Initializing component 'filter'...
+2025-04-20 10:23:30,259 - dbp.core.lifecycle - INFO - Initializing component 'filter' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-20 10:23:30,259 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-20 10:23:30,259 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'filter'
+2025-04-20 10:23:30,259 - dbp.filter - INFO - Initializing component 'filter'...
+2025-04-20 10:23:30,312 - dbp.fs_monitor.filter - INFO - Found 3 .gitignore files.
+2025-04-20 10:23:30,312 - dbp.fs_monitor.filter - INFO - GitIgnoreFilter initialized with 45 patterns.
+2025-04-20 10:23:30,312 - dbp.filter - INFO - Component 'filter' initialized successfully.
+2025-04-20 10:23:30,312 - dbp.core.lifecycle - INFO - Component 'filter' initialized successfully
+2025-04-20 10:23:30,312 - dbp.core.lifecycle - INFO - Initializing component 'database'...
+2025-04-20 10:23:30,312 - dbp.core.lifecycle - INFO - Initializing component 'database' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-20 10:23:30,312 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-20 10:23:30,312 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'database'
+2025-04-20 10:23:30,312 - dbp.database - INFO - Initializing component 'database'...
+2025-04-20 10:23:30,312 - dbp.database.database - INFO - Initializing database with type: sqlite
+2025-04-20 10:23:30,312 - dbp.database.database - INFO - Initializing SQLite database at: .dbp/database.sqlite
+2025-04-20 10:23:30,312 - dbp.database.database - INFO - SQLite configuration: pool_size=4, timeout=5
+2025-04-20 10:23:30,312 - dbp.database.database - INFO - SQLite path: absolute=/home/jcjorel/cline-best-practices/.dbp/database.sqlite, normalized=.dbp/database.sqlite
+2025-04-20 10:23:30,317 - dbp.database.database - INFO - Enabling SQLite WAL mode...
+2025-04-20 10:23:30,318 - dbp.database.database - INFO - SQLite WAL mode enabled. Current journal mode: wal
+2025-04-20 10:23:30,318 - dbp.database.alembic_manager - INFO - Running Alembic migrations to initialize/update the database schema...
+2025-04-20 10:23:30,318 - dbp.database.alembic_manager - INFO - Enhanced migration verbosity enabled
+2025-04-20 10:23:30,318 - dbp.database.alembic_manager - INFO - Verbose logging enabled for migration operations
+2025-04-20 10:23:30,380 - dbp.database.alembic_manager - INFO - Checking available migration versions...
+2025-04-20 10:23:30,381 - dbp.database.alembic_manager - INFO - Available migration heads: ['20250416_180000']
+2025-04-20 10:23:30,381 - dbp.database.alembic_manager - INFO - Total available revisions: 1
+2025-04-20 10:23:30,381 - dbp.database.alembic_manager - INFO - Latest available revisions:
+2025-04-20 10:23:30,381 - dbp.database.alembic_manager - INFO -   - 20250416_180000: Initial schema
+2025-04-20 10:23:30,381 - dbp.database.alembic_manager - INFO - Running database migrations...
+2025-04-20 10:23:30,381 - dbp.database.alembic_manager - INFO - Migration sequence:
+2025-04-20 10:23:30,381 - dbp.database.alembic_manager - INFO - 1. Testing database connection
+2025-04-20 10:23:30,381 - dbp.database.alembic_manager - INFO - 2. Running upgrade to latest version
+2025-04-20 10:23:30,381 - dbp.database.alembic_manager - INFO - 3. Verifying migration success
+INFO  [sqlalchemy.engine.Engine] BEGIN (implicit)
+2025-04-20 10:23:30,381 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+INFO  [sqlalchemy.engine.Engine] SELECT 1
+2025-04-20 10:23:30,381 - sqlalchemy.engine.Engine - INFO - SELECT 1
+INFO  [sqlalchemy.engine.Engine] [generated in 0.00006s] ()
+2025-04-20 10:23:30,381 - sqlalchemy.engine.Engine - INFO - [generated in 0.00006s] ()
+DEBUG [sqlalchemy.engine.Engine] Col ('1',)
+2025-04-20 10:23:30,381 - sqlalchemy.engine.Engine - DEBUG - Col ('1',)
+INFO  [sqlalchemy.engine.Engine] COMMIT
+2025-04-20 10:23:30,382 - sqlalchemy.engine.Engine - INFO - COMMIT
+INFO  [sqlalchemy.engine.Engine] BEGIN (implicit)
+2025-04-20 10:23:30,382 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+INFO  [sqlalchemy.engine.Engine] SELECT version_num FROM alembic_version
+2025-04-20 10:23:30,382 - sqlalchemy.engine.Engine - INFO - SELECT version_num FROM alembic_version
+INFO  [sqlalchemy.engine.Engine] [generated in 0.00005s] ()
+2025-04-20 10:23:30,382 - sqlalchemy.engine.Engine - INFO - [generated in 0.00005s] ()
+DEBUG [sqlalchemy.engine.Engine] Col ('version_num',)
+2025-04-20 10:23:30,382 - sqlalchemy.engine.Engine - DEBUG - Col ('version_num',)
+DEBUG [sqlalchemy.engine.Engine] Row ('20250416_180000',)
+2025-04-20 10:23:30,382 - sqlalchemy.engine.Engine - DEBUG - Row ('20250416_180000',)
+2025-04-20 10:23:30,382 - dbp.database.alembic_manager - INFO - Current version before migration: 20250416_180000
+INFO  [sqlalchemy.engine.Engine] SELECT name FROM sqlite_master WHERE type='table'
+2025-04-20 10:23:30,382 - sqlalchemy.engine.Engine - INFO - SELECT name FROM sqlite_master WHERE type='table'
+INFO  [sqlalchemy.engine.Engine] [generated in 0.00007s] ()
+2025-04-20 10:23:30,382 - sqlalchemy.engine.Engine - INFO - [generated in 0.00007s] ()
+DEBUG [sqlalchemy.engine.Engine] Col ('name',)
+2025-04-20 10:23:30,382 - sqlalchemy.engine.Engine - DEBUG - Col ('name',)
+DEBUG [sqlalchemy.engine.Engine] Row ('alembic_version',)
+2025-04-20 10:23:30,382 - sqlalchemy.engine.Engine - DEBUG - Row ('alembic_version',)
+DEBUG [sqlalchemy.engine.Engine] Row ('projects',)
+2025-04-20 10:23:30,382 - sqlalchemy.engine.Engine - DEBUG - Row ('projects',)
+DEBUG [sqlalchemy.engine.Engine] Row ('documents',)
+2025-04-20 10:23:30,382 - sqlalchemy.engine.Engine - DEBUG - Row ('documents',)
+DEBUG [sqlalchemy.engine.Engine] Row ('document_relationships',)
+2025-04-20 10:23:30,382 - sqlalchemy.engine.Engine - DEBUG - Row ('document_relationships',)
+DEBUG [sqlalchemy.engine.Engine] Row ('functions',)
+2025-04-20 10:23:30,382 - sqlalchemy.engine.Engine - DEBUG - Row ('functions',)
+DEBUG [sqlalchemy.engine.Engine] Row ('classes',)
+2025-04-20 10:23:30,382 - sqlalchemy.engine.Engine - DEBUG - Row ('classes',)
+DEBUG [sqlalchemy.engine.Engine] Row ('design_decisions',)
+2025-04-20 10:23:30,382 - sqlalchemy.engine.Engine - DEBUG - Row ('design_decisions',)
+DEBUG [sqlalchemy.engine.Engine] Row ('change_records',)
+2025-04-20 10:23:30,382 - sqlalchemy.engine.Engine - DEBUG - Row ('change_records',)
+DEBUG [sqlalchemy.engine.Engine] Row ('inconsistencies',)
+2025-04-20 10:23:30,383 - sqlalchemy.engine.Engine - DEBUG - Row ('inconsistencies',)
+DEBUG [sqlalchemy.engine.Engine] Row ('recommendations',)
+2025-04-20 10:23:30,383 - sqlalchemy.engine.Engine - DEBUG - Row ('recommendations',)
+DEBUG [sqlalchemy.engine.Engine] Row ('suggested_changes',)
+2025-04-20 10:23:30,383 - sqlalchemy.engine.Engine - DEBUG - Row ('suggested_changes',)
+DEBUG [sqlalchemy.engine.Engine] Row ('developer_decisions',)
+2025-04-20 10:23:30,383 - sqlalchemy.engine.Engine - DEBUG - Row ('developer_decisions',)
+DEBUG [sqlalchemy.engine.Engine] Row ('schema_version',)
+2025-04-20 10:23:30,383 - sqlalchemy.engine.Engine - DEBUG - Row ('schema_version',)
+DEBUG [sqlalchemy.engine.Engine] Row ('doc_relationships',)
+2025-04-20 10:23:30,383 - sqlalchemy.engine.Engine - DEBUG - Row ('doc_relationships',)
+DEBUG [sqlalchemy.engine.Engine] Row ('inconsistency_records',)
+2025-04-20 10:23:30,383 - sqlalchemy.engine.Engine - DEBUG - Row ('inconsistency_records',)
+DEBUG [sqlalchemy.engine.Engine] Row ('recommendation_records',)
+2025-04-20 10:23:30,383 - sqlalchemy.engine.Engine - DEBUG - Row ('recommendation_records',)
+DEBUG [sqlalchemy.engine.Engine] Row ('inconsistency_documents',)
+2025-04-20 10:23:30,383 - sqlalchemy.engine.Engine - DEBUG - Row ('inconsistency_documents',)
+DEBUG [sqlalchemy.engine.Engine] Row ('recommendation_inconsistencies',)
+2025-04-20 10:23:30,383 - sqlalchemy.engine.Engine - DEBUG - Row ('recommendation_inconsistencies',)
+2025-04-20 10:23:30,383 - dbp.database.alembic_manager - INFO - Existing tables before migration: ['alembic_version', 'projects', 'documents', 'document_relationships', 'functions', 'classes', 'design_decisions', 'change_records', 'inconsistencies', 'recommendations', 'suggested_changes', 'developer_decisions', 'schema_version', 'doc_relationships', 'inconsistency_records', 'recommendation_records', 'inconsistency_documents', 'recommendation_inconsistencies']
+INFO  [sqlalchemy.engine.Engine] COMMIT
+2025-04-20 10:23:30,383 - sqlalchemy.engine.Engine - INFO - COMMIT
+2025-04-20 10:23:30,383 - dbp.database.alembic_manager - INFO - Upgrading database schema to latest version...
+2025-04-20 10:23:30,383 - dbp.database.alembic_manager - INFO - Running migration with enhanced logging...
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+WARNI [dbp.mcp_server] MCP server is not running.
+
+
+--- SERVER START ATTEMPT AT 2025-04-20 10:26:08 ---
+
+2025-04-20 10:26:09,121 - root - DEBUG - Application logging initialized at level debug with consistent formatting
+2025-04-20 10:26:09,122 - dbp.mcp_server.__main__ - DEBUG - Using watchdog timeout from configuration: 20s
+2025-04-20 10:26:09,122 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for signal 15
+2025-04-20 10:26:09,122 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for signal 2
+2025-04-20 10:26:09,122 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 1
+2025-04-20 10:26:09,122 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 3
+2025-04-20 10:26:09,122 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 6
+2025-04-20 10:26:09,122 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 10
+2025-04-20 10:26:09,122 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 12
+2025-04-20 10:26:09,122 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for unhandled exceptions
+2025-04-20 10:26:09,122 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for normal process termination
+2025-04-20 10:26:09,122 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG SETUP: Initializing watchdog with 20s timeout
+2025-04-20 10:26:09,122 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG SETUP: Initial timestamp: 1745137569.122332
+2025-04-20 10:26:09,122 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG THREAD STARTED: with 20 second timeout
+2025-04-20 10:26:09,122 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG THREAD INFO: id=140675591497408, name=watchdog_monitor, is_daemon=True
+2025-04-20 10:26:09,122 - dbp.mcp_server.__main__ - CRITICAL - WATCHDOG LOOP 1: Sleeping for 5s
+2025-04-20 10:26:09,122 - dbp.mcp_server.__main__ - DEBUG - Process keepalive updated at 1745137569.1229281
+2025-04-20 10:26:09,123 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-20 10:26:09,123 - dbp.mcp_server.__main__ - DEBUG - Arguments: Namespace(host='localhost', port=6231, log_level='debug', log_file=None, startup_timeout=180, startup_check=True, watchdog_timeout=20)
+2025-04-20 10:26:09,123 - dbp.mcp_server.__main__ - DEBUG - Successfully imported MCPServerComponent
+2025-04-20 10:26:09,123 - dbp.mcp_server.__main__ - DEBUG - Environment: {'Python version': '3.12.3 (main, Feb  4 2025, 14:48:35) [GCC 13.3.0]', 'Working directory': '/home/jcjorel/cline-best-practices', 'Module path': '/home/jcjorel/cline-best-practices/src/dbp/mcp_server/__main__.py', 'PATH': '/home/jcjorel/.vscode-server/extensions/ms-python.python-2025.4.0-linux-x64/python_files/deactivate/bash:/home/jcjorel/cline-best-practices/venv/bin:/home/jcjorel/.vscode-server/extensions/ms-python.python-2025.4.0-linux-x64/python_files/deactivate/bash:/home/jcjorel/cline-best-practices/venv/bin:/home/jcjorel/.vscode-server/bin/17baf841131aa23349f217ca7c570c76ee87b957/bin/remote-cli:/home/jcjorel/.local/bin:/home/jcjorel/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/java8path:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/javapath:/mnt/c/Program Files/Microsoft/jdk-11.0.16.101-hotspot/bin:/mnt/c/Program Files/itacsvc:/mnt/c/WINDOWS/system32:/mnt/c/WINDOWS:/mnt/c/WINDOWS/System32/Wbem:/mnt/c/WINDOWS/System32/WindowsPowerShell/v1.0/:/mnt/c/WINDOWS/System32/OpenSSH/:/mnt/c/Program Files/Microchip/xc16/v2.10/bin:/mnt/c/Program Files/dotnet/:/mnt/c/Program Files (x86)/IVI Foundation/VISA/WinNT/Bin/:/mnt/c/Program Files/IVI Foundation/VISA/Win64/Bin/:/mnt/c/Program Files (x86)/IVI Foundation/VISA/WinNT/Bin:/mnt/c/Program Files/PuTTY/:/mnt/c/Program Files (x86)/ACMEGuardian/:/mnt/c/FPC/3.2.2/bin/i386-Win32:/mnt/c/Program Files (x86)/Quarantine/:/mnt/c/Program Files/Oracle/VirtualBox:/mnt/c/Program Files/GitDefender/bin:/mnt/c/Program Files/Amazon/FOPAzureADMAnagementApp/:/mnt/c/Users/jcjorel/AppData/Local/Programs/Python/Python313/Scripts/:/mnt/c/Users/jcjorel/AppData/Local/Programs/Python/Python313/:/mnt/c/Wincupl/WINCUPL/EXE:/mnt/c/Wincupl/WINCUPL/FITTERS:/mnt/c/Users/jcjorel/AppData/Local/Programs/Git/cmd:/mnt/c/Users/jcjorel/AppData/Local/GitDefender/bin:/mnt/c/Users/jcjorel/AppData/Local/Programs/Microsoft VS Code/bin:/mnt/c/Users/jcjorel/.dotnet/tools:/snap/bin:/usr/local/bin:/usr/local/bin', 'PYTHONPATH': ''}
+2025-04-20 10:26:09,123 - dbp.mcp_server.__main__ - DEBUG - FastAPI version: 0.115.12
+2025-04-20 10:26:09,123 - dbp.mcp_server.__main__ - DEBUG - Uvicorn available: uvicorn
+2025-04-20 10:26:09,123 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-20 10:26:09,123 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-20 10:26:09,123 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-20 10:26:09,123 - dbp.mcp_server.__main__ - DEBUG - Successfully imported tool classes
+2025-04-20 10:26:09,123 - dbp.mcp_server.__main__ - DEBUG - Successfully imported resource classes
+2025-04-20 10:26:09,123 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-20 10:26:09,124 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-20 10:26:09,124 - dbp.config.config_manager - WARNING - ConfigurationManager already initialized. Skipping re-initialization.
+2025-04-20 10:26:09,124 - dbp.core.lifecycle - INFO - Registering components with registry...
+2025-04-20 10:26:09,124 - dbp.core.lifecycle - INFO - Using component enablement configuration
+2025-04-20 10:26:09,124 - dbp.core.lifecycle - INFO - Registered component factory: 'config_manager' with dependencies: []
+2025-04-20 10:26:09,124 - dbp.core.lifecycle - INFO - Registered component class: 'file_access' with dependencies: []
+2025-04-20 10:26:09,124 - dbp.core.lifecycle - INFO - Registered component class: 'database' with dependencies: ['config_manager']
+2025-04-20 10:26:09,153 - dbp.fs_monitor.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-04-20 10:26:09,154 - dbp.fs_monitor.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-04-20 10:26:09,154 - dbp.core.lifecycle - INFO - Registered component class: 'change_queue' with dependencies: ['config_manager']
+2025-04-20 10:26:09,154 - dbp.core.lifecycle - INFO - Registered component class: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-20 10:26:09,154 - dbp.core.lifecycle - INFO - Registered component class: 'filter' with dependencies: ['config_manager']
+2025-04-20 10:26:09,154 - dbp.core.lifecycle - INFO - Registered component class: 'memory_cache' with dependencies: ['database', 'config_manager']
+2025-04-20 10:26:09,154 - dbp.core.lifecycle - INFO - Registered component class: 'metadata_extraction' with dependencies: ['database']
+2025-04-20 10:26:09,154 - dbp.core.lifecycle - INFO - Registered component class: 'doc_relationships' with dependencies: ['database', 'metadata_extraction', 'file_access']
+2025-04-20 10:26:09,154 - dbp.core.lifecycle - INFO - Registered component class: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-20 10:26:09,154 - dbp.core.lifecycle - INFO - Registered component class: 'recommendation_generator' with dependencies: ['consistency_analysis', 'database', 'llm_coordinator']
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Registered component class: 'scheduler' with dependencies: ['config_manager', 'fs_monitor', 'metadata_extraction']
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Registered component class: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Registered component class: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator']
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Registered 14 components with registry
+2025-04-20 10:26:09,156 - dbp.core.registry - INFO - Registering 14 components with system
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Registering component: 'file_access' with dependencies: []
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Registering component: 'database' with dependencies: ['config_manager']
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Registering component: 'change_queue' with dependencies: ['config_manager']
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager', 'change_queue']
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Registering component: 'filter' with dependencies: ['config_manager']
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Registering component: 'memory_cache' with dependencies: ['database', 'config_manager']
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Registering component: 'metadata_extraction' with dependencies: ['database']
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Registering component: 'doc_relationships' with dependencies: ['database', 'metadata_extraction', 'file_access']
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Registering component: 'consistency_analysis' with dependencies: ['database', 'doc_relationships', 'metadata_extraction']
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Registering component: 'recommendation_generator' with dependencies: ['consistency_analysis', 'database', 'llm_coordinator']
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Registering component: 'scheduler' with dependencies: ['config_manager', 'fs_monitor', 'metadata_extraction']
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager']
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['consistency_analysis', 'recommendation_generator']
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Initializing 14 components
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Component initialization order: file_access, config_manager, filter, database, memory_cache, change_queue, fs_monitor, llm_coordinator, metadata_extraction, doc_relationships, consistency_analysis, scheduler, recommendation_generator, mcp_server
+2025-04-20 10:26:09,156 - dbp.core.lifecycle - INFO - Initializing component 'file_access'...
+2025-04-20 10:26:09,157 - dbp.core.lifecycle - INFO - Initializing component 'file_access' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-20 10:26:09,157 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-20 10:26:09,157 - dbp.core.lifecycle.file_access.file_access - INFO - Initializing component 'file_access'...
+2025-04-20 10:26:09,157 - dbp.core.lifecycle.file_access.file_access - INFO - Component 'file_access' initialized successfully
+2025-04-20 10:26:09,157 - dbp.core.lifecycle - INFO - Component 'file_access' initialized successfully
+2025-04-20 10:26:09,157 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-20 10:26:09,157 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-20 10:26:09,157 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-20 10:26:09,157 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-20 10:26:09,158 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-20 10:26:09,158 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-20 10:26:09,159 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-20 10:26:09,159 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-20 10:26:09,159 - dbp.core.lifecycle - INFO - Initializing component 'filter'...
+2025-04-20 10:26:09,159 - dbp.core.lifecycle - INFO - Initializing component 'filter' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-20 10:26:09,159 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-20 10:26:09,159 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'filter'
+2025-04-20 10:26:09,159 - dbp.filter - INFO - Initializing component 'filter'...
+2025-04-20 10:26:09,203 - dbp.fs_monitor.filter - INFO - Found 3 .gitignore files.
+2025-04-20 10:26:09,203 - dbp.fs_monitor.filter - INFO - GitIgnoreFilter initialized with 45 patterns.
+2025-04-20 10:26:09,203 - dbp.filter - INFO - Component 'filter' initialized successfully.
+2025-04-20 10:26:09,203 - dbp.core.lifecycle - INFO - Component 'filter' initialized successfully
+2025-04-20 10:26:09,203 - dbp.core.lifecycle - INFO - Initializing component 'database'...
+2025-04-20 10:26:09,203 - dbp.core.lifecycle - INFO - Initializing component 'database' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-20 10:26:09,203 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-20 10:26:09,203 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'database'
+2025-04-20 10:26:09,203 - dbp.database - INFO - Initializing component 'database'...
+2025-04-20 10:26:09,203 - dbp.database.database - INFO - Initializing database with type: sqlite
+2025-04-20 10:26:09,203 - dbp.database.database - INFO - Initializing SQLite database at: .dbp/database.sqlite
+2025-04-20 10:26:09,203 - dbp.database.database - INFO - SQLite configuration: pool_size=4, timeout=5
+2025-04-20 10:26:09,204 - dbp.database.database - INFO - SQLite path: absolute=/home/jcjorel/cline-best-practices/.dbp/database.sqlite, normalized=.dbp/database.sqlite
+2025-04-20 10:26:09,208 - dbp.database.database - INFO - Enabling SQLite WAL mode...
+2025-04-20 10:26:09,209 - dbp.database.database - INFO - SQLite WAL mode enabled. Current journal mode: wal
+2025-04-20 10:26:09,209 - dbp.database.alembic_manager - INFO - Running Alembic migrations to initialize/update the database schema...
+2025-04-20 10:26:09,209 - dbp.database.alembic_manager - INFO - Enhanced migration verbosity enabled
+2025-04-20 10:26:09,209 - dbp.database.alembic_manager - INFO - Verbose logging enabled for migration operations
+2025-04-20 10:26:09,261 - dbp.database.alembic_manager - INFO - Checking available migration versions...
+2025-04-20 10:26:09,262 - dbp.database.alembic_manager - INFO - Available migration heads: ['20250416_180000']
+2025-04-20 10:26:09,262 - dbp.database.alembic_manager - INFO - Total available revisions: 1
+2025-04-20 10:26:09,262 - dbp.database.alembic_manager - INFO - Latest available revisions:
+2025-04-20 10:26:09,262 - dbp.database.alembic_manager - INFO -   - 20250416_180000: Initial schema
+2025-04-20 10:26:09,262 - dbp.database.alembic_manager - INFO - Running database migrations...
+2025-04-20 10:26:09,262 - dbp.database.alembic_manager - INFO - Migration sequence:
+2025-04-20 10:26:09,262 - dbp.database.alembic_manager - INFO - 1. Testing database connection
+2025-04-20 10:26:09,262 - dbp.database.alembic_manager - INFO - 2. Running upgrade to latest version
+2025-04-20 10:26:09,262 - dbp.database.alembic_manager - INFO - 3. Verifying migration success
+INFO  [sqlalchemy.engine.Engine] BEGIN (implicit)
+2025-04-20 10:26:09,262 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+INFO  [sqlalchemy.engine.Engine] SELECT 1
+2025-04-20 10:26:09,263 - sqlalchemy.engine.Engine - INFO - SELECT 1
+INFO  [sqlalchemy.engine.Engine] [generated in 0.00008s] ()
+2025-04-20 10:26:09,263 - sqlalchemy.engine.Engine - INFO - [generated in 0.00008s] ()
+DEBUG [sqlalchemy.engine.Engine] Col ('1',)
+2025-04-20 10:26:09,263 - sqlalchemy.engine.Engine - DEBUG - Col ('1',)
+INFO  [sqlalchemy.engine.Engine] COMMIT
+2025-04-20 10:26:09,263 - sqlalchemy.engine.Engine - INFO - COMMIT
+INFO  [sqlalchemy.engine.Engine] BEGIN (implicit)
+2025-04-20 10:26:09,263 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+INFO  [sqlalchemy.engine.Engine] SELECT version_num FROM alembic_version
+2025-04-20 10:26:09,263 - sqlalchemy.engine.Engine - INFO - SELECT version_num FROM alembic_version
+INFO  [sqlalchemy.engine.Engine] [generated in 0.00007s] ()
+2025-04-20 10:26:09,263 - sqlalchemy.engine.Engine - INFO - [generated in 0.00007s] ()
+DEBUG [sqlalchemy.engine.Engine] Col ('version_num',)
+2025-04-20 10:26:09,263 - sqlalchemy.engine.Engine - DEBUG - Col ('version_num',)
+DEBUG [sqlalchemy.engine.Engine] Row ('20250416_180000',)
+2025-04-20 10:26:09,263 - sqlalchemy.engine.Engine - DEBUG - Row ('20250416_180000',)
+2025-04-20 10:26:09,263 - dbp.database.alembic_manager - INFO - Current version before migration: 20250416_180000
+INFO  [sqlalchemy.engine.Engine] SELECT name FROM sqlite_master WHERE type='table'
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - INFO - SELECT name FROM sqlite_master WHERE type='table'
+INFO  [sqlalchemy.engine.Engine] [generated in 0.00006s] ()
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - INFO - [generated in 0.00006s] ()
+DEBUG [sqlalchemy.engine.Engine] Col ('name',)
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - DEBUG - Col ('name',)
+DEBUG [sqlalchemy.engine.Engine] Row ('alembic_version',)
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - DEBUG - Row ('alembic_version',)
+DEBUG [sqlalchemy.engine.Engine] Row ('projects',)
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - DEBUG - Row ('projects',)
+DEBUG [sqlalchemy.engine.Engine] Row ('documents',)
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - DEBUG - Row ('documents',)
+DEBUG [sqlalchemy.engine.Engine] Row ('document_relationships',)
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - DEBUG - Row ('document_relationships',)
+DEBUG [sqlalchemy.engine.Engine] Row ('functions',)
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - DEBUG - Row ('functions',)
+DEBUG [sqlalchemy.engine.Engine] Row ('classes',)
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - DEBUG - Row ('classes',)
+DEBUG [sqlalchemy.engine.Engine] Row ('design_decisions',)
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - DEBUG - Row ('design_decisions',)
+DEBUG [sqlalchemy.engine.Engine] Row ('change_records',)
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - DEBUG - Row ('change_records',)
+DEBUG [sqlalchemy.engine.Engine] Row ('inconsistencies',)
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - DEBUG - Row ('inconsistencies',)
+DEBUG [sqlalchemy.engine.Engine] Row ('recommendations',)
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - DEBUG - Row ('recommendations',)
+DEBUG [sqlalchemy.engine.Engine] Row ('suggested_changes',)
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - DEBUG - Row ('suggested_changes',)
+DEBUG [sqlalchemy.engine.Engine] Row ('developer_decisions',)
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - DEBUG - Row ('developer_decisions',)
+DEBUG [sqlalchemy.engine.Engine] Row ('schema_version',)
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - DEBUG - Row ('schema_version',)
+DEBUG [sqlalchemy.engine.Engine] Row ('doc_relationships',)
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - DEBUG - Row ('doc_relationships',)
+DEBUG [sqlalchemy.engine.Engine] Row ('inconsistency_records',)
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - DEBUG - Row ('inconsistency_records',)
+DEBUG [sqlalchemy.engine.Engine] Row ('recommendation_records',)
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - DEBUG - Row ('recommendation_records',)
+DEBUG [sqlalchemy.engine.Engine] Row ('inconsistency_documents',)
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - DEBUG - Row ('inconsistency_documents',)
+DEBUG [sqlalchemy.engine.Engine] Row ('recommendation_inconsistencies',)
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - DEBUG - Row ('recommendation_inconsistencies',)
+2025-04-20 10:26:09,264 - dbp.database.alembic_manager - INFO - Existing tables before migration: ['alembic_version', 'projects', 'documents', 'document_relationships', 'functions', 'classes', 'design_decisions', 'change_records', 'inconsistencies', 'recommendations', 'suggested_changes', 'developer_decisions', 'schema_version', 'doc_relationships', 'inconsistency_records', 'recommendation_records', 'inconsistency_documents', 'recommendation_inconsistencies']
+INFO  [sqlalchemy.engine.Engine] COMMIT
+2025-04-20 10:26:09,264 - sqlalchemy.engine.Engine - INFO - COMMIT
+2025-04-20 10:26:09,264 - dbp.database.alembic_manager - INFO - Upgrading database schema to latest version...
+2025-04-20 10:26:09,264 - dbp.database.alembic_manager - INFO - Running migration with enhanced logging...
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+ERROR:    Traceback (most recent call last):
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/starlette/routing.py", line 699, in lifespan
+    await receive()
+  File "/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/uvicorn/lifespan/on.py", line 137, in receive
+    return await self.receive_queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/queues.py", line 158, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+WARNI [dbp.fs_monitor.base] LinuxFileSystemMonitor thread did not exit cleanly.
+WARNI [dbp.mcp_server.__main__] Server exit detected
+WARNI [dbp.mcp_server.__main__] Exit source: main() completion
+WARNI [dbp.mcp_server.__main__] Exit reason: Normal server shutdown
+WARNI [dbp.mcp_server.__main__] Server exit detected
+WARNI [dbp.mcp_server.__main__] Exit source: Python interpreter shutdown
+WARNI [dbp.mcp_server.__main__] Exit reason: Process exit via atexit
