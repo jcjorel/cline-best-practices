@@ -5,7 +5,7 @@
 # [GenAI coding tool directive]
 # - Maintain this header with all modifications
 # - Update History section with each change
-# - Keep only the 4 most recent records in the history section. Sort from older to newer.
+# - Keep only the 4 most recent records in the history section. Sort from newer to older.
 # - Preserve Intent, Design, and Constraints sections
 # - Use this header as context for code reviews and modifications
 # - Ensure all changes align with the design principles
@@ -29,7 +29,7 @@
 # - Must not introduce complexity in dependency declaration
 # - Requires components to set _initialized flag properly
 ###############################################################################
-# [Reference documentation]
+# [Dependencies]
 # - doc/DESIGN.md
 # - doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
@@ -52,10 +52,6 @@
 # * Added get_typed_config() method for type-safe configuration access
 # * Improved documentation with more detailed function intent and design principles
 # * Added forward references for proper type annotations
-# 2025-04-17T08:54:49Z : Added get_debug_info method for better diagnostics by CodeAssistant
-# * Implemented debug information gathering for component failure analysis
-# * Enhanced Component base class with diagnostic capabilities
-# * Added documentation for new debugging methods
 ###############################################################################
 
 import logging

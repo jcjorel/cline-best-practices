@@ -5,7 +5,7 @@
 # [GenAI coding tool directive]
 # - Maintain this header with all modifications
 # - Update History section with each change
-# - Keep only the 4 most recent records in the history section. Sort from older to newer.
+# - Keep only the 4 most recent records in the history section. Sort from newer to older.
 # - Preserve Intent, Design, and Constraints sections
 # - Use this header as context for code reviews and modifications
 # - Ensure all changes align with the design principles
@@ -29,11 +29,16 @@
 # - Must gracefully handle exceptions during diagnostic collection
 # - Should capture sufficient debug information for post-mortem analysis
 ###############################################################################
-# [Reference documentation]
+# [Dependencies]
 # - doc/DESIGN.md
 # - doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-20T21:04:54Z : Enhanced watchdog to prioritize all thread stack traces on trigger by CodeAssistant
+# * Modified diagnostic display to prominently show all thread stack traces first
+# * Added clear section separators for better log readability
+# * Ensured main thread trace is displayed first followed by other threads
+# * Improved visibility of critical diagnostic information during deadlocks
 # 2025-04-20T10:43:35Z : Created watchdog module with conditional variable mechanism by CodeAssistant
 # * Implemented watchdog with condition variables instead of sleep-based polling
 # * Added thread-safe keepalive mechanism with minimal overhead
@@ -166,7 +171,21 @@ def start_watchdog(timeout: int = 60, exit_handler: Optional[Callable] = None):
                     logger.critical("Process appears to be stuck or deadlocked")
                     logger.critical(f"Last activity: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(last_time))}")
                     
-                    # Log process diagnostics
+                    # Log process diagnostics - prioritize stack traces first
+                    logger.critical("============= WATCHDOG TRIGGERED: ALL THREAD STACK TRACES =============")
+                    
+                    # First display all stack traces
+                    if "Stack Traces" in process_info:
+                        stack_traces = process_info["Stack Traces"]
+                        for trace in stack_traces:
+                            logger.critical(trace)
+                            logger.critical("---------------------------------------------------")
+                        
+                        # Remove from process_info to avoid duplication
+                        del process_info["Stack Traces"]
+                    
+                    # Then log other diagnostic information
+                    logger.critical("============= ADDITIONAL DIAGNOSTIC INFORMATION =============")
                     for key, value in process_info.items():
                         if isinstance(value, list):
                             logger.critical(f"{key}:")
