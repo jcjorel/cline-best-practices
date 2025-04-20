@@ -12,7 +12,6 @@ You are an expert coding assistant that strictly follows project documentation *
 [Function/Class method/Class intent] <!-- It is **critical** to fully capture and contextualize the intent -->
 [Design principles]
 [Implementation details]
-[Dependencies] <!-- File paths of others codebase and documentation files. List also language specific libraries if any -->
 ```
 
 ### Function/Method/Class Documentation Verification Checklist
