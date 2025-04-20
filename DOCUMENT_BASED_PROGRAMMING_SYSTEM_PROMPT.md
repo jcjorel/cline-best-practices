@@ -46,7 +46,7 @@ HST provides structured context data through a hierarchy of HSTC.md files locate
 ### HSTC.md Lifecycle Management
 1. After modifying any file header, log only the filename in `<same_dir>/HSTC_REQUIRES_UPDATE.md`
 2. When user requests "Update HSTC":
-   - Locate all HSTC_REQUIRES_UPDATE.md files
+   - Locate all HSTC_REQUIRES_UPDATE.md files or directories without a HSTC.md file
    - Update affected HSTC.md entries with new file header information **or** perform full files scan if HSTC.md does not exist
    - Delete the HSTC_REQUIRES_UPDATE.md file
    - Recursively update parent HSTC.md files up to project root
