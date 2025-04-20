@@ -2,6 +2,36 @@
 
 This document tracks new design decisions that haven't yet been integrated into the core documentation files. Once integrated, decisions are removed from this file and merged into the appropriate core documentation.
 
+## 2025-04-20: Explicit Dependency Validation Strategy
+
+### Context
+After implementing the centralized dependency declaration system, we discovered that some components had missing dependencies that were not properly declared in the central registration but were being used in the component code. This led to component initialization failures with unclear error messages.
+
+### Decision
+Implement explicit dependency validation with immediate failure and clear error messaging when a component attempts to access a dependency that wasn't properly declared.
+
+### Rationale
+- **Fail Fast Principle**: Catch dependency issues immediately during initialization rather than at runtime.
+- **Clear Error Messages**: Provide specific error messages that identify exactly which component and which dependency caused the failure.
+- **Improved Diagnostics**: Make debugging easier by including the exact dependency name in error messages.
+
+### Implementation
+1. Added error handling in the `get_dependency` method of the Component base class that provides clear error messages
+2. Enhanced dependency registration in the lifecycle manager to include all actually required dependencies
+3. Added post-implementation verification to ensure all components have their dependencies correctly declared
+
+### Implications
+- Any missing dependency will cause an immediate initialization failure with a clear error message
+- Developers must ensure all dependencies are properly registered before components can initialize
+- Reduced chance of runtime errors caused by missing dependencies
+
+### Example
+The memory_cache component was trying to access the config_manager dependency but it wasn't declared in its dependency list in lifecycle.py. This was detected during startup with the error message:
+```
+ERROR [dbp.core.lifecycle.memory_cache] Initialization failed: Missing dependency component '"Required dependency 'config_manager' not found in provided dependencies"'.
+```
+The solution was to update the dependency list in lifecycle.py to include config_manager.
+
 ## 2025-04-20: Centralized Component Registration with Dependency Injection
 
 ### Context

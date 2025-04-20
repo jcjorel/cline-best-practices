@@ -316,18 +316,18 @@ class LifecycleManager:
         register_component_class("dbp.database.database", "DatabaseComponent", "database", ["config_manager"])
         
         # File system monitoring components
-        register_component_class("dbp.fs_monitor.component", "FileSystemMonitorComponent", "fs_monitor", ["config_manager"])
+        register_component_class("dbp.fs_monitor.queue", "ChangeQueueComponent", "change_queue", ["config_manager"])
+        register_component_class("dbp.fs_monitor.component", "FileSystemMonitorComponent", "fs_monitor", ["config_manager", "change_queue"])
         register_component_class("dbp.fs_monitor.filter", "FilterComponent", "filter", ["config_manager"])
-        register_component_class("dbp.fs_monitor.queue", "ChangeQueueComponent", "change_queue", ["fs_monitor"])
         
         # Memory cache component
-        register_component_class("dbp.memory_cache.component", "MemoryCacheComponent", "memory_cache", ["database"])
+        register_component_class("dbp.memory_cache.component", "MemoryCacheComponent", "memory_cache", ["database", "config_manager"])
         
         # Metadata extraction component
         register_component_class("dbp.metadata_extraction.component", "MetadataExtractionComponent", "metadata_extraction", ["database"])
         
         # Document relationships component
-        register_component_class("dbp.doc_relationships.component", "DocRelationshipsComponent", "doc_relationships", ["database"])
+        register_component_class("dbp.doc_relationships.component", "DocRelationshipsComponent", "doc_relationships", ["database", "metadata_extraction", "file_access"])
         
         # Consistency analysis component
         register_component_class(
@@ -342,11 +342,11 @@ class LifecycleManager:
             "dbp.recommendation_generator.component", 
             "RecommendationGeneratorComponent", 
             "recommendation_generator", 
-            ["consistency_analysis"]
+            ["consistency_analysis", "database", "llm_coordinator"]
         )
         
         # Scheduler component
-        register_component_class("dbp.scheduler.component", "SchedulerComponent", "scheduler", ["config_manager"])
+        register_component_class("dbp.scheduler.component", "SchedulerComponent", "scheduler", ["config_manager", "fs_monitor", "metadata_extraction"])
         
         # LLM coordinator component
         register_component_class(

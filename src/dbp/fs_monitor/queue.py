@@ -359,25 +359,7 @@ class ChangeQueueComponent(Component):
         """
         return "change_queue"
     
-    @property
-    def dependencies(self) -> List[str]:
-        """
-        [Function intent]
-        Returns the component names that this component depends on.
-        
-        [Implementation details]
-        Change queue depends on config_manager for queue settings,
-        and optionally filter if it's available.
-        
-        [Design principles]
-        Explicit dependency declaration for clear initialization order.
-        
-        Returns:
-            List[str]: List of component dependencies
-        """
-        return ["config_manager"]
-    
-    def initialize(self, context: InitializationContext) -> None:
+    def initialize(self, context: InitializationContext, dependencies: Dict[str, Component]) -> None:
         """
         [Function intent]
         Initializes the change queue with the provided configuration.
@@ -388,9 +370,11 @@ class ChangeQueueComponent(Component):
         [Design principles]
         Explicit initialization with clear success/failure indication.
         Type-safe configuration access.
+        Dependency injection for improved performance and testability.
         
         Args:
             context: Initialization context with typed configuration and resources
+            dependencies: Dictionary of pre-resolved dependencies {name: component_instance}
             
         Raises:
             RuntimeError: If initialization fails
@@ -403,22 +387,26 @@ class ChangeQueueComponent(Component):
         self.logger.info(f"Initializing component '{self.name}'...")
         
         try:
-            # Get the strongly-typed configuration
-            config = context.get_typed_config()
+            # Get configuration and dependencies
+            self.logger.debug("Using injected dependencies")
+            # Get config from the config_manager component in dependencies
+            config_manager = self.get_dependency(dependencies, "config_manager")
+            config = config_manager.get_typed_config()
             
             # Create and initialize the queue
             self._queue = ChangeDetectionQueue(config)
             
             # Attempt to set up a filter if the filter component is available
             try:
-                # Get the component system
-                from ..core.system import ComponentSystem
-                system = ComponentSystem.get_instance()
-                filter_component = system.get_component("filter")
-                if filter_component and filter_component.is_initialized:
-                    self.logger.info("Setting up event filtering with filter component")
-                    # The filter itself has the should_ignore method that the queue expects
-                    self._queue.set_filter(filter_component)
+                # Check if filter component is available in the dependencies
+                if "filter" in dependencies:
+                    filter_component = dependencies["filter"]
+                    if filter_component.is_initialized:
+                        self.logger.info("Setting up event filtering with filter component")
+                        # The filter itself has the should_ignore method that the queue expects
+                        self._queue.set_filter(filter_component)
+                else:
+                    self.logger.debug("Filter component not available in dependencies")
             except Exception as e:
                 self.logger.warning(f"Could not set up filter for change queue: {e}")
                 # Continue without filtering - it's optional

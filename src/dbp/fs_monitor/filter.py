@@ -357,24 +357,7 @@ class FilterComponent(Component):
         """
         return "filter"
     
-    @property
-    def dependencies(self) -> List[str]:
-        """
-        [Function intent]
-        Returns the component names that this component depends on.
-        
-        [Implementation details]
-        Filter depends on config_manager for filter patterns.
-        
-        [Design principles]
-        Explicit dependency declaration for clear initialization order.
-        
-        Returns:
-            List[str]: List of component dependencies
-        """
-        return ["config_manager"]
-    
-    def initialize(self, context: InitializationContext) -> None:
+    def initialize(self, context: InitializationContext, dependencies: Dict[str, Component]) -> None:
         """
         [Function intent]
         Initializes the filter with the provided configuration.
@@ -385,9 +368,11 @@ class FilterComponent(Component):
         [Design principles]
         Explicit initialization with clear success/failure indication.
         Type-safe configuration access.
+        Dependency injection for improved performance and testability.
         
         Args:
             context: Initialization context with typed configuration and resources
+            dependencies: Dictionary of pre-resolved dependencies {name: component_instance}
             
         Raises:
             RuntimeError: If initialization fails
@@ -400,8 +385,11 @@ class FilterComponent(Component):
         self.logger.info(f"Initializing component '{self.name}'...")
         
         try:
-            # Get strongly-typed configuration
-            config = context.get_typed_config()
+            # Get configuration and dependencies
+            self.logger.debug("Using injected dependencies")
+            # Get config from the config_manager component in dependencies
+            config_manager = self.get_dependency(dependencies, "config_manager")
+            config = config_manager.get_typed_config()
             
             # Get project root from typed configuration
             self.project_root = config.project.root_path
