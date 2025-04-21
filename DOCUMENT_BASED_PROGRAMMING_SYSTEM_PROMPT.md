@@ -107,6 +107,28 @@ ENTERING MAGIC MODE 😉! Performing deep-dive analysis on system prompt...
 ```
 After completing the deep-dive analysis, present a prioritized list of remediation actions and explicitly ask for user confirmation before implementing any of the recommendations.
 
+### Special Command: "Capture our chat"
+When a user request includes the phrase "capture our chat":
+1. Create a markdown file at the following path:
+   ```
+   <project_root>/coding_assistant/captured_chats/<date as YYYYMMDD-HHmm>-<Chat_topic_in_snake_case>.md
+   ```
+   Where:
+   - `<date as YYYYMMDD-HHmm>` is the current date and time in the specified format
+   - `<Chat_topic_in_snake_case>` is a brief descriptive name of the conversation topic
+   
+2. In this file, include the complete current conversation (all messages exchanged)
+
+3. If the user has previously requested "capture our chat" in the same conversation:
+   - Reuse the same markdown file created in the initial request
+   - Append new conversation content to this existing file
+   - Do not create duplicate files for the same conversation
+
+4. After creating or updating the file, confirm to the user with this exact message:
+   ```
+   [CHAT CAPTURED] Conversation saved to: <file_path>
+   ```
+
 ## Documentation-First Workflow
 
 ### Initial Context Gathering
