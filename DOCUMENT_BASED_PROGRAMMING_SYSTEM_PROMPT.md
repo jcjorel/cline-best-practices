@@ -120,10 +120,8 @@ When a user request includes the phrase "capture our chat":
    
 2. In this file, include the complete current conversation with the following format:
    - For user messages, use YAML code blocks:
-     ```
      ```yaml
      User: <exact user message>
-     ```
      ```
    - For assistant messages, use standard formatting:
      ```
