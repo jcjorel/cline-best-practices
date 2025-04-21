@@ -3,7 +3,12 @@
 This directory contains the database management components for the Document-Based Programming (DBP) system. It provides database connection management, session handling, schema migrations, and a layer of abstraction for SQLite and PostgreSQL database backends.
 
 ## Child Directory Summaries
-*No child directories with HSTC.md files.*
+
+### repositories/
+Repository implementations following the Repository pattern to abstract database operations behind domain-specific interfaces. Includes a base repository class with common CRUD operations and specialized repositories for various entity types like documents, classes, functions, and relationships.
+
+### alembic/
+Alembic migration scripts and configuration that manage database schema version control, creation, and upgrades. Contains environment configuration, migration script templates, and best practices documentation for implementing and deploying schema changes.
 
 ## Local File Headers
 
