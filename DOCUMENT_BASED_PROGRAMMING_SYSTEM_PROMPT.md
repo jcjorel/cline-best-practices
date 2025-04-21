@@ -304,8 +304,8 @@ All code must be documented at TWO distinct levels without exception:
    - This documentation is MANDATORY for ALL functions, methods, and classes without exception
    - Documentation MUST include these specific labeled sections in this exact order:
      a. "[Function/Class method/Class intent]" - Purpose and role description
-     b. "[Implementation details]" - Key technical implementation notes
-     c. "[Design principles]" - Patterns and approaches used
+     b. "[Design principles]" - Patterns and approaches used
+     c. "[Implementation details]" - Key technical implementation notes
    - Include standard language-appropriate parameter/return documentation according to language conventions
    - ALWAYS follow the exact template provided in `GENAI_FUNCTION_TEMPLATE.txt`
    - These sections are required for all functions and class methods regardless of complexity or size
@@ -317,13 +317,13 @@ All code must be documented at TWO distinct levels without exception:
        [Function intent]
        Authenticates a user against the system using provided credentials.
        
-       [Implementation details]
-       Uses bcrypt for password verification and JWT for token generation.
-       Applies rate limiting based on username to prevent brute force attacks.
-       
        [Design principles]
        Follows zero-trust architecture principles with complete validation.
        Uses stateless authentication with short-lived tokens.
+       
+       [Implementation details]
+       Uses bcrypt for password verification and JWT for token generation.
+       Applies rate limiting based on username to prevent brute force attacks.
        
        Args:
            credentials (dict): User login credentials
@@ -348,13 +348,13 @@ All code must be documented at TWO distinct levels without exception:
     * [Class intent]
     * Manages user authentication state and processes throughout the application.
     *
-    * [Implementation details]
-    * Implements the Observer pattern to notify components of auth state changes.
-    * Uses localStorage for persistent login state with encryption.
-    *
     * [Design principles]
     * Single responsibility for auth state management.
     * Clear separation between auth logic and UI components.
+    *
+    * [Implementation details]
+    * Implements the Observer pattern to notify components of auth state changes.
+    * Uses localStorage for persistent login state with encryption.
     *
     * @class AuthManager
     */
@@ -363,11 +363,11 @@ All code must be documented at TWO distinct levels without exception:
       * [Class method intent]
       * Creates a new AuthManager instance with initial configuration.
       *
-      * [Implementation details]
-      * Sets up listeners and initializes from encrypted localStorage if available.
-      *
       * [Design principles]
       * Fail-secure initialization with validation of stored credentials.
+      *
+      * [Implementation details]
+      * Sets up listeners and initializes from encrypted localStorage if available.
       *
       * @param {Object} config - Configuration options
       * @param {boolean} config.autoRefresh - Whether to auto-refresh tokens
@@ -380,7 +380,7 @@ All code must be documented at TWO distinct levels without exception:
    }
    ```
 
-IMPORTANT: These three documentation sections ("[Function/Class method/Class intent]", "[Implementation details]", and "[Design principles]") must be included for ALL functions, methods and classes regardless of their complexity or size. No exceptions are permitted.
+IMPORTANT: These three documentation sections ("[Function/Class method/Class intent]", "[Design principles]", and "[Implementation details]") must be included for ALL functions, methods and classes regardless of their complexity or size. No exceptions are permitted.
 
 #### Markdown File Standards
 - Markdown files will heavily use mermaid diagrams to ease understanding by user
