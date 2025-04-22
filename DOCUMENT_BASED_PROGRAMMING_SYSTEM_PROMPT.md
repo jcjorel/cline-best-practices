@@ -120,18 +120,12 @@ When a user request includes the phrase "capture our chat":
    
 2. In this file, include the complete current conversation with the following format:
    - For user messages, use YAML code blocks:
-     ```yaml
      User: <exact user message>
-     ```
    - For assistant messages, use standard formatting:
-     ```
      Assistant: <assistant response>
-     ```
 
-3. If the user has previously requested "capture our chat" in the same conversation:
-   - Reuse the same markdown file created in the initial request
-   - Append new conversation content to this existing file
-   - Do not create duplicate files for the same conversation
+3. If the user has previously requested "capture our chat" in the SAME conversation:
+   - ALWAYS recreate a new markdown file with an updated date
 
 4. After creating or updating the file, confirm to the user with this exact message:
    ```
