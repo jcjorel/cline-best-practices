@@ -119,10 +119,12 @@ When a user request includes the phrase "capture our chat":
    - `<Chat_topic_in_snake_case>` is a brief descriptive name of the conversation topic
    
 2. In this file, NOT INCLUDING the user request to "capture our chat", dump the complete current conversation with the following format:
-   - For user messages, use YAML code blocks for better user conversation part highlight:
+   - For user messages, use markdown blocks for better user conversation part highlight:
      User: <exact user message>
-   - For assistant messages, use standard formatting.
+   - For assistant messages, dump as-is.
      Assistant: <assistant response>
+
+     **ALWAYS end properly a captured chat with "End of chat capture" message**
 
 3. If the user has previously requested "capture our chat" in the SAME conversation:
    - ALWAYS recreate a new markdown file with an updated date
