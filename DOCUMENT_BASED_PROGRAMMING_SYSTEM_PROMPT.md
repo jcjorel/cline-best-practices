@@ -119,13 +119,14 @@ When a user request includes the phrase "capture our chat":
    - `<Chat_topic_in_snake_case>` is a brief descriptive name of the conversation topic
    
 2. In this file, dump the complete current conversation, but highlighting the user conversation part with a YAML distinctive code block
+   - Include your reasoning in the conversation dump if any
+     
+   **ALWAYS end properly a captured chat with the final task completion result once known and with the message "End of chat capture" message**
 
-     **ALWAYS end properly a captured chat with the final task completion result once known and with the message "End of chat capture" message**
-
-3. If the user has previously requested "capture our chat" in the SAME conversation:
+4. If the user has previously requested "capture our chat" in the SAME conversation:
    - ALWAYS recreate a new markdown file with an updated date
 
-4. After creating or updating the file,
+5. After creating or updating the file,
    - Stop immediatly to update the file and forget about call of this command.
    
 ## Documentation-First Workflow
