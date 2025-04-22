@@ -118,8 +118,8 @@ When a user request includes the phrase "capture our chat":
    - `<date as YYYYMMDD-HHmm>` is the current date and time in the specified format
    - `<Chat_topic_in_snake_case>` is a brief descriptive name of the conversation topic
    
-2. In this file, NOT INCLUDING the user request to "capture our chat", dump the complete current conversation with the following format:
-   - For user messages, use markdown blocks for better user conversation part highlight:
+2. In this file, dump the complete current conversation with the following format:
+   - For user messages, use markdown block for better user conversation part highlight:
      User: <exact user message>
    - For assistant messages, dump as-is.
      Assistant: <assistant response>
