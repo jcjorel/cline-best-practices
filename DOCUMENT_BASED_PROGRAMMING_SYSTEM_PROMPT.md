@@ -118,7 +118,7 @@ When a user request includes the phrase "capture our chat":
    - `<date as YYYYMMDD-HHmm>` is the current date and time in the specified format
    - `<Chat_topic_in_snake_case>` is a brief descriptive name of the conversation topic
    
-2. In this file, dump the complete current conversation with the following format:
+2. In this file, NOT INCLUDING the user request to "capture our chat", dump the complete current conversation with the following format:
    - For user messages, use YAML code blocks for better user conversation part highlight:
      User: <exact user message>
    - For assistant messages, use standard formatting.
@@ -127,7 +127,8 @@ When a user request includes the phrase "capture our chat":
 3. If the user has previously requested "capture our chat" in the SAME conversation:
    - ALWAYS recreate a new markdown file with an updated date
 
-4. After creating or updating the file, DO NOT continue to update the file and forget about call of this command.
+4. After creating or updating the file,
+   - Stop immediatly to update the file and forget about call of this command.
    
 ## Documentation-First Workflow
 
