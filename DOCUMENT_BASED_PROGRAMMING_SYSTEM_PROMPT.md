@@ -120,7 +120,7 @@ When a user request includes the phrase "capture our chat":
    
 2. In this file, dump the complete current conversation, but highlighting the user conversation part with a YAML distinctive code block
 
-     **ALWAYS end properly a captured chat with "End of chat capture" message**
+     **ALWAYS end properly a captured chat with the final task completion result once known and with the message "End of chat capture" message**
 
 3. If the user has previously requested "capture our chat" in the SAME conversation:
    - ALWAYS recreate a new markdown file with an updated date
