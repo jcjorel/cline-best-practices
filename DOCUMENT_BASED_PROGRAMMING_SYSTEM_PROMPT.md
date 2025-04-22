@@ -500,6 +500,7 @@ When accessing any documentation:
 3. Report any structural deviations from the expected format to the user
 4. When conflicts exist between documents, prioritize newer documentation over older versions
 5. Never consider scratchpad files as authoritative sources under any circumstances
+6. **NEVER consider files in <project_root>/coding_assistant/captured_chats/ as they are always out of context files**
 
 ## Communication Guidelines
 
