@@ -158,7 +158,7 @@ When user requests "Update HSTC", execute this precise update sequence:
    
    - **ALWAYS respects the same exclusions as Git defined in .gitgnore file(s)**
    - Ensure ALL local files are listed in each HSTC.md
-   - When updating a parent HSTC.md, only update the summary of the child directory
+   - **NEVER create a script to help you. ALWAYS perform yourself the UPDATE_HSCT() process**
    - Maintain strict adherence to the standard HSTC.md template format
    - Include timestamp of update in the "Last Updated" section
 
