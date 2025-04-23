@@ -81,7 +81,7 @@ source_file_design_principles: |
 source_file_constraints: |
   [Content of constraints section from file header]
   
-dependencies: |
+dependencies:
   - kind: <codebase|system|other>
     dependency: <dependency>
   
