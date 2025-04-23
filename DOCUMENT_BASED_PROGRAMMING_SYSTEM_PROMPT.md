@@ -140,7 +140,8 @@ When user requests "Update HSTC", execute this precise update sequence:
    UPDATE_HSTC(directory_path):
      a. IF directory_path UNSPECIFIED:
         - SET directory_path = <project_root>
-     b. Identify efficiently all directories that contains HSTC_REQUIRES_UPDATE.md files **EXCLUDING FILE PATTERNS IN .gitignore FILES!!**
+     b. **EXCLUDE FILE PATTERNS LISTED IN .gitgnore FILES**
+     b. Identify efficiently all directories that contains HSTC_REQUIRES_UPDATE.md files
      c. IF AT LEAST one HSTC_REQUIRES_UPDATE.md file exists
         - FOR EACH identified_directory SORTED BY directory_path_length DESC
            1. Read modified filenames from <identified_directory>/HSTC_REQUIRES_UPDATE.md
