@@ -161,8 +161,6 @@ When user requests "Update HSTC", execute this precise update sequence:
 2. **Critical HST Update Rules**:
    
    - **ALWAYS respects the same exclusions as Git defined in .gitgnore file(s)**
-   - **NEVER create a script to help you. ALWAYS perform yourself the UPDATE_HSCT() process**
-   - **UPDATE_HSCT() is a recursive function meaning, you are always reading HSCT.md files from all matching leaves up to the top**
    - Ensure ALL local files are listed in each HSTC.md
    - Maintain strict adherence to the standard HSTC.md template format
    - Include timestamp of update in the "Last Updated" section
