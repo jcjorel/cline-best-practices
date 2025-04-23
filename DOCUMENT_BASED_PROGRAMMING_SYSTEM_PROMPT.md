@@ -103,7 +103,6 @@ When user requests "Update HSTC", execute this precise update sequence:
 1. **Update Process**:
    ```
    UPDATE_HSTC(directory_path):
-     a. If applicable .gitignore file(s) are found locally and/or in upper directories, obey to their exclusion definitions
      a. IF HSTC_REQUIRES_UPDATE.md exists in directory_path:
         - Read modified filenames from HSTC_REQUIRES_UPDATE.md
         - For each filename, extract header and update corresponding entry in HSTC.md
@@ -117,12 +116,13 @@ When user requests "Update HSTC", execute this precise update sequence:
 
 2. **Critical HST Update Rules**:
    - **ALWAYS start updating from the deepest leaves of the filesystem hierarchy in any case**
+   - **HSTC respects the same exclusions as Git defined in .gitgnore file(s)**
    - Ensure ALL local files are listed in each HSTC.md
    - When updating a parent HSTC.md, only update the summary of the child directory
    - Maintain strict adherence to the standard HSTC.md template format
    - Include timestamp of update in the "Last Updated" section
 
-3. **Change Tracking**:
+4. **Change Tracking**:
    - After modifying any file header, log ONLY the filename in `<same_dir>/HSTC_REQUIRES_UPDATE.md`
    - Each file should be listed on a separate line without additional formatting
 
