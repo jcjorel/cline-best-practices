@@ -140,19 +140,21 @@ When user requests "Update HSTC", execute this precise update sequence:
    UPDATE_HSTC(directory_path):
      a. IF directory_path UNSPECIFIED:
         - SET directory_path = <project_root>
-     b. **EXCLUDE FILE PATTERNS LISTED IN .gitgnore FILES**
-     b. Identify efficiently all directories that contains HSTC_REQUIRES_UPDATE.md files
+     b. Write a script in coding_assistant/ that will help you identify files to update by:
+        - **EXCLUDING FILE PATTERNS LISTED IN .gitgnore FILES**
+        - Outputing all directories that contains HSTC_REQUIRES_UPDATE.md files SORTED BY directory_path_length DESC
+        - Outputing all directories that does not contain HSTC.md file
      c. IF AT LEAST one HSTC_REQUIRES_UPDATE.md file exists
-        - FOR EACH identified_directory SORTED BY directory_path_length DESC
+        - FOR EACH identified_directory
            1. Read modified filenames from <identified_directory>/HSTC_REQUIRES_UPDATE.md
            2. For each filename, extract header and update corresponding entry in HSTC.md
            3. Garbage collect file and directory references in HSTC.md file that do not exist in filesystem
            4. Delete HSTC_REQUIRES_UPDATE.md
      d. ELSE:
-        - FOR EACH directory_without_HSTC.md SORTED BY directory_path_length DESC
+        - FOR EACH directory_without_HSTC.md
            1. Scan all files in directory
            2. Extract all headers and create new HSTC.md
-     i. FOR EACH parent_directory up to root:
+     i. FOR EACH parent_directory_of_modified_HTSC.md up to root:
         - Update parent's HSTC.md with current directory summary
    ```
 
