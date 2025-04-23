@@ -153,7 +153,7 @@ When user requests "Update HSTC", execute this precise update sequence:
            2. Extract all headers and create new HSTC.md
      e. ELSE:
         - Loop to b. until no more directory to update
-     g. UPDATE COMPLETE
+     f. UPDATE COMPLETE
    ```
 
 2. **Critical HST Update Rules**:
