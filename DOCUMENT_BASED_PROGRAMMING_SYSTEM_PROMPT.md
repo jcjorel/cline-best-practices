@@ -363,6 +363,8 @@ All code must be documented at TWO distinct levels without exception:
    # <File paths of others codebase and documentation files. List also language specific libraries if any>
    # <List of markdown files in doc/ that provide broader context for this file>
    # <Prefix the dependency with its kind like "<codebase|system|other>:<dependency>"
+   #    <"codebase" kind means a reference to any artifact in the current project codebase>
+   #    <"system" kind means a reference toward an external artifact provided by the environement (files, librairies, modules...)>
    ###############################################################################
    # [GenAI tool change history] <!-- Change history sorted from the newest to the oldest -->
    # YYYY-MM-DDThh:mm:ssZ : <summary of change> by CodeAssistant
