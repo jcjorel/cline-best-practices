@@ -55,7 +55,7 @@ Each HSTC.md file must strictly follow this template format:
 # Hierarchical Semantic Tree Context: [Directory Name]
 
 ## Directory Purpose
-[Brief description of this directory's purpose and role in the project architecture - 5-10 sentences. It is effectively a **TECHNICAL ONLY** summary of the rest of the file highlighting architectural information]
+[Brief description of this directory's purpose and role in the project architecture - 5-10 sentences. It is effectively a **TECHNICAL ONLY** summary of the rest of the file highlighting architectural information. Add technical significant details if still enough spare sentences.]
 
 ## Child Directories
 <!-- For each child directory with HSTC.md -->
