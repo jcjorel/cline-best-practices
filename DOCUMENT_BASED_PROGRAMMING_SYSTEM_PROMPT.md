@@ -103,7 +103,7 @@ When user requests "Update HSTC", execute this precise update sequence:
 1. **Update Process**:
    ```
    UPDATE_HSTC(directory_path):
-     a. If applicable .gitignore file is found locally and/or in upper directory, obey to its exclusion definitions
+     a. If applicable .gitignore file(s) are found locally and/or in upper directories, obey to their exclusion definitions
      a. IF HSTC_REQUIRES_UPDATE.md exists in directory_path:
         - Read modified filenames from HSTC_REQUIRES_UPDATE.md
         - For each filename, extract header and update corresponding entry in HSTC.md
