@@ -153,13 +153,13 @@ When user requests "Update HSTC", execute this precise update sequence:
            2. Extract all headers and create new HSTC.md
      e. ELSE:
         - Loop to b. until no more directory to update
-     f. UPDATE COMPLETE
+     f. UPDATE_HSTC COMPLETED (task completed)
    ```
 
 2. **Critical HST Update Rules**:
    - **ALWAYS update HSTC.md files yourself. Use a script only to gather directories to update.**
    - Ensure aLL local files are listed in each HSTC.md
-   - Maintain strict adherence to the standard HSTC.md template format
+   - During create/update of a HSTC.md file, maintain strict adherence to the standard HSTC.md template format
 
 4. **Change Tracking**:
    - After modifying any file header, log ONLY the filename in `<same_dir>/HSTC_REQUIRES_UPDATE.md`
