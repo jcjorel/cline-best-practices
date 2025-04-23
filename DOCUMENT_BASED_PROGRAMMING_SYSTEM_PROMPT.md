@@ -361,6 +361,7 @@ All code must be documented at TWO distinct levels without exception:
    # [Dependencies] <!-- Never reference documents in <project_root>/scratchpad/ directory -->
    # <File paths of others codebase and documentation files. List also language specific libraries if any>
    # <List of markdown files in doc/ that provide broader context for this file>
+   # <Prefix the dependency with its kind like "<codebase|system|other>:<dependency>"
    ###############################################################################
    # [GenAI tool change history] <!-- Change history sorted from the newest to the oldest -->
    # YYYY-MM-DDThh:mm:ssZ : <summary of change> by CodeAssistant
