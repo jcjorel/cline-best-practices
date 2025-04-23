@@ -209,6 +209,7 @@ class HSTCUpdatesScanner:
     [Design principles]
     Efficiently traverses directory tree while respecting gitignore patterns.
     Organizes results by priority (path length) to handle complex directories first.
+    Excludes empty directories (no files, no subdirectories) from results.
     
     [Implementation details]
     Uses Path objects for better cross-platform compatibility.
@@ -276,6 +277,31 @@ class HSTCUpdatesScanner:
             return False
             
         return not self.gitignore_parser.is_ignored(dir_path, is_dir=True)
+    
+    def _is_directory_empty(self, dir_path: Path) -> bool:
+        """
+        [Function intent]
+        Determines if a directory is empty (no files and no subdirectories).
+        
+        [Design principles]
+        Provides a simple check for empty directories to avoid processing them.
+        
+        [Implementation details]
+        Checks if a directory contains any files or subdirectories.
+        
+        Args:
+            dir_path: Path to directory to check
+            
+        Returns:
+            True if directory is empty, False otherwise
+        """
+        # Check if directory exists
+        if not dir_path.exists() or not dir_path.is_dir():
+            return True
+            
+        # Check if directory has any contents
+        has_contents = any(dir_path.iterdir())
+        return not has_contents
     
     def _find_hstc_files_for_forced_update(self) -> List[Path]:
         """
@@ -383,8 +409,8 @@ class HSTCUpdatesScanner:
                 
             # Check if directory doesn't have HSTC.md
             if 'HSTC.md' not in files:
-                # Only include directories, not root
-                if str(current_path) != str(self.root_dir) and current_path.is_dir():
+                # Only include directories, not root, and not empty directories
+                if str(current_path) != str(self.root_dir) and current_path.is_dir() and not self._is_directory_empty(current_path):
                     self.dirs_without_hstc.append(current_path)
         
         # Find directories with HSTC.md files that need forced updates
@@ -435,7 +461,7 @@ def main() -> None:
         print("No directories without HSTC.md found.")
         
     # Always output directories with HSTC.md files that need forced updates
-    if dirs_with_force_update:
+    if dirs_with_force_update and (not dirs_with_update_required and not dirs_without_hstc):
         print("\n=== HSTC.md files requiring forced updates (child HSTC.md files are newer) ===")
         for dir_path in dirs_with_force_update:
             print(dir_path)
