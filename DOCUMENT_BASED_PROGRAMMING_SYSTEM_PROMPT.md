@@ -82,7 +82,7 @@ source_file_constraints: |
   [Content of constraints section from file header]
   
 dependencies:
-  - kind: <codebase|system|other(default)>
+  - kind: <codebase|system|other|unknown(default)>
     dependency: <dependency>
   
 change_history:
