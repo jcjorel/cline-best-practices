@@ -35,11 +35,11 @@
 # - Placeholder logic exists in the execution engine and LLM interfaces.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/INTERNAL_LLM_TOOLS.md
-# - src/dbp/core/component.py
-# - src/dbp/llm_coordinator/component.py (Dependency)
-# - All other files in src/dbp/internal_tools/
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/INTERNAL_LLM_TOOLS.md
+# system:- src/dbp/core/component.py
+# other:- src/dbp/llm_coordinator/component.py (Dependency)
+# other:- All other files in src/dbp/internal_tools/
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-20T01:49:11Z : Completed dependency injection refactoring by CodeAssistant

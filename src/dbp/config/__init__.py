@@ -25,8 +25,8 @@
 # - Should maintain backward compatibility for configuration interfaces
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/CONFIGURATION.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/CONFIGURATION.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T21:55:04Z : Added GenAI header to comply with documentation standards by CodeAssistant

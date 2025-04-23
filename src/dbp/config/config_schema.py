@@ -36,8 +36,11 @@
 # - Default values should always come from default_config.py, not hardcoded here.
 ###############################################################################
 # [Dependencies]
-# - doc/CONFIGURATION.md
-# - doc/DESIGN.md
+# codebase:doc/CONFIGURATION.md
+# codebase:doc/DESIGN.md
+# system:pydantic
+# system:os
+# system:logging
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-18T10:42:33Z : Removed hardcoded defaults and referenced default_config.py by CodeAssistant

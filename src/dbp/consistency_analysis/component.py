@@ -37,9 +37,9 @@
 # - Relies on placeholder implementations within the concrete analyzers.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/core/component.py
-# - All other files in src/dbp/consistency_analysis/
+# codebase:- doc/DESIGN.md
+# system:- src/dbp/core/component.py
+# other:- All other files in src/dbp/consistency_analysis/
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-20T01:21:25Z : Completed dependency injection refactoring by CodeAssistant

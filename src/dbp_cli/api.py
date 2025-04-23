@@ -37,10 +37,10 @@
 # - Error handling maps HTTP/MCP errors to CLI-specific exceptions.
 ###############################################################################
 # [Dependencies]
-# - src/dbp_cli/auth.py
-# - src/dbp_cli/config.py
-# - src/dbp_cli/exceptions.py
-# - src/dbp/mcp_server/data_models.py (MCPRequest/Response/Error structure)
+# other:- src/dbp_cli/auth.py
+# other:- src/dbp_cli/config.py
+# other:- src/dbp_cli/exceptions.py
+# system:- src/dbp/mcp_server/data_models.py (MCPRequest/Response/Error structure)
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-17T15:34:30Z : Fixed configuration key in MCPClientAPI by CodeAssistant

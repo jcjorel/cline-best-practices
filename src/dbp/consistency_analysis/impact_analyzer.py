@@ -29,8 +29,8 @@
 # - Must maintain proper separation between consistency analysis and document relationships
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/DOCUMENT_RELATIONSHIPS.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/DOCUMENT_RELATIONSHIPS.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T23:14:45Z : Initial implementation of ConsistencyImpactAnalyzer by CodeAssistant

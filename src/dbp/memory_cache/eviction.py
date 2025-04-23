@@ -34,7 +34,7 @@
 # - Assumes keys (file paths) are strings.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:58:10Z : Initial creation of eviction strategy classes by CodeAssistant

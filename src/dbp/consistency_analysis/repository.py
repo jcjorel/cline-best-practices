@@ -30,10 +30,10 @@
 # - Enum values are stored as strings in the database.
 ###############################################################################
 # [Dependencies]
-# - doc/DATA_MODEL.md
-# - src/dbp/database/database.py
-# - src/dbp/database/models.py
-# - src/dbp/consistency_analysis/data_models.py
+# codebase:- doc/DATA_MODEL.md
+# other:- src/dbp/database/database.py
+# other:- src/dbp/database/models.py
+# other:- src/dbp/consistency_analysis/data_models.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:28:45Z : Initial creation of InconsistencyRepository class by CodeAssistant

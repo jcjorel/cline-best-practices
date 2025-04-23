@@ -28,7 +28,7 @@
 # - Enum values should be kept consistent with their usage in analyzers and reports.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:27:45Z : Initial creation of consistency analysis data models by CodeAssistant

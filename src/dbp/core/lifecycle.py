@@ -30,8 +30,8 @@
 # - Maintains backward compatibility with existing entry points
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/COMPONENT_INITIALIZATION.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-20T19:21:00Z : Added watchdog keepalive calls by CodeAssistant

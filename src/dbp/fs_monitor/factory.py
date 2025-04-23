@@ -33,7 +33,7 @@
 # - Requires necessary libraries (inotify, fsevents, pywin32) to be installed for native monitors to be chosen.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:45:55Z : Initial creation of FileSystemMonitorFactory by CodeAssistant

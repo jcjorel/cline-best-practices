@@ -1,88 +1,268 @@
-# Hierarchical Semantic Tree Context for /doc
+# Hierarchical Semantic Tree Context: doc
 
-## Child Directory Summaries
-<!-- Summaries of child HSTC.md files, if they exist -->
+## Directory Purpose
+This directory contains comprehensive documentation for the Documentation-Based Programming (DBP) system. It follows the DBP methodology with structured markdown files that define the system architecture, APIs, configuration options, data models, security considerations, and other important aspects of the system. The documentation serves as a single source of truth for the project and is designed to maintain consistency with the codebase through automated analysis and tracking of relationships between documentation files.
 
-## Local File Headers
+## Child Directories
 
-### Filename 'DESIGN.md':
-- Source file intent: Describes the architectural principles, components, and design decisions for the Documentation-Based Programming system
-- Document structure:
-  * General Architecture Overview
-  * Provided Services
-  * Business Logic
-  * External Dependencies toward Cooperating Systems
-  * Middleware and Support Functions
-- Design principles:
-  * Documentation as Source of Truth
-  * Automatic Consistency Maintenance
-  * Global Contextual Awareness
-  * Design Decision Preservation
-  * Reasonable Default Values
-  * Simplified Component Management
-- Implementation principles:
-  * Avoid Manual Parsing
-  * Metadata Normalization via LLM
-  * Precise LLM Prompts
-  * Thread-Safe Database Access
-  * Code Size Governance
-  * Explicit Error Handling
-  * Centralized Exception Handling
-  * LLM-Exclusive Metadata Extraction
-  * Standardized Logging Format
-  * Strict Configuration Access
+### llm
+This directory contains components related to llm.
 
-### Filename 'DESIGN_DECISIONS.md':
-- Source file intent: Tracks new design decisions that haven't yet been integrated into the core documentation files
-- Note: Currently empty, with no pending design decisions
+### design
+This directory contains components related to design.
 
-### Filename 'DATA_MODEL.md':
-- Source file intent: Defines the data structures and relationships for the Documentation-Based Programming system
-- Key components:
-  * Metadata Extraction Model
-  * Core Data Entities
-  * File Formats
-  * Database Implementation
-  * Security Considerations
+## Local Files
 
-### Filename 'API.md':
-- Source file intent: Describes the REST API endpoints exposed by the Documentation-Based Programming MCP server
-- Key features:
-  * REST API as MCP Transport Layer
-  * Exposed REST API Endpoints
-  * Error Handling
-  * Security Considerations
+### `PR-FAQ.md`
+```yaml
+source_file_intent: |
+  File: PR-FAQ.md
+  
+source_file_design_principles: |
+  Not documented
+  
+source_file_constraints: |
+  Not documented
+  
+dependencies:
+  - kind: unknown
+    dependency: None
+  
+change_history:
+  - timestamp: "2025-04-23T17:49:18Z"
+    summary: "Auto-detected file"
+    details: "Automatically indexed PR-FAQ.md"
+```
 
-### Filename 'DOCUMENT_RELATIONSHIPS.md':
-- Source file intent: Maps the relationships between documentation files in the project
-- Key features:
-  * Relationship Graph
-  * Database Documentation Relationships
-  * Code Analysis Documentation Relationships
-  * Relationship Types
-  * Update Workflow
-  * Relationship Management Guidelines
+### `CODING_GUIDELINES.md`
+```yaml
+source_file_intent: |
+  File: CODING_GUIDELINES.md
+  
+source_file_design_principles: |
+  Not documented
+  
+source_file_constraints: |
+  Not documented
+  
+dependencies:
+  - kind: unknown
+    dependency: None
+  
+change_history:
+  - timestamp: "2025-04-23T17:49:18Z"
+    summary: "Auto-detected file"
+    details: "Automatically indexed CODING_GUIDELINES.md"
+```
 
-### Filename 'CONFIGURATION.md':
-- Source file intent: Documents configuration parameters for the Documentation-Based Programming system
+### `DESIGN_DECISIONS.md`
+```yaml
+source_file_intent: |
+  File: DESIGN_DECISIONS.md
+  
+source_file_design_principles: |
+  Not documented
+  
+source_file_constraints: |
+  Not documented
+  
+dependencies:
+  - kind: unknown
+    dependency: None
+  
+change_history:
+  - timestamp: "2025-04-23T17:49:18Z"
+    summary: "Auto-detected file"
+    details: "Automatically indexed DESIGN_DECISIONS.md"
+```
 
-### Filename 'SECURITY.md':
-- Source file intent: Documents comprehensive security information, architecture, and principles
+### `DESIGN.md`
+```yaml
+source_file_intent: |
+  File: DESIGN.md
+  
+source_file_design_principles: |
+  Not documented
+  
+source_file_constraints: |
+  Not documented
+  
+dependencies:
+  - kind: unknown
+    dependency: None
+  
+change_history:
+  - timestamp: "2025-04-23T17:49:18Z"
+    summary: "Auto-detected file"
+    details: "Automatically indexed DESIGN.md"
+```
 
-### Filename 'PR-FAQ.md':
-- Source file intent: Contains product requirements as press release and FAQ
+### `WORKING_BACKWARDS.md`
+```yaml
+source_file_intent: |
+  File: WORKING_BACKWARDS.md
+  
+source_file_design_principles: |
+  Not documented
+  
+source_file_constraints: |
+  Not documented
+  
+dependencies:
+  - kind: unknown
+    dependency: None
+  
+change_history:
+  - timestamp: "2025-04-23T17:49:18Z"
+    summary: "Auto-detected file"
+    details: "Automatically indexed WORKING_BACKWARDS.md"
+```
 
-### Filename 'WORKING_BACKWARDS.md':
-- Source file intent: Documents product vision and customer experience
+### `README.md`
+```yaml
+source_file_intent: |
+  File: README.md
+  
+source_file_design_principles: |
+  Not documented
+  
+source_file_constraints: |
+  Not documented
+  
+dependencies:
+  - kind: unknown
+    dependency: None
+  
+change_history:
+  - timestamp: "2025-04-23T17:49:18Z"
+    summary: "Auto-detected file"
+    details: "Automatically indexed README.md"
+```
 
-### Filename 'CODING_GUIDELINES.md':
-- Source file intent: Documents programming approaches and constraints specific to the project
+### `API.md`
+```yaml
+source_file_intent: |
+  File: API.md
+  
+source_file_design_principles: |
+  Not documented
+  
+source_file_constraints: |
+  Not documented
+  
+dependencies:
+  - kind: unknown
+    dependency: None
+  
+change_history:
+  - timestamp: "2025-04-23T17:49:18Z"
+    summary: "Auto-detected file"
+    details: "Automatically indexed API.md"
+```
 
-### Filename 'MARKDOWN_CHANGELOG.md':
-- Source file intent: Tracks all documentation changes organized by directory
+### `DATA_MODEL.md`
+```yaml
+source_file_intent: |
+  File: DATA_MODEL.md
+  
+source_file_design_principles: |
+  Not documented
+  
+source_file_constraints: |
+  Not documented
+  
+dependencies:
+  - kind: unknown
+    dependency: None
+  
+change_history:
+  - timestamp: "2025-04-23T17:49:18Z"
+    summary: "Auto-detected file"
+    details: "Automatically indexed DATA_MODEL.md"
+```
 
-## Change Log History
-2025-04-21T00:56:00Z : Updated DESIGN.md entry by CodeAssistant
-* Updated DESIGN.md entry to reflect restructured document with new chapter organization
-2025-04-21T00:25:15Z : Initial creation by CodeAssistant
-* Created first version of HSTC.md for doc/ directory
+### `CONFIGURATION.md`
+```yaml
+source_file_intent: |
+  File: CONFIGURATION.md
+  
+source_file_design_principles: |
+  Not documented
+  
+source_file_constraints: |
+  Not documented
+  
+dependencies:
+  - kind: unknown
+    dependency: None
+  
+change_history:
+  - timestamp: "2025-04-23T17:49:18Z"
+    summary: "Auto-detected file"
+    details: "Automatically indexed CONFIGURATION.md"
+```
+
+### `DOCUMENT_RELATIONSHIPS.md`
+```yaml
+source_file_intent: |
+  File: DOCUMENT_RELATIONSHIPS.md
+  
+source_file_design_principles: |
+  Not documented
+  
+source_file_constraints: |
+  Not documented
+  
+dependencies:
+  - kind: unknown
+    dependency: None
+  
+change_history:
+  - timestamp: "2025-04-23T17:49:18Z"
+    summary: "Auto-detected file"
+    details: "Automatically indexed DOCUMENT_RELATIONSHIPS.md"
+```
+
+### `SECURITY.md`
+```yaml
+source_file_intent: |
+  File: SECURITY.md
+  
+source_file_design_principles: |
+  Not documented
+  
+source_file_constraints: |
+  Not documented
+  
+dependencies:
+  - kind: unknown
+    dependency: None
+  
+change_history:
+  - timestamp: "2025-04-23T17:49:18Z"
+    summary: "Auto-detected file"
+    details: "Automatically indexed SECURITY.md"
+```
+
+### `MARKDOWN_CHANGELOG.md`
+```yaml
+source_file_intent: |
+  File: MARKDOWN_CHANGELOG.md
+  
+source_file_design_principles: |
+  Not documented
+  
+source_file_constraints: |
+  Not documented
+  
+dependencies:
+  - kind: unknown
+    dependency: None
+  
+change_history:
+  - timestamp: "2025-04-23T17:49:18Z"
+    summary: "Auto-detected file"
+    details: "Automatically indexed MARKDOWN_CHANGELOG.md"
+```
+
+<!-- End of HSTC.md file -->

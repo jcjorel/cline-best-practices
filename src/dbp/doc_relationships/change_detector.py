@@ -31,9 +31,9 @@
 # - Assumes document content is text-based (e.g., Markdown).
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/doc_relationships/impact_analyzer.py
-# - src/dbp/doc_relationships/data_models.py
+# codebase:- doc/DESIGN.md
+# system:- src/dbp/doc_relationships/impact_analyzer.py
+# system:- src/dbp/doc_relationships/data_models.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:22:40Z : Initial creation of ChangeDetector class by CodeAssistant

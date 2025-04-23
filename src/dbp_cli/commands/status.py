@@ -27,8 +27,8 @@
 # - Authentication checks may trigger authorization-only API calls.
 ###############################################################################
 # [Dependencies]
-# - src/dbp_cli/commands/base.py
-# - src/dbp_cli/auth.py
+# other:- src/dbp_cli/commands/base.py
+# other:- src/dbp_cli/auth.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T13:13:30Z : Initial creation of StatusCommandHandler by CodeAssistant

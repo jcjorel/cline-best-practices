@@ -25,7 +25,7 @@
 # - Should maintain backward compatibility for public interfaces
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-17T17:02:45Z : Added logging utility exports by CodeAssistant

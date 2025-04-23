@@ -33,9 +33,9 @@
 # - Assumes node identifiers (document paths) are unique strings.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/DOCUMENT_RELATIONSHIPS.md
-# - src/dbp/doc_relationships/data_models.py
+# codebase:- doc/DESIGN.md
+# codebase:- doc/DOCUMENT_RELATIONSHIPS.md
+# system:- src/dbp/doc_relationships/data_models.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:18:10Z : Initial creation of RelationshipGraph class by CodeAssistant

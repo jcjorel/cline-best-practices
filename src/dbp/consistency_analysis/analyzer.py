@@ -36,8 +36,8 @@
 # - Placeholder `apply_rule` methods need to be replaced with actual analysis logic.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/consistency_analysis/data_models.py
+# codebase:- doc/DESIGN.md
+# other:- src/dbp/consistency_analysis/data_models.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:30:45Z : Initial creation of analyzer classes by CodeAssistant

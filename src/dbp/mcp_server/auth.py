@@ -38,10 +38,10 @@
 # - Permission matching logic is basic (exact match or wildcard).
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/SECURITY.md
-# - src/dbp/config/config_schema.py (MCPServerConfig, APIKeyEntry)
-# - src/dbp/mcp_server/data_models.py (MCPRequest)
+# codebase:- doc/DESIGN.md
+# codebase:- doc/SECURITY.md
+# other:- src/dbp/config/config_schema.py (MCPServerConfig, APIKeyEntry)
+# other:- src/dbp/mcp_server/data_models.py (MCPRequest)
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T16:40:59Z : Updated auth to use centralized exceptions by CodeAssistant

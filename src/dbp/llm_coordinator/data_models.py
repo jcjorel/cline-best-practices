@@ -30,9 +30,9 @@
 # - Assumes consistency in usage across the coordinator components.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/LLM_COORDINATION.md
-# - doc/design/MCP_SERVER_ENHANCED_DATA_MODEL.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/LLM_COORDINATION.md
+# codebase:- doc/design/MCP_SERVER_ENHANCED_DATA_MODEL.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T16:25:27Z : Fixed field order in InternalToolJob dataclass by CodeAssistant

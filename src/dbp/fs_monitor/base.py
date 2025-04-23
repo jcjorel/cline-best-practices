@@ -32,7 +32,7 @@
 #   implement the abstract methods.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:40:40Z : Initial creation of base monitor components by CodeAssistant

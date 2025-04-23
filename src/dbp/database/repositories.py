@@ -27,9 +27,9 @@
 # - Should not contain any implementation code, only imports and re-exports.
 ###############################################################################
 # [Dependencies]
-# - doc/DATA_MODEL.md
-# - doc/DESIGN.md
-# - doc/design/COMPONENT_INITIALIZATION.md
+# codebase:- doc/DATA_MODEL.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T22:38:07Z : Refactored file to be a compatibility shim for modular repositories by CodeAssistant

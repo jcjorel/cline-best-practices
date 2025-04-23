@@ -33,8 +33,8 @@
 # - Must not depend on model-specific response formats
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/LLM_COORDINATION.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/LLM_COORDINATION.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T12:56:00Z : Initial creation of Bedrock base class by Cline

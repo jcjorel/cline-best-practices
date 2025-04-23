@@ -32,8 +32,8 @@
 # - Relies on analyzers correctly reporting their rules via `get_rules()`.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/consistency_analysis/analyzer.py (Interface definition)
+# codebase:- doc/DESIGN.md
+# other:- src/dbp/consistency_analysis/analyzer.py (Interface definition)
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:29:35Z : Initial creation of AnalysisRegistry class by CodeAssistant

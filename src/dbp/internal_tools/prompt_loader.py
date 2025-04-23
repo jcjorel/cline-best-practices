@@ -32,8 +32,8 @@
 # - Cache is simple and doesn't handle file updates automatically (requires re-initialization).
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/INTERNAL_LLM_TOOLS.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/INTERNAL_LLM_TOOLS.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:14:45Z : Initial creation of PromptLoader class by CodeAssistant

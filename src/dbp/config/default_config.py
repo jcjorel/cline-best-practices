@@ -31,8 +31,8 @@
 # - Must keep naming conventions consistent with Pydantic model field names
 ###############################################################################
 # [Dependencies]
-# - doc/CONFIGURATION.md
-# - doc/DESIGN.md
+# codebase:- doc/CONFIGURATION.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-17T15:16:00Z : Reorganized configuration structure for clarity by CodeAssistant

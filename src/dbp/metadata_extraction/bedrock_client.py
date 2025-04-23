@@ -37,8 +37,8 @@
 # - Specific model parameters (temperature, max_tokens) are passed during invocation.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/SECURITY.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/SECURITY.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:51:20Z : Initial creation of BedrockClient class by CodeAssistant

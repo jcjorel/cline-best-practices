@@ -33,8 +33,8 @@
 # - Statistics are stored in memory and lost on restart unless persisted.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/recommendation_generator/data_models.py
+# codebase:- doc/DESIGN.md
+# system:- src/dbp/recommendation_generator/data_models.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:42:55Z : Initial creation of FeedbackAnalyzer class by CodeAssistant

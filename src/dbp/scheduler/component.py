@@ -35,12 +35,12 @@
 # - Integration with fs_monitor for receiving change events needs refinement (current fs_monitor pushes to its own queue, doesn't support listeners as planned here).
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/BACKGROUND_TASK_SCHEDULER.md
-# - src/dbp/core/component.py
-# - All other files in src/dbp/scheduler/
-# - src/dbp/fs_monitor/__init__.py (Dependency)
-# - src/dbp/metadata_extraction/component.py (Dependency)
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/BACKGROUND_TASK_SCHEDULER.md
+# system:- src/dbp/core/component.py
+# other:- All other files in src/dbp/scheduler/
+# other:- src/dbp/fs_monitor/__init__.py (Dependency)
+# other:- src/dbp/metadata_extraction/component.py (Dependency)
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-20T01:30:44Z : Completed dependency injection refactoring by CodeAssistant

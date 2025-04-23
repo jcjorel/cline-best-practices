@@ -30,8 +30,8 @@
 # - Requires components to set _initialized flag properly
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/COMPONENT_INITIALIZATION.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-20T00:35:54Z : Removed deprecated dependencies property by CodeAssistant

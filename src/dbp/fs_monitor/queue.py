@@ -33,9 +33,9 @@
 # - Relies on accurate timestamps within ChangeEvent objects.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/BACKGROUND_TASK_SCHEDULER.md
-# - src/dbp/fs_monitor/base.py
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/BACKGROUND_TASK_SCHEDULER.md
+# other:- src/dbp/fs_monitor/base.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:44:35Z : Initial creation of ChangeDetectionQueue by CodeAssistant

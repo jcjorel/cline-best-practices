@@ -27,8 +27,8 @@
 # - Should not contain entity-specific logic.
 ###############################################################################
 # [Dependencies]
-# - doc/DATA_MODEL.md
-# - doc/DESIGN.md
+# codebase:- doc/DATA_MODEL.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T22:00:02Z : Created base_repository.py as part of repositories.py refactoring by CodeAssistant

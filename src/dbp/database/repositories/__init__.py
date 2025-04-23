@@ -25,8 +25,8 @@
 # - Must avoid circular imports
 ###############################################################################
 # [Dependencies]
-# - doc/DATA_MODEL.md
-# - doc/DESIGN.md
+# codebase:- doc/DATA_MODEL.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T21:59:06Z : Created repositories package __init__.py by CodeAssistant

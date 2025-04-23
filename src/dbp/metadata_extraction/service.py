@@ -34,8 +34,8 @@
 # - Overall performance depends on the combined performance of its dependencies (especially LLM invocation).
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - All other files in src/dbp/metadata_extraction/
+# codebase:- doc/DESIGN.md
+# other:- All other files in src/dbp/metadata_extraction/
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T12:25:00Z : Updated service to use the new LLMPromptManager by Cline

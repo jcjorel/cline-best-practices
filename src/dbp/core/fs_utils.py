@@ -31,7 +31,7 @@
 # - Should not modify any global state
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-17T12:03:38Z : Updated path resolution to be Git root-relative by CodeAssistant

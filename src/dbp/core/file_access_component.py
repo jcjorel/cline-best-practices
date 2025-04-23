@@ -27,9 +27,11 @@
 # - Should not have dependencies on high-level components
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/core/component.py
-# - src/dbp/core/file_access.py
+# codebase:doc/DESIGN.md
+# codebase:src/dbp/core/component.py
+# codebase:src/dbp/core/file_access.py
+# system:logging
+# system:typing
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-19T23:46:00Z : Added dependency injection support by CodeAssistant

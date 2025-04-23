@@ -32,8 +32,8 @@
 # - Project root path must be a valid directory.
 ###############################################################################
 # [Dependencies]
-# - doc/CONFIGURATION.md
-# - doc/DESIGN.md
+# codebase:- doc/CONFIGURATION.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:37:25Z : Initial creation of ProjectConfigManager class by CodeAssistant

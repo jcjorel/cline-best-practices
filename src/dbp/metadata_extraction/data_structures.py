@@ -31,7 +31,7 @@
 #   output schema used in LLM prompts.
 ###############################################################################
 # [Dependencies]
-# - doc/DATA_MODEL.md
+# codebase:- doc/DATA_MODEL.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:50:30Z : Initial creation of metadata data structures by CodeAssistant

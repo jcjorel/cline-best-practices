@@ -34,8 +34,8 @@
 # - Assumes UTF-8 encoding for the LLM response.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/DATA_MODEL.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/DATA_MODEL.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:51:55Z : Initial creation of ResponseParser class by CodeAssistant

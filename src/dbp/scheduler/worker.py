@@ -36,10 +36,10 @@
 # - Number of worker threads should be configured carefully based on system resources.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/BACKGROUND_TASK_SCHEDULER.md
-# - src/dbp/scheduler/queue.py
-# - src/dbp/metadata_extraction/component.py (Dependency)
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/BACKGROUND_TASK_SCHEDULER.md
+# other:- src/dbp/scheduler/queue.py
+# other:- src/dbp/metadata_extraction/component.py (Dependency)
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:03:00Z : Initial creation of worker classes by CodeAssistant

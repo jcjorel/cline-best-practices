@@ -33,8 +33,8 @@
 # - FSEvents provides less granular information than inotify (e.g., rename detection is harder).
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/fs_monitor/base.py
+# codebase:- doc/DESIGN.md
+# other:- src/dbp/fs_monitor/base.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:42:15Z : Initial creation of MacOSFileSystemMonitor by CodeAssistant

@@ -25,7 +25,7 @@
 # - Should maintain backward compatibility for public interfaces
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T20:13:29Z : Updated class name from BackgroundTaskSchedulerComponent to SchedulerComponent by CodeAssistant

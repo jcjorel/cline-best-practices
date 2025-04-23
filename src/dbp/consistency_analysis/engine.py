@@ -33,10 +33,10 @@
 # - Performance depends on the number of rules and the complexity of the analyzers.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/consistency_analysis/registry.py
-# - src/dbp/consistency_analysis/analyzer.py
-# - src/dbp/consistency_analysis/data_models.py
+# codebase:- doc/DESIGN.md
+# system:- src/dbp/consistency_analysis/registry.py
+# other:- src/dbp/consistency_analysis/analyzer.py
+# other:- src/dbp/consistency_analysis/data_models.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:30:15Z : Initial creation of RuleEngine class by CodeAssistant

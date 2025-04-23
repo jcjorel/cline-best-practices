@@ -26,8 +26,8 @@
 # - Query handling ultimately depends on the server's ability to interpret queries.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp_cli/commands/base.py
+# codebase:- doc/DESIGN.md
+# other:- src/dbp_cli/commands/base.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T10:08:00Z : Initial creation of QueryCommandHandler by CodeAssistant

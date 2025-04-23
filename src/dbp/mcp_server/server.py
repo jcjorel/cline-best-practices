@@ -35,12 +35,12 @@
 # - Threading model for handling requests depends on the chosen web framework.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/mcp_server/data_models.py
-# - src/dbp/mcp_server/mcp_protocols.py
-# - src/dbp/mcp_server/registry.py
-# - src/dbp/mcp_server/auth.py
-# - src/dbp/mcp_server/error_handler.py
+# codebase:- doc/DESIGN.md
+# other:- src/dbp/mcp_server/data_models.py
+# other:- src/dbp/mcp_server/mcp_protocols.py
+# system:- src/dbp/mcp_server/registry.py
+# other:- src/dbp/mcp_server/auth.py
+# other:- src/dbp/mcp_server/error_handler.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T21:37:00Z : Implemented FastAPI/Uvicorn integration by CodeAssistant

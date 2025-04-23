@@ -34,9 +34,9 @@
 # - Assumes indexes are kept up-to-date by the `IndexManager`.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/memory_cache/index_manager.py
-# - src/dbp/memory_cache/storage.py
+# codebase:- doc/DESIGN.md
+# other:- src/dbp/memory_cache/index_manager.py
+# other:- src/dbp/memory_cache/storage.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:58:40Z : Initial creation of query classes by CodeAssistant

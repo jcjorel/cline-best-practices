@@ -37,10 +37,10 @@
 # - Response parsing logic needs to be robust to variations in the LLM's output format.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/LLM_COORDINATION.md
-# - src/dbp/llm_coordinator/data_models.py
-# - src/dbp/llm_coordinator/tool_registry.py
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/LLM_COORDINATION.md
+# other:- src/dbp/llm_coordinator/data_models.py
+# system:- src/dbp/llm_coordinator/tool_registry.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T13:20:00Z : Refactored to use centralized Bedrock client management by Cline

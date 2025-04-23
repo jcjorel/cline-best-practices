@@ -34,8 +34,8 @@
 # - Relies on the availability and proper functioning of the inotify kernel subsystem.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/fs_monitor/base.py
+# codebase:- doc/DESIGN.md
+# other:- src/dbp/fs_monitor/base.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-18T17:12:00Z : Fixed LinuxFileSystemMonitor thread exit issue by CodeAssistant

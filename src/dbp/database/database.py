@@ -41,9 +41,9 @@
 # - Schema migration is handled by AlembicManager.
 ###############################################################################
 # [Dependencies]
-# - doc/DATA_MODEL.md
-# - doc/DESIGN.md
-# - doc/CONFIGURATION.md
+# codebase:- doc/DATA_MODEL.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/CONFIGURATION.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-19T23:52:00Z : Added dependency injection support by CodeAssistant

@@ -28,7 +28,7 @@
 # - Must maintain compatibility with existing tool functionality
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T08:55:00Z : Created base internal tools structure by CodeAssistant

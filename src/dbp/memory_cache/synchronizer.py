@@ -34,10 +34,10 @@
 # - Incremental sync logic requires a mechanism to identify changes in the database (e.g., timestamps, version numbers). Placeholder implementation provided.
 ###############################################################################
 # [Dependencies]
-# - doc/DATA_MODEL.md
-# - src/dbp/database/repositories.py
-# - src/dbp/database/models.py (Assumed ORM models)
-# - src/dbp/metadata_extraction/data_structures.py (FileMetadata)
+# codebase:- doc/DATA_MODEL.md
+# system:- src/dbp/database/repositories.py
+# other:- src/dbp/database/models.py (Assumed ORM models)
+# system:- src/dbp/metadata_extraction/data_structures.py (FileMetadata)
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:59:20Z : Initial creation of DatabaseSynchronizer class by CodeAssistant

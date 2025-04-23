@@ -30,8 +30,8 @@
 # - Must use the common BedrockModelClientBase interface
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/LLM_COORDINATION.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/LLM_COORDINATION.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T13:41:00Z : Initial creation of Claude 3.7 Sonnet client by Cline

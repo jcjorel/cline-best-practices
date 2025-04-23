@@ -28,9 +28,9 @@
 # - Assumes a properly initialized DatabaseManager is provided.
 ###############################################################################
 # [Dependencies]
-# - doc/DATA_MODEL.md
-# - doc/DESIGN.md
-# - doc/DOCUMENT_RELATIONSHIPS.md
+# codebase:- doc/DATA_MODEL.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/DOCUMENT_RELATIONSHIPS.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T22:13:00Z : Created relationship_repository.py as part of repositories.py refactoring by CodeAssistant

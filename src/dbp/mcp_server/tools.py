@@ -34,10 +34,10 @@
 # - Placeholder execution logic needs to be replaced with actual component interactions.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/API.md
-# - src/dbp/mcp_server/mcp_protocols.py
-# - src/dbp/mcp_server/adapter.py
+# codebase:- doc/DESIGN.md
+# codebase:- doc/API.md
+# other:- src/dbp/mcp_server/mcp_protocols.py
+# other:- src/dbp/mcp_server/adapter.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T14:33:45Z : Renamed GenerateRecommendationsTool to CommitMessageTool by CodeAssistant

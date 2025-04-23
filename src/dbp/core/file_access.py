@@ -29,7 +29,7 @@
 # - Does not handle writing to files (read-only service)
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
+# codebase:doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-18T15:40:30Z : Initial creation of FileAccessService by CodeAssistant

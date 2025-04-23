@@ -37,9 +37,9 @@
 # - Relies on placeholder implementations in strategies and LLM integration.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/core/component.py
-# - All other files in src/dbp/recommendation_generator/
+# codebase:- doc/DESIGN.md
+# system:- src/dbp/core/component.py
+# system:- All other files in src/dbp/recommendation_generator/
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-20T01:27:55Z : Completed dependency injection refactoring by CodeAssistant

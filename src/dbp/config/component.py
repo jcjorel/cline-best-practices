@@ -31,11 +31,11 @@
 # - Must be named "config_manager" to meet dependency declarations
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/CONFIGURATION.md
-# - doc/design/COMPONENT_INITIALIZATION.md
-# - src/dbp/core/component.py
-# - src/dbp/config/config_manager.py
+# codebase:- doc/DESIGN.md
+# codebase:- doc/CONFIGURATION.md
+# codebase:- doc/design/COMPONENT_INITIALIZATION.md
+# system:- src/dbp/core/component.py
+# other:- src/dbp/config/config_manager.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-20T10:21:00Z : Fixed initialization flag naming by CodeAssistant

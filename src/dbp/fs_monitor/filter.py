@@ -34,8 +34,8 @@
 # - Path normalization (e.g., using forward slashes) is important for consistent matching.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md (Dynamic File Exclusion Strategy)
-# - doc/CONFIGURATION.md (fs_monitor.ignore_patterns)
+# other:- doc/DESIGN.md (Dynamic File Exclusion Strategy)
+# system:- doc/CONFIGURATION.md (fs_monitor.ignore_patterns)
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-17T16:49:00Z : Updated configuration key for ignore patterns by CodeAssistant

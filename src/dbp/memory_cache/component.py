@@ -36,10 +36,10 @@
 # - Assumes configuration for the memory cache is available via the InitializationContext.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/COMPONENT_INITIALIZATION.md
-# - src/dbp/core/component.py
-# - All other files in src/dbp/memory_cache/
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/COMPONENT_INITIALIZATION.md
+# system:- src/dbp/core/component.py
+# other:- All other files in src/dbp/memory_cache/
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-20T01:13:35Z : Completed component dependency refactoring by CodeAssistant

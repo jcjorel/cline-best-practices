@@ -26,8 +26,8 @@
 # - Should not expose internal implementation details.
 ###############################################################################
 # [Dependencies]
-# - doc/DATA_MODEL.md
-# - doc/DESIGN.md
+# codebase:- doc/DATA_MODEL.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T22:42:52Z : Created database package __init__ file by CodeAssistant

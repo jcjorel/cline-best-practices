@@ -34,9 +34,9 @@
 # - Assumes file paths and directory structures are consistent.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/INTERNAL_LLM_TOOLS.md
-# - src/dbp/internal_tools/file_access.py
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/INTERNAL_LLM_TOOLS.md
+# other:- src/dbp/internal_tools/file_access.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:12:30Z : Initial creation of Context Assembler classes by CodeAssistant

@@ -31,11 +31,11 @@
 # - Assumes the worker pool correctly handles thread management.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/BACKGROUND_TASK_SCHEDULER.md
-# - src/dbp/scheduler/queue.py
-# - src/dbp/scheduler/worker.py
-# - src/dbp/scheduler/status.py
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/BACKGROUND_TASK_SCHEDULER.md
+# other:- src/dbp/scheduler/queue.py
+# other:- src/dbp/scheduler/worker.py
+# other:- src/dbp/scheduler/status.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:04:00Z : Initial creation of SchedulerController class by CodeAssistant

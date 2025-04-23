@@ -25,7 +25,7 @@
 # - Should maintain backward compatibility for public interfaces
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T21:58:23Z : Added GenAI header to comply with documentation standards by CodeAssistant

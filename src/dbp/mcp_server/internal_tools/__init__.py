@@ -25,7 +25,7 @@
 # - Not to be exposed directly to MCP clients
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T09:25:00Z : Created internal tools package by CodeAssistant

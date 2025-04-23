@@ -42,8 +42,8 @@
 # - Project-specific configuration loading requires the project root path.
 ###############################################################################
 # [Dependencies]
-# - doc/CONFIGURATION.md
-# - doc/DESIGN.md
+# codebase:doc/CONFIGURATION.md
+# codebase:doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-18T09:14:00Z : Fixed template variable recursion issue in resolve_template_string by CodeAssistant

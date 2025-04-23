@@ -32,8 +32,8 @@
 # - Placeholder implementations need to be replaced with actual parsing/formatting logic.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/INTERNAL_LLM_TOOLS.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/INTERNAL_LLM_TOOLS.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T12:14:22Z : Added ResponseValidationError class by CodeAssistant

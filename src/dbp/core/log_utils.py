@@ -30,7 +30,7 @@
 # - Should handle different log format requirements flexibly
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-18T13:54:00Z : Fixed log level name truncation by CodeAssistant

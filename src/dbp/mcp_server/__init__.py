@@ -26,8 +26,8 @@
 # - Should maintain backward compatibility for public interfaces
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/LLM_COORDINATION.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/LLM_COORDINATION.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T21:53:30Z : Fixed docstring formatting by CodeAssistant

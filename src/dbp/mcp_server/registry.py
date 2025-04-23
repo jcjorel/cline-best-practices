@@ -31,8 +31,8 @@
 # - Thread safety ensured by RLock.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/mcp_server/mcp_protocols.py (Expected location for MCPTool/MCPResource bases)
+# codebase:- doc/DESIGN.md
+# other:- src/dbp/mcp_server/mcp_protocols.py (Expected location for MCPTool/MCPResource bases)
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:50:45Z : Initial creation of MCP ToolRegistry and ResourceProvider by CodeAssistant

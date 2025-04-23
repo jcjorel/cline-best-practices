@@ -29,9 +29,9 @@
 # - Must import all models to ensure they're included in migrations
 ###############################################################################
 # [Dependencies]
-# - doc/DATA_MODEL.md
-# - doc/DESIGN.md
-# - doc/CONFIGURATION.md
+# codebase:- doc/DATA_MODEL.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/CONFIGURATION.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T18:08:07Z : Initial creation of Alembic environment by CodeAssistant

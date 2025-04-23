@@ -29,9 +29,9 @@
 # - Expects configuration for monitoring settings via InitializationContext
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/core/component.py
-# - src/dbp/fs_monitor/factory.py
+# codebase:- doc/DESIGN.md
+# system:- src/dbp/core/component.py
+# other:- src/dbp/fs_monitor/factory.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-20T01:41:39Z : Completed dependency injection refactoring by CodeAssistant

@@ -34,8 +34,8 @@
 # - Thread safety is ensured via RLock.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/LLM_COORDINATION.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/LLM_COORDINATION.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:07:25Z : Initial creation of ToolRegistry class by CodeAssistant

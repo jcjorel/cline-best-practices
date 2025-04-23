@@ -32,8 +32,8 @@
 # - Must be thread-safe for concurrent access from multiple components
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/LLM_COORDINATION.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/LLM_COORDINATION.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T13:00:00Z : Initial creation of Bedrock client manager by Cline

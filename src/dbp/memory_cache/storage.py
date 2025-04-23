@@ -31,8 +31,8 @@
 # - Assumes keys (file paths) are unique strings.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/metadata_extraction/data_structures.py (Defines FileMetadata)
+# codebase:- doc/DESIGN.md
+# system:- src/dbp/metadata_extraction/data_structures.py (Defines FileMetadata)
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:57:00Z : Initial creation of CacheStorage class by CodeAssistant

@@ -34,11 +34,11 @@
 # - Performance depends on the number of inconsistencies and the complexity of the selected strategies.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/recommendation_generator/selector.py
-# - src/dbp/recommendation_generator/strategy.py
-# - src/dbp/consistency_analysis/data_models.py (InconsistencyRecord)
-# - src/dbp/recommendation_generator/data_models.py (Recommendation)
+# codebase:- doc/DESIGN.md
+# system:- src/dbp/recommendation_generator/selector.py
+# system:- src/dbp/recommendation_generator/strategy.py
+# other:- src/dbp/consistency_analysis/data_models.py (InconsistencyRecord)
+# system:- src/dbp/recommendation_generator/data_models.py (Recommendation)
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:41:00Z : Initial creation of GeneratorEngine class by CodeAssistant

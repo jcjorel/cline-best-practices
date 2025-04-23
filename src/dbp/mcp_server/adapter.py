@@ -32,9 +32,9 @@
 # - Assumes component names used for retrieval match the names used during registration.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/core/component.py
-# - src/dbp/core/system.py
+# codebase:- doc/DESIGN.md
+# system:- src/dbp/core/component.py
+# system:- src/dbp/core/system.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T22:55:41Z : Fixed import path for component registry by CodeAssistant

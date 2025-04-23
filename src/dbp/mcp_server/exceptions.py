@@ -28,7 +28,7 @@
 # - Must be importable by all other MCP server modules.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T16:31:15Z : Created exceptions.py file by CodeAssistant

@@ -29,8 +29,8 @@
 # - File writing depends on filesystem permissions.
 ###############################################################################
 # [Dependencies]
-# - src/dbp_cli/commands/base.py
-# - src/dbp_cli/config.py
+# other:- src/dbp_cli/commands/base.py
+# other:- src/dbp_cli/config.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T13:12:00Z : Initial creation of ConfigCommandHandler by CodeAssistant

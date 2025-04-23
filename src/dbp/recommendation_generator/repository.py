@@ -32,10 +32,10 @@
 # - Filtering by inconsistency_id relies on database-specific JSON querying capabilities or string matching.
 ###############################################################################
 # [Dependencies]
-# - doc/DATA_MODEL.md
-# - src/dbp/database/database.py
-# - src/dbp/database/models.py
-# - src/dbp/recommendation_generator/data_models.py
+# codebase:- doc/DATA_MODEL.md
+# other:- src/dbp/database/database.py
+# other:- src/dbp/database/models.py
+# system:- src/dbp/recommendation_generator/data_models.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:38:40Z : Initial creation of RecommendationRepository by CodeAssistant

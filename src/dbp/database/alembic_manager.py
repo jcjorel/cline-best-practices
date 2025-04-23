@@ -31,9 +31,9 @@
 # - Needs access to a database engine and session manager.
 ###############################################################################
 # [Dependencies]
-# - doc/DATA_MODEL.md
-# - doc/DESIGN.md
-# - doc/CONFIGURATION.md
+# codebase:- doc/DATA_MODEL.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/CONFIGURATION.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-20T23:50:00Z : Removed threading-based watchdog integration by CodeAssistant

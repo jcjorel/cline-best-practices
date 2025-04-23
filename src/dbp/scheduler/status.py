@@ -32,8 +32,8 @@
 # - Assumes timestamps are reasonably accurate for uptime calculation.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/BACKGROUND_TASK_SCHEDULER.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/BACKGROUND_TASK_SCHEDULER.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:03:35Z : Initial creation of StatusReporter class by CodeAssistant

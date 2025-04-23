@@ -25,8 +25,8 @@
 # - Depends on the MCP server supporting the 'dbp_commit_message' tool.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp_cli/commands/base.py
+# codebase:- doc/DESIGN.md
+# other:- src/dbp_cli/commands/base.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T10:12:00Z : Initial creation of CommitCommandHandler by CodeAssistant

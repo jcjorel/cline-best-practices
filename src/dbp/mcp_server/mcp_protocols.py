@@ -30,7 +30,7 @@
 # - Input/output schemas should ideally follow JSON Schema standards.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:51:20Z : Initial creation of MCP protocol base classes by CodeAssistant

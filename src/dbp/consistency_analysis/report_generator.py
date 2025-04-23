@@ -31,8 +31,8 @@
 # - Summary statistics are based solely on the provided list of inconsistencies.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/consistency_analysis/data_models.py
+# codebase:- doc/DESIGN.md
+# other:- src/dbp/consistency_analysis/data_models.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:31:35Z : Initial creation of ReportGenerator class by CodeAssistant

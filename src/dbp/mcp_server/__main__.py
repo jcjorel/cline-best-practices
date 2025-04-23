@@ -31,10 +31,10 @@
 # - Exit codes must be meaningful for the calling process.
 ###############################################################################
 # [Dependencies]
-# - src/dbp_cli/commands/server.py
-# - src/dbp/mcp_server/component.py
-# - src/dbp/mcp_server/server.py
-# - doc/DESIGN.md
+# other:- src/dbp_cli/commands/server.py
+# other:- src/dbp/mcp_server/component.py
+# other:- src/dbp/mcp_server/server.py
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-20T19:23:00Z : Fixed watchdog deadlock detection by CodeAssistant

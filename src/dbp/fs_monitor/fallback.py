@@ -34,8 +34,8 @@
 # - Resource usage (CPU, I/O) increases with the number of files and polling frequency.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/fs_monitor/base.py
+# codebase:- doc/DESIGN.md
+# other:- src/dbp/fs_monitor/base.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:43:55Z : Initial creation of FallbackFileSystemMonitor by CodeAssistant

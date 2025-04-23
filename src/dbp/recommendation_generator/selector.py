@@ -32,9 +32,9 @@
 # - The mapping from inconsistency type to strategy name needs to be maintained.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/recommendation_generator/strategy.py
-# - src/dbp/consistency_analysis/data_models.py (InconsistencyType)
+# codebase:- doc/DESIGN.md
+# system:- src/dbp/recommendation_generator/strategy.py
+# other:- src/dbp/consistency_analysis/data_models.py (InconsistencyType)
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:40:20Z : Initial creation of StrategySelector class by CodeAssistant

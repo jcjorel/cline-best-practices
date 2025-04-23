@@ -36,10 +36,10 @@
 # - Performance of analysis and loading depends on the number of documents and relationships.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/DOCUMENT_RELATIONSHIPS.md
-# - src/dbp/core/component.py
-# - All other files in src/dbp/doc_relationships/
+# codebase:- doc/DESIGN.md
+# codebase:- doc/DOCUMENT_RELATIONSHIPS.md
+# system:- src/dbp/core/component.py
+# system:- All other files in src/dbp/doc_relationships/
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-20T01:24:15Z : Completed dependency injection refactoring by CodeAssistant

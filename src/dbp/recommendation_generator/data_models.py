@@ -30,7 +30,7 @@
 # - Assumes consistency in the structure of Recommendation objects.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:34:15Z : Initial creation of recommendation data models by CodeAssistant

@@ -35,9 +35,9 @@
 # - Timestamp parsing assumes ISO 8601 format from the LLM.
 ###############################################################################
 # [Dependencies]
-# - doc/DATA_MODEL.md
-# - src/dbp/metadata_extraction/data_structures.py
-# - src/dbp/metadata_extraction/response_parser.py
+# codebase:- doc/DATA_MODEL.md
+# system:- src/dbp/metadata_extraction/data_structures.py
+# system:- src/dbp/metadata_extraction/response_parser.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:52:30Z : Initial creation of ExtractionResultProcessor by CodeAssistant

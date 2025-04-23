@@ -33,10 +33,10 @@
 # - The mapping between Python exceptions and MCP error codes needs to be maintained.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/mcp_server/data_models.py
-# - src/dbp/mcp_server/auth.py (Defines Auth exceptions)
-# - src/dbp/mcp_server/adapter.py (Defines ComponentNotFoundError)
+# codebase:- doc/DESIGN.md
+# other:- src/dbp/mcp_server/data_models.py
+# other:- src/dbp/mcp_server/auth.py (Defines Auth exceptions)
+# other:- src/dbp/mcp_server/adapter.py (Defines ComponentNotFoundError)
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T16:36:30Z : Updated error handler to use centralized exceptions by CodeAssistant

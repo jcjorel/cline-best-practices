@@ -32,8 +32,8 @@
 # - Assumes the MCP server uses `X-API-Key` header for authentication.
 ###############################################################################
 # [Dependencies]
-# - src/dbp_cli/config.py
-# - src/dbp_cli/exceptions.py
+# other:- src/dbp_cli/config.py
+# other:- src/dbp_cli/exceptions.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:57:50Z : Initial creation of CLI AuthenticationManager by CodeAssistant

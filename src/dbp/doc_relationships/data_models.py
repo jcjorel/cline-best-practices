@@ -27,8 +27,8 @@
 # - Assumes consistency in usage across the documentation relationships components.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/DOCUMENT_RELATIONSHIPS.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/DOCUMENT_RELATIONSHIPS.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:17:40Z : Initial creation of doc relationships data models by CodeAssistant

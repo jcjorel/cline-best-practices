@@ -30,8 +30,8 @@
 # - Should support a transition period where both approaches are supported
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/COMPONENT_INITIALIZATION.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-19T23:37:00Z : Initial creation of ComponentRegistry by CodeAssistant

@@ -27,9 +27,9 @@
 # - Assumes a properly initialized DatabaseManager is provided.
 ###############################################################################
 # [Dependencies]
-# - doc/DATA_MODEL.md
-# - doc/DESIGN.md
-# - doc/DESIGN_DECISIONS.md
+# codebase:- doc/DATA_MODEL.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/DESIGN_DECISIONS.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T22:33:27Z : Created design_decision_repository.py as part of repositories.py refactoring by CodeAssistant

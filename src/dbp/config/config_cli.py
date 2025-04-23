@@ -32,8 +32,8 @@
 # - Assumes ConfigurationManager is initialized before CLI commands are run (in a typical application entry point).
 ###############################################################################
 # [Dependencies]
-# - doc/CONFIGURATION.md
-# - doc/DESIGN.md
+# codebase:- doc/CONFIGURATION.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:39:30Z : Initial creation of ConfigCLI class by CodeAssistant

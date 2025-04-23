@@ -30,8 +30,8 @@
 # - Should capture sufficient debug information for post-mortem analysis
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/COMPONENT_INITIALIZATION.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-20T21:04:54Z : Enhanced watchdog to prioritize all thread stack traces on trigger by CodeAssistant

@@ -26,7 +26,7 @@
 # - Should be kept minimal as the actual implementation is in cli.py.
 ###############################################################################
 # [Dependencies]
-# - src/dbp_cli/cli.py
+# other:- src/dbp_cli/cli.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T13:17:15Z : Initial creation of __main__.py entry point by CodeAssistant

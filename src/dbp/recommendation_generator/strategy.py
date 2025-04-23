@@ -34,9 +34,9 @@
 # - Placeholder implementations need to be replaced with actual logic.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/recommendation_generator/data_models.py
-# - src/dbp/llm_coordinator/llm_interface.py (Potentially used by LLMIntegration)
+# codebase:- doc/DESIGN.md
+# system:- src/dbp/recommendation_generator/data_models.py
+# other:- src/dbp/llm_coordinator/llm_interface.py (Potentially used by LLMIntegration)
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:39:40Z : Initial creation of strategy classes by CodeAssistant

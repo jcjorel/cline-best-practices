@@ -30,8 +30,8 @@
 # - Must handle model-specific parameters appropriately
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/LLM_COORDINATION.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/LLM_COORDINATION.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T13:55:00Z : Initial creation of common Bedrock client utilities by CodeAssistant

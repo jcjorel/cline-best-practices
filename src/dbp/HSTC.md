@@ -1,50 +1,54 @@
-# Hierarchical Semantic Tree Context - DBP Root Module (Updated: 2025-04-20T22:32:43+02:00)
+# Hierarchical Semantic Tree Context: dbp
 
-This directory is the root of the Document-Based Programming (DBP) system, containing all the major components and subsystems that make up the framework.
+## Directory Purpose
+This directory contains the core implementation of the Documentation-Based Programming (DBP) system. DBP is an architecture that leverages documentation as a primary project asset to maintain consistency between code and documentation, provide context for AI tools, and enforce project standards. The system includes components for configuration management, filesystem monitoring, document relationship tracking, consistency analysis, metadata extraction, LLM coordination, and MCP server functionality.
 
-## Child Directory Summaries
+## Child Directories
 
-### core/
-Contains core system components that provide foundational functionality for the Document-Based Programming (DBP) system. This includes the Component base class, component lifecycle management, system registry, filesystem utilities, and logging tools.
+### internal_tools
+This directory contains components related to internal_tools.
 
-### config/
-Contains the configuration management components for the Document-Based Programming (DBP) system. It provides a layered configuration system with multiple sources (defaults, files, environment variables, CLI arguments) and validation using Pydantic schemas.
+### memory_cache
+This directory contains components related to memory_cache.
 
-### consistency_analysis/
-Contains the consistency analysis components for the Document-Based Programming (DBP) system. It provides a framework for detecting inconsistencies between code, documentation, and configuration artifacts.
+### database
+This directory contains the database layer of the DBP system, responsible for data persistence, schema management, and database interactions. It implements a robust ORM architecture using SQLAlchemy, with separate components for database connection handling, model definitions, migration management, and data access repositories. The architecture follows the repository pattern to abstract database operations and provides a comprehensive set of repositories for different entity types, supporting schema evolution through Alembic-managed migrations.
 
-### database/
-Contains the database management components for the Document-Based Programming (DBP) system. It provides database connection management, session handling, schema migrations, and a layer of abstraction for SQLite and PostgreSQL database backends.
+### mcp_server
+This directory implements the Model Context Protocol (MCP) server integration for the Documentation-Based Programming (DBP) system. It provides a complete MCP server implementation that enables AI assistants to interact with the DBP system through standardized tools and resources. The MCP server exposes functionality for document relationships analysis, consistency checking, and recommendation generation to AI assistants while maintaining proper authentication and authorization controls. The implementation follows the component architecture of the DBP system and integrates with its lifecycle management.
 
-### doc_relationships/
-Contains the document relationships components for the Document-Based Programming (DBP) system. It provides capabilities for analyzing, tracking, and visualizing relationships between documentation files to support consistency and impact analysis.
+### recommendation_generator
+This directory contains components related to recommendation_generator.
 
-### fs_monitor/
-Contains the file system monitoring components for the Document-Based Programming (DBP) system. It provides cross-platform file system change detection with platform-specific optimizations and a fallback polling mechanism.
+### doc_relationships
+This directory implements the documentation relationship management subsystem of the DBP system. It provides components for analyzing, tracking, and visualizing relationships between documentation files and between documentation and code. The system enables impact analysis to understand how changes in one document affect others, builds relationship graphs for visualization, detects changes in document relationships over time, and provides query capabilities for exploring documentation connections. This functionality is critical for maintaining consistency across the documentation ecosystem.
 
-### internal_tools/
-Contains components for the LLM-powered internal tools system of the Document-Based Programming (DBP) framework. It provides context assemblage, execution, and response handling for specialized LLM tools used by the LLM Coordinator.
+### config
+This directory contains components responsible for configuration management in the Documentation-Based Programming (DBP) system. It implements a layered configuration approach with a singleton ConfigurationManager that loads settings from multiple sources (defaults, files, environment variables, CLI args), validates them using Pydantic models, and provides type-safe access. The ConfigManagerComponent acts as an adapter between the ConfigurationManager singleton and the component lifecycle framework, making configuration available to other components via the registry.
 
-### mcp_server/
-Contains the Model Context Protocol (MCP) server implementation for the Document-Based Programming (DBP) system, which provides API access to DBP functionalities.
+### llm
+This directory contains components related to llm.
 
-### dbp_cli/
-Contains the command-line interface application for the Document-Based Programming (DBP) system. It provides various commands for interacting with the system including query, commit, config, server management, and status checking operations. The CLI is built with a modular architecture based on command handlers that extend a common BaseCommandHandler class.
+### consistency_analysis
+This directory implements the consistency analysis subsystem of the DBP system, responsible for detecting inconsistencies between code and documentation. It provides components for analyzing code-documentation alignment, identifying potential issues, assessing their impact, and generating comprehensive reports. The system uses a repository pattern for storing analysis results and a registry for tracking consistency rules and validation strategies. The impact analyzer enables understanding how documentation changes affect code quality and vice versa.
 
-### llm/
-Contains the Large Language Model integration components for the DBP system. It provides common interfaces and client implementations for interacting with different LLM providers (Amazon Bedrock, Claude, etc.).
+### core
+This directory implements the foundational infrastructure of the Documentation-Based Programming (DBP) system. It provides the component lifecycle framework, dependency injection system, registry for component discovery, file access abstractions, and system-level utilities. These core components form the backbone of the DBP architecture, enabling modular design, proper initialization sequences, and standardized interaction patterns between subsystems. The core framework emphasizes type safety, structured error handling, and clean separation of concerns throughout the system.
 
-### llm_coordinator/
-Contains the LLM Coordinator components that manage job processing, dispatching, and orchestration for language model interactions across the system. It acts as an intermediary between system components and LLM services.
+### llm_coordinator
+This directory contains components related to llm_coordinator.
 
-### memory_cache/
-Contains the memory cache system for efficient data storage and retrieval during processing. It provides indexing, querying, and synchronization capabilities for context data used by LLM components.
+### scheduler
+This directory contains components related to scheduler.
 
-### metadata_extraction/
-Contains components for analyzing code and documentation to extract structured metadata used for consistency analysis and relationship tracking. It leverages LLMs for semantic understanding of file contents.
+### metadata_extraction
+This directory contains components related to metadata_extraction.
 
-### recommendation_generator/
-Contains components for generating intelligent recommendations based on system analysis. It produces actionable suggestions for improving documentation and code consistency.
+### fs_monitor
+This directory contains components related to fs_monitor.
 
-### scheduler/
-Contains task scheduling and background processing components used for asynchronous operations throughout the system. It manages worker pools, job queues, and execution tracking.
+## Local Files
+
+<!-- No local files at top level of this directory -->
+
+<!-- End of HSTC.md file -->

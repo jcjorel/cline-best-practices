@@ -34,10 +34,10 @@
 # - Performance depends on the LLM Coordinator's job processing time.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/INTERNAL_LLM_TOOLS.md (Defines LLM capabilities)
-# - src/dbp/llm_coordinator/component.py (Dependency)
-# - src/dbp/consistency_analysis/data_models.py (InconsistencyRecord)
+# codebase:- doc/DESIGN.md
+# other:- doc/design/INTERNAL_LLM_TOOLS.md (Defines LLM capabilities)
+# other:- src/dbp/llm_coordinator/component.py (Dependency)
+# other:- src/dbp/consistency_analysis/data_models.py (InconsistencyRecord)
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:41:35Z : Initial creation of LLMIntegration class by CodeAssistant

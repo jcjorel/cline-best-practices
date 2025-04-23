@@ -33,9 +33,9 @@
 # - Performance of adding changes depends on timer management overhead.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/BACKGROUND_TASK_SCHEDULER.md
-# - src/dbp/fs_monitor/base.py (Similar ChangeEvent structure)
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/BACKGROUND_TASK_SCHEDULER.md
+# system:- src/dbp/fs_monitor/base.py (Similar ChangeEvent structure)
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:02:15Z : Initial creation of scheduler queue by CodeAssistant

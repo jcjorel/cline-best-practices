@@ -36,9 +36,9 @@
 # - Relies on placeholder implementations for the actual web server and tool/resource logic.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/core/component.py
-# - All other files in src/dbp/mcp_server/
+# codebase:- doc/DESIGN.md
+# system:- src/dbp/core/component.py
+# other:- All other files in src/dbp/mcp_server/
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-20T01:35:42Z : Completed dependency injection refactoring by CodeAssistant

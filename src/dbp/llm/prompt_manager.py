@@ -34,9 +34,9 @@
 # - Templates must be valid markdown or text files.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/LLM_COORDINATION.md
-# - doc/llm/prompts/README.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/LLM_COORDINATION.md
+# codebase:- doc/llm/prompts/README.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T11:58:00Z : Initial creation of LLMPromptManager class by Cline

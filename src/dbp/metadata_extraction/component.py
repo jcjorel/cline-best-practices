@@ -37,10 +37,10 @@
 # - Assumes configuration for metadata extraction is available via the InitializationContext.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/COMPONENT_INITIALIZATION.md
-# - src/dbp/core/component.py
-# - All other files in src/dbp/metadata_extraction/
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/COMPONENT_INITIALIZATION.md
+# system:- src/dbp/core/component.py
+# other:- All other files in src/dbp/metadata_extraction/
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-20T01:17:51Z : Completed dependency injection refactoring by CodeAssistant

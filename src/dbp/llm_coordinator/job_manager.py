@@ -36,9 +36,9 @@
 # - Error handling within `_execute_job` needs to be robust.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/LLM_COORDINATION.md
-# - src/dbp/llm_coordinator/data_models.py
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/LLM_COORDINATION.md
+# other:- src/dbp/llm_coordinator/data_models.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:07:50Z : Initial creation of JobManager class by CodeAssistant

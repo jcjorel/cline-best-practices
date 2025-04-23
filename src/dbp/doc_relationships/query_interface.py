@@ -31,9 +31,9 @@
 # - Assumes the graph is populated with relevant relationship data.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/doc_relationships/graph.py
-# - src/dbp/doc_relationships/data_models.py
+# codebase:- doc/DESIGN.md
+# system:- src/dbp/doc_relationships/graph.py
+# system:- src/dbp/doc_relationships/data_models.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:24:00Z : Initial creation of QueryInterface class by CodeAssistant

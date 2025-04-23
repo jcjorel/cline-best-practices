@@ -34,9 +34,9 @@
 # - Assumes relationship types are suitable for direct use as edge labels.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/DOCUMENT_RELATIONSHIPS.md
-# - src/dbp/doc_relationships/graph.py
+# codebase:- doc/DESIGN.md
+# codebase:- doc/DOCUMENT_RELATIONSHIPS.md
+# system:- src/dbp/doc_relationships/graph.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:23:25Z : Initial creation of GraphVisualization class by CodeAssistant

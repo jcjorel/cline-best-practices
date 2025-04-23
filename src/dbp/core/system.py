@@ -30,8 +30,8 @@
 # - No complex transactions or rollbacks beyond basic cleanup
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/COMPONENT_INITIALIZATION.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-20T19:15:00Z : Added watchdog keepalive to prevent deadlocks by CodeAssistant

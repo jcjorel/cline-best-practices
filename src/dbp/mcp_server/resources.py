@@ -32,10 +32,10 @@
 # - Placeholder `get` methods need to be replaced with actual data retrieval logic.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/API.md
-# - src/dbp/mcp_server/mcp_protocols.py
-# - src/dbp/mcp_server/adapter.py
+# codebase:- doc/DESIGN.md
+# codebase:- doc/API.md
+# other:- src/dbp/mcp_server/mcp_protocols.py
+# other:- src/dbp/mcp_server/adapter.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T16:39:48Z : Updated resources to use centralized exceptions by CodeAssistant

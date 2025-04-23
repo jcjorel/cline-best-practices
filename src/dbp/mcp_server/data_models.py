@@ -27,8 +27,8 @@
 # - Assumes adherence to the basic principles of the Model Context Protocol.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/MCP_SERVER_ENHANCED_DATA_MODEL.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/MCP_SERVER_ENHANCED_DATA_MODEL.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T22:56:00Z : Fixed Pydantic v2 compatibility issues by CodeAssistant

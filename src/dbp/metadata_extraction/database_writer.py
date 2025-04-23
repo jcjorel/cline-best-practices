@@ -37,9 +37,9 @@
 # - Database transaction management is handled by the repositories/DatabaseManager.
 ###############################################################################
 # [Dependencies]
-# - doc/DATA_MODEL.md
-# - src/dbp/metadata_extraction/data_structures.py
-# - src/dbp/database/repositories.py # Depends on this module
+# codebase:- doc/DATA_MODEL.md
+# system:- src/dbp/metadata_extraction/data_structures.py
+# system:- src/dbp/database/repositories.py # Depends on this module
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:53:15Z : Initial creation of DatabaseWriter class by CodeAssistant

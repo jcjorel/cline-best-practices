@@ -34,10 +34,10 @@
 # - Needs access to configuration for LLM parameters (passed via job or config).
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/INTERNAL_LLM_TOOLS.md
-# - All other files in src/dbp/internal_tools/
-# - src/dbp/llm_coordinator/data_models.py (InternalToolJob)
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/INTERNAL_LLM_TOOLS.md
+# other:- All other files in src/dbp/internal_tools/
+# other:- src/dbp/llm_coordinator/data_models.py (InternalToolJob)
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:15:10Z : Initial creation of InternalToolExecutionEngine by CodeAssistant

@@ -29,10 +29,10 @@
 # - Relies on `json` library for serializing/deserializing metadata.
 ###############################################################################
 # [Dependencies]
-# - doc/DATA_MODEL.md
-# - src/dbp/database/database.py
-# - src/dbp/database/models.py
-# - src/dbp/doc_relationships/data_models.py
+# codebase:- doc/DATA_MODEL.md
+# other:- src/dbp/database/database.py
+# other:- src/dbp/database/models.py
+# system:- src/dbp/doc_relationships/data_models.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:19:15Z : Initial creation of RelationshipRepository class by CodeAssistant

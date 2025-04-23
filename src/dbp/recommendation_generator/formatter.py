@@ -31,8 +31,8 @@
 # - JSON output relies on standard `json` library serialization.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - src/dbp/recommendation_generator/data_models.py
+# codebase:- doc/DESIGN.md
+# system:- src/dbp/recommendation_generator/data_models.py
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:42:05Z : Initial creation of FormattingEngine class by CodeAssistant

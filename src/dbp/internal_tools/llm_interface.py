@@ -33,9 +33,9 @@
 # - Depends on configuration classes (`NovaLiteConfig`, `ClaudeConfig`) being defined.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/INTERNAL_LLM_TOOLS.md
-# - src/dbp/metadata_extraction/bedrock_client.py (Related, but potentially separate instances)
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/INTERNAL_LLM_TOOLS.md
+# other:- src/dbp/metadata_extraction/bedrock_client.py (Related, but potentially separate instances)
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:13:30Z : Initial creation of LLM interface classes by CodeAssistant

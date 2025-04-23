@@ -35,8 +35,8 @@
 # - Performance relies on the efficiency of the underlying components.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - All other files in src/dbp/memory_cache/
+# codebase:- doc/DESIGN.md
+# other:- All other files in src/dbp/memory_cache/
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T10:00:00Z : Initial creation of MetadataCacheInterface by CodeAssistant

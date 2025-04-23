@@ -38,10 +38,10 @@
 # - Placeholder logic exists for the `InternalToolExecutionEngine` and actual tool execution.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/LLM_COORDINATION.md
-# - src/dbp/core/component.py
-# - All other files in src/dbp/llm_coordinator/
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/LLM_COORDINATION.md
+# system:- src/dbp/core/component.py
+# other:- All other files in src/dbp/llm_coordinator/
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-20T01:33:21Z : Completed dependency injection refactoring by CodeAssistant

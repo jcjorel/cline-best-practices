@@ -31,8 +31,8 @@
 # - Table and column names follow snake_case convention.
 ###############################################################################
 # [Dependencies]
-# - doc/DATA_MODEL.md
-# - doc/DESIGN.md
+# codebase:- doc/DATA_MODEL.md
+# codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-15T09:31:30Z : Initial creation of database models by CodeAssistant

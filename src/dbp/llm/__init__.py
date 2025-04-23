@@ -23,9 +23,9 @@
 # - Keep imports minimal to prevent circular dependencies.
 ###############################################################################
 # [Dependencies]
-# - doc/DESIGN.md
-# - doc/design/LLM_COORDINATION.md
-# - doc/llm/prompts/README.md
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/LLM_COORDINATION.md
+# codebase:- doc/llm/prompts/README.md
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-16T13:45:00Z : Added Claude 3.7 Sonnet client by Cline
