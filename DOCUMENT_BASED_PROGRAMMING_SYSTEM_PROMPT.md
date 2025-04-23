@@ -158,8 +158,10 @@ When user requests "Update HSTC", execute this precise update sequence:
 
 2. **Critical HST Update Rules**:
    - **ALWAYS update HSTC.md files yourself. Use a script only to gather directories to update.**
-   - Ensure aLL local files are listed in each HSTC.md
-   - During create/update of a HSTC.md file, maintain strict adherence to the standard HSTC.md template format
+   - If the script used by UPDATE_HSCT() is identifying a file, always open it and write it even with the same content as we need to update last modification time. 
+   - During create/update of a HSTC.md file,
+        1. Maintain strict adherence to the standard HSTC.md template format
+        2. Ensure aLL local files (and no more) are listed in each HSTC.md
 
 4. **Change Tracking**:
    - After modifying any file header, log ONLY the filename in `<same_dir>/HSTC_REQUIRES_UPDATE.md`
