@@ -138,21 +138,19 @@ When user requests "Update HSTC", execute this precise update sequence:
 1. **Update Process**:
    ```
    UPDATE_HSTC(directory_path):
-     a. Do not read yet <directory_path>/HSTC.md file
-     b. IF directory_path UNSPECIFIED:
+     a. IF directory_path UNSPECIFIED:
         - SET directory_path = <project_root>
-     c. FOR EACH sub_directory OF directory_path:
-        - RECURSIVE_CALL UPDATE_HSTC(sub_directory)
-     d. IF HSTC_REQUIRES_UPDATE.md exists in directory_path:
-        - Read modified filenames from HSTC_REQUIRES_UPDATE.md
-        - For each filename, extract header and update corresponding entry in HSTC.md
-     e. ELSE IF HSTC.md doesn't exist:
-        - Scan all files in directory
-        - Extract all headers and create new HSTC.md
-     f. ELSE:
-        - Read HSTC.md
-     g. Delete HSTC_REQUIRES_UPDATE.md if it exists
-     h. Garbage collect file and directory references in HSTC.md file that do not exist in filesystem
+     b. Identify efficiently all directories that contains HSTC_REQUIRES_UPDATE.md files
+     c. IF AT LEAST one HSTC_REQUIRES_UPDATE.md file exists
+        - FOR EACH identified_directory SORTED BY directory_path_length DESC
+           1. Read modified filenames from <identified_directory>/HSTC_REQUIRES_UPDATE.md
+           2. For each filename, extract header and update corresponding entry in HSTC.md
+           3. Garbage collect file and directory references in HSTC.md file that do not exist in filesystem
+           4. Delete HSTC_REQUIRES_UPDATE.md
+     d. ELSE:
+        - FOR EACH directory_without_HSTC.md SORTED BY directory_path_length DESC
+           1. Scan all files in directory
+           2. Extract all headers and create new HSTC.md
      i. FOR EACH parent_directory up to root:
         - Update parent's HSTC.md with current directory summary
    ```
