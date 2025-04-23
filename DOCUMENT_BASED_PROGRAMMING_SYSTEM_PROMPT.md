@@ -82,7 +82,8 @@ source_file_constraints: |
   [Content of constraints section from file header]
   
 dependencies: |
-  [Content of dependencies section from file header]
+  - kind: <codebase|system|other>
+    dependency: <dependency>
   
 change_history:
   - timestamp: "YYYY-MM-DDThh:mm:ssZ"
