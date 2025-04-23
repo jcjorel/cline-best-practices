@@ -94,6 +94,7 @@ change_history:
 ```
 
 <!-- Repeat for all files in directory -->
+<!-- End of the file with "End of HSTC.md file" to easily detect potential truncation -->
 
 ### HSTC.md Lifecycle Management
 When user requests "Update HSTC", execute this precise update sequence:
