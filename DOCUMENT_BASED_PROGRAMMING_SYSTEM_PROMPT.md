@@ -61,10 +61,10 @@ Each HSTC.md file must strictly follow this template format:
 <!-- For each child directory with HSTC.md -->
 
 ### [Child Directory Name 1]
-["Directory Purpose" section from child's HSTC.md]
+["Directory Purpose" section from child's HSTC.md. Rephrase it if contains reference to "parent directory" or other relative positional indication not applicable once merged in the current HSTC.md]
 
 ### [Child Directory Name 2]
-["Directory Purpose" section from child's HSTC.md]
+["Directory Purpose" section from child's HSTC.md. Rephrase it if contains reference to "parent directory" or other relative positional indication not applicable once merged in the current HSTC.md]
 
 <!-- Repeat for all child directories -->
 
