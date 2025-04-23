@@ -161,6 +161,7 @@ When user requests "Update HSTC", execute this precise update sequence:
 2. **Critical HST Update Rules**:
    
    - **ALWAYS respects the same exclusions as Git defined in .gitgnore file(s)**
+   - **ALWAYS update HSTC.md files yourself. Use a script only to gather directories to update.**
    - Ensure ALL local files are listed in each HSTC.md
    - Maintain strict adherence to the standard HSTC.md template format
    - Include timestamp of update in the "Last Updated" section
