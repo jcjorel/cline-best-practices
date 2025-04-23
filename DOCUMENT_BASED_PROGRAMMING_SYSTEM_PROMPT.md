@@ -138,21 +138,23 @@ When user requests "Update HSTC", execute this precise update sequence:
 1. **Update Process**:
    ```
    UPDATE_HSTC(directory_path):
-     a. FOR EACH sub_directory OF directory_path:
-        - RECURSIVE CALL UPDATE_HSTC(sub_directory)
+     a. IF directory_path UNSPECIFIED:
+        - SET directory_path = <project_root>
+     b. FOR EACH sub_directory OF directory_path:
+        - RECURSIVE_CALL UPDATE_HSTC(sub_directory)
      b. IF HSTC_REQUIRES_UPDATE.md exists in directory_path:
         - Read modified filenames from HSTC_REQUIRES_UPDATE.md
         - For each filename, extract header and update corresponding entry in HSTC.md
-     c. ELSE IF HSTC.md doesn't exist:
+     d. ELSE IF HSTC.md doesn't exist:
         - Scan all files in directory
         - Extract all headers and create new HSTC.md
-     d. Delete HSTC_REQUIRES_UPDATE.md if it exists
-     e. FOR EACH parent_directory up to root:
+     e. Delete HSTC_REQUIRES_UPDATE.md if it exists
+     f. FOR EACH parent_directory up to root:
         - Update parent's HSTC.md with current directory summary
    ```
 
 2. **Critical HST Update Rules**:
-   - **ALWAYS start updating from the deepest leaves of the filesystem hierarchy in any case**
+   
    - **ALWAYS respects the same exclusions as Git defined in .gitgnore file(s)**
    - Ensure ALL local files are listed in each HSTC.md
    - When updating a parent HSTC.md, only update the summary of the child directory
