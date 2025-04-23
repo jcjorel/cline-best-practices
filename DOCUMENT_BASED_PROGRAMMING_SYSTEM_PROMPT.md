@@ -82,6 +82,7 @@ When using HSTC to enrich LLM context, follow this precise traversal pattern:
 5. Process the final HSTC.md to understand local file context
 
 **CRITICAL: When gathering project context, traversal must always proceed from root toward leaves, never starting mid-tree**
+**CRITICAL: When thinking about any change to perform on the codebase, you MUST gather high quality context from existing HSTC.md files before to decide to change a given file** 
 
 ### HSTC.md Standardized Structure
 Each HSTC.md file must strictly follow this template format:
