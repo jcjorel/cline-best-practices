@@ -78,11 +78,11 @@ When using HSTC to enrich LLM context, follow this precise traversal pattern:
 1. ALWAYS start from the top-level HSTC.md in the project root
 2. Identify which child directory is most relevant to the user request
 3. Move to that child directory's HSTC.md file
-4. Repeat steps 2-3 until reaching the most specific relevant directory
+4. Repeat steps 6-9 times until reaching the most specific relevant directory
 5. Process the final HSTC.md to understand local file context
 
 **CRITICAL: When gathering project context to answer a user request, traversal must always proceed from root toward leaves, never starting mid-tree**
-**CRITICAL: When thinking about any change to perform on the codebase, you MUST gather high quality context from existing HSTC.md files to make best design decision** 
+**CRITICAL: When thinking about any change to perform on the codebase, you MUST gather high quality context FOLLOWING STRICTLY the "HST Traversal Algorithm" to make best design decision** 
 
 ### HSTC.md Standardized Structure
 Each HSTC.md file must strictly follow this template format:
