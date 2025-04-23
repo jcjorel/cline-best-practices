@@ -53,6 +53,7 @@ HST provides structured context data through a hierarchy of HSTC.md files locate
    - Update affected HSTC.md entries with new file header information **or** perform full files scan if HSTC.md does not exist
    - **Ensure that all local files are listed in a HSTC.md**, update missing entries if any
    - Delete the HSTC_REQUIRES_UPDATE.md files when they are integrated
+   - **ALWAYS start updating HSTC.md files from the deepest leaves of the filesystem hierarchy**
    - Recursively update parent HSTC.md files up to project root
 
 This approach creates a navigable semantic tree that provides efficient context about the entire project structure and documentation.
