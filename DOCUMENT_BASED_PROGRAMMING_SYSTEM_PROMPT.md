@@ -35,7 +35,7 @@ HST provides structured context data through a hierarchy of HSTC.md files locate
 
 1. **Project Structure Information**: Each HSTC.md contains plain text summaries of all child HSTC.md files, creating a discoverable hierarchy.
 
-2. **File Header Documentation**: Contains mandatory sections from all files in the current directory.
+2. **File Header Documentation**: Contains all file header sections from all files in the current directory.
 
 **CRITICAL: When using HSTC to enrich a LLM context, ALWAYS start from the top of hierarchy and walk down according user request content**
 
