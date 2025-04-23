@@ -112,8 +112,8 @@ When user requests "Update HSTC", execute this precise update sequence:
         - Update parent's HSTC.md with current directory summary
    ```
 
-2. **Critical Update Rules**:
-   - ALWAYS start updating from the deepest leaves of the filesystem hierarchy
+2. **Critical HST Update Rules**:
+   - **ALWAYS start updating from the deepest leaves of the filesystem hierarchy in any case**
    - Ensure ALL local files are listed in each HSTC.md
    - When updating a parent HSTC.md, only update the summary of the child directory
    - Maintain strict adherence to the standard HSTC.md template format
