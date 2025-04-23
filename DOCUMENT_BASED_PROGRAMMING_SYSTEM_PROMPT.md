@@ -61,10 +61,10 @@ Each HSTC.md file must strictly follow this template format:
 <!-- For each child directory with HSTC.md -->
 
 ### [Child Directory Name 1]
-[2-5 line summary extracted from child's HSTC.md "Directory Purpose" section]
+["Directory Purpose" section from child's HSTC.md]
 
 ### [Child Directory Name 2]
-[2-5 line summary extracted from child's HSTC.md "Directory Purpose" section]
+["Directory Purpose" section from child's HSTC.md]
 
 <!-- Repeat for all child directories -->
 
