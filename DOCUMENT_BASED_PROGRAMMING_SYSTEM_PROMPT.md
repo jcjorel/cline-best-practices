@@ -81,7 +81,7 @@ When using HSTC to enrich LLM context, follow this precise traversal pattern:
 4. Repeat steps 2-3 until reaching the most specific relevant directory
 5. Process the final HSTC.md to understand local file context
 
-**CRITICAL: Traversal must always proceed from root toward leaves, never starting mid-tree**
+**CRITICAL: When gathering project context, traversal must always proceed from root toward leaves, never starting mid-tree**
 
 ### HSTC.md Standardized Structure
 Each HSTC.md file must strictly follow this template format:
@@ -158,7 +158,7 @@ When user requests "Update HSTC", execute this precise update sequence:
 
 2. **Critical HST Update Rules**:
    - **ALWAYS update HSTC.md files yourself. Use a script only to gather directories to update.**
-   - Always process files in the order returned by the identification script
+   - **During update operation, the traversal rule is to always process files in the order returned by the identification script**
    - If the script used by UPDATE_HSCT() is identifying a file, always open it and write it even with the same content as we need to update last modification time. 
    - During create/update of a HSTC.md file,
         1. Maintain strict adherence to the standard HSTC.md template format
