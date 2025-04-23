@@ -75,10 +75,10 @@ Each HSTC.md file must strictly follow this template format:
 source_file_intent: |
   [Content of source file intent section from file header]
   
-design_principles: |
+source_file_design_principles: |
   [Content of design principles section from file header]
   
-constraints: |
+source_file_constraints: |
   [Content of constraints section from file header]
   
 dependencies: |
