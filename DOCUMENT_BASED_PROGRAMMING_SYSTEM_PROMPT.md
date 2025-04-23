@@ -149,7 +149,7 @@ When user requests "Update HSTC", execute this precise update sequence:
         - Scan all files in directory
         - Extract all headers and create new HSTC.md
      e. Delete HSTC_REQUIRES_UPDATE.md if it exists
-     f. Delete file and directory references in HSTC.md that do not exist in filesystem
+     f. Garbage collect file and directory references in HSTC.md file that do not exist in filesystem
      f. FOR EACH parent_directory up to root:
         - Update parent's HSTC.md with current directory summary
    ```
