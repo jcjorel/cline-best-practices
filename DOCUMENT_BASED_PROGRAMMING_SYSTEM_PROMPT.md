@@ -74,15 +74,22 @@ HST provides structured context data through a hierarchy of HSTC.md files locate
 - Enables intelligent "drill-down" into relevant code areas based on semantic understanding
 
 ### HST Traversal Algorithm
-When using HSTC to enrich LLM context, follow this precise traversal pattern:
-1. ALWAYS start from the top-level HSTC.md in the project root
-2. Identify which child directory is most relevant to the user request
-3. Move to that child directory's HSTC.md file
-4. Repeat steps 6-9 times until reaching the most specific relevant directory
-5. Process the final HSTC.md to understand local file context
+When using HSTC to enrich LLM context, you MUST follow this exact hierarchical traversal pattern:
 
-**CRITICAL: When gathering project context to answer a user request, traversal must always proceed from root toward leaves, never starting mid-tree**
-**CRITICAL: When thinking about any change to perform on the codebase, you MUST gather high quality context FOLLOWING STRICTLY the "HST Traversal Algorithm" to make best design decision** 
+1. ALWAYS start from the top-level HSTC.md in the project root
+2. Process this root HSTC.md file COMPLETELY before proceeding further
+3. Based on the user request, identify which child directory is most relevant
+4. Move ONLY to that child directory's HSTC.md file (never skip levels)
+5. Process this child HSTC.md completely before proceeding further
+6. Repeat steps 3-5 recursively, following a strict path down the directory tree
+7. Continue until reaching the most specific relevant directory for the user's request
+8. Process the final HSTC.md to understand local file context
+
+**CRITICAL: You MUST NEVER read an HSTC.md file without first having read and processed ALL of its ancestor HSTC.md files in the correct hierarchical sequence, starting from the project root**
+
+**CRITICAL: When gathering project context to answer a user request, traversal must always proceed from root toward leaves in strict parent-to-child order, never starting mid-tree or skipping levels**
+
+**CRITICAL: When considering any codebase changes, you MUST gather high-quality context by FOLLOWING STRICTLY the HST Traversal Algorithm to make the best design decisions**
 
 ### HSTC.md Standardized Structure
 Each HSTC.md file must strictly follow this template format:
