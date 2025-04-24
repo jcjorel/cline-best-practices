@@ -13,8 +13,9 @@
 # - Respect system prompt directives at all times
 ###############################################################################
 # [Source file intent]
-# This script generates MIME mail formatted messages with document attachments for two
-# different scenarios: master documentation and HSTC files. It's designed to be used
+# This script generates MIME mail formatted messages with document attachments for
+# different types of documentation (top-tier, second-tier, and HSTC files). It supports
+# combining multiple document types in a single message. It's designed to be used
 # in Design Mode to load necessary context documents for GenAI assistants.
 ###############################################################################
 # [Source file design principles]
@@ -42,6 +43,11 @@
 # system:sys
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-24T06:52:15Z : Updated command-line options for flexible document selection by CodeAssistant
+# * Renamed --hstc option to --include-hstc-documents
+# * Split --master-documents into --include-top-tier-documents and --include-second-tier-documents
+# * Modified main() to allow combining multiple document type options
+# * Added find_top_tier_documents() and find_second_tier_documents() functions
 # 2025-04-24T06:43:55Z : Refactored code and made paths relative by CodeAssistant
 # * Created add_dbp_headers helper function to make X-DBP-CodebaseFilePath relative to project root
 # * Created check_size_limit helper function to eliminate code duplication
@@ -88,27 +94,39 @@ mimetypes.add_type('text/markdown', '.md')
 def parse_arguments():
     """
     [Function intent]
-    Parse command line arguments to determine which MIME message type to generate.
+    Parse command line arguments to determine which document types to include in the MIME message.
     
     [Design principles]
-    Simple interface with mutually exclusive options for clarity.
+    Flexible interface with multiple options that can be combined.
     
     [Implementation details]
-    Uses argparse to create a parser with two mutually exclusive arguments.
+    Uses argparse to create a parser with multiple boolean flag options that can be combined.
     
     Returns:
         argparse.Namespace: Parsed command line arguments
     """
     parser = argparse.ArgumentParser(
         description='Generate MIME messages with document attachments.')
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--master-documents', action='store_true',
-                       help='Generate MIME message with markdown documents from doc/ and templates')
-    group.add_argument('--hstc', action='store_true',
-                       help='Generate MIME message with all HSTC.md files')
+    
+    # Document selection options - can be combined
+    parser.add_argument('--include-top-tier-documents', action='store_true',
+                       help='Include top-tier documentation files (GENAI templates and key doc/ files)')
+    parser.add_argument('--include-second-tier-documents', action='store_true',
+                       help='Include second-tier documentation files (remaining doc/ files)')
+    parser.add_argument('--include-hstc-documents', action='store_true',
+                       help='Include all HSTC.md files from the codebase')
+    
+    # Size limit option
     parser.add_argument('--max-message-size', type=int, default=150000, metavar='BYTES',
                        help='Maximum size of the MIME message in bytes (default: 150000). Truncates attachments if needed.')
-    return parser.parse_args()
+    
+    args = parser.parse_args()
+    
+    # Ensure at least one document type is selected
+    if not (args.include_top_tier_documents or args.include_second_tier_documents or args.include_hstc_documents):
+        parser.error("At least one document type option must be specified.")
+    
+    return args
 
 
 def is_top_tier_document(filepath):
@@ -146,35 +164,84 @@ def is_top_tier_document(filepath):
     return filepath in top_tier_docs
 
 
-def find_master_documents(base_dir):
+def find_top_tier_documents(base_dir):
     """
     [Function intent]
-    Find all markdown documents in doc/ directory and the template files.
+    Find all top-tier documents as specified in system prompt.
     
     [Design principles]
-    Centralized file collection for maintainability.
+    Clear identification of critical documentation files.
     
     [Implementation details]
-    Collects all .md files in doc/ directory and adds GENAI template files.
+    Uses the is_top_tier_document function to filter for specific files.
     
     Args:
         base_dir (str): Base directory of the project
     
     Returns:
-        list: Paths to all master documents
+        list: Paths to all top-tier documents
     """
     documents = []
     
     # Add template files
-    documents.append(os.path.join(base_dir, "coding_assistant/GENAI_HEADER_TEMPLATE.txt"))
-    documents.append(os.path.join(base_dir, "coding_assistant/GENAI_FUNCTION_TEMPLATE.txt"))
+    template_files = [
+        os.path.join(base_dir, "coding_assistant/GENAI_HEADER_TEMPLATE.txt"),
+        os.path.join(base_dir, "coding_assistant/GENAI_FUNCTION_TEMPLATE.txt")
+    ]
+    documents.extend(template_files)
     
-    # Add all markdown files in doc/ directory
+    # Add top-tier markdown files from doc/ directory
+    top_tier_md_files = [
+        "DESIGN.md",
+        "DESIGN_DECISIONS.md",
+        "DATA_MODEL.md",
+        "API.md",
+        "DOCUMENT_RELATIONSHIPS.md",
+        "PR-FAQ.md",
+        "WORKING_BACKWARDS.md",
+        "SECURITY.md",
+        "CONFIGURATION.md",
+        "CODING_GUIDELINES.md"
+    ]
+    
+    doc_dir = os.path.join(base_dir, "doc")
+    for md_file in top_tier_md_files:
+        full_path = os.path.join(doc_dir, md_file)
+        if os.path.exists(full_path):
+            documents.append(full_path)
+    
+    return documents
+
+
+def find_second_tier_documents(base_dir):
+    """
+    [Function intent]
+    Find all non-top-tier markdown documents in the doc/ directory.
+    
+    [Design principles]
+    Comprehensive collection of secondary documentation.
+    
+    [Implementation details]
+    Walks the doc/ directory and filters out top-tier documents.
+    
+    Args:
+        base_dir (str): Base directory of the project
+    
+    Returns:
+        list: Paths to all second-tier documents
+    """
+    documents = []
+    top_tier_docs = find_top_tier_documents(base_dir)
+    
+    # Get all markdown files in doc/ directory
     doc_dir = os.path.join(base_dir, "doc")
     for root, _, files in os.walk(doc_dir):
         for file in files:
             if file.endswith(".md"):
-                documents.append(os.path.join(root, file))
+                full_path = os.path.join(root, file)
+                # Only include if not already in top-tier
+                if full_path not in top_tier_docs:
+                    documents.append(full_path)
     
     return documents
 
@@ -459,23 +526,44 @@ def main():
     
     [Design principles]
     Clear workflow with error handling.
+    Flexible document selection based on command line flags.
     
     [Implementation details]
-    Parses arguments, finds appropriate files, creates MIME message and outputs to stdout.
+    Parses arguments, finds appropriate files based on selected options,
+    creates MIME message with combined document types, and outputs to stdout.
     """
     args = parse_arguments()
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     
-    if args.master_documents:
-        files = find_master_documents(base_dir)
-        subject = "Design Mode: Master Documentation Context"
-    else:  # args.hstc
-        files = find_hstc_files(base_dir)
-        subject = "Design Mode: HSTC Documentation Context"
+    files = []
+    subject_parts = ["Design Mode:"]
+    
+    # Collect files based on selected options
+    if args.include_top_tier_documents:
+        top_tier_files = find_top_tier_documents(base_dir)
+        files.extend(top_tier_files)
+        subject_parts.append("Top-Tier Docs")
+    
+    if args.include_second_tier_documents:
+        second_tier_files = find_second_tier_documents(base_dir)
+        files.extend(second_tier_files)
+        subject_parts.append("Second-Tier Docs")
+    
+    if args.include_hstc_documents:
+        hstc_files = find_hstc_files(base_dir)
+        files.extend(hstc_files)
+        subject_parts.append("HSTC Files")
+    
+    # Remove duplicates while preserving order
+    seen = set()
+    files = [x for x in files if x not in seen and not seen.add(x)]
     
     if not files:
         sys.stderr.write("No files found matching the specified criteria.\n")
         sys.exit(1)
+    
+    # Create subject line from selected document types
+    subject = " + ".join(subject_parts)
     
     # Create and output the MIME message
     mime_msg = create_mime_message(files, subject, args.max_message_size)
