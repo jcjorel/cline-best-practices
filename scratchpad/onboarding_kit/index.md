@@ -49,6 +49,16 @@ Welcome to the Documentation-Based Programming (DBP) system onboarding kit! This
    - Troubleshooting
    - Advanced topics
 
+6. [HSTC and Recommendations](06_hstc_and_recommendations.md) - Understanding key system concepts
+   - Hierarchical Semantic Tree Context (HSTC) approach
+   - HSTC file structure and traversal
+   - HSTC lifecycle management
+   - Recommendation system workflow
+   - Recommendation file format
+   - Practical usage examples
+   - Integration with AI assistants
+   - Best practices and tips
+
 ## How to Use This Kit
 
 If you're new to the project, we recommend reading these documents in order, as each builds upon concepts introduced in the previous ones. This structured approach will give you a comprehensive understanding of the system's purpose, architecture, workflows, and implementation details.
