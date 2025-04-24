@@ -39,6 +39,8 @@ When analyzing tasks and providing guidance, you should:
 
 This dual documentation approach enables you to generate more accurate code, make smarter architectural recommendations, and provide more valuable guidance by understanding both the intended design and the current implementation reality.
 
+# Mandatory action at every session start
+
 **CRITICAL: To get full power of the dual documentation system, after first interaction of a new conversation, ALWAYS read all pages returned by "python coding_assistant/scripts/get_design_mode_context.py --include-top-tier-documents --include-hstc-documents --page-number [0..n]". This script return the documents in a MIME type message. You will discover the total number of available pages in page zero message payload**
 
 ## MANDATORY CODE DOCUMENTATION PATTERNS
