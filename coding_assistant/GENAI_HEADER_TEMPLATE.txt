@@ -1,0 +1,33 @@
+###############################################################################
+# IMPORTANT: This header comment is designed for GenAI code review and maintenance
+# Any GenAI tool working with this file MUST preserve and update this header
+###############################################################################
+# [GenAI coding tool directive]
+# - Maintain this header with all modifications
+# - Update History section with each change
+# - Keep only the 4 most recent records in the history section. Sort from newer to older.
+# - Preserve Intent, Design, and Constraints sections
+# - Use this header as context for code reviews and modifications
+# - Ensure all changes align with the design principles
+# - Respect system prompt directives at all times
+###############################################################################
+# [Source file intent]
+# <Describe the detailed purpose of this file. Intent must be fully captured and contextualized.>
+###############################################################################
+# [Source file design principles]
+# <List key design principles guiding this implementation>
+###############################################################################
+# [Source file constraints]
+# <Document any limitations or requirements for this file>
+###############################################################################
+# [Dependencies] <!-- Never reference documents in <project_root>/scratchpad/ directory -->
+# <File paths of others codebase and documentation files. List also language specific libraries if any>
+# <List of markdown files in doc/ that provide broader context for this file>
+# <Prefix the dependency with its kind like "<codebase|system|other>:<dependency>"
+#    <"codebase" kind means a reference to any artifact in the current project codebase>
+#    <"system" kind means a reference toward an external artifact provided by the environement (files, librairies, modules...)>
+###############################################################################
+# [GenAI tool change history] <!-- Change history sorted from the newest to the oldest -->
+# YYYY-MM-DDThh:mm:ssZ : <summary of change> by CodeAssistant
+# * <change detail>
+###############################################################################
