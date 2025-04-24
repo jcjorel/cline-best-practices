@@ -1,155 +1,189 @@
 # Hierarchical Semantic Tree Context: config
 
 ## Directory Purpose
-This directory contains components responsible for configuration management in the Documentation-Based Programming (DBP) system. It implements a layered configuration approach with a singleton ConfigurationManager that loads settings from multiple sources (defaults, files, environment variables, CLI args), validates them using Pydantic models, and provides type-safe access. The ConfigManagerComponent acts as an adapter between the ConfigurationManager singleton and the component lifecycle framework, making configuration available to other components via the registry.
+The config directory implements the configuration management system for the Documentation-Based Programming platform. It provides a unified approach to managing configuration settings from different sources (environment variables, configuration files, command line arguments) with validation, defaults, and schema enforcement. This component follows a hierarchical configuration model where system defaults can be overridden by project-specific settings and environment-specific overrides. The implementation uses a component-based approach for integration with the rest of the system.
 
 ## Local Files
 
-### `config_manager.py`
+### `__init__.py`
 ```yaml
 source_file_intent: |
-  File: config_manager.py
+  Marks the config directory as a Python package and defines its public interface.
   
 source_file_design_principles: |
-  Not documented
+  - Minimal package initialization
+  - Clear definition of public interfaces
+  - Explicit version information
   
 source_file_constraints: |
-  Not documented
+  - No side effects during import
+  - No heavy dependencies loaded during initialization
   
 dependencies:
-  - kind: unknown
-    dependency: None
+  - kind: system
+    dependency: Python package system
   
 change_history:
-  - timestamp: "2025-04-23T17:49:18Z"
-    summary: "Auto-detected file"
-    details: "Automatically indexed config_manager.py"
+  - timestamp: "2025-04-24T23:25:45Z"
+    summary: "Created HSTC.md file"
+    details: "Initial documentation of __init__.py in HSTC.md"
 ```
 
 ### `component.py`
 ```yaml
 source_file_intent: |
-  File: component.py
+  Implements the ConfigComponent class that provides configuration services to other system components.
   
 source_file_design_principles: |
-  Not documented
+  - Component lifecycle management following system patterns
+  - Dependency injection for required services
+  - Configuration source hierarchy
   
 source_file_constraints: |
-  Not documented
+  - Must implement standard component interfaces
+  - Must handle configuration loading and validation gracefully
+  - Must support dynamic configuration updates
   
 dependencies:
-  - kind: unknown
-    dependency: None
+  - kind: codebase
+    dependency: src/dbp/core/component.py
+  - kind: codebase
+    dependency: src/dbp/config/config_manager.py
   
 change_history:
-  - timestamp: "2025-04-23T17:49:18Z"
-    summary: "Auto-detected file"
-    details: "Automatically indexed component.py"
+  - timestamp: "2025-04-24T23:25:45Z"
+    summary: "Created HSTC.md file"
+    details: "Initial documentation of component.py in HSTC.md"
 ```
 
 ### `config_cli.py`
 ```yaml
 source_file_intent: |
-  File: config_cli.py
+  Implements command-line interface functionality for viewing and modifying system configuration.
   
 source_file_design_principles: |
-  Not documented
+  - Consistent CLI command structure
+  - Config value validation
+  - Human-friendly output formatting
   
 source_file_constraints: |
-  Not documented
+  - Must validate inputs before applying changes
+  - Must provide clear error messages
+  - Must handle sensitive configuration values appropriately
   
 dependencies:
-  - kind: unknown
-    dependency: None
+  - kind: codebase
+    dependency: src/dbp/config/config_manager.py
+  - kind: codebase
+    dependency: src/dbp/config/config_schema.py
   
 change_history:
-  - timestamp: "2025-04-23T17:49:18Z"
-    summary: "Auto-detected file"
-    details: "Automatically indexed config_cli.py"
+  - timestamp: "2025-04-24T23:25:45Z"
+    summary: "Created HSTC.md file"
+    details: "Initial documentation of config_cli.py in HSTC.md"
 ```
 
-### `project_config.py`
+### `config_manager.py`
 ```yaml
 source_file_intent: |
-  File: project_config.py
+  Implements the core configuration management functionality, including loading, validation, and access to configuration values.
   
 source_file_design_principles: |
-  Not documented
+  - Layered configuration sources with precedence
+  - Schema-based validation
+  - Type-safe configuration access
   
 source_file_constraints: |
-  Not documented
+  - Must support multiple configuration sources
+  - Must provide atomic updates to configuration
+  - Must maintain backward compatibility for config changes
   
 dependencies:
-  - kind: unknown
-    dependency: None
+  - kind: codebase
+    dependency: src/dbp/config/config_schema.py
+  - kind: codebase
+    dependency: src/dbp/config/default_config.py
   
 change_history:
-  - timestamp: "2025-04-23T17:49:18Z"
-    summary: "Auto-detected file"
-    details: "Automatically indexed project_config.py"
-```
-
-### `default_config.py`
-```yaml
-source_file_intent: |
-  File: default_config.py
-  
-source_file_design_principles: |
-  Not documented
-  
-source_file_constraints: |
-  Not documented
-  
-dependencies:
-  - kind: unknown
-    dependency: None
-  
-change_history:
-  - timestamp: "2025-04-23T17:49:18Z"
-    summary: "Auto-detected file"
-    details: "Automatically indexed default_config.py"
+  - timestamp: "2025-04-24T23:25:45Z"
+    summary: "Created HSTC.md file"
+    details: "Initial documentation of config_manager.py in HSTC.md"
 ```
 
 ### `config_schema.py`
 ```yaml
 source_file_intent: |
-  File: config_schema.py
+  Defines the schema for system configuration, including types, validation rules, and documentation.
   
 source_file_design_principles: |
-  Not documented
+  - Clear schema definition with validation rules
+  - Comprehensive field documentation
+  - Default value specifications
   
 source_file_constraints: |
-  Not documented
+  - Must provide complete validation for all configuration fields
+  - Must include documentation for each field
+  - Must maintain backward compatibility for schema changes
   
 dependencies:
-  - kind: unknown
-    dependency: None
+  - kind: system
+    dependency: Pydantic or similar schema validation library
   
 change_history:
-  - timestamp: "2025-04-23T17:49:18Z"
-    summary: "Auto-detected file"
-    details: "Automatically indexed config_schema.py"
+  - timestamp: "2025-04-24T23:25:45Z"
+    summary: "Created HSTC.md file"
+    details: "Initial documentation of config_schema.py in HSTC.md"
 ```
 
-### `__init__.py`
+### `default_config.py`
 ```yaml
 source_file_intent: |
-  File: __init__.py
+  Defines the default configuration values for the system when no overrides are provided.
   
 source_file_design_principles: |
-  Not documented
+  - Reasonable default values for all settings
+  - Environment-specific default variations
+  - Clear documentation of default values
   
 source_file_constraints: |
-  Not documented
+  - Must be kept in sync with config_schema.py
+  - Must provide secure defaults where applicable
+  - Values must be compliant with schema validation rules
   
 dependencies:
-  - kind: unknown
-    dependency: None
+  - kind: codebase
+    dependency: src/dbp/config/config_schema.py
+  - kind: codebase
+    dependency: doc/CONFIGURATION.md
   
 change_history:
-  - timestamp: "2025-04-23T17:49:18Z"
-    summary: "Auto-detected file"
-    details: "Automatically indexed __init__.py"
+  - timestamp: "2025-04-24T23:25:45Z"
+    summary: "Created HSTC.md file"
+    details: "Initial documentation of default_config.py in HSTC.md"
 ```
 
-<!-- End of HSTC.md file -->
+### `project_config.py`
+```yaml
+source_file_intent: |
+  Implements project-specific configuration management, handling project-level settings and overrides.
+  
+source_file_design_principles: |
+  - Project-specific configuration isolation
+  - Configuration inheritance from system defaults
+  - Project-based configuration discovery
+  
+source_file_constraints: |
+  - Must support multiple project configurations
+  - Must validate against the system schema
+  - Must handle project-specific extensions to configuration
+  
+dependencies:
+  - kind: codebase
+    dependency: src/dbp/config/config_manager.py
+  - kind: codebase
+    dependency: src/dbp/config/config_schema.py
+  
+change_history:
+  - timestamp: "2025-04-24T23:25:45Z"
+    summary: "Created HSTC.md file"
+    details: "Initial documentation of project_config.py in HSTC.md"

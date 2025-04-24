@@ -41,7 +41,7 @@ This dual documentation approach enables you to generate more accurate code, mak
 
 ## CRITICAL: Mandatory action at every session start
 
-**CRITICAL: At first interaction of a new conversation, WHATEVER THE USER REQUEST, you WILL ALWAYS read all pages returned by script "python coding_assistant/scripts/get_design_mode_context.py --include-top-tier-documents --include-hstc-documents --page-number [0..n]". This script returns the documents in a MIME type message. You will discover the total number of available pages in page zero message payload**
+**CRITICAL: At first interaction of a new conversation, WHATEVER THE USER REQUEST, you WILL ALWAYS read all pages returned by script "python3 coding_assistant/scripts/get_design_mode_context.py --include-top-tier-documents --include-hstc-documents --page-number [0..n]". This script returns the documents in a MIME type message. You will discover the total number of available pages in page zero message payload**
 
 ## MANDATORY CODE DOCUMENTATION PATTERNS
 ⚠️ CRITICAL: ALL functions, methods, and classes MUST include the three-section documentation pattern regardless of size or complexity. NO EXCEPTIONS PERMITTED (except for Markdown files). This is a non-negotiable project standard that takes precedence over all other considerations except correct code functionality.
@@ -199,7 +199,7 @@ This standardized approach ensures consistent, navigable semantic trees that pro
   - When active:
     - Automatically implies PLAN mode (no direct documentation modifications until agreed by the user)
     - Restricts scope to ONLY files in `<project_root>/doc/` directory
-    - Automatically reads all additional documentation files for proper context initialization through execution of script "python coding_assistant/scripts/get_design_mode_context.py --include-second-tier-documents --page-number [0..n]". This script returns the documents in a MIME type message. You will discover the total number of available pages in page zero message payload
+    - Automatically reads all additional documentation files for proper context initialization through execution of script "python3 coding_assistant/scripts/get_design_mode_context.py --include-second-tier-documents --page-number [0..n]". This script returns the documents in a MIME type message. You will discover the total number of available pages in page zero message payload
     - All user requests processed in this context until explicitly exited
     - **Maintain absolute documentation consistency with each change as this is a critical goal in DESIGN mode.**
     - **Avoid documentation redundancy to prevent inconsistencies, which may require documentation refactoring even for small changes. Request user acknowledgment before implementing large refactoring efforts.**

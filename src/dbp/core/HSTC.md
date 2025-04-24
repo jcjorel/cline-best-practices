@@ -1,218 +1,268 @@
 # Hierarchical Semantic Tree Context: core
 
 ## Directory Purpose
-This directory implements the foundational infrastructure of the Documentation-Based Programming (DBP) system. It provides the component lifecycle framework, dependency injection system, registry for component discovery, file access abstractions, and system-level utilities. These core components form the backbone of the DBP architecture, enabling modular design, proper initialization sequences, and standardized interaction patterns between subsystems. The core framework emphasizes type safety, structured error handling, and clean separation of concerns throughout the system.
+The core directory implements the foundational infrastructure and patterns used throughout the Documentation-Based Programming system. It provides core abstractions including component lifecycle management, registry mechanisms, file access utilities, and system initialization. This module establishes the architectural scaffolding that other components build upon, ensuring consistency in how components are discovered, initialized, and interact with each other. The core functionality focuses on reliability, proper resource management, and clean shutdown procedures.
 
 ## Local Files
 
-### `registry.py`
+### `__init__.py`
 ```yaml
 source_file_intent: |
-  File: registry.py
+  Marks the core directory as a Python package and defines its public interface.
   
 source_file_design_principles: |
-  Not documented
+  - Minimal package initialization
+  - Clear definition of public interfaces
+  - Explicit version information
   
 source_file_constraints: |
-  Not documented
+  - No side effects during import
+  - No heavy dependencies loaded during initialization
   
 dependencies:
-  - kind: unknown
-    dependency: None
+  - kind: system
+    dependency: Python package system
   
 change_history:
-  - timestamp: "2025-04-23T17:49:18Z"
-    summary: "Auto-detected file"
-    details: "Automatically indexed registry.py"
-```
-
-### `lifecycle.py`
-```yaml
-source_file_intent: |
-  File: lifecycle.py
-  
-source_file_design_principles: |
-  Not documented
-  
-source_file_constraints: |
-  Not documented
-  
-dependencies:
-  - kind: unknown
-    dependency: None
-  
-change_history:
-  - timestamp: "2025-04-23T17:49:18Z"
-    summary: "Auto-detected file"
-    details: "Automatically indexed lifecycle.py"
-```
-
-### `fs_utils.py`
-```yaml
-source_file_intent: |
-  File: fs_utils.py
-  
-source_file_design_principles: |
-  Not documented
-  
-source_file_constraints: |
-  Not documented
-  
-dependencies:
-  - kind: unknown
-    dependency: None
-  
-change_history:
-  - timestamp: "2025-04-23T17:49:18Z"
-    summary: "Auto-detected file"
-    details: "Automatically indexed fs_utils.py"
-```
-
-### `file_access_component.py`
-```yaml
-source_file_intent: |
-  File: file_access_component.py
-  
-source_file_design_principles: |
-  Not documented
-  
-source_file_constraints: |
-  Not documented
-  
-dependencies:
-  - kind: unknown
-    dependency: None
-  
-change_history:
-  - timestamp: "2025-04-23T17:49:18Z"
-    summary: "Auto-detected file"
-    details: "Automatically indexed file_access_component.py"
+  - timestamp: "2025-04-24T23:26:55Z"
+    summary: "Created HSTC.md file"
+    details: "Initial documentation of __init__.py in HSTC.md"
 ```
 
 ### `component.py`
 ```yaml
 source_file_intent: |
-  File: component.py
+  Defines the base Component class and component interface that all system components must implement.
   
 source_file_design_principles: |
-  Not documented
+  - Consistent component lifecycle model
+  - Dependency injection framework
+  - Clear component state management
   
 source_file_constraints: |
-  Not documented
+  - Must be lightweight and dependency-free
+  - Must support both synchronous and asynchronous lifecycle methods
+  - Must define clear contract for component implementations
   
 dependencies:
-  - kind: unknown
-    dependency: None
+  - kind: codebase
+    dependency: src/dbp/core/lifecycle.py
+  - kind: codebase
+    dependency: doc/design/COMPONENT_INITIALIZATION.md
   
 change_history:
-  - timestamp: "2025-04-23T17:49:18Z"
-    summary: "Auto-detected file"
-    details: "Automatically indexed component.py"
-```
-
-### `log_utils.py`
-```yaml
-source_file_intent: |
-  File: log_utils.py
-  
-source_file_design_principles: |
-  Not documented
-  
-source_file_constraints: |
-  Not documented
-  
-dependencies:
-  - kind: unknown
-    dependency: None
-  
-change_history:
-  - timestamp: "2025-04-23T17:49:18Z"
-    summary: "Auto-detected file"
-    details: "Automatically indexed log_utils.py"
+  - timestamp: "2025-04-24T23:26:55Z"
+    summary: "Created HSTC.md file"
+    details: "Initial documentation of component.py in HSTC.md"
 ```
 
 ### `file_access.py`
 ```yaml
 source_file_intent: |
-  File: file_access.py
+  Implements file access utilities and abstractions for safe and efficient file operations.
   
 source_file_design_principles: |
-  Not documented
+  - Safe file access with proper error handling
+  - Path resolution and validation
+  - Resource cleanup guarantees
   
 source_file_constraints: |
-  Not documented
+  - Must handle all IO exceptions gracefully
+  - Must support different file types and encodings
+  - Must provide thread-safe file access
   
 dependencies:
-  - kind: unknown
-    dependency: None
+  - kind: system
+    dependency: Python pathlib and io modules
+  - kind: codebase
+    dependency: src/dbp/core/fs_utils.py
   
 change_history:
-  - timestamp: "2025-04-23T17:49:18Z"
-    summary: "Auto-detected file"
-    details: "Automatically indexed file_access.py"
+  - timestamp: "2025-04-24T23:26:55Z"
+    summary: "Created HSTC.md file"
+    details: "Initial documentation of file_access.py in HSTC.md"
 ```
 
-### `watchdog.py`
+### `file_access_component.py`
 ```yaml
 source_file_intent: |
-  File: watchdog.py
+  Implements the FileAccessComponent that provides file access services to other system components.
   
 source_file_design_principles: |
-  Not documented
+  - Component-based file access service
+  - Configurable file access permissions
+  - Path translation and resolution
   
 source_file_constraints: |
-  Not documented
+  - Must implement standard component interfaces
+  - Must ensure secure file access within defined boundaries
+  - Must integrate with the component registry
   
 dependencies:
-  - kind: unknown
-    dependency: None
+  - kind: codebase
+    dependency: src/dbp/core/component.py
+  - kind: codebase
+    dependency: src/dbp/core/file_access.py
   
 change_history:
-  - timestamp: "2025-04-23T17:49:18Z"
-    summary: "Auto-detected file"
-    details: "Automatically indexed watchdog.py"
+  - timestamp: "2025-04-24T23:26:55Z"
+    summary: "Created HSTC.md file"
+    details: "Initial documentation of file_access_component.py in HSTC.md"
+```
+
+### `fs_utils.py`
+```yaml
+source_file_intent: |
+  Provides low-level file system utilities for operations like path manipulation, file matching, and directory traversal.
+  
+source_file_design_principles: |
+  - Platform-independent file operations
+  - Efficient file system traversal
+  - Path pattern matching
+  
+source_file_constraints: |
+  - Must handle path differences across operating systems
+  - Must provide efficient implementations for common operations
+  - Must handle file system errors gracefully
+  
+dependencies:
+  - kind: system
+    dependency: Python os, pathlib, and glob modules
+  
+change_history:
+  - timestamp: "2025-04-24T23:26:55Z"
+    summary: "Created HSTC.md file"
+    details: "Initial documentation of fs_utils.py in HSTC.md"
+```
+
+### `lifecycle.py`
+```yaml
+source_file_intent: |
+  Implements lifecycle management utilities for components, including initialization, startup, and shutdown coordination.
+  
+source_file_design_principles: |
+  - Clear lifecycle phase definition
+  - Dependency-aware initialization order
+  - Graceful shutdown with proper cleanup
+  
+source_file_constraints: |
+  - Must handle circular dependencies
+  - Must ensure proper shutdown order (reverse of initialization)
+  - Must provide hooks for lifecycle events
+  
+dependencies:
+  - kind: codebase
+    dependency: src/dbp/core/registry.py
+  - kind: codebase
+    dependency: doc/design/COMPONENT_INITIALIZATION.md
+  
+change_history:
+  - timestamp: "2025-04-24T23:26:55Z"
+    summary: "Created HSTC.md file"
+    details: "Initial documentation of lifecycle.py in HSTC.md"
+```
+
+### `log_utils.py`
+```yaml
+source_file_intent: |
+  Provides logging utilities and configuration for consistent and structured logging across the system.
+  
+source_file_design_principles: |
+  - Standardized log format
+  - Log level management
+  - Contextual logging helpers
+  
+source_file_constraints: |
+  - Must integrate with standard Python logging
+  - Must provide context-aware log formatting
+  - Must support different output destinations
+  
+dependencies:
+  - kind: system
+    dependency: Python logging module
+  
+change_history:
+  - timestamp: "2025-04-24T23:26:55Z"
+    summary: "Created HSTC.md file"
+    details: "Initial documentation of log_utils.py in HSTC.md"
+```
+
+### `registry.py`
+```yaml
+source_file_intent: |
+  Implements the component registry for tracking, discovering, and accessing system components.
+  
+source_file_design_principles: |
+  - Centralized component registration
+  - Component discovery mechanisms
+  - Type-safe component access
+  
+source_file_constraints: |
+  - Must be thread-safe for concurrent access
+  - Must handle component dependencies correctly
+  - Must provide diagnostics for component state
+  
+dependencies:
+  - kind: codebase
+    dependency: src/dbp/core/component.py
+  - kind: codebase
+    dependency: doc/design/COMPONENT_INITIALIZATION.md
+  
+change_history:
+  - timestamp: "2025-04-24T23:26:55Z"
+    summary: "Created HSTC.md file"
+    details: "Initial documentation of registry.py in HSTC.md"
 ```
 
 ### `system.py`
 ```yaml
 source_file_intent: |
-  File: system.py
+  Implements the top-level System class that coordinates component initialization, configuration, and shutdown.
   
 source_file_design_principles: |
-  Not documented
+  - System lifecycle management
+  - Configuration integration
+  - Component coordination
   
 source_file_constraints: |
-  Not documented
+  - Must ensure proper initialization ordering
+  - Must handle system-wide errors gracefully
+  - Must provide clean shutdown under all conditions
   
 dependencies:
-  - kind: unknown
-    dependency: None
+  - kind: codebase
+    dependency: src/dbp/core/registry.py
+  - kind: codebase
+    dependency: src/dbp/core/lifecycle.py
   
 change_history:
-  - timestamp: "2025-04-23T17:49:18Z"
-    summary: "Auto-detected file"
-    details: "Automatically indexed system.py"
+  - timestamp: "2025-04-24T23:26:55Z"
+    summary: "Created HSTC.md file"
+    details: "Initial documentation of system.py in HSTC.md"
 ```
 
-### `__init__.py`
+### `watchdog.py`
 ```yaml
 source_file_intent: |
-  File: __init__.py
+  Implements system watchdog functionality for detecting and recovering from component failures or hangs.
   
 source_file_design_principles: |
-  Not documented
+  - Health check mechanisms
+  - Automatic recovery strategies
+  - Failure isolation
   
 source_file_constraints: |
-  Not documented
+  - Must not interfere with normal system operation
+  - Must detect deadlocks and resource exhaustion
+  - Must provide appropriate diagnostics
   
 dependencies:
-  - kind: unknown
-    dependency: None
+  - kind: codebase
+    dependency: src/dbp/core/system.py
+  - kind: codebase
+    dependency: src/dbp/core/registry.py
   
 change_history:
-  - timestamp: "2025-04-23T17:49:18Z"
-    summary: "Auto-detected file"
-    details: "Automatically indexed __init__.py"
-```
-
-<!-- End of HSTC.md file -->
+  - timestamp: "2025-04-24T23:26:55Z"
+    summary: "Created HSTC.md file"
+    details: "Initial documentation of watchdog.py in HSTC.md"
