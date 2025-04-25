@@ -46,15 +46,14 @@
 ###############################################################################
 
 import abc
-import asyncio
 import logging
-from typing import Dict, Any, Optional, AsyncGenerator, Type, Union, List
+from typing import Dict, Any, Optional, AsyncGenerator
 
 from fastapi import Response
 from pydantic import BaseModel
 
 from .tool import MCPTool
-from .streaming import MCPStreamingResponse, StreamFormat, create_streaming_generator
+from .streaming import MCPStreamingResponse
 from .error import MCPError, MCPErrorCode
 from .cancellation import MCPCancellationToken
 from .progress import MCPProgressReporter
@@ -70,12 +69,11 @@ class MCPStreamingTool(MCPTool):
     
     [Design principles]
     - Maintains compatibility with base MCPTool interface
-    - Adds streaming-specific methods and overrides
-    - Supports both JSON and event-stream formats
+    - Adds streaming-specific methods
+    - Follows strict MCP specification compliance
     
     [Implementation details]
     - Uses asyncio for non-blocking streaming
-    - Integrates with FastAPI streaming responses
     - Maintains JSON-RPC 2.0 compatibility for each chunk
     """
     
@@ -90,7 +88,6 @@ class MCPStreamingTool(MCPTool):
         
         [Implementation details]
         - Calls parent constructor with same parameters
-        - Sets up stream format defaults
         
         Args:
             name: The unique identifier name for this tool
@@ -99,7 +96,6 @@ class MCPStreamingTool(MCPTool):
         """
         super().__init__(name, description, logger_override)
         self._supports_streaming = True
-        self._default_stream_format = StreamFormat.JSON_CHUNKS
         
     @property
     def supports_streaming(self) -> bool:
@@ -112,8 +108,7 @@ class MCPStreamingTool(MCPTool):
         data: BaseModel,
         cancellation_token: Optional[MCPCancellationToken] = None,
         progress_reporter: Optional[MCPProgressReporter] = None,
-        auth_context: Optional[Dict[str, Any]] = None,
-        stream_format: StreamFormat = None
+        auth_context: Optional[Dict[str, Any]] = None
     ) -> AsyncGenerator[Any, None]:
         """
         [Function intent]
@@ -127,7 +122,7 @@ class MCPStreamingTool(MCPTool):
         
         [Implementation details]
         - Must be implemented by concrete streaming tool classes
-        - Should yield data chunks that can be serialized to JSON
+        - Should yield data that can be serialized to JSON
         - Should check cancellation between chunks
         
         Args:
@@ -135,7 +130,6 @@ class MCPStreamingTool(MCPTool):
             cancellation_token: Optional token to check for cancellation
             progress_reporter: Optional reporter to update progress
             auth_context: Optional authentication context
-            stream_format: Optional format override for the stream
             
         Yields:
             Data chunks for streaming to the client
@@ -185,8 +179,7 @@ class MCPStreamingTool(MCPTool):
     async def handle_streaming_request(
         self,
         request: Dict[str, Any],
-        session: Optional[Any] = None,
-        stream_format: StreamFormat = None
+        session: Optional[Any] = None
     ) -> AsyncGenerator[str, None]:
         """
         [Function intent]
@@ -253,18 +246,6 @@ class MCPStreamingTool(MCPTool):
             # Extract auth context if provided
             auth_context = params.get("auth_context")
             
-            # Get stream format if specified in params
-            requested_format = params.get("stream_format")
-            if requested_format:
-                try:
-                    format_enum = StreamFormat(requested_format)
-                    stream_format = format_enum
-                except ValueError:
-                    # Invalid format, use default
-                    self.logger.warning(f"Invalid stream format requested: {requested_format}")
-                    
-            # Use specified format or default
-            final_format = stream_format or self._default_stream_format
                 
             # Validate parameters against schema
             try:
@@ -273,7 +254,7 @@ class MCPStreamingTool(MCPTool):
                 raise MCPError(MCPErrorCode.INVALID_PARAMS, f"Invalid parameters: {str(e)}")
             
             # Create streaming response handler
-            response_handler = MCPStreamingResponse(format=final_format)
+            response_handler = MCPStreamingResponse()
             
             # Execute the streaming tool
             try:
@@ -281,8 +262,7 @@ class MCPStreamingTool(MCPTool):
                     input_model,
                     cancellation_token=cancellation_token,
                     progress_reporter=progress_reporter,
-                    auth_context=auth_context,
-                    stream_format=final_format
+                    auth_context=auth_context
                 )
                 
                 # Stream results through response handler

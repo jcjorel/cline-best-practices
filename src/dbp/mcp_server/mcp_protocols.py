@@ -15,6 +15,9 @@
 # Provides a façade for the Model Context Protocol (MCP) implementation.
 # Re-exports all classes from the mcp/ module to maintain backward compatibility
 # while allowing a more modular, maintainable implementation under the hood.
+# 
+# This file implements the Anthropic MCP specification as defined at:
+# https://modelcontextprotocol.io/specification/2025-03-26
 ###############################################################################
 # [Source file design principles]
 # - Acts as a backward-compatible entry point for MCP protocol components
@@ -30,6 +33,7 @@
 # [Dependencies]
 # codebase:src/dbp/mcp_server/mcp/__init__.py
 # codebase:doc/DESIGN.md
+# system:https://modelcontextprotocol.io/specification/2025-03-26
 ###############################################################################
 # [GenAI tool change history]
 # 2025-04-25T18:53:28Z : Refactored to serve as a façade for modular mcp/ package by CodeAssistant
@@ -67,9 +71,6 @@ from .mcp import (
     MCPTool, 
     MCPResource,
     MCPStreamingResponse,
-    StreamFormat,
-    StreamChunk,
-    create_streaming_generator,
     MCPStreamingTool,
     StreamingResponse
 )
@@ -82,9 +83,6 @@ __all__ = [
     'MCPTool', 
     'MCPResource',
     'MCPStreamingResponse',
-    'StreamFormat',
-    'StreamChunk',
-    'create_streaming_generator',
     'MCPStreamingTool',
     'StreamingResponse'
 ]

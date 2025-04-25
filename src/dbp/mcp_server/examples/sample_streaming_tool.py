@@ -49,9 +49,7 @@ from pydantic import BaseModel, Field
 from src.dbp.mcp_server.mcp_protocols import (
     MCPStreamingTool, 
     MCPCancellationToken, 
-    MCPProgressReporter,
-    StreamFormat,
-    create_streaming_generator
+    MCPProgressReporter
 )
 
 logger = logging.getLogger(__name__)
@@ -244,8 +242,7 @@ class SampleStreamingTool(MCPStreamingTool):
         data: SampleToolInput,
         cancellation_token: Optional[MCPCancellationToken] = None,
         progress_reporter: Optional[MCPProgressReporter] = None,
-        auth_context: Optional[Dict[str, Any]] = None,
-        stream_format: Optional[StreamFormat] = None
+        auth_context: Optional[Dict[str, Any]] = None
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         [Function intent]

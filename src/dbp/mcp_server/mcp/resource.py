@@ -115,24 +115,38 @@ class MCPResource(ABC):
         Provides MCP-compliant resource metadata.
         
         [Design principles]
-        - Follows MCP resource metadata specification
+        - Follows MCP resource metadata specification from modelcontextprotocol.io
         - Includes all required information for resource discovery
         
         [Implementation details]
         - Generates metadata based on properties and schemas
         - Includes URI template information
+        - Ensures proper schema validation with additionalProperties settings
         
         Returns:
             Dictionary containing MCP-compliant resource metadata
         """
+        # Get schema dictionaries
+        params_schema_dict = self._params_schema_model.schema()
+        response_schema_dict = self._response_schema_model.schema()
+        
+        # Ensure additionalProperties is set to false as per MCP recommendation
+        # This prevents unspecified fields from being accepted
+        if 'additionalProperties' not in params_schema_dict:
+            params_schema_dict['additionalProperties'] = False
+            
+        if 'additionalProperties' not in response_schema_dict:
+            response_schema_dict['additionalProperties'] = False
+        
         return {
             "name": self.name,
             "description": self.description,
             "uri_template": f"{self.name}/{{id}}",
-            "params_schema": self._params_schema_model.schema(),
-            "response_schema": self._response_schema_model.schema(),
+            "params_schema": params_schema_dict,
+            "response_schema": response_schema_dict,
             "operations": ["get"],  # Default support for GET only
-            "version": "1.0"  # Resource version (optional in MCP spec)
+            "version": "1.0",  # Resource version (optional in MCP spec)
+            "specification": "https://modelcontextprotocol.io/specification/2025-03-26"
         }
         
     def _get_params_schema(self) -> Type[BaseModel]:

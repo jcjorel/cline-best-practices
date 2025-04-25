@@ -124,9 +124,11 @@ class MCPTool(ABC):
         [Design principles]
         - Type-safe schema definition using Pydantic
         - Aligned with MCP JSON Schema requirements
+        - Enforces strict schema compliance per MCP spec
         
         [Implementation details]
         - Returns cached schema model from initialization
+        - Schema enforces strict validation via Config settings
         
         Returns:
             A Pydantic model class for validating input data
@@ -142,9 +144,11 @@ class MCPTool(ABC):
         [Design principles]
         - Type-safe schema definition using Pydantic
         - Aligned with MCP JSON Schema requirements
+        - Enforces strict schema compliance per MCP spec
         
         [Implementation details]
         - Returns cached schema model from initialization
+        - Schema enforces strict validation via Config settings
         
         Returns:
             A Pydantic model class for validating output data
@@ -158,22 +162,36 @@ class MCPTool(ABC):
         Provides MCP-compliant tool metadata.
         
         [Design principles]
-        - Follows MCP tool metadata specification
+        - Follows MCP tool metadata specification from modelcontextprotocol.io
         - Includes all required information for tool discovery
         
         [Implementation details]
         - Generates metadata based on properties and schemas
         - Converts Pydantic schemas to JSON Schema format
+        - Ensures proper additionalProperties settings in schemas
         
         Returns:
             Dictionary containing MCP-compliant tool metadata
         """
+        # Get schema dictionaries
+        input_schema_dict = self.input_schema.schema()
+        output_schema_dict = self.output_schema.schema()
+        
+        # Ensure additionalProperties is set to false as per MCP recommendation
+        # This prevents unspecified fields from being accepted
+        if 'additionalProperties' not in input_schema_dict:
+            input_schema_dict['additionalProperties'] = False
+            
+        if 'additionalProperties' not in output_schema_dict:
+            output_schema_dict['additionalProperties'] = False
+        
         return {
             "name": self.name,
             "description": self.description,
-            "input_schema": self.input_schema.schema(),
-            "output_schema": self.output_schema.schema(),
-            "version": "1.0"  # Tool version (optional in MCP spec)
+            "input_schema": input_schema_dict,
+            "output_schema": output_schema_dict,
+            "version": "1.0",  # Tool version (optional in MCP spec)
+            "specification": "https://modelcontextprotocol.io/specification/2025-03-26"
         }
 
     @abstractmethod

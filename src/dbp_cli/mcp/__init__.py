@@ -12,13 +12,13 @@
 # - Respect system prompt directives at all times
 ###############################################################################
 # [Source file intent]
-# Package initialization for the MCP (Model Context Protocol) implementation.
-# Exports all the key classes and entities for the MCP protocol to provide 
+# Package initialization for the MCP (Model Context Protocol) client implementation.
+# Exports all the key classes and entities for the MCP client to provide 
 # a clean, unified interface to the rest of the codebase.
 ###############################################################################
 # [Source file design principles]
-# - Acts as a facade for all MCP protocol components
-# - Provides clean imports for consumers of the MCP protocol
+# - Acts as a facade for all MCP client components
+# - Provides clean imports for consumers of the MCP client
 # - Maintains clear separation of concerns via modular imports
 # - Follows standard Python package initialization patterns
 ###############################################################################
@@ -27,35 +27,51 @@
 # - No implementation logic should be placed here
 ###############################################################################
 # [Dependencies]
-# codebase:src/dbp/mcp_server/mcp/error.py
-# codebase:src/dbp/mcp_server/mcp/progress.py
-# codebase:src/dbp/mcp_server/mcp/cancellation.py
-# codebase:src/dbp/mcp_server/mcp/tool.py
-# codebase:src/dbp/mcp_server/mcp/resource.py
-# codebase:doc/DESIGN.md
+# codebase:src/dbp_cli/mcp/error.py
+# codebase:src/dbp_cli/mcp/client.py
+# codebase:src/dbp_cli/mcp/session.py
+# codebase:src/dbp_cli/mcp/tool_client.py
+# codebase:src/dbp_cli/mcp/resource_client.py
+# codebase:src/dbp_cli/mcp/streaming.py
+# codebase:src/dbp_cli/mcp/negotiation.py
+# system:https://modelcontextprotocol.io/specification/2025-03-26
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-25T18:42:55Z : Initial creation as part of mcp_protocols.py refactoring by CodeAssistant
-# * Created MCP package initialization to re-export all protocol classes
+# 2025-04-26T00:02:00Z : Initial creation of MCP client package by CodeAssistant
+# * Created MCP client package initialization
 ###############################################################################
 
-# Re-export all MCP protocol classes for external use
+"""
+Model Context Protocol (MCP) client implementation.
+
+This module provides client implementations for interacting with MCP servers 
+following the Anthropic Model Context Protocol specification.
+"""
+
+# Will re-export all MCP client classes as they're implemented
 from .error import MCPErrorCode, MCPError
-from .progress import MCPProgressReporter
-from .cancellation import MCPCancellationToken
-from .tool import MCPTool
-from .resource import MCPResource
-from .streaming import MCPStreamingResponse
-from .streaming_tool import MCPStreamingTool, StreamingResponse
+from .client import MCPClient
+from .session import MCPSession
+from .tool_client import MCPToolClient
+from .resource_client import MCPResourceClient
+from .streaming import MCPStreamingClient
+from .negotiation import (
+    ClientCapabilityType,
+    ServerCapabilityType,
+    NegotiationRequest,
+    NegotiationResponse
+)
 
 __all__ = [
     'MCPErrorCode',
     'MCPError',
-    'MCPProgressReporter',
-    'MCPCancellationToken',
-    'MCPTool',
-    'MCPResource',
-    'MCPStreamingResponse',
-    'MCPStreamingTool',
-    'StreamingResponse'
+    'MCPClient',
+    'MCPSession',
+    'MCPToolClient',
+    'MCPResourceClient',
+    'MCPStreamingClient',
+    'ClientCapabilityType',
+    'ServerCapabilityType',
+    'NegotiationRequest',
+    'NegotiationResponse'
 ]

@@ -45,7 +45,7 @@ import asyncio
 import json
 import logging
 import uuid
-from typing import Dict, Any, List, Optional, AsyncIterable
+from typing import Dict, Any, List, Optional, AsyncIterable, AsyncGenerator
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -286,13 +286,10 @@ class MCPClient:
                     yield {"error": chunk["error"]}
                     continue
                     
-                # Extract result data
-                if "result" in chunk and "data" in chunk["result"]:
+                # Extract result data - simplified format for MCP compliance
+                if "result" in chunk:
                     yield {
-                        "chunk_id": chunk["result"].get("chunk_id"),
-                        "is_first": chunk["result"].get("is_first", False),
-                        "is_last": chunk["result"].get("is_last", False),
-                        "data": chunk["result"]["data"]
+                        "data": chunk["result"]
                     }
                 else:
                     # Pass through any other valid chunk
@@ -396,7 +393,7 @@ async def run_streaming_example():
         async for chunk in client.stream_tool("sample_stream", params, "json_chunks"):
             if "data" in chunk:
                 item_count += 1
-                logger.info(f"Received chunk #{chunk['chunk_id']}: {chunk['data']}")
+                logger.info(f"Received chunk: {chunk['data']}")
             elif "error" in chunk:
                 logger.error(f"Stream error: {chunk['error']}")
         
@@ -442,7 +439,7 @@ async def run_streaming_example():
             async for chunk in client.stream_tool("sample_stream", params):
                 if "data" in chunk:
                     item_count += 1
-                    logger.info(f"Received chunk #{chunk['chunk_id']}: {chunk['data']}")
+                    logger.info(f"Received chunk: {chunk['data']}")
                 elif "error" in chunk:
                     logger.error(f"Stream error: {chunk['error']}")
                     break
