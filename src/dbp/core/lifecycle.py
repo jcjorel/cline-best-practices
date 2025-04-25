@@ -34,6 +34,19 @@
 # codebase:- doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-25T13:21:47Z : Fixed component enablement configuration handling by CodeAssistant
+# * Updated is_component_enabled to properly access Pydantic model attributes instead of treating it as a dictionary
+# * Improved error handling to throw explicit errors when component names are missing from configuration
+# * Removed fallback behavior to align with project's fail-fast error handling approach
+# 2025-04-25T13:12:00Z : Fixed component registration to skip disabled components by CodeAssistant
+# * Modified _register_components_with_registry to skip registering disabled components 
+# * Updated component registration to properly respect the enablement configuration
+# * Maintained existing logging for disabled components
+# 2025-04-25T09:11:14Z : Centralized component dependencies by CodeAssistant
+# * Created new component_dependencies.py to store component declarations
+# * Modified _register_components_with_registry to use the centralized declarations
+# * Improved documentation to reflect the new component registration approach
+# * Added type hints for better code quality and IDE support
 # 2025-04-20T19:21:00Z : Added watchdog keepalive calls by CodeAssistant
 # * Added keepalive before and after component registration
 # * Added keepalive at the start of the initialization process
@@ -48,9 +61,6 @@
 # * Changed relative imports to absolute imports to solve "No module named '.'" errors
 # * Updated register_if_enabled to handle absolute imports correctly
 # * Improved log messages to show component dependencies for better debugging
-# 2025-04-17T17:28:22Z : Standardized log format for consistency by CodeAssistant
-# * Ensured log format follows standard: 2025-04-17 17:24:30,221 - dbp.core.lifecycle - <LOGLEVEL> - <message>
-# * Verified that _setup_logging is using the centralized formatter from log_utils
 ###############################################################################
 
 import logging
@@ -58,7 +68,9 @@ import signal
 import sys
 import threading
 import traceback
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
+
+from .component_dependencies import COMPONENT_DECLARATIONS
 
 from .log_utils import setup_application_logging
 
@@ -237,12 +249,14 @@ class LifecycleManager:
     def _register_components_with_registry(self) -> None:
         """
         [Function intent]
-        Registers all application components with the component registry
+        Registers only enabled application components with the component registry
         with explicit dependency declarations.
         
         [Implementation details]
+        Uses the centralized component declarations from component_dependencies.py.
+        Checks component enablement configuration before registration.
+        Skips disabled components entirely to prevent unnecessary imports.
         Registers component classes with explicit dependencies.
-        Respects component enablement configuration.
         
         [Design principles]
         Centralized component registration with explicit dependencies.
@@ -257,17 +271,25 @@ class LifecycleManager:
         
         # Get component enablement configuration
         try:
-            enabled_config = self.config_manager.get('component_enabled', False) if self.config_manager else {}
-            logger.info(f"Using component enablement configuration")
+            if self.config_manager:
+                typed_config = self.config_manager.get_typed_config()
+                # Direct attribute access with no fallbacks
+                enabled_config = typed_config.component_enabled
+                logger.info(f"Using component enablement configuration")
+            else:
+                # Config manager not available, raise to the exception handler
+                raise ValueError("Configuration manager not available")
         except Exception as e:
             logger.warning(f"Failed to get component enablement configuration: {e}, using defaults")
-            enabled_config = {}
+            # Raise to notify that this is a critical issue that needs fixing
+            raise RuntimeError(f"Failed to access required configuration: component_enabled") from e
         
         # Helper function to check if component is enabled
         def is_component_enabled(name):
-            if not isinstance(enabled_config, dict):
-                return True  # Default to enabled if config is invalid
-            return enabled_config.get(name, True)  # Default to enabled if not specified
+            # Access component enablement directly as an attribute of the Pydantic model
+            if not hasattr(enabled_config, name):
+                raise AttributeError(f"Component '{name}' not found in component_enabled configuration")
+            return getattr(enabled_config, name)
         
         # Helper function to register a component class with the registry
         def register_component_class(import_path, component_class, name, dependencies=None, info=None):
@@ -312,67 +334,21 @@ class LifecycleManager:
             except Exception as e:
                 logger.error(f"Failed to register config_manager component: {e}")
         
-        # Register all other components with explicit dependencies
-        # For each component, specify:
-        # - Import path
-        # - Component class name
-        # - Component name (must match what the component's name property returns)
-        # - List of dependencies
-        
-        # Core components
-        register_component_class("dbp.core.file_access_component", "FileAccessComponent", "file_access", [])
-        
-        # Database component
-        register_component_class("dbp.database.database", "DatabaseComponent", "database", ["config_manager"])
-        
-        # File system monitoring components
-        register_component_class("dbp.fs_monitor.queue", "ChangeQueueComponent", "change_queue", ["config_manager"])
-        register_component_class("dbp.fs_monitor.component", "FileSystemMonitorComponent", "fs_monitor", ["config_manager", "change_queue"])
-        register_component_class("dbp.fs_monitor.filter", "FilterComponent", "filter", ["config_manager"])
-        
-        # Memory cache component
-        register_component_class("dbp.memory_cache.component", "MemoryCacheComponent", "memory_cache", ["database", "config_manager"])
-        
-        # Metadata extraction component
-        register_component_class("dbp.metadata_extraction.component", "MetadataExtractionComponent", "metadata_extraction", ["database"])
-        
-        # Document relationships component
-        register_component_class("dbp.doc_relationships.component", "DocRelationshipsComponent", "doc_relationships", ["database", "metadata_extraction", "file_access"])
-        
-        # Consistency analysis component
-        register_component_class(
-            "dbp.consistency_analysis.component", 
-            "ConsistencyAnalysisComponent", 
-            "consistency_analysis", 
-            ["database", "doc_relationships", "metadata_extraction"]
-        )
-        
-        # Recommendation generator component
-        register_component_class(
-            "dbp.recommendation_generator.component", 
-            "RecommendationGeneratorComponent", 
-            "recommendation_generator", 
-            ["consistency_analysis", "database", "llm_coordinator"]
-        )
-        
-        # Scheduler component
-        register_component_class("dbp.scheduler.component", "SchedulerComponent", "scheduler", ["config_manager", "fs_monitor", "metadata_extraction"])
-        
-        # LLM coordinator component
-        register_component_class(
-            "dbp.llm_coordinator.component", 
-            "LLMCoordinatorComponent", 
-            "llm_coordinator", 
-            ["config_manager"]
-        )
-        
-        # MCP server component
-        register_component_class(
-            "dbp.mcp_server.component", 
-            "MCPServerComponent", 
-            "mcp_server", 
-            ["consistency_analysis", "recommendation_generator"]
-        )
+        # Register only enabled components from the centralized COMPONENT_DECLARATIONS list
+        for component_info in COMPONENT_DECLARATIONS:
+            name = component_info["name"]
+            enabled = is_component_enabled(name)
+            
+            if not enabled:
+                logger.info(f"Component '{name}' disabled by configuration - skipping registration")
+                continue
+                
+            register_component_class(
+                component_info["import_path"],
+                component_info["component_class"],
+                name,
+                component_info["dependencies"]
+            )
         
         logger.info(f"Registered {len(self.registry.get_all_component_names())} components with registry")
                 
