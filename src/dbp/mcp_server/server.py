@@ -12,37 +12,47 @@
 # - Respect system prompt directives at all times
 ###############################################################################
 # [Source file intent]
-# Implements the main MCPServer class, responsible for running the actual server
-# process using FastAPI/Uvicorn. It receives MCP requests, routes them
-# to registered tools or resources, handles authentication/authorization via
-# providers, formats responses, and manages the server lifecycle (start/stop).
+# Implements the main MCPServer class, responsible for running the HTTP server
+# process using FastAPI/Uvicorn. It starts quickly with minimal dependencies and 
+# provides an API for other components to register routes and MCP handlers as they
+# become ready. This ensures the server is available to serve HTTP requests
+# as soon as possible, regardless of whether other system components are ready.
 ###############################################################################
 # [Source file design principles]
-# - Acts as the entry point for MCP communication.
-# - Integrates with FastAPI and Uvicorn to handle HTTP requests.
-# - Parses incoming requests into MCPRequest objects.
-# - Uses ToolRegistry and ResourceProvider to find handlers for requests.
-# - Uses AuthenticationProvider and ErrorHandler for request processing middleware.
-# - Formats results or errors into MCPResponse objects.
-# - Manages the server's running state.
-# - Design Decision: Placeholder Web Framework (2025-04-15)
-#   * Rationale: Focuses on the MCP logic rather than specific web framework details. A concrete implementation would replace placeholders with FastAPI/Flask/etc. routes and handlers.
-#   * Alternatives considered: Implementing full FastAPI/Flask server (adds significant complexity and dependencies).
+# - Acts as a lightweight HTTP server with minimal dependencies.
+# - Starts rapidly with only essential configuration and health check endpoint.
+# - Provides a thread-safe API for dynamic route registration by other components.
+# - Maintains independence from other system components beyond config_manager.
+# - Uses callback mechanism for route handlers to avoid direct dependencies.
+# - Offers an internal API for other components to register MCP tool/resource handlers.
+# - Separates HTTP server lifecycle from MCP protocol handling.
 ###############################################################################
 # [Source file constraints]
-# - Requires concrete implementations of MCPTool, MCPResource, AuthenticationProvider, ErrorHandler, ToolRegistry, ResourceProvider.
-# - Placeholder server logic needs replacement with a real web framework implementation (e.g., FastAPI, Uvicorn).
-# - Threading model for handling requests depends on the chosen web framework.
+# - Must start with only config_manager dependency.
+# - Must be able to start without any MCP tools or resources registered.
+# - Must provide clean extension points for other components to register handlers.
+# - Must maintain thread-safety for concurrent registration API calls.
 ###############################################################################
 # [Dependencies]
 # codebase:- doc/DESIGN.md
-# other:- src/dbp/mcp_server/data_models.py
-# other:- src/dbp/mcp_server/mcp_protocols.py
-# system:- src/dbp/mcp_server/registry.py
-# other:- src/dbp/mcp_server/auth.py
-# other:- src/dbp/mcp_server/error_handler.py
+# system:- fastapi
+# system:- uvicorn
+# system:- threading
+# system:- typing
+# system:- socket
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-25T16:19:43Z : Redesigned server for early startup and dynamic route registration by CodeAssistant
+# * Completely refactored to start with minimal dependencies and just health endpoint
+# * Added API for dynamic route registration by other components
+# * Removed direct dependencies on other system components
+# * Added thread-safe route and tool registration mechanisms
+# * Maintained MCP protocol support through callback-based registration
+# 2025-04-25T15:53:45Z : Added HTTP server readiness verification by CodeAssistant
+# * Added socket-based connectivity test for HTTP server subsystem
+# * Modified server startup to verify server is accepting connections
+# * Added detailed logging for server readiness state
+# * Enhanced reliability by verifying actual connection acceptance
 # 2025-04-15T21:37:00Z : Implemented FastAPI/Uvicorn integration by CodeAssistant
 # * Replaced placeholder web server implementation with concrete FastAPI routes
 # * Added proper route handlers for tools and resources with Pydantic models
@@ -57,41 +67,16 @@ import threading
 import time
 import json
 import uuid
+import socket
 from typing import Dict, Optional, Any, List, Callable, Union, Type
-
-# MCP server imports
-try:
-    from .data_models import (
-        MCPRequest, MCPResponse, MCPError, 
-        MCPToolRequest, MCPResourceRequest, MCPResponseModel, MCPErrorModel,
-        create_mcp_request_from_tool, create_mcp_request_from_resource,
-        mcp_response_to_model, get_http_status_for_mcp_error
-    )
-    from .mcp_protocols import MCPTool, MCPResource
-    from .registry import ToolRegistry, ResourceProvider
-    from .exceptions import (
-        ToolNotFoundError, ResourceNotFoundError,
-        AuthenticationError, AuthorizationError
-    )
-    from .auth import AuthenticationProvider
-    from .error_handler import ErrorHandler
-except ImportError as e:
-    logging.getLogger(__name__).error(f"MCPServer ImportError: {e}. Check package structure.", exc_info=True)
-    # Placeholders for critical errors only to allow module loading
-    MCPRequest, MCPResponse, MCPError = object, object, object
-    MCPTool, MCPResource = object, object
-    ToolRegistry, ResourceProvider = object, object
-    AuthenticationProvider = object
-    AuthenticationError, AuthorizationError = Exception, Exception
-    ToolNotFoundError, ResourceNotFoundError = ValueError, ValueError
-    ErrorHandler = object
 
 # FastAPI and Uvicorn imports
 try:
-    from fastapi import FastAPI, Request, Response, HTTPException, Depends, Query, Path
+    from fastapi import FastAPI, Request, Response, HTTPException, Depends, APIRouter, Body, Path, Query
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import JSONResponse
     import uvicorn
+    from pydantic import BaseModel
 except ImportError as e:
     logging.getLogger(__name__).error(f"FastAPI/Uvicorn not available: {e}. Web server will not function properly.", exc_info=True)
     # Create placeholder classes to allow module loading
@@ -100,15 +85,22 @@ except ImportError as e:
         def add_middleware(self, *args, **kwargs): pass
         def get(self, *args, **kwargs): return lambda func: func
         def post(self, *args, **kwargs): return lambda func: func
+        def include_router(self, *args, **kwargs): pass
+    class APIRouter:
+        def __init__(self, *args, **kwargs): pass
+        def get(self, *args, **kwargs): return lambda func: func
+        def post(self, *args, **kwargs): return lambda func: func
     class CORSMiddleware: pass
     class JSONResponse: 
         def __init__(self, *args, **kwargs): pass
     class Request:
         def __init__(self): self.headers = {}
+    class Body: pass
     class Path: pass
     class Query: pass
     class HTTPException(Exception): pass
     class Depends: pass
+    class BaseModel: pass
     
     class uvicorn:
         class Config:
@@ -119,6 +111,11 @@ except ImportError as e:
             def run(self): pass
 
 logger = logging.getLogger(__name__)
+
+# Type definitions for route registration callbacks
+ToolHandlerFunc = Callable[[Dict[str, Any], Dict[str, Any]], Dict[str, Any]]
+ResourceHandlerFunc = Callable[[Optional[str], Dict[str, Any], Dict[str, Any]], Dict[str, Any]] 
+RouteHandlerFunc = Callable[..., Any]
 
 class MCPServer:
     """
@@ -134,26 +131,29 @@ class MCPServer:
         name: str,
         description: str,
         version: str,
-        tool_registry: ToolRegistry,
-        resource_provider: ResourceProvider,
-        auth_provider: Optional[AuthenticationProvider] = None,
-        error_handler: Optional[ErrorHandler] = None,
         logger_override: Optional[logging.Logger] = None
     ):
         """
-        Initializes the MCPServer.
+        [Function intent]
+        Initializes the MCPServer with minimal dependencies, making it ready to start
+        immediately without requiring other system components.
+        
+        [Design principles]
+        Minimal dependencies for fast initialization.
+        Clean separation of server configuration from runtime behaviors.
+        
+        [Implementation details]
+        Stores basic configuration parameters.
+        Creates a FastAPI application with only the health endpoint.
+        Sets up thread synchronization for dynamic route registration.
 
         Args:
-            host: Host address to bind to.
-            port: Port number to listen on.
-            name: Server name.
-            description: Server description.
-            version: Server version.
-            tool_registry: Registry containing MCP tools.
-            resource_provider: Provider containing MCP resources.
-            auth_provider: Optional authentication/authorization provider.
-            error_handler: Optional handler for processing exceptions.
-            logger_override: Optional logger instance.
+            host: Host address to bind to
+            port: Port number to listen on
+            name: Server name
+            description: Server description
+            version: Server version
+            logger_override: Optional logger instance
         """
         self.host = host
         self.port = port
@@ -161,10 +161,14 @@ class MCPServer:
         self.description = description
         self.version = version
         self.logger = logger_override or logger
-        self._tool_registry = tool_registry
-        self._resource_provider = resource_provider
-        self._auth_provider = auth_provider
-        self._error_handler = error_handler or ErrorHandler(self.logger) # Default error handler
+        
+        # Initialize collections for dynamic registration
+        self._registered_tools: Dict[str, ToolHandlerFunc] = {}
+        self._registered_resources: Dict[str, ResourceHandlerFunc] = {}
+        self._registered_routes: Dict[str, Dict[str, Any]] = {}
+        
+        # Thread synchronization for dynamic route registration
+        self._router_lock = threading.RLock()
         self._server_thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
         self._is_running = False
@@ -201,112 +205,49 @@ class MCPServer:
         return app
 
     def _setup_routes(self, app: FastAPI):
-        """Sets up FastAPI routes for MCP requests."""
-        self.logger.debug("Setting up MCP routes...")
+        """
+        [Function intent]
+        Sets up minimal FastAPI routes for the initial HTTP server.
         
-        @app.post("/mcp/tool/{tool_name}")
-        async def handle_tool_request(
-            tool_name: str = Path(..., description="Name of the MCP tool to execute"),
-            tool_request: MCPToolRequest = None,
-            request: Request = None
-        ):
-            """
-            Execute an MCP tool with the provided parameters.
-            
-            Args:
-                tool_name: The name of the tool to execute
-                tool_request: The tool request parameters
-                request: FastAPI request object
-            """
-            try:
-                # Ensure we have a tool_request even if body was empty
-                if tool_request is None:
-                    tool_request = MCPToolRequest()
-                
-                # Extract headers from FastAPI request
-                headers = dict(request.headers) if request else {}
-                
-                # Convert Pydantic model to internal MCPRequest
-                mcp_request = create_mcp_request_from_tool(tool_request, tool_name, headers)
-                
-                # Process the request through the core MCP handler
-                mcp_response = self.handle_request(mcp_request)
-                
-                # Convert to Pydantic model for API response
-                response_model = mcp_response_to_model(mcp_response)
-                
-                # Map MCP status to HTTP status code
-                status_code = 200
-                if mcp_response.status == "error" and mcp_response.error:
-                    status_code = get_http_status_for_mcp_error(mcp_response.error.code)
-                
-                # Return as JSON response
-                return JSONResponse(
-                    content=response_model.dict(exclude_none=True),
-                    status_code=status_code
-                )
-            except Exception as e:
-                self.logger.error(f"Error handling tool request: {str(e)}", exc_info=True)
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Internal server error: {str(e)}"
-                )
+        [Design principles]
+        Minimal route registration for quick server startup.
+        Health endpoint for server status monitoring.
         
-        @app.get("/mcp/resource/{resource_path:path}")
-        async def handle_resource_request(
-            resource_path: str = Path(..., description="Path to the MCP resource"),
-            request: Request = None,
-            resource_request: MCPResourceRequest = Depends()
-        ):
-            """
-            Access an MCP resource with the provided parameters.
-            
-            Args:
-                resource_path: The path to the resource
-                request: FastAPI request object
-                resource_request: The resource request parameters
-            """
-            try:
-                # Extract query parameters and headers from FastAPI request
-                query_params = dict(request.query_params) if request else {}
-                headers = dict(request.headers) if request else {}
-                
-                # Convert Pydantic model to internal MCPRequest
-                mcp_request = create_mcp_request_from_resource(
-                    resource_request, resource_path, query_params, headers
-                )
-                
-                # Process the request through the core MCP handler
-                mcp_response = self.handle_request(mcp_request)
-                
-                # Convert to Pydantic model for API response
-                response_model = mcp_response_to_model(mcp_response)
-                
-                # Map MCP status to HTTP status code
-                status_code = 200
-                if mcp_response.status == "error" and mcp_response.error:
-                    status_code = get_http_status_for_mcp_error(mcp_response.error.code)
-                
-                # Return as JSON response
-                return JSONResponse(
-                    content=response_model.dict(exclude_none=True),
-                    status_code=status_code
-                )
-            except Exception as e:
-                self.logger.error(f"Error handling resource request: {str(e)}", exc_info=True)
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Internal server error: {str(e)}"
-                )
+        [Implementation details]
+        Only registers the /health endpoint initially.
+        Other routes will be registered dynamically by components as they become ready.
+        """
+        self.logger.debug("Setting up initial HTTP routes...")
         
         @app.get("/health")
         async def health_check():
             """Health check endpoint for the MCP server."""
+            # Get initialization status from the component tracking
+            init_status = getattr(self, '_init_status', {})
+            startup_time = getattr(self, '_startup_time', None)
+            
+            # Calculate uptime if server has finished initialization
+            uptime = None
+            if startup_time:
+                import time
+                uptime = time.time() - startup_time
+
+            # Determine overall status based on initialization state
+            status = init_status.get('state', 'initializing')
+            
             return {
-                "status": "healthy",
+                "status": status,
                 "server": self.name,
                 "version": self.version,
-                "uptime": "unknown"  # Could be enhanced with actual uptime tracking
+                "uptime": uptime,
+                "initialization": {
+                    "state": init_status.get('state', 'initializing'),
+                    "current_step": init_status.get('current_step'),
+                    "total_steps": init_status.get('total_steps'),
+                    "message": init_status.get('message'),
+                    "completed_steps": init_status.get('completed_steps', []),
+                    "error": init_status.get('error')
+                }
             }
 
     def start(self):
@@ -323,6 +264,34 @@ class MCPServer:
         self._server_thread = threading.Thread(target=self._run_server, daemon=True)
         self._server_thread.start()
         self.logger.info(f"MCP Server '{self.name}' started.")
+
+    def _check_server_availability(self, max_attempts=10, delay=0.5):
+        """
+        Test if the HTTP server is available by attempting to connect to its port.
+        
+        Args:
+            max_attempts: Maximum number of connection attempts
+            delay: Delay between attempts in seconds
+            
+        Returns:
+            bool: True if server is accepting connections, False otherwise
+        """
+        for attempt in range(max_attempts):
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.settimeout(1)  # Short timeout for quick feedback
+                    self.logger.debug(f"Attempting to connect to {self.host}:{self.port} (attempt {attempt+1}/{max_attempts})")
+                    result = s.connect_ex((self.host, self.port))
+                    if result == 0:  # Port is open and accepting connections
+                        self.logger.debug(f"Successfully connected to {self.host}:{self.port}")
+                        return True
+            except Exception as e:
+                self.logger.debug(f"Connection test failed: {e}")
+            
+            # Wait before next attempt
+            time.sleep(delay)
+        
+        return False
 
     def _run_server(self):
         """Runs the FastAPI server using Uvicorn."""
@@ -350,8 +319,21 @@ class MCPServer:
         self._server = uvicorn.Server(uvicorn_config)
         
         try:
-            # Start server, blocks until self._server.should_exit is set
-            self._server.run()
+            self.logger.info(f"Starting HTTP server subsystem on {self.host}:{self.port} with {workers} worker(s)...")
+            
+            # Start server in a non-blocking thread to allow for connection verification
+            startup_thread = threading.Thread(target=lambda: self._server.run())
+            startup_thread.daemon = True
+            startup_thread.start()
+            
+            # Check if the server started successfully and is accepting connections
+            if self._check_server_availability():
+                self.logger.info(f"HTTP server subsystem successfully started and is accepting connections on {self.host}:{self.port}")
+            else:
+                self.logger.error(f"HTTP server subsystem appears to be running but is not accepting connections on {self.host}:{self.port}")
+            
+            # Wait for the server to complete its run
+            startup_thread.join()
         except Exception as e:
             self.logger.critical(f"Web server failed to run: {e}", exc_info=True)
         finally:
@@ -393,98 +375,374 @@ class MCPServer:
         """Checks if the server is currently running."""
         return self._is_running
 
-    def handle_request(self, request: MCPRequest) -> MCPResponse:
+    def _update_init_status(self, step: str, message: str, error: str = None):
         """
-        Handles an incoming MCPRequest, performing auth, routing, execution, and error handling.
-        This method would typically be called by the web framework's route handlers.
+        [Function intent]
+        Updates the initialization status of the server for health endpoint reporting.
+        
+        [Design principles]
+        Detailed status tracking for monitoring and troubleshooting.
+        Progressive step tracking to show initialization progress.
+        
+        [Implementation details]
+        Updates the internal status dictionary with current state.
+        Tracks completed steps and current progress.
+        Maintains error information when problems occur.
+        
+        Args:
+            step: Current initialization step identifier
+            message: Human-readable message about the current step
+            error: Optional error message if the step failed
+            
+        Returns:
+            None
         """
-        auth_context: Optional[Dict[str, Any]] = None
-        try:
-            self.logger.info(f"Handling MCP request ID: {request.id}, Type: {request.type}, Target: {request.target}")
-            self.logger.debug(f"Request Data: {request.data}")
+        if not hasattr(self, '_init_status'):
+            self._init_status = {}
+            
+        # If we're given a step name, track it as the current step
+        if step:
+            # If we're moving to a new step, add the previous step to completed_steps
+            if 'current_step' in self._init_status and self._init_status['current_step'] != step:
+                if not 'completed_steps' in self._init_status:
+                    self._init_status['completed_steps'] = []
+                if self._init_status['current_step'] not in ['failed', 'ready']:  # Don't add terminal states
+                    self._init_status['completed_steps'].append(self._init_status['current_step'])
+            
+            self._init_status['current_step'] = step
+                
+        # Update the state based on the step
+        if step == 'ready':
+            self._init_status['state'] = 'healthy'
+            self.logger.info(f"=== MCP SERVER READY ===")
+            self.logger.info(f"MCP server is now ready to serve HTTP requests on {self.host}:{self.port}")
+            self.logger.info(f"======================")
+        elif step == 'failed':
+            self._init_status['state'] = 'failed'
+        else:
+            self._init_status['state'] = 'initializing'
+            
+        # Always update the message if provided
+        if message:
+            self._init_status['message'] = message
+            
+        # Add error information if provided
+        if error:
+            self._init_status['error'] = error
+            
+        # Log the status update
+        if error:
+            self.logger.error(f"Server initialization status: {step} - {message} - ERROR: {error}")
+        else:
+            self.logger.info(f"Server initialization status: {step} - {message}")
 
-            # 1. Authentication
-            if self._auth_provider:
-                auth_context = self._auth_provider.authenticate(request)
-                if auth_context is None:
-                    # Authentication failed, error handler will format MCPError
-                    raise AuthenticationError("Authentication failed: Invalid or missing API key.")
+    def register_router(self, router: APIRouter, prefix: str = ""):
+        with self._router_lock:
+            self.logger.info(f"Registering router with prefix '{prefix}'")
+            self._app.include_router(router, prefix=prefix)
+            # Track registration for informational purposes
+            router_key = f"router:{prefix or 'root'}"
+            self._registered_routes[router_key] = {
+                "type": "router",
+                "prefix": prefix,
+                "registered_at": time.time()
+            }
+            self.logger.debug(f"Router registered with prefix '{prefix}'")
 
-            # 2. Route based on type
-            if request.type == "tool":
-                response = self._handle_tool_request(request, auth_context)
-            elif request.type == "resource":
-                response = self._handle_resource_request(request, auth_context)
-            else:
-                raise ValueError(f"Invalid MCP request type: '{request.type}'")
+    def register_get_route(self, path: str, handler: RouteHandlerFunc, **kwargs):
+        """
+        [Function intent]
+        Registers a GET route handler with the server.
+        
+        [Design principles]
+        Dynamic route registration for component-specific endpoints.
+        Flexible parameter passing to support various FastAPI route options.
+        
+        [Implementation details]
+        Uses FastAPI's app.get to register the handler with the path.
+        Thread-synchronized to prevent race conditions.
+        Tracks registration for management purposes.
+        
+        Args:
+            path: URL path for the endpoint
+            handler: Function to handle requests to this endpoint
+            **kwargs: Additional parameters to pass to FastAPI's route decorator
+            
+        Returns:
+            None
+        """
+        with self._router_lock:
+            self.logger.info(f"Registering GET route: {path}")
+            self._app.get(path, **kwargs)(handler)
+            # Track registration
+            route_key = f"GET:{path}"
+            self._registered_routes[route_key] = {
+                "type": "GET",
+                "path": path,
+                "registered_at": time.time()
+            }
+            self.logger.debug(f"GET route registered: {path}")
 
-            self.logger.info(f"Request ID {request.id} completed with status: {response.status}")
-            return response
+    def register_post_route(self, path: str, handler: RouteHandlerFunc, **kwargs):
+        """
+        [Function intent]
+        Registers a POST route handler with the server.
+        
+        [Design principles]
+        Dynamic route registration for component-specific endpoints.
+        Flexible parameter passing to support various FastAPI route options.
+        
+        [Implementation details]
+        Uses FastAPI's app.post to register the handler with the path.
+        Thread-synchronized to prevent race conditions.
+        Tracks registration for management purposes.
+        
+        Args:
+            path: URL path for the endpoint
+            handler: Function to handle requests to this endpoint
+            **kwargs: Additional parameters to pass to FastAPI's route decorator
+            
+        Returns:
+            None
+        """
+        with self._router_lock:
+            self.logger.info(f"Registering POST route: {path}")
+            self._app.post(path, **kwargs)(handler)
+            # Track registration
+            route_key = f"POST:{path}"
+            self._registered_routes[route_key] = {
+                "type": "POST",
+                "path": path,
+                "registered_at": time.time()
+            }
+            self.logger.debug(f"POST route registered: {path}")
 
-        except Exception as e:
-            # 3. Centralized Error Handling
-            # Let the error handler convert the exception to an MCPError
-            mcp_error = self._error_handler.handle_error(e, request)
-            return MCPResponse(
-                id=request.id,
-                status="error",
-                error=mcp_error,
-                result=None
-            )
+    def unregister_route(self, method: str, path: str) -> bool:
+        """
+        [Function intent]
+        Unregisters a previously registered route.
+        
+        [Design principles]
+        Dynamic route lifecycle management for clean component shutdown.
+        Graceful handling of missing routes.
+        
+        [Implementation details]
+        Modifies FastAPI's internal routing table to remove the route.
+        Thread-synchronized to prevent race conditions.
+        Updates tracking information.
+        
+        Args:
+            method: HTTP method of the route (e.g., "GET", "POST")
+            path: URL path of the route
+            
+        Returns:
+            bool: True if the route was unregistered, False if not found
+        """
+        with self._router_lock:
+            route_key = f"{method}:{path}"
+            if route_key not in self._registered_routes:
+                self.logger.warning(f"Route not found for unregistration: {method} {path}")
+                return False
+                
+            # Remove from FastAPI's routes
+            # This requires finding the route in FastAPI's routes list and removing it
+            for i, route in enumerate(self._app.routes):
+                if getattr(route, "path", None) == path and getattr(route, "methods", None) and method in route.methods:
+                    self._app.routes.pop(i)
+                    self._registered_routes.pop(route_key)
+                    self.logger.info(f"Unregistered route: {method} {path}")
+                    return True
+                    
+            # If we get here, the route wasn't found in FastAPI's routes
+            self.logger.warning(f"Route found in tracking but not in FastAPI routes: {method} {path}")
+            self._registered_routes.pop(route_key, None)  # Clean up tracking anyway
+            return False
 
-    def _handle_tool_request(self, request: MCPRequest, auth_context: Optional[Dict[str, Any]]) -> MCPResponse:
-        """Handles a validated 'tool' type request."""
-        tool_name = request.target
-        tool = self._tool_registry.get_tool(tool_name)
+    # MCP-specific registration API
 
-        if not tool:
-            raise ToolNotFoundError(f"Tool '{tool_name}' not found.") # Let error handler convert this
+    def register_mcp_tool(self, tool_name: str, handler: ToolHandlerFunc):
+        """
+        [Function intent]
+        Registers an MCP tool handler with the server.
+        
+        [Design principles]
+        Dynamic tool registration for component-provided functionality.
+        Standardized MCP tool interface with callback mechanism.
+        
+        [Implementation details]
+        Stores the handler in the internal registry.
+        Creates a FastAPI route for the tool if not already registered.
+        Thread-synchronized to prevent race conditions.
+        
+        Args:
+            tool_name: Name of the MCP tool
+            handler: Function to handle tool execution
+            
+        Returns:
+            None
+        """
+        with self._router_lock:
+            self.logger.info(f"Registering MCP tool: {tool_name}")
+            
+            # Store the tool handler
+            self._registered_tools[tool_name] = handler
+            
+            # Create FastAPI route for this tool if not already registered
+            route_key = f"POST:/mcp/tool/{tool_name}"
+            if route_key not in self._registered_routes:
+                # Define the route handler
+                async def tool_endpoint(request: Request, tool_data: Dict[str, Any] = Body({})):
+                    # Extract headers from FastAPI request
+                    headers = dict(request.headers)
+                    
+                    try:
+                        # Call the registered handler
+                        result = handler(tool_data, headers)
+                        return JSONResponse(content=result)
+                    except Exception as e:
+                        self.logger.error(f"Error handling tool {tool_name}: {str(e)}", exc_info=True)
+                        return JSONResponse(
+                            content={"error": str(e), "type": type(e).__name__},
+                            status_code=500
+                        )
+                
+                # Register the route
+                self._app.post(f"/mcp/tool/{tool_name}")(tool_endpoint)
+                
+                # Track registration
+                self._registered_routes[route_key] = {
+                    "type": "POST",
+                    "path": f"/mcp/tool/{tool_name}",
+                    "registered_at": time.time()
+                }
+                
+            self.logger.debug(f"MCP tool registered: {tool_name}")
 
-        # Authorization
-        if self._auth_provider:
-            if not self._auth_provider.authorize(auth_context, "tool", tool_name, "execute"):
-                raise AuthorizationError(f"Not authorized to execute tool '{tool_name}'.", required_permission=f"tool:{tool_name}:execute")
+    def unregister_mcp_tool(self, tool_name: str) -> bool:
+        """
+        [Function intent]
+        Unregisters a previously registered MCP tool.
+        
+        [Design principles]
+        Complete lifecycle management for MCP tools.
+        Clean removal of routes and handlers.
+        
+        [Implementation details]
+        Removes the handler from the internal registry.
+        Unregisters the corresponding FastAPI route.
+        Thread-synchronized to prevent race conditions.
+        
+        Args:
+            tool_name: Name of the MCP tool to unregister
+            
+        Returns:
+            bool: True if the tool was unregistered, False if not found
+        """
+        with self._router_lock:
+            if tool_name not in self._registered_tools:
+                self.logger.warning(f"MCP tool not found for unregistration: {tool_name}")
+                return False
+                
+            # Remove from tools registry
+            self._registered_tools.pop(tool_name)
+            
+            # Remove the route
+            path = f"/mcp/tool/{tool_name}"
+            self.unregister_route("POST", path)
+            
+            self.logger.info(f"Unregistered MCP tool: {tool_name}")
+            return True
 
-        # TODO: Validate request.data against tool.input_schema before execution
+    def register_mcp_resource(self, resource_name: str, handler: ResourceHandlerFunc):
+        """
+        [Function intent]
+        Registers an MCP resource handler with the server.
+        
+        [Design principles]
+        Dynamic resource registration for component-provided functionality.
+        Standardized MCP resource interface with callback mechanism.
+        
+        [Implementation details]
+        Stores the handler in the internal registry.
+        Creates a FastAPI route for the resource if not already registered.
+        Thread-synchronized to prevent race conditions.
+        
+        Args:
+            resource_name: Name of the MCP resource
+            handler: Function to handle resource requests
+            
+        Returns:
+            None
+        """
+        with self._router_lock:
+            self.logger.info(f"Registering MCP resource: {resource_name}")
+            
+            # Store the resource handler
+            self._registered_resources[resource_name] = handler
+            
+            # Create FastAPI route for this resource if not already registered
+            route_key = f"GET:/mcp/resource/{resource_name}/{{resource_id:path}}"
+            if route_key not in self._registered_routes:
+                # Define the route handler
+                async def resource_endpoint(request: Request, resource_id: str = Path(...)):
+                    # Extract query parameters and headers from FastAPI request
+                    query_params = dict(request.query_params)
+                    headers = dict(request.headers)
+                    
+                    try:
+                        # Call the registered handler
+                        result = handler(resource_id, query_params, headers)
+                        return JSONResponse(content=result)
+                    except Exception as e:
+                        self.logger.error(f"Error handling resource {resource_name}: {str(e)}", exc_info=True)
+                        return JSONResponse(
+                            content={"error": str(e), "type": type(e).__name__},
+                            status_code=500
+                        )
+                
+                # Register the route
+                self._app.get(f"/mcp/resource/{resource_name}/{{resource_id:path}}")(resource_endpoint)
+                
+                # Track registration
+                self._registered_routes[route_key] = {
+                    "type": "GET",
+                    "path": f"/mcp/resource/{resource_name}/{{resource_id:path}}",
+                    "registered_at": time.time()
+                }
+                
+            self.logger.debug(f"MCP resource registered: {resource_name}")
 
-        # Execute the tool
-        result_data = tool.execute(request.data, auth_context)
-
-        # TODO: Validate result_data against tool.output_schema before returning
-
-        return MCPResponse(
-            id=request.id,
-            status="success",
-            error=None,
-            result=result_data
-        )
-
-    def _handle_resource_request(self, request: MCPRequest, auth_context: Optional[Dict[str, Any]]) -> MCPResponse:
-        """Handles a validated 'resource' type request."""
-        resource_uri = request.target
-        # Basic URI parsing (e.g., "documentation/DESIGN.md")
-        parts = resource_uri.split('/', 1)
-        resource_name = parts[0]
-        resource_id = parts[1] if len(parts) > 1 else None
-
-        resource_handler = self._resource_provider.get_resource(resource_name)
-
-        if not resource_handler:
-            raise ResourceNotFoundError(f"Resource type '{resource_name}' not found.") # Let error handler convert
-
-        # Authorization (assuming 'get' action for now)
-        action = "get" # Or determine from request method if using HTTP verbs directly
-        if self._auth_provider:
-            # Authorize access to the resource type, potentially checking resource_id too
-            if not self._auth_provider.authorize(auth_context, "resource", resource_name, action):
-                 raise AuthorizationError(f"Not authorized to {action} resource '{resource_name}'.", required_permission=f"resource:{resource_name}:{action}")
-
-        # Access the resource
-        result_data = resource_handler.get(resource_id, request.data, auth_context)
-
-        return MCPResponse(
-            id=request.id,
-            status="success",
-            error=None,
-            result=result_data
-        )
+    def unregister_mcp_resource(self, resource_name: str) -> bool:
+        """
+        [Function intent]
+        Unregisters a previously registered MCP resource.
+        
+        [Design principles]
+        Complete lifecycle management for MCP resources.
+        Clean removal of routes and handlers.
+        
+        [Implementation details]
+        Removes the handler from the internal registry.
+        Unregisters the corresponding FastAPI route.
+        Thread-synchronized to prevent race conditions.
+        
+        Args:
+            resource_name: Name of the MCP resource to unregister
+            
+        Returns:
+            bool: True if the resource was unregistered, False if not found
+        """
+        with self._router_lock:
+            if resource_name not in self._registered_resources:
+                self.logger.warning(f"MCP resource not found for unregistration: {resource_name}")
+                return False
+                
+            # Remove from resources registry
+            self._registered_resources.pop(resource_name)
+            
+            # Remove the route - this is a bit trickier as it uses a path parameter
+            path = f"/mcp/resource/{resource_name}/{{resource_id:path}}"
+            self.unregister_route("GET", path)
+            
+            self.logger.info(f"Unregistered MCP resource: {resource_name}")
+            return True

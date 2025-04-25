@@ -43,6 +43,10 @@
 # system:- src/dbp/mcp_server/data_models.py (MCPRequest/Response/Error structure)
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-25T10:10:00Z : Updated to use get_typed_config() instead of deprecated get() method by CodeAssistant
+# * Replaced config_manager.get() calls with direct attribute access via get_typed_config()
+# * Fixed server startup error related to deprecated method exception
+# * Updated configuration access to follow new type-safe pattern
 # 2025-04-17T15:34:30Z : Fixed configuration key in MCPClientAPI by CodeAssistant
 # * Changed config key from "mcp_server.timeout" to "server.timeout" to match schema structure
 # * Fixed server initialization error that was preventing debug_server.sh from working correctly
@@ -125,10 +129,11 @@ class MCPClientAPI:
         self.logger.debug("Initializing MCPClientAPI configuration...")
         
         # Compute URL from host and port
-        host = self.config_manager.get("mcp_server.host", "localhost")
-        port = self.config_manager.get("mcp_server.port", 6231)
+        config = self.config_manager.get_typed_config()
+        host = config.mcp_server.host
+        port = config.mcp_server.port
         self.server_url = f"http://{host}:{port}"
-        self.timeout = int(self.config_manager.get("server.timeout", 30))
+        self.timeout = int(config.server.timeout)
 
         if not self.server_url:
             raise ConfigurationError("MCP server URL could not be computed from host and port.")

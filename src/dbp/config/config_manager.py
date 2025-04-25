@@ -46,6 +46,11 @@
 # codebase:doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-25T10:01:49Z : Deprecated get() method in favor of get_typed_config() by CodeAssistant
+# * Replaced get() method implementation to raise DeprecatedMethodError
+# * Added proper migration guidance to use get_typed_config() with direct attribute access
+# * Added DeprecatedMethodError to core exceptions module
+# * Ensured backward compatibility through descriptive error messages
 # 2025-04-18T09:14:00Z : Fixed template variable recursion issue in resolve_template_string by CodeAssistant
 # * Made resolve_template_string completely independent from get() method to avoid recursion
 # * Implemented direct attribute access for template variable resolution
@@ -406,10 +411,17 @@ class ConfigurationManager:
             logger.debug("Configuration validated successfully with all template variables resolved.")
             
         except ValidationError as e:
-            logger.error(f"Configuration validation failed. Using default values. Errors:\n{e}")
-            # Fallback to default configuration on validation error
-            self._config = AppConfig()
-            self._raw_config_dict = self._config.dict()
+            # Re-raise the validation error with a clear message
+            logger.error(f"Configuration validation failed. Errors:\n{e}")
+            error_details = []
+            for err in e.errors():
+                loc = err.get('loc', 'unknown_location')
+                msg = err.get('msg', 'unknown_error')
+                error_details.append(f"{loc}: {msg}")
+                
+            error_message = f"Configuration validation failed: {'; '.join(error_details)}"
+            logger.error(error_message)
+            raise ValueError(error_message) from e
 
     def _convert_value(self, value: str) -> Any:
         """Attempts to convert string value to bool, int, float, or keeps as string."""
@@ -646,77 +658,30 @@ class ConfigurationManager:
     def get(self, key: str, resolve_templates: bool = False) -> Any:
         """
         [Function intent]
-        Retrieves a configuration value using dot notation (e.g., 'database.type').
-        Template variables are already resolved during initialization.
+        DEPRECATED method that previously retrieved a configuration value using dot notation.
         
         [Implementation details]
-        Uses direct attribute access on the Pydantic AppConfig model.
-        Falls back to default configuration if not initialized.
-        Forces initialization if accessed before initialized.
+        This method is deprecated and will raise an exception when called.
+        Use get_typed_config() and direct attribute access instead.
         
         [Design principles]
-        Type-safe configuration access with pre-resolved template variables.
-        Self-initializing on first access to ensure templates are always resolved.
+        Clear deprecation signaling with migration guidance.
         
         Args:
             key: The configuration key in dot notation.
             resolve_templates: Whether to resolve template variables in string values.
-                              This parameter is maintained for backward compatibility,
-                              but all templates are already resolved at initialization.
 
         Returns:
-            The configuration value with template variables already resolved.
+            Never returns as the method always raises an exception.
             
         Raises:
-            ValueError: If the configuration key doesn't exist.
+            DeprecatedMethodError: Always raised to indicate this method is deprecated.
         """
-        # If not initialized, initialize first to ensure template variables are resolved
-        if not self.initialized_flag:
-            logger.info(f"Configuration accessed via get('{key}') before initialization. Initializing now.")
-            self.initialize()
-            
-        # Use the initialized config
-        config = self._config
-            
-        # Navigate through the Pydantic model hierarchy
-        parts = key.split('.')
-        value = config
+        from dbp.core.exceptions import DeprecatedMethodError
         
-        try:
-            for part in parts:
-                value = getattr(value, part)
-                
-            # Ensure any unresolved templates are resolved (this should be rare after our initialization fix)
-            if isinstance(value, str) and "${" in value:
-                logger.warning(f"Unresolved template variable found in config key {key}: {value}. "
-                              "This may indicate an initialization issue or a circular template reference.")
-                value = self.resolve_template_string(value)
-                
-            return value
-        except AttributeError as e:
-            # Create a more descriptive error message
-            attempted_path = []
-            current_value = config
-            for part in parts:
-                attempted_path.append(part)
-                try:
-                    current_value = getattr(current_value, part)
-                except AttributeError:
-                    path_so_far = ".".join(attempted_path[:-1])
-                    if path_so_far:
-                        error_message = f"Configuration key '{key}' not found. '{path_so_far}' exists but has no attribute '{part}'."
-                    else:
-                        error_message = f"Configuration key '{key}' not found in configuration."
-                    
-                    logger.error(error_message)
-                    raise ValueError(error_message) from e
-            
-            # This should not be reached, but just in case
-            logger.error(f"Configuration key '{key}' not found")
-            raise ValueError(f"Configuration key '{key}' not found in configuration") from e
-        except Exception as e:
-            logger.error(f"Error retrieving configuration key '{key}': {e}", exc_info=True)
-            raise ValueError(f"Error retrieving configuration key '{key}': {e}") from e
+        alternative = f"config_manager.get_typed_config().{key.replace('.', '.')}"
+        logger.error(f"The get() method is deprecated. Use {alternative} instead.")
+        raise DeprecatedMethodError("ConfigurationManager.get()", alternative)
             
     def resolve_template_string(self, template_str: str, max_depth: int = 10) -> str:
         """
@@ -925,21 +890,26 @@ class ConfigurationManager:
     def get_raw_merged_config(self) -> Dict[str, Any]:
         """
         [Function intent]
-        Returns the raw merged configuration dictionary before Pydantic validation.
+        DEPRECATED method that previously returned the raw merged configuration dictionary.
         
         [Implementation details]
-        Ensures the configuration manager is initialized before returning the raw config.
+        This method is deprecated and will raise an exception when called.
+        Use get_typed_config() and the .dict() method instead.
         
         [Design principles]
-        Self-initializing to ensure all configuration is loaded when accessed.
+        Clear deprecation signaling with migration guidance.
         
         Returns:
-            Dict[str, Any]: Raw merged configuration dictionary
+            Never returns as the method always raises an exception.
+            
+        Raises:
+            DeprecatedMethodError: Always raised to indicate this method is deprecated.
         """
-        if not self.initialized_flag:
-            logger.info("Getting raw configuration before initialization. Initializing now.")
-            self.initialize()
-        return self._raw_config_dict.copy()
+        from dbp.core.exceptions import DeprecatedMethodError
+        
+        alternative = "config_manager.get_typed_config().dict()"
+        logger.error(f"The get_raw_merged_config() method is deprecated. Use {alternative} instead.")
+        raise DeprecatedMethodError("ConfigurationManager.get_raw_merged_config()", alternative)
 
 
     def get_typed_config(self) -> AppConfig:

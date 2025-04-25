@@ -103,13 +103,26 @@ class BedrockClient:
             raise ImportError("boto3 library is required for BedrockClient.")
 
         # --- Configuration Values ---
-        # Provide defaults directly here if config object might be missing keys
-        self.model_id = self.config.get('metadata_extraction.model_id', "amazon.titan-text-lite-v1") # Default model
-        self.max_retries = int(self.config.get('metadata_extraction.max_retries', 3))
-        self.retry_delay = float(self.config.get('metadata_extraction.retry_delay', 1.0))
-        self.temperature = float(self.config.get('metadata_extraction.temperature', 0.0))
-        self.max_tokens = int(self.config.get('metadata_extraction.max_tokens', 4096))
-        self.aws_region = self.config.get('aws.region', None) # Optional region from config
+        try:
+            # Try to get values from typed config
+            typed_config = self.config.get_typed_config()
+            # Extract metadata_extraction configuration
+            self.model_id = typed_config.metadata_extraction.model_id
+            self.max_retries = typed_config.metadata_extraction.max_retries
+            self.retry_delay = typed_config.metadata_extraction.retry_delay
+            self.temperature = typed_config.metadata_extraction.temperature
+            self.max_tokens = typed_config.metadata_extraction.max_tokens
+            # Extract AWS region from typed config
+            self.aws_region = typed_config.aws.region if hasattr(typed_config, 'aws') else None
+        except (AttributeError, Exception) as e:
+            # Fall back to defaults if typed_config is not available or attributes are missing
+            self.logger.warning(f"Could not get metadata_extraction configuration from typed_config: {e}. Using defaults.")
+            self.model_id = "amazon.titan-text-lite-v1"  # Default model
+            self.max_retries = 3
+            self.retry_delay = 1.0
+            self.temperature = 0.0
+            self.max_tokens = 4096
+            self.aws_region = None
 
         # --- Initialize Boto3 Client ---
         self.client = self._initialize_client()

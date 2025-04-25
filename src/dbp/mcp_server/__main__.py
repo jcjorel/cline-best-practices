@@ -37,6 +37,20 @@
 # codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-25T15:21:00Z : Removed file-based startup signal mechanism by CodeAssistant
+# * Removed all logic that creates and manages startup signal files
+# * Server status is now detected solely through health API checks
+# * Simplified server startup process to eliminate file-based coordination
+# * Improved reliability by removing file operation dependencies
+# 2025-04-25T15:15:00Z : Fixed missing keep_alive import causing startup failure by CodeAssistant
+# * Added explicit import for keep_alive() function in main() method
+# * Fixed UnboundLocalError during server startup
+# * Ensured proper watchdog operation during initialization
+# 2025-04-25T14:48:00Z : Modified watchdog behavior to disable after successful component initialization by CodeAssistant
+# * Changed watchdog to stop after all components have started successfully
+# * Removed the always-active watchdog behavior that was causing false triggers
+# * Improved log message to clearly indicate watchdog is being disabled
+# * Fixed the deadlock detection issue that occurred after all components started
 # 2025-04-20T19:23:00Z : Fixed watchdog deadlock detection by CodeAssistant
 # * Modified watchdog behavior to remain active during application lifetime
 # * Removed code that was stopping watchdog after component initialization
@@ -48,10 +62,6 @@
 # * Updated imports in __main__.py to use the new watchdog module
 # * Removed duplicate code to improve maintainability
 # 2025-04-20T03:52:00Z : Fixed startup timeout parameter to use configuration values by CodeAssistant
-# * Updated startup-timeout parameter to use timeout_seconds from configuration
-# * Eliminated last hardcoded default value in argument parser
-# * Ensured consistent default values across all CLI parameters
-# 2025-04-20T03:48:00Z : Updated argument parser to use ConfigurationManager by CodeAssistant
 # * Modified parse_arguments() to get default values from ConfigurationManager
 # * Added strict exception handling for configuration access
 # * Made default argument values consistent with system-wide configuration
@@ -292,8 +302,6 @@ def parse_arguments() -> argparse.Namespace:
                         help='Path to log file')
     parser.add_argument('--startup-timeout', type=int, default=typed_config.initialization.timeout_seconds,
                         help=f'Timeout in seconds to wait for server startup (default: {typed_config.initialization.timeout_seconds})')
-    parser.add_argument('--startup-check', action='store_true',
-                        help='Perform health check after starting to verify server is responsive')
     parser.add_argument('--watchdog-timeout', type=int, default=watchdog_timeout,
                         help=f'Watchdog timeout in seconds (default: {watchdog_timeout})')
     
@@ -350,13 +358,11 @@ def main() -> int:
     setup_exit_handlers(watchdog_timeout=watchdog_timeout)
     
     # Record initial keepalive
+    from ..core.watchdog import keep_alive
     keep_alive()
     
     logger.info(f"Starting MCP server on {args.host}:{args.port}")
     logger.debug(f"Arguments: {args}")
-    
-    # Signal file to be used for startup indication
-    startup_signal_file = Path.home() / '.dbp' / 'mcp_server_started'
     
     try:
         # Import here to avoid circular imports
@@ -476,13 +482,14 @@ def main() -> int:
                 return 1
                 
             logger.info("All components started successfully")
-            
+
             # Component initialization is complete
             logger.info("Component initialization completed successfully")
-            
-            # IMPORTANT: Do not stop the watchdog - keep it running to detect deadlocks during operation
-            # The keep_alive function needs to be called periodically by long-running operations
-            logger.info("Watchdog will remain active to monitor for deadlocks during operation")
+
+            # Disable the watchdog now that all components have started successfully
+            from ..core.watchdog import stop_watchdog
+            stop_watchdog()
+            logger.info("Watchdog disabled after successful component initialization")
                 
             # Access the MCP server component directly to start the server
             # (since LifecycleManager doesn't do that automatically)
@@ -498,38 +505,6 @@ def main() -> int:
                 exit_handler(reason="MCP server component not initialized", source="Component initialization check")
                 return 1
             
-            # Signal file to indicate successful startup
-            try:
-                with open(startup_signal_file, 'w') as f:
-                    f.write(str(os.getpid()))
-                logger.debug(f"Created startup signal file at {startup_signal_file}")
-            except Exception as e:
-                logger.warning(f"Failed to create startup signal file: {e}")
-
-            # Perform health check if requested
-            if args.startup_check:
-                try:
-                    import requests
-                    from urllib.parse import urljoin
-                    base_url = f"http://{args.host}:{args.port}"
-                    
-                    # Try to connect to the health endpoint
-                    logger.info("Performing server health check...")
-                    start_time = time.time()
-                    while time.time() - start_time < args.startup_timeout:
-                        try:
-                            health_url = urljoin(base_url, "/health")
-                            response = requests.get(health_url, timeout=2)
-                            if response.status_code == 200:
-                                logger.info("Server health check passed")
-                                break
-                        except Exception:
-                            # Wait and retry
-                            time.sleep(1)
-                    else:
-                        logger.warning("Server health check timed out, but continuing...")
-                except Exception as e:
-                    logger.warning(f"Health check setup failed: {e}")
             
             # Start the server (this should block until server exit)
             logger.info("Starting MCP server...")
@@ -544,17 +519,17 @@ def main() -> int:
                 exit_handler(reason="Failed during server execution", exception=e, source="MCP server execution")
                 return 1
             finally:
-                # Clean up startup signal file
-                if startup_signal_file.exists():
-                    try:
-                        startup_signal_file.unlink()
-                        logger.debug("Removed startup signal file")
-                    except Exception as e:
-                        logger.warning(f"Failed to remove startup signal file: {e}")
-                
                 # Shutdown gracefully
                 logger.info("Shutting down MCP server...")
                 try:
+                    # Re-enable watchdog for shutdown process to detect potential deadlocks
+                    from ..core.watchdog import start_watchdog, keep_alive
+                    watchdog_timeout = args.watchdog_timeout
+                    start_watchdog(timeout=watchdog_timeout, exit_handler=exit_handler)
+                    logger.info(f"Watchdog reactivated with {watchdog_timeout}s timeout for shutdown process")
+                    keep_alive()  # Initialize keepalive for shutdown
+                    
+                    # Perform shutdown
                     lifecycle.shutdown()
                     logger.info("Lifecycle manager shutdown complete")
                 except Exception as e:

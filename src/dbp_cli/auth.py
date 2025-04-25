@@ -112,7 +112,8 @@ class AuthenticationManager:
             return
 
         # Check configuration file
-        config_key = self.config_manager.get("mcp_server.api_key")
+        typed_config = self.config_manager.get_typed_config()
+        config_key = typed_config.mcp_server.api_key if hasattr(typed_config.mcp_server, 'api_key') else None
         if config_key:
             self.logger.info("Using API key from configuration file.")
             self._api_key = config_key
@@ -135,9 +136,13 @@ class AuthenticationManager:
         else:
              self.logger.debug("Keyring library not available. Skipping keyring check.")
 
-
-        self.logger.info("No API key found from any source.")
-        self._api_key = None
+        # If we got here, no API key was found from any source
+        self.logger.error("No API key found from any source.")
+        raise AuthenticationError(
+            "Authentication required: No API key found. "
+            "Set DBP_API_KEY environment variable, use --api-key flag, "
+            "or configure 'mcp_server.api_key' in config file."
+        )
 
 
     def get_api_key(self) -> Optional[str]:
@@ -184,9 +189,8 @@ class AuthenticationManager:
         if save:
             try:
                 # Save to config file
-                self.config_manager.set("mcp_server.api_key", api_key)
-                # Note: Using ConfigurationManager from dbp.config.config_manager which doesn't have save_to_user_config
-                # So we just log that the key is set in memory
+                typed_config = self.config_manager.get_typed_config()
+                typed_config.mcp_server.api_key = api_key
                 self.logger.info("API key saved to configuration manager")
 
                 # Save to keyring if available and requested
@@ -214,8 +218,8 @@ class AuthenticationManager:
          if clear_persistent:
               try:
                    # Clear from config
-                   self.config_manager.set("mcp_server.api_key", None)
-                   # Note: Using ConfigurationManager from dbp.config.config_manager which doesn't have save_to_user_config
+                   typed_config = self.config_manager.get_typed_config()
+                   typed_config.mcp_server.api_key = None
                    self.logger.info("API key cleared from configuration manager")
                    # Clear from keyring
                    if HAS_KEYRING:

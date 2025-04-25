@@ -34,6 +34,12 @@
 # codebase:- doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-25T13:08:04Z : Fixed watchdog logging severity levels by CodeAssistant
+# * Adjusted log levels to reserve CRITICAL only for actual watchdog triggers
+# * Changed routine status checks from CRITICAL to INFO level
+# * Changed thread information logging from CRITICAL to DEBUG level
+# * Changed threshold exceeded notifications from CRITICAL to WARNING level
+# * Maintained CRITICAL level for actual watchdog trigger diagnostics
 # 2025-04-20T21:04:54Z : Enhanced watchdog to prioritize all thread stack traces on trigger by CodeAssistant
 # * Modified diagnostic display to prominently show all thread stack traces first
 # * Added clear section separators for better log readability
@@ -117,16 +123,16 @@ def start_watchdog(timeout: int = 60, exit_handler: Optional[Callable] = None):
     _watchdog_active = True
     
     # Log diagnostic information about watchdog setup
-    logger.critical(f"WATCHDOG SETUP: Initializing watchdog with {timeout}s timeout")
-    logger.critical(f"WATCHDOG SETUP: Initial timestamp: {_last_keepalive_time}")
+    logger.info(f"WATCHDOG SETUP: Initializing watchdog with {timeout}s timeout")
+    logger.info(f"WATCHDOG SETUP: Initial timestamp: {_last_keepalive_time}")
     
     def watchdog_monitor():
-        logger.critical(f"WATCHDOG THREAD STARTED: with {timeout} second timeout")
+        logger.info(f"WATCHDOG THREAD STARTED: with {timeout} second timeout")
         
         # Log thread information for debugging
         thread_id = threading.get_ident()
         thread_name = threading.current_thread().name
-        logger.critical(f"WATCHDOG THREAD INFO: id={thread_id}, name={thread_name}, is_daemon={threading.current_thread().daemon}")
+        logger.debug(f"WATCHDOG THREAD INFO: id={thread_id}, name={thread_name}, is_daemon={threading.current_thread().daemon}")
         
         # Loop counter for logging
         loop_counter = 0
@@ -155,15 +161,15 @@ def start_watchdog(timeout: int = 60, exit_handler: Optional[Callable] = None):
                 last_time = _last_keepalive_time
                 
                 if last_time is None:
-                    logger.critical("WATCHDOG LOOP: _last_keepalive_time is None, skipping check")
+                    logger.warning("WATCHDOG LOOP: _last_keepalive_time is None, skipping check")
                     continue
                     
                 time_since_keepalive = current_time - last_time
-                logger.critical(f"WATCHDOG CHECK: Time since last keepalive: {time_since_keepalive:.1f}s (threshold: {_watchdog_timeout}s)")
+                logger.info(f"WATCHDOG CHECK: Time since last keepalive: {time_since_keepalive:.1f}s (threshold: {_watchdog_timeout}s)")
                 
                 # If too much time has passed since last activity
                 if time_since_keepalive > _watchdog_timeout:
-                    logger.critical("WATCHDOG THRESHOLD EXCEEDED: Preparing to take action")
+                    logger.warning("WATCHDOG THRESHOLD EXCEEDED: Preparing to take action")
                     # Get information about the current process state
                     process_info = get_process_diagnostics()
                     

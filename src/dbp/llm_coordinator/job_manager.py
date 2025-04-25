@@ -101,9 +101,9 @@ class JobManager:
         self._lock = threading.RLock() # Lock for managing job states and results
         self._shutdown_flag = False # Flag to signal shutdown
 
-        # Get config values
-        self._job_wait_timeout = float(self.config.get('job_wait_timeout_seconds', 60.0))
-        self._max_parallel_jobs = int(self.config.get('max_parallel_jobs', 5))
+        # Get config values using direct attribute access
+        self._job_wait_timeout = self.config.job_wait_timeout_seconds
+        self._max_parallel_jobs = self.config.max_parallel_jobs
         # TODO: Implement logic to limit parallel jobs if needed (e.g., using a Semaphore or ThreadPoolExecutor)
 
         self.logger.debug("JobManager initialized.")

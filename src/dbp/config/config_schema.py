@@ -28,6 +28,10 @@
 # - Design Decision: Centralized Default Values (2025-04-16)
 #   * Rationale: Separates default values from schema definition for better maintainability.
 #   * Alternatives considered: Keep defaults in schema (less maintainable, harder to synchronize with documentation).
+# - Design Decision: No Hardcoded Default Values in Field Default Parameter (2025-04-25)
+#   * Rationale: All default values in Field(default=...) must be defined in default_config.py to maintain a single source of truth.
+#   * Note: This applies specifically to the 'default' parameter in Field() and not to 'default_factory' parameter.
+#   * Alternatives considered: Inline defaults (creates maintenance issues, inconsistencies between code and documentation).
 ###############################################################################
 # [Source file constraints]
 # - Requires Pydantic library.
@@ -43,24 +47,17 @@
 # system:logging
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-18T10:42:33Z : Removed hardcoded defaults and referenced default_config.py by CodeAssistant
-# * Added missing default dictionaries in default_config.py: METADATA_EXTRACTION_DEFAULTS, MEMORY_CACHE_DEFAULTS, AWS_DEFAULTS
-# * Updated MetadataExtractionConfig, MemoryCacheConfig, and AWSConfig to reference the default values
-# * Updated imports to include the new default dictionaries
-# * Ensured all configuration classes use centralized defaults from default_config.py
-# 2025-04-17T18:57:30Z : Removed duplicate AppConfig class definitions by CodeAssistant
-# * Removed two duplicate incomplete AppConfig class definitions
-# * Kept only the final complete AppConfig class definition
-# * Fixed potential confusion and errors when modifying configuration schema
-# 2025-04-17T16:46:00Z : Renamed MonitorConfig to FSMonitorConfig for component name consistency by CodeAssistant
-# * Renamed MonitorConfig class to FSMonitorConfig to match fs_monitor component name
-# * Updated AppConfig to use fs_monitor field instead of monitor
-# * Fixed "Configuration key 'fs_monitor' not found" error during server startup
-# * Aligned configuration schema with component naming conventions
-# 2025-04-17T16:17:00Z : Added database.alembic_ini_path configuration field by CodeAssistant
-# * Added missing alembic_ini_path field to DatabaseConfig class
-# * Fixed "Configuration key 'database.alembic_ini_path' not found" error
-# * Enabled successful execution of database migrations during server startup
+# 2025-04-25T14:36:00Z : Added missing COMPONENT_ENABLED_DEFAULTS import by CodeAssistant
+# * Added COMPONENT_ENABLED_DEFAULTS to the imports from default_config.py
+# * Fixed NameError in ComponentEnabledConfig class
+# 2025-04-25T14:31:47Z : Updated ComponentEnabledConfig to use default values from COMPONENT_ENABLED_DEFAULTS by CodeAssistant
+# * Replaced hardcoded 'True' values with references to corresponding values in COMPONENT_ENABLED_DEFAULTS
+# 2025-04-25T14:26:02Z : Updated validators to raise exceptions instead of using fallbacks by CodeAssistant
+# * Modified all validator methods to raise ValueError instead of returning fallback values
+# * Includes format, verbosity, file path expansion, cache_dir, response_format, and prompt_templates_dir validators
+# 2025-04-25T11:39:07Z : Clarified design decision to apply specifically to Field default parameter by CodeAssistant
+# * Updated the design decision to specify it only applies to the Field default parameter
+# * Added note clarifying that default_factory parameter is not subject to this restriction
 ###############################################################################
 
 from pydantic import BaseModel, Field, validator, DirectoryPath, FilePath
@@ -92,6 +89,8 @@ from .default_config import (
     METADATA_EXTRACTION_DEFAULTS,
     MEMORY_CACHE_DEFAULTS,
     AWS_DEFAULTS,
+    BEDROCK_DEFAULTS,
+    COMPONENT_ENABLED_DEFAULTS,
 )
 
 logger = logging.getLogger(__name__)
@@ -113,7 +112,7 @@ class ProjectConfig(BaseModel):
     """Project settings."""
     name: str = Field(default=PROJECT_DEFAULTS["name"], description="Project name")
     description: str = Field(default=PROJECT_DEFAULTS["description"], description="Project description")
-    root_path: str = Field(default="", description="Git root path for the project")
+    root_path: str = Field(default=PROJECT_DEFAULTS["root_path"], description="Git root path for the project")
 
 class OutputConfig(BaseModel):
     """Output formatting settings."""
@@ -126,18 +125,16 @@ class OutputConfig(BaseModel):
     def validate_format(cls, v):
         allowed = ["json", "yaml", "formatted"]
         if v not in allowed:
-            logger.warning(f"Invalid output format '{v}'. Defaulting to 'formatted'. Allowed: {allowed}")
-            return "formatted"
-            # raise ValueError(f"Format must be one of: {allowed}")
+            # Remove fallback and raise exception instead
+            raise ValueError(f"Format must be one of: {allowed}")
         return v
 
     @validator('verbosity')
     def validate_verbosity(cls, v):
         allowed = ["minimal", "normal", "detailed"]
         if v not in allowed:
-            logger.warning(f"Invalid verbosity level '{v}'. Defaulting to 'normal'. Allowed: {allowed}")
-            return "normal"
-            # raise ValueError(f"Verbosity must be one of: {allowed}")
+            # Remove fallback and raise exception instead
+            raise ValueError(f"Verbosity must be one of: {allowed}")
         return v
 
 class HistoryConfig(BaseModel):
@@ -153,8 +150,8 @@ class HistoryConfig(BaseModel):
             return os.path.expanduser(v)
         except Exception as e:
             logger.error(f"Could not expand history file path '{v}': {e}")
-            # Fallback to a default path if expansion fails
-            return os.path.expanduser("~/.dbp_cli_history_fallback")
+            # Raise exception instead of providing fallback
+            raise ValueError(f"Invalid history file path: {v}")
 
 
 class ScriptConfig(BaseModel):
@@ -172,7 +169,7 @@ class ScriptConfig(BaseModel):
                     expanded_paths.append(os.path.expanduser(str(dir_path)))
                 except Exception as e:
                     logger.error(f"Could not expand script directory path '{dir_path}': {e}")
-                    # Optionally skip invalid paths or use a default
+                    raise ValueError(f"Invalid script directory path: {dir_path}")
             return expanded_paths
         # Handle case where default is passed directly
         elif isinstance(v, str):
@@ -180,8 +177,9 @@ class ScriptConfig(BaseModel):
                  return [os.path.expanduser(v)]
              except Exception as e:
                  logger.error(f"Could not expand script directory path '{v}': {e}")
-                 return []
-        return []
+                 raise ValueError(f"Invalid script directory path: {v}")
+        # If neither list nor string, raise error
+        raise ValueError("Script directories must be a list of paths or a single path string")
 
 
 class SchedulerConfig(BaseModel):
@@ -219,15 +217,15 @@ class DatabaseConfig(BaseModel):
             return os.path.expanduser(v)
         except Exception as e:
             logger.error(f"Could not expand database path '{v}': {e}")
-            return os.path.expanduser("~/.dbp/metadata_fallback.db")
+            # Raise exception instead of providing fallback
+            raise ValueError(f"Invalid database path: {v}")
 
     @validator('type')
     def validate_type(cls, v):
         allowed = ["sqlite", "postgresql"]
         if v not in allowed:
-            logger.warning(f"Invalid database type '{v}'. Defaulting to 'sqlite'. Allowed: {allowed}")
-            return "sqlite"
-            # raise ValueError(f"Database type must be one of: {allowed}")
+            # Remove fallback and raise exception instead
+            raise ValueError(f"Database type must be one of: {allowed}")
         return v
 
 class RecommendationConfig(BaseModel):
@@ -250,25 +248,23 @@ class InitializationConfig(BaseModel):
     def validate_verification_level(cls, v):
         allowed = ["minimal", "normal", "thorough"]
         if v not in allowed:
-            logger.warning(f"Invalid verification level '{v}'. Defaulting to 'normal'. Allowed: {allowed}")
-            return "normal"
-            # raise ValueError(f"Verification level must be one of: {allowed}")
+            # Remove fallback and raise exception instead
+            raise ValueError(f"Verification level must be one of: {allowed}")
         return v
 
     @validator('startup_mode')
     def validate_startup_mode(cls, v):
         allowed = ["normal", "maintenance", "recovery", "minimal"]
         if v not in allowed:
-            logger.warning(f"Invalid startup mode '{v}'. Defaulting to 'normal'. Allowed: {allowed}")
-            return "normal"
-            # raise ValueError(f"Startup mode must be one of: {allowed}")
+            # Remove fallback and raise exception instead
+            raise ValueError(f"Startup mode must be one of: {allowed}")
         return v
 
 # --- LLM Coordinator Configuration ---
 
 class BedrockConfig(BaseModel):
     """AWS Bedrock client configuration."""
-    region: Optional[str] = Field(default=None, description="AWS region for Bedrock API calls")
+    region: Optional[str] = Field(default=BEDROCK_DEFAULTS["region"], description="AWS region for Bedrock API calls")
 
 class CoordinatorLLMConfig(BaseModel):
     """Configuration specific to the Coordinator LLM instance."""
@@ -284,8 +280,8 @@ class CoordinatorLLMConfig(BaseModel):
     def validate_response_format(cls, v):
         allowed = ["json", "text"]
         if v not in allowed:
-            logger.warning(f"Invalid coordinator LLM response format '{v}'. Defaulting to 'json'. Allowed: {allowed}")
-            return "json"
+            # Remove fallback and raise exception instead
+            raise ValueError(f"Response format must be one of: {allowed}")
         return v
 
     @validator('prompt_templates_dir', pre=True, always=True)
@@ -296,8 +292,8 @@ class CoordinatorLLMConfig(BaseModel):
             return os.path.abspath(os.path.expanduser(v))
         except Exception as e:
             logger.error(f"Could not expand prompt template directory path '{v}': {e}")
-            # Fallback to a default relative path
-            return "doc/llm/prompts"
+            # Raise exception instead of providing fallback
+            raise ValueError(f"Invalid prompt template directory path: {v}")
 
 
 class LLMCoordinatorConfig(BaseModel):
@@ -408,8 +404,8 @@ class MemoryCacheConfig(BaseModel):
     def validate_eviction_policy(cls, v):
         allowed = ["lru", "lfu", "fifo", "random"]
         if v not in allowed:
-            logger.warning(f"Invalid eviction policy '{v}'. Defaulting to 'lru'. Allowed: {allowed}")
-            return "lru"
+            # Remove fallback and raise exception instead
+            raise ValueError(f"Eviction policy must be one of: {allowed}")
         return v
 
 # --- MCP Server Integration Configuration ---
@@ -457,8 +453,8 @@ class CLIConfig(BaseModel):
     def validate_output_format(cls, v):
         allowed = ["text", "json", "markdown", "html"]
         if v not in allowed:
-            logger.warning(f"Invalid output format '{v}'. Defaulting to 'text'. Allowed: {allowed}")
-            return "text"
+            # Remove fallback and raise exception instead
+            raise ValueError(f"Output format must be one of: {allowed}")
         return v
 
     @validator('cache_dir', pre=True, always=True)
@@ -467,24 +463,25 @@ class CLIConfig(BaseModel):
             return os.path.expanduser(v)
         except Exception as e:
             logger.error(f"Could not expand cache directory path '{v}': {e}")
-            return os.path.expanduser("~/.dbp/cli_cache_fallback")
+            # Raise exception instead of providing fallback
+            raise ValueError(f"Invalid cache directory path: {v}")
 
 class ComponentEnabledConfig(BaseModel):
     """Configuration for enabling/disabling individual components."""
-    config_manager: bool = Field(default=True, description="Enable configuration manager component")
-    file_access: bool = Field(default=True, description="Enable file access component")
-    database: bool = Field(default=True, description="Enable database component")
-    fs_monitor: bool = Field(default=True, description="Enable file system monitor component")
-    filter: bool = Field(default=True, description="Enable file filter component")
-    change_queue: bool = Field(default=True, description="Enable change queue component")
-    memory_cache: bool = Field(default=True, description="Enable memory cache component")
-    consistency_analysis: bool = Field(default=True, description="Enable consistency analysis component")
-    doc_relationships: bool = Field(default=True, description="Enable document relationships component")
-    recommendation_generator: bool = Field(default=True, description="Enable recommendation generator component")
-    scheduler: bool = Field(default=True, description="Enable scheduler component")
-    metadata_extraction: bool = Field(default=True, description="Enable metadata extraction component")
-    llm_coordinator: bool = Field(default=True, description="Enable LLM coordinator component (required for MCP server LLM functions)")
-    mcp_server: bool = Field(default=True, description="Enable MCP server component")
+    config_manager: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["config_manager"], description="Enable configuration manager component")
+    file_access: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["file_access"], description="Enable file access component")
+    database: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["database"], description="Enable database component")
+    fs_monitor: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["fs_monitor"], description="Enable file system monitor component")
+    filter: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["filter"], description="Enable file filter component")
+    change_queue: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["change_queue"], description="Enable change queue component")
+    memory_cache: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["memory_cache"], description="Enable memory cache component")
+    consistency_analysis: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["consistency_analysis"], description="Enable consistency analysis component")
+    doc_relationships: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["doc_relationships"], description="Enable document relationships component")
+    recommendation_generator: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["recommendation_generator"], description="Enable recommendation generator component")
+    scheduler: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["scheduler"], description="Enable scheduler component")
+    metadata_extraction: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["metadata_extraction"], description="Enable metadata extraction component") 
+    llm_coordinator: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["llm_coordinator"], description="Enable LLM coordinator component (required for MCP server LLM functions)")
+    mcp_server: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["mcp_server"], description="Enable MCP server component")
 
 class AppConfig(BaseModel):
     """Root configuration model for the DBP application."""

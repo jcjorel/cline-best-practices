@@ -34,23 +34,25 @@
 # codebase:- doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-25T10:54:00Z : Updated config access to use get_typed_config() by CodeAssistant
+# * Replaced deprecated ConfigurationManager.get() calls with get_typed_config()
+# * Updated component enablement configuration access to use direct attribute access
+# * Fixed server startup failures caused by deprecated method usage
+# * Improved type safety through Pydantic model usage
+# 2025-04-25T09:51:14Z : Added component enablement check to initialization by CodeAssistant
+# * Modified initialize_all to check component_enabled configuration before initialization
+# * Added strict validation for component enablement configuration
+# * Updated documentation to reflect component enablement functionality
+# * Improved error handling for component enablement configuration access
+# 2025-04-25T08:43:00Z : Improved error handling with specific exceptions by CodeAssistant
+# * Replaced CircularDependencyError with imported one from exceptions module
+# * Modified get_component to raise ComponentNotFoundError and ComponentNotInitializedError
+# * Changed return type from Optional[Component] to Component for strict error checking
+# * Updated docstring to reflect the new fail-fast behavior
 # 2025-04-20T19:15:00Z : Added watchdog keepalive to prevent deadlocks by CodeAssistant
 # * Added keep_alive call before each component initialization
 # * Ensured watchdog doesn't trigger false alarms during long component initializations
 # * Fixed issue where watchdog wasn't properly updated between initializations
-# 2025-04-20T00:38:24Z : Removed backward compatibility code by CodeAssistant
-# * Updated register method to require explicit dependencies parameter
-# * Removed code that accessed component.dependencies directly
-# * Made the dependency declaration fully centralized
-# 2025-04-19T23:36:00Z : Added dependency injection support to ComponentSystem by CodeAssistant
-# * Updated register method to accept explicit dependencies parameter
-# * Added dependencies dictionary to store component dependencies
-# * Modified dependency validation to use stored dependencies
-# * Enhanced initialization to resolve and pass dependencies to components
-# 2025-04-17T23:12:30Z : Added typed configuration to initialization context by CodeAssistant
-# * Updated initialization to use typed configuration from ConfigurationManager
-# * Now using component-specific child loggers for better log clarity
-# * Enhanced type safety through strongly-typed configuration access
 ###############################################################################
 
 import logging
@@ -59,12 +61,9 @@ import sys
 import traceback
 
 from .component import Component, InitializationContext
+from .exceptions import CircularDependencyError, ComponentNotFoundError, ComponentNotInitializedError, ComponentError
 
 logger = logging.getLogger(__name__)
-
-class CircularDependencyError(Exception):
-    """Exception raised when a circular dependency is detected."""
-    pass
 
 class ComponentSystem:
     """
@@ -159,25 +158,35 @@ class ComponentSystem:
         self.components[name] = component
         self.dependencies[name] = dependencies
     
-    def get_component(self, name: str) -> Optional[Component]:
+    def get_component(self, name: str) -> Component:
         """
         [Function intent]
-        Retrieves a component by name.
+        Retrieves a component by name with strict validation.
         
         [Implementation details]
-        Looks up the component in the components dictionary.
-        Returns None if component is not found.
+        Looks up the component in the components dictionary and validates initialization.
+        Raises specific exceptions for different error conditions.
         
         [Design principles]
-        Simple dictionary lookup with graceful failure.
+        Fail-fast with specific exceptions rather than returning None.
+        Clear error messages for easier troubleshooting.
         
         Args:
             name: Name of the component to retrieve
             
         Returns:
-            Optional[Component]: The component if found, None otherwise
+            Component: The initialized component
+            
+        Raises:
+            ComponentNotFoundError: If the component is not registered
+            ComponentNotInitializedError: If the component is registered but not initialized
         """
-        return self.components.get(name)
+        component = self.components.get(name)
+        if component is None:
+            raise ComponentNotFoundError(name)
+        if not component.is_initialized:
+            raise ComponentNotInitializedError(name)
+        return component
     
     def validate_dependencies(self) -> List[str]:
         """
@@ -221,14 +230,17 @@ class ComponentSystem:
     def initialize_all(self) -> bool:
         """
         [Function intent]
-        Initializes all registered components in dependency order.
+        Initializes all registered components in dependency order,
+        respecting component enablement configuration.
         
         [Implementation details]
         Validates dependencies, calculates initialization order,
+        checks if each component is enabled in configuration,
         and initializes components sequentially with clear error reporting.
         
         [Design principles]
         Simple sequential process with explicit error handling.
+        Respects component enablement configuration.
         Fail fast on validation errors.
         
         Returns:
@@ -245,7 +257,7 @@ class ComponentSystem:
         if missing:
             for error in missing:
                 self.logger.error(f"Dependency validation error: {error}")
-            return False
+            raise ComponentError(f"Dependency validation failed with {len(missing)} errors")
         
         # Calculate initialization order
         try:
@@ -253,11 +265,31 @@ class ComponentSystem:
             self.logger.info(f"Component initialization order: {', '.join(init_order)}")
         except CircularDependencyError as e:
             self.logger.error(f"Circular dependency detected: {e}")
-            return False
+            # Re-raise the circular dependency exception
+            raise e
+        
+        # Get component enablement configuration
+        config_manager = self.components.get('config_manager')
+        if not config_manager:
+            raise ComponentNotFoundError('config_manager')
+        
+        # Get the component_enabled configuration from the typed config model
+        typed_config = config_manager.get_typed_config()
+        enabled_config = typed_config.component_enabled
+        
+        # We expect this to be a Pydantic model (ComponentEnabledConfig)
+        self.logger.info(f"Using component enablement configuration: {enabled_config}")
         
         # Initialize components in order
         for name in init_order:
             component = self.components[name]
+            
+            # Check if component is enabled in configuration
+            # Access component enablement directly via attribute access on the Pydantic model
+            is_enabled = getattr(enabled_config, name)  # Dynamic attribute access using component name
+            if not is_enabled:
+                self.logger.info(f"Skipping disabled component: '{name}'")
+                continue
             
             # Skip already initialized components
             if component.is_initialized:
@@ -281,11 +313,15 @@ class ComponentSystem:
                 
                 # Create the initialization context
                 # Components expect a config manager with get() method, not the raw config
-                config_manager = self.get_component('config_manager')
-                if not config_manager:
-                    self.logger.error(f"Required config_manager component not found during initialization of '{name}'")
+                try:
+                    config_manager = self.components.get('config_manager')
+                    if not config_manager:
+                        raise ComponentNotFoundError('config_manager')
+                except ComponentError as e:
+                    self.logger.error(f"Config manager error during initialization of '{name}': {e}")
                     self._rollback()
-                    return False
+                    # Re-raise the original exception
+                    raise e
                 
                 # Get the typed configuration - throw on error
                 typed_config = config_manager.get_typed_config()
@@ -309,11 +345,11 @@ class ComponentSystem:
                     if not dep_component:
                         self.logger.error(f"Dependency '{dep_name}' not found for component '{name}'")
                         self._rollback()
-                        return False
+                        raise ComponentNotFoundError(dep_name)
                     if not dep_component.is_initialized:
                         self.logger.error(f"Dependency '{dep_name}' for component '{name}' is not initialized")
                         self._rollback()
-                        return False
+                        raise ComponentNotInitializedError(dep_name)
                     resolved_deps[dep_name] = dep_component
                 
                 # Add logging for dependencies
@@ -328,7 +364,7 @@ class ComponentSystem:
                     self.logger.error(f"Component '{name}' failed to set is_initialized flag to True")
                     self.logger.error(f"Component '{name}' current is_initialized value: {component.is_initialized}")
                     self._rollback()
-                    return False
+                    raise ComponentError(f"Component '{name}' failed to set is_initialized flag to True after initialization")
                     
                 # Track initialization for shutdown order
                 self._initialized.append(name)
@@ -360,12 +396,13 @@ class ComponentSystem:
                 # Log dependency states to help with troubleshooting
                 if hasattr(component, 'dependencies'):
                     for dep_name in component.dependencies:
-                        dep = self.get_component(dep_name)
+                        dep = self.components.get(dep_name)
                         if dep:
                             self.logger.error(f"Dependency '{dep_name}' initialized: {dep.is_initialized}")
                 
                 self._rollback()
-                return False
+                # Re-raise the original exception
+                raise e
         
         self.logger.info("All components initialized successfully")
         return True

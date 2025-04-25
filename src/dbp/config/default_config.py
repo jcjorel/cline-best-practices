@@ -35,6 +35,20 @@
 # codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-25T17:33:00Z : Changed MCP server default host from 0.0.0.0 to 127.0.0.1 by CodeAssistant
+# * Fixed security issue by changing default host binding from all interfaces to localhost only
+# * Aligned implementation with security requirements specified in doc/SECURITY.md
+# 2025-04-25T14:41:38Z : Removed unused fallback values by CodeAssistant
+# * Removed fallback_path from DATABASE_DEFAULTS
+# * Removed fallback_format and fallback_verbosity from CLI_OUTPUT_DEFAULTS
+# * Removed fallback_path from CLI_HISTORY_DEFAULTS
+# * Removed cache_fallback_dir from CLI_DEFAULTS
+# 2025-04-25T11:42:23Z : Removed COMPONENT_DEFAULT_FACTORIES dictionary by CodeAssistant
+# * Removed unused COMPONENT_DEFAULT_FACTORIES dictionary following design decision clarification
+# * The design decision now explicitly applies only to Field default parameter
+# 2025-04-25T11:30:16Z : Added missing default values to comply with "No Hardcoded Default Values" decision by CodeAssistant
+# * Added root_path default to PROJECT_DEFAULTS
+# * Added BEDROCK_DEFAULTS dictionary for Bedrock configuration
 # 2025-04-17T15:16:00Z : Reorganized configuration structure for clarity by CodeAssistant
 # * Renamed SERVER_DEFAULTS to CLI_SERVER_CONNECTION_DEFAULTS
 # * Renamed OUTPUT_DEFAULTS to CLI_OUTPUT_DEFAULTS
@@ -44,9 +58,6 @@
 # 2025-04-17T14:46:00Z : Added CLI-specific settings to defaults by CodeAssistant
 # * Increased server timeout from 5 to 30 seconds for CLI compatibility
 # * Added CLI specific settings for output formatting and progress display
-# 2025-04-17T11:44:31Z : Updated default file paths for all components by CodeAssistant
-# * Changed all file paths to use .dbp/ directory structure
-# * Added server logs_dir, pid_file, and cli_config_file configurations
 ###############################################################################
 
 """
@@ -58,25 +69,25 @@ and reference these values rather than hardcoding defaults directly.
 """
 
 import os
-# Default component enablement settings - only essential components for LLM coordinator are enabled
+# Default component enablement settings - only config_manager and mcp_server are enabled
 COMPONENT_ENABLED_DEFAULTS = {
-    # Essential components required for LLM coordinator functionality
+    # Only essential components required for minimized MCP server operations
     "config_manager": True,   # Required for configuration
-    "file_access": True,      # Required for file access operations
-    "database": True,         # Required for database operations
-    "llm_coordinator": True,  # Main component we want to keep
     "mcp_server": True,       # Required for API access
     
-    # Non-essential components disabled by default
-    "fs_monitor": False,      # Not needed for basic LLM coordinator functioning
-    "filter": False,          # Part of monitoring system
-    "change_queue": False,    # Part of monitoring system
-    "memory_cache": False,    # Can be disabled to reduce memory usage
-    "consistency_analysis": False,    # Non-essential for LLM coordinator
-    "doc_relationships": False,       # Non-essential for LLM coordinator
-    "recommendation_generator": False, # Non-essential for LLM coordinator
-    "scheduler": False,       # Non-essential background tasks can be disabled
-    "metadata_extraction": False,     # Non-essential for basic LLM operation
+    # All other components disabled
+    "file_access": False,     # Not needed for minimized MCP server
+    "database": False,        # Not needed for minimized MCP server
+    "llm_coordinator": False, # Not needed for minimized MCP server
+    "fs_monitor": False,      # Not needed for minimized MCP server
+    "filter": False,          # Not needed for minimized MCP server
+    "change_queue": False,    # Not needed for minimized MCP server
+    "memory_cache": False,    # Not needed for minimized MCP server
+    "consistency_analysis": False,    # Not needed for minimized MCP server
+    "doc_relationships": False,       # Not needed for minimized MCP server
+    "recommendation_generator": False, # Not needed for minimized MCP server
+    "scheduler": False,       # Not needed for minimized MCP server
+    "metadata_extraction": False,     # Not needed for minimized MCP server
 }
 
 # General application settings
@@ -88,6 +99,7 @@ GENERAL_DEFAULTS = {
 PROJECT_DEFAULTS = {
     "name": "dbp_project",
     "description": "Documentation-Based Programming Project",
+    "root_path": "",  # Empty string default, will be set dynamically during initialization
 }
 
 # Script settings
@@ -202,7 +214,7 @@ RECOMMENDATION_GENERATOR_DEFAULTS = {
 
 # MCP Server Integration settings
 MCP_SERVER_DEFAULTS = {
-    "host": "0.0.0.0",
+    "host": "127.0.0.1",
     "port": 6231,
     "server_name": "dbp-mcp-server",
     "server_description": "MCP Server for Documentation-Based Programming",
@@ -249,6 +261,11 @@ AWS_DEFAULTS = {
     "region": "us-east-1",
     "endpoint_url": None,
     "credentials_profile": None,
+}
+
+# Bedrock settings
+BEDROCK_DEFAULTS = {
+    "region": None,  # Will default to AWS region if not specified
 }
 
 # === CLI-specific settings ===

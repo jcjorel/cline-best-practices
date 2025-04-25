@@ -196,8 +196,9 @@ class AlembicManager:
                 
             self.logger.debug("Config manager retrieved successfully")
             
-            # Get alembic.ini location from global config
-            alembic_ini_path = config_manager.get('database.alembic_ini_path')
+            # Get alembic.ini location from global config using typed config
+            typed_config = config_manager.get_typed_config()
+            alembic_ini_path = typed_config.database.alembic_ini_path
             self.logger.debug(f"Using alembic.ini path: {alembic_ini_path}")
             
             # Use module-specific Alembic migrations directory
@@ -216,16 +217,17 @@ class AlembicManager:
             alembic_cfg = Config(alembic_ini_path)
             
             # Configure Alembic with database URL from global config
-            # Construct database URL based on database type and configuration
+            # Construct database URL based on database type and configuration from typed config
             db_url = None
             try:
-                db_type = config_manager.get('database.type')
+                # Use typed config to access database configuration
+                db_type = typed_config.database.type
                 if db_type == 'sqlite':
-                    db_path = config_manager.get('database.path')
+                    db_path = typed_config.database.path
                     db_url = f"sqlite:///{db_path}"
                     self.logger.debug(f"Constructed SQLite URL: {db_url}")
                 elif db_type == 'postgresql':
-                    conn_string = config_manager.get('database.connection_string')
+                    conn_string = typed_config.database.connection_string
                     if conn_string:
                         db_url = conn_string
                         self.logger.debug(f"Using PostgreSQL connection string")
@@ -463,22 +465,23 @@ class AlembicManager:
             system = ComponentSystem.get_instance()
             config_manager = system.get_component("config_manager")
             
-            # Get alembic.ini path and module directory
-            alembic_ini_path = config_manager.get('database.alembic_ini_path')
+            # Get alembic.ini path and module directory using typed config
+            typed_config = config_manager.get_typed_config()
+            alembic_ini_path = typed_config.database.alembic_ini_path
             module_alembic_dir = os.path.join(os.path.dirname(__file__), 'alembic')
             
             # Create alembic config
             alembic_cfg = Config(alembic_ini_path)
             alembic_cfg.set_main_option('script_location', module_alembic_dir)
             
-            # Set database URL
+            # Set database URL using typed config
             db_url = None
-            db_type = config_manager.get('database.type')
+            db_type = typed_config.database.type
             if db_type == 'sqlite':
-                db_path = config_manager.get('database.path')
+                db_path = typed_config.database.path
                 db_url = f"sqlite:///{db_path}"
             elif db_type == 'postgresql':
-                db_url = config_manager.get('database.connection_string')
+                db_url = typed_config.database.connection_string
                 
             if db_url:
                 alembic_cfg.set_main_option('sqlalchemy.url', db_url)

@@ -229,7 +229,8 @@ class StatusCommandHandler(BaseCommandHandler):
         self.output.info("=== Server Status ===")
         
         # Get server URL
-        server_url = self.mcp_client.config_manager.get("mcp_server.url")
+        config = self.mcp_client.config_manager.get_typed_config()
+        server_url = config.mcp_server.url
         
         if not server_url:
             self.output.error("Server URL not configured")
@@ -395,13 +396,14 @@ class StatusCommandHandler(BaseCommandHandler):
         self.output.info("=== Current Settings ===")
         
         # Get important settings
+        config = self.mcp_client.config_manager.get_typed_config()
         settings = {
-            "Server URL": self.mcp_client.config_manager.get("mcp_server.url"),
-            "Request Timeout": f"{self.mcp_client.config_manager.get('mcp_server.timeout', 30)}s",
+            "Server URL": config.mcp_server.url,
+            "Request Timeout": f"{config.mcp_server.timeout}s",
             "API Key": "Configured" if self.mcp_client.auth_manager.is_authenticated() else "Not configured",
-            "Output Format": self.mcp_client.config_manager.get("cli.output_format", "text"),
-            "Color Output": self.mcp_client.config_manager.get("cli.color", True),
-            "Progress Indicators": self.mcp_client.config_manager.get("cli.progress_bar", True),
+            "Output Format": config.cli.output_format,
+            "Color Output": config.cli.color,
+            "Progress Indicators": config.cli.progress_bar,
         }
         
         # Display key settings
@@ -411,7 +413,7 @@ class StatusCommandHandler(BaseCommandHandler):
         # Show all settings if verbose
         if verbose:
             self.output.info("\nAll Settings:")
-            full_config = self.mcp_client.config_manager.get_config_dict()
+            full_config = self.mcp_client.config_manager.get_typed_config().dict()
             
             def print_nested_dict(data: Dict[str, Any], prefix: str = ""):
                 for k, v in data.items():

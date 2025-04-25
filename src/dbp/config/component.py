@@ -38,6 +38,11 @@
 # other:- src/dbp/config/config_manager.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-25T11:02:00Z : Updated config access to use get_typed_config() by CodeAssistant
+# * Deprecated get() method with clear migration guidance
+# * Updated get_default_config to return Pydantic model references directly
+# * Added proper error handling for section navigation
+# * Enhanced method documentation with three-section format
 # 2025-04-20T10:21:00Z : Fixed initialization flag naming by CodeAssistant
 # * Updated attribute name from _is_initialized to _initialized for base class compatibility
 # * Added super().__init__() call in constructor to ensure proper initialization
@@ -51,18 +56,6 @@
 # * Updated initialize() method to accept dependencies parameter 
 # * Enhanced method documentation using three-section format
 # * Updated typing imports for consistency
-# 2025-04-17T23:29:30Z : Enhanced with strongly-typed configuration access by CodeAssistant
-# * Updated initialize() method signature to use InitializationContext
-# * Added get_typed_config() method for direct access to typed configuration
-# * Improved type safety for configuration access
-# 2025-04-17T12:56:00Z : Added Git root path initialization by CodeAssistant
-# * Added detection and setting of project.root_path from Git root directory
-# * Added error handling when Git root cannot be found
-# * Enhanced initialization method to set project.root_path automatically
-# 2025-04-17T12:23:22Z : Added template variable substitution by CodeAssistant
-# * Implemented resolve_template_string method for ${key} variable substitution
-# * Enhanced get method to support template resolution in configuration values
-# * Added support for nested templates with recursion depth limit
 ###############################################################################
 
 import logging
@@ -155,7 +148,15 @@ class ConfigManagerComponent(Component):
 
     def get(self, key: str, resolve_templates: bool = True) -> Any:
         """
+        [Function intent]
         Retrieves a configuration value using dot notation.
+        THIS METHOD IS DEPRECATED. Use get_typed_config() instead.
+        
+        [Implementation details]
+        Delegates to the ConfigurationManager but this method is deprecated.
+        
+        [Design principles]
+        Provides backward compatibility but warns about deprecation.
         
         Args:
             key: The configuration key in dot notation.
@@ -165,9 +166,16 @@ class ConfigManagerComponent(Component):
             The configuration value with template variables resolved.
             
         Raises:
-            ValueError: If the configuration key doesn't exist.
+            DeprecatedMethodError: Always raised to indicate this method is deprecated.
         """
-        # The configuration manager now handles template resolution internally
+        from ..core.exceptions import DeprecatedMethodError
+        
+        # Use the raw key path to determine the attribute access path for error message
+        alternative = f"config_manager.get_typed_config().{key.replace('.', '.')}"
+        self.logger.warning(f"The get() method is deprecated. Use {alternative} instead.")
+        
+        # Forward to the deprecated ConfigurationManager.get method
+        # This will raise the appropriate DeprecatedMethodError
         return self._config_manager.get(key, resolve_templates)
 
     def set(self, key: str, value: Any) -> bool:
@@ -199,33 +207,45 @@ class ConfigManagerComponent(Component):
         """
         return self._config_manager.get_typed_config()
     
-    def get_default_config(self, section: str) -> Dict[str, Any]:
+    def get_default_config(self, section: str) -> Any:
         """
-        Returns the default configuration for a specific section.
+        [Function intent]
+        Returns the default configuration for a specific section as a Pydantic model.
+        
+        [Implementation details]
+        Retrieves the section configuration from the typed config model
+        and returns the model directly.
+        
+        [Design principles]
+        Type-safe access to configuration sections as Pydantic models.
         
         Args:
             section: The configuration section name.
             
         Returns:
-            Dictionary containing default values for the section.
+            Pydantic model section configuration object.
             
         Raises:
             ValueError: If the section doesn't exist.
         """
         try:
-            # Get values from the configuration model
-            section_config = self._config_manager.get(section)
+            # Get typed configuration
+            typed_config = self._config_manager.get_typed_config()
             
-            # If it's a dictionary, return it directly
-            if isinstance(section_config, dict):
-                return section_config
-                
-            # If it's a Pydantic model with a dict() method
-            if hasattr(section_config, 'dict') and callable(section_config.dict):
-                return section_config.dict()
-                
-            # Last resort - try to convert to dict if possible
-            return dict(section_config)
+            # Get the section using attribute access
+            section_parts = section.split('.')
+            section_config = typed_config
+            
+            # Navigate through the section parts
+            for part in section_parts:
+                section_config = getattr(section_config, part)
+            
+            # Return the section model directly
+            return section_config
+            
+        except AttributeError as e:
+            self.logger.error(f"Section '{section}' not found in configuration: {e}")
+            raise ValueError(f"Section '{section}' not found in configuration") from e
         except Exception as e:
             self.logger.error(f"Could not get default configuration for section '{section}': {e}")
             raise ValueError(f"Could not get default configuration for section '{section}'") from e

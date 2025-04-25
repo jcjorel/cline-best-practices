@@ -35,6 +35,26 @@
 # other:- src/dbp/mcp_server/server.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-25T15:38:46Z : Added server ready log message by CodeAssistant
+# * Added explicit log message when server is ready to serve HTTP requests
+# * Displayed the server URL in the ready message for convenient access
+# * Improved user feedback about server readiness state
+# * Enhanced clarity about when the server becomes fully operational
+# 2025-04-25T15:25:00Z : Added health endpoint URL to server startup log by CodeAssistant
+# * Added explicit display of health endpoint URL in the polling status message
+# * Stored endpoint URL in a variable to ensure consistent usage
+# * Modified log message to show exactly which URL is being polled
+# * Improved transparency for server startup process
+# 2025-04-25T15:22:00Z : Removed file-based startup signal detection by CodeAssistant
+# * Removed all code that waits for startup signal files
+# * Server status is now detected solely through health API checks
+# * Eliminated startup_signal_file detection logic
+# * Improved reliability by relying only on HTTP health checks for server status
+# 2025-04-25T10:51:00Z : Replaced deprecated config_manager.get() calls by CodeAssistant
+# * Updated all configuration access to use get_typed_config() with direct attribute access
+# * Removed error checking for missing configuration values as they are guaranteed to exist
+# * Fixed server startup errors related to deprecated method usage
+# * Improved type safety through Pydantic model usage
 # 2025-04-20T23:43:45Z : Added explicit server startup timeout logging by CodeAssistant
 # * Added explicit check and error message when server startup times out
 # * Improved diagnostic output with clear TIMEOUT prefix for easier log searching
@@ -283,9 +303,8 @@ class ServerCommandHandler(BaseCommandHandler):
                 self._clear_pid_file()
         
         # Get required PID file path from configuration manager
-        pid_file_path = self.mcp_client.config_manager.get('mcp_server.pid_file')
-        if pid_file_path is None:
-            raise ValueError("Required configuration 'mcp_server.pid_file' is missing")
+        config = self.mcp_client.config_manager.get_typed_config()
+        pid_file_path = config.mcp_server.pid_file
         pid_file = Path(pid_file_path)
         pid_file.parent.mkdir(parents=True, exist_ok=True)
         
@@ -301,8 +320,7 @@ class ServerCommandHandler(BaseCommandHandler):
             sys.executable, "-m", "dbp.mcp_server",
             "--host", args.host,
             "--port", str(args.port),
-            "--log-level", args.log_level,
-            "--startup-check"  # Add startup verification
+            "--log-level", args.log_level
         ]
         
         try:
@@ -313,9 +331,8 @@ class ServerCommandHandler(BaseCommandHandler):
                 return 0
             else:
                 # Get required log directory from configuration manager
-                logs_dir_path = self.mcp_client.config_manager.get('mcp_server.logs_dir')
-                if logs_dir_path is None:
-                    raise ValueError("Required configuration 'mcp_server.logs_dir' is missing")
+                config = self.mcp_client.config_manager.get_typed_config()
+                logs_dir_path = config.mcp_server.logs_dir
                 logs_dir = Path(logs_dir_path)
                 logs_dir.mkdir(parents=True, exist_ok=True)
                 stdout_log = logs_dir / "mcp_server_stdout.log"
@@ -345,15 +362,9 @@ class ServerCommandHandler(BaseCommandHandler):
                 # Process is started, now wait for it to initialize
                 self.output.info("Process started, waiting for server initialization...")
                 
-                # Get timeout from config or use default
-                startup_timeout = self.mcp_client.config_manager.get('initialization.timeout_seconds', 30)
-                
-                # Use the base_dir from the centralized configuration - with absolute import
-                from dbp.config.default_config import GENERAL_DEFAULTS
-                base_dir_path = GENERAL_DEFAULTS["base_dir"]
-                startup_signal_file = Path(base_dir_path) / 'mcp_server_started'
-                
-                self.output.info(f"Waiting for startup signal at {startup_signal_file} (timeout: {startup_timeout}s)...")
+                # Get timeout from config
+                config = self.mcp_client.config_manager.get_typed_config()
+                startup_timeout = config.initialization.timeout_seconds
                 
                 # Initial check if process is still running
                 if process.poll() is not None:
@@ -367,55 +378,29 @@ class ServerCommandHandler(BaseCommandHandler):
                     self.output.info(f"  All logs directory: {logs_dir}")
                     return 1
                 
-                # Wait for startup signal or timeout
-                start_time = time.time()
-                while time.time() - start_time < startup_timeout:
-                    # Check for startup signal file
-                    if startup_signal_file.exists():
-                        self.output.info("Server startup signal detected")
-                        break
-                        
-                    # Check if process is still running
-                    if process.poll() is not None:
-                        self.output.error(f"Server failed during startup (exit code: {process.returncode})")
-                        # Display complete logs without limit since we removed the limit parameter
-                        self._dump_server_error_logs(stderr_log)
-                        self.output.info(f"Full server logs available at:")
-                        self.output.info(f"  - Stdout: {stdout_log}")
-                        self.output.info(f"  - Stderr: {stderr_log}")
-                        return 1
-                        
-                    # Wait a bit before checking again
-                    time.sleep(0.5)
-                
-                # Check if timeout was reached
-                if not startup_signal_file.exists():
-                    self.output.error(f"TIMEOUT: Server startup timed out after {startup_timeout}s")
-                    self.output.error("The server process is running but didn't create the startup signal file.")
-                    self.output.info("This may indicate a deadlock or slowness during initialization.")
-                    # Show logs to help diagnose the issue
-                    self._dump_server_error_logs(stderr_log)
-                    self.output.info(f"Full server logs available at:")
-                    self.output.info(f"  - Stdout: {stdout_log}")
-                    self.output.info(f"  - Stderr: {stderr_log}")
-                
-                # Check server responsiveness
-                self.output.info("Verifying server responsiveness...")
-                
-                # Try to connect to the server API
+                # Poll health API to detect server status
+                self.output.info("Polling server health status...")
+
+                # Get configuration and set up polling parameters
                 server_url = f"http://{args.host}:{args.port}"
-                connection_timeout = 10  # seconds
-                start_time = time.time()
+                poll_interval = 2  # Poll every 2 seconds as requested
                 
-                while time.time() - start_time < connection_timeout:
+                # Get timeout from config
+                config = self.mcp_client.config_manager.get_typed_config()
+                health_check_timeout = config.initialization.timeout_seconds
+                
+                health_endpoint = f"{server_url}/health"
+                self.output.info(f"Waiting up to {health_check_timeout}s for server initialization (polling every {poll_interval}s at {health_endpoint})...")
+                
+                # Initialize progress display
+                last_step = None
+                last_message = None
+                    
+                # Start polling
+                start_time = time.time()
+                while time.time() - start_time < health_check_timeout:
                     try:
-                        # Use a simple request to the health endpoint
-                        response = requests.get(f"{server_url}/health", timeout=2)
-                        if response.status_code == 200:
-                            self.output.info("Server health check passed")
-                            break
-                    except Exception:
-                        # Check if process died
+                        # Check if the process is still running
                         if process.poll() is not None:
                             self.output.error(f"Server crashed during startup (exit code: {process.returncode})")
                             # Show complete logs for better debugging
@@ -424,13 +409,53 @@ class ServerCommandHandler(BaseCommandHandler):
                             self.output.info(f"  - Stdout: {stdout_log}")
                             self.output.info(f"  - Stderr: {stderr_log}")
                             return 1
+                            
+                        # Request health status
+                        response = requests.get(health_endpoint, timeout=2)
                         
-                        # Wait a bit and retry
-                        time.sleep(1)
+                        # Parse the health data
+                        if response.status_code == 200:
+                            health_data = response.json()
+                            status = health_data.get("status")
+                            
+                            # Get initialization details
+                            init_info = health_data.get("initialization", {})
+                            current_step = init_info.get("current_step")
+                            message = init_info.get("message")
+                            error = init_info.get("error")
+                            
+                            # Display progress updates only when they change
+                            if current_step != last_step or message != last_message:
+                                if error:
+                                    self.output.error(f"Initialization failed: {error}")
+                                    self._dump_server_error_logs(stderr_log)
+                                    return 1
+                                else:
+                                    # Show progress info
+                                    step_info = f"Step: {current_step}" if current_step else ""
+                                    msg_info = f"- {message}" if message else ""
+                                    self.output.info(f"Server status: {status} {step_info} {msg_info}")
+                                    
+                                # Update tracking variables  
+                                last_step = current_step
+                                last_message = message
+                            
+                            # Check if server is ready
+                            if status == "healthy":
+                                self.output.success("Server initialization completed successfully!")
+                                self.output.info(f"Server is now ready to serve HTTP requests at {server_url}")
+                                break
+                        
+                    except requests.RequestException:
+                        # Connection errors are expected while the server is starting up
+                        pass
+                        
+                    # Wait before polling again
+                    time.sleep(poll_interval)
                 else:
-                    # Server is running but not responsive
-                    self.output.warning("Server process is running but not yet responding to API requests")
-                    self.output.warning("This may be normal if initialization is still in progress")
+                    # Timeout reached
+                    self.output.error(f"Timeout waiting for server initialization after {health_check_timeout}s")
+                    self.output.warning("Server process is running but initialization did not complete")
                 
                 self.output.success(f"MCP server started (PID: {process.pid})")
                 self.output.info(f"Server logs available at:")
@@ -490,7 +515,7 @@ class ServerCommandHandler(BaseCommandHandler):
                     except ProcessLookupError:
                         pass  # Already gone
                     break
-                time.sleep(0.1)
+                time.sleep(0.5)
             
             # Clean up PID file
             self._clear_pid_file()
@@ -597,10 +622,8 @@ class ServerCommandHandler(BaseCommandHandler):
             Exit code (0 if server running and responsive, 1 otherwise)
         """
         # Get server URL from config
-        server_url = self.mcp_client.config_manager.get("mcp_server.url")
-        if not server_url:
-            self.output.error("MCP server URL is not configured")
-            return 1
+        config = self.mcp_client.config_manager.get_typed_config()
+        server_url = config.mcp_server.url
         
         # Use the existing status command via the API client
         pid = self._get_server_pid()
@@ -669,9 +692,8 @@ class ServerCommandHandler(BaseCommandHandler):
         Raises:
             ValueError: If the required configuration value is missing
         """
-        pid_file_path = self.mcp_client.config_manager.get('mcp_server.pid_file')
-        if pid_file_path is None:
-            raise ValueError("Required configuration 'mcp_server.pid_file' is missing")
+        config = self.mcp_client.config_manager.get_typed_config()
+        pid_file_path = config.mcp_server.pid_file
             
         try:
             pid_file = Path(pid_file_path)
@@ -708,10 +730,9 @@ class ServerCommandHandler(BaseCommandHandler):
         Raises:
             ValueError: If the required configuration value is missing
         """
-        pid_file_path = self.mcp_client.config_manager.get('mcp_server.pid_file')
-        if pid_file_path is None:
-            raise ValueError("Required configuration 'mcp_server.pid_file' is missing")
-            
+        config = self.mcp_client.config_manager.get_typed_config()
+        pid_file_path = config.mcp_server.pid_file
+        
         try:
             pid_file = Path(pid_file_path)
             if pid_file.exists():

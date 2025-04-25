@@ -36,6 +36,10 @@
 # other:- src/dbp_cli/commands/base.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-25T10:06:00Z : Updated to use get_typed_config() instead of deprecated get() method by CodeAssistant
+# * Replaced config_manager.get() calls with direct attribute access via get_typed_config()
+# * Fixed server startup failure caused by deprecated method exception
+# * Eliminated dependency on deprecated API according to design principles
 # 2025-04-17T14:35:00Z : Updated to use server ConfigurationManager by CodeAssistant
 # * Changed from local CLI config manager to use the shared server ConfigurationManager
 # * Improves configuration consistency by having a single source of truth
@@ -144,8 +148,9 @@ class DocumentationProgrammingCLI:
         self.mcp_client = MCPClientAPI(self.auth_manager)
         
         # Create output formatter
-        output_format = self.config_manager.get("cli.output_format", "text")
-        use_color = self.config_manager.get("cli.color", True)
+        config = self.config_manager.get_typed_config()
+        output_format = config.cli.output_format
+        use_color = config.cli.color
         self.output_formatter = OutputFormatter(default_format=output_format, use_color=use_color)
         
         # Create progress indicator
@@ -383,7 +388,8 @@ class DocumentationProgrammingCLI:
             
             # Override configuration with command-line options
             if parsed_args.server:
-                self.config_manager.set("mcp_server.url", parsed_args.server)
+                config = self.config_manager.get_typed_config()
+                config.mcp_server.url = parsed_args.server
                 
             if parsed_args.api_key:
                 self.auth_manager.set_api_key(parsed_args.api_key, save=False)

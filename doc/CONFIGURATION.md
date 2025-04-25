@@ -116,6 +116,21 @@ This approach provides several benefits:
 | `recommendations.purge_decisions_with_recommendations` | Also purge related developer decisions | `true` | `true, false` |
 | `recommendations.auto_invalidate` | Automatically invalidate recommendation on codebase change | `true` | `true, false` |
 
+### MCP Server Integration
+
+| Parameter | Description | Default | Valid Values |
+|-----------|-------------|---------|-------------|
+| `mcp_server.host` | Network address for MCP server to bind to | `"127.0.0.1"` | Valid IP address or hostname |
+| `mcp_server.port` | Port for MCP server to listen on | `6231` | `1024-65535` |
+| `mcp_server.server_name` | Name of the MCP server | `"dbp-mcp-server"` | String |
+| `mcp_server.server_description` | Description of the MCP server | `"MCP Server for Documentation-Based Programming"` | String |
+| `mcp_server.server_version` | Version of the MCP server | `"1.0.0"` | String |
+| `mcp_server.auth_enabled` | Enable authentication for MCP server | `false` | `true, false` |
+| `mcp_server.workers` | Number of worker processes | `1` | `1-16` |
+| `mcp_server.enable_cors` | Enable CORS for MCP server | `false` | `true, false` |
+| `mcp_server.keep_alive` | Connection keep-alive timeout in seconds | `5` | `1-60` |
+| `mcp_server.graceful_shutdown_timeout` | Graceful shutdown timeout in seconds | `10` | `1-60` |
+
 ### Component Enablement Settings
 
 | Parameter | Description | Default | Valid Values |
