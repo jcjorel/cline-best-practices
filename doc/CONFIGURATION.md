@@ -130,6 +130,8 @@ This approach provides several benefits:
 | `mcp_server.enable_cors` | Enable CORS for MCP server | `false` | `true, false` |
 | `mcp_server.keep_alive` | Connection keep-alive timeout in seconds | `5` | `1-60` |
 | `mcp_server.graceful_shutdown_timeout` | Graceful shutdown timeout in seconds | `10` | `1-60` |
+| `mcp_server.require_negotiation` | Require capability negotiation for all requests | `false` | `true, false` |
+| `mcp_server.session_timeout_seconds` | Session timeout in seconds | `3600` | `300-86400` |
 
 ### Component Enablement Settings
 

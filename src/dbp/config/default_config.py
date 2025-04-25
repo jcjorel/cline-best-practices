@@ -231,6 +231,9 @@ MCP_SERVER_DEFAULTS = {
     "cors_allow_credentials": False,
     "keep_alive": 5,
     "graceful_shutdown_timeout": 10,
+    # Capability negotiation settings
+    "require_negotiation": False,  # Whether to require capability negotiation for all requests
+    "session_timeout_seconds": 3600,  # Session timeout in seconds (1 hour)
 }
 
 # Metadata Extraction settings

@@ -349,7 +349,10 @@ class MCPServerComponent(Component):
                 name=f"{config.mcp_server.server_name} (STANDALONE MODE)",
                 description=f"{config.mcp_server.server_description} - Running with minimal dependencies for progressive integration testing",
                 version=config.mcp_server.server_version,
-                logger_override=self.logger.getChild("server_instance")
+                logger_override=self.logger.getChild("server_instance"),
+                # Add capability negotiation parameters with default values
+                require_negotiation=False,  # For backward compatibility in standalone mode
+                session_timeout_seconds=3600  # Default 1 hour session timeout
             )
 
             # Set the server configuration for FastAPI/Uvicorn settings

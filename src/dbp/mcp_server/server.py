@@ -42,6 +42,11 @@
 # system:- socket
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-25T18:13:54Z : Updated MCP tool registration to use MCPTool objects by CodeAssistant
+# * Modified register_mcp_tool to accept MCPTool objects instead of handler functions
+# * Updated unregister_mcp_tool to accept either MCPTool objects or tool names
+# * Added direct import of MCPTool and MCPResource classes
+# * Enhanced FastAPI integration using MCPTool's handler method
 # 2025-04-25T16:19:43Z : Redesigned server for early startup and dynamic route registration by CodeAssistant
 # * Completely refactored to start with minimal dependencies and just health endpoint
 # * Added API for dynamic route registration by other components
@@ -68,7 +73,14 @@ import time
 import json
 import uuid
 import socket
-from typing import Dict, Optional, Any, List, Callable, Union, Type
+from typing import Dict, Optional, Any, List, Callable, Union, Type, Set
+
+# Import the new capability negotiation and session modules
+from src.dbp.mcp_server.mcp.session import SessionManager, MCPSession, create_anonymous_session
+from src.dbp.mcp_server.mcp.negotiation import (
+    NegotiationRequest, NegotiationResponse, ServerCapabilityType,
+    ClientCapabilityType, CapabilityDetail, get_capability_metadata
+)
 
 # FastAPI and Uvicorn imports
 try:
@@ -112,8 +124,10 @@ except ImportError as e:
 
 logger = logging.getLogger(__name__)
 
+from src.dbp.mcp_server.mcp_protocols import MCPTool, MCPResource
+from src.dbp.mcp_server.mcp.error import MCPError
+
 # Type definitions for route registration callbacks
-ToolHandlerFunc = Callable[[Dict[str, Any], Dict[str, Any]], Dict[str, Any]]
 ResourceHandlerFunc = Callable[[Optional[str], Dict[str, Any], Dict[str, Any]], Dict[str, Any]] 
 RouteHandlerFunc = Callable[..., Any]
 
@@ -131,7 +145,9 @@ class MCPServer:
         name: str,
         description: str,
         version: str,
-        logger_override: Optional[logging.Logger] = None
+        logger_override: Optional[logging.Logger] = None,
+        require_negotiation: bool = False,
+        session_timeout_seconds: int = 3600
     ):
         """
         [Function intent]
@@ -146,6 +162,7 @@ class MCPServer:
         Stores basic configuration parameters.
         Creates a FastAPI application with only the health endpoint.
         Sets up thread synchronization for dynamic route registration.
+        Initializes session management for capability negotiation.
 
         Args:
             host: Host address to bind to
@@ -154,6 +171,8 @@ class MCPServer:
             description: Server description
             version: Server version
             logger_override: Optional logger instance
+            require_negotiation: Whether to require capability negotiation for all requests
+            session_timeout_seconds: Timeout for inactive sessions in seconds
         """
         self.host = host
         self.port = port
@@ -161,11 +180,16 @@ class MCPServer:
         self.description = description
         self.version = version
         self.logger = logger_override or logger
+        self.require_negotiation = require_negotiation
         
         # Initialize collections for dynamic registration
-        self._registered_tools: Dict[str, ToolHandlerFunc] = {}
+        self._registered_tools: Dict[str, MCPTool] = {}
         self._registered_resources: Dict[str, ResourceHandlerFunc] = {}
         self._registered_routes: Dict[str, Dict[str, Any]] = {}
+        
+        # Initialize session management
+        self._session_manager = SessionManager(session_timeout_seconds=session_timeout_seconds)
+        self._server_capabilities = self._determine_server_capabilities()
         
         # Thread synchronization for dynamic route registration
         self._router_lock = threading.RLock()
@@ -203,6 +227,52 @@ class MCPServer:
         
         self._setup_routes(app)
         return app
+
+    def _determine_server_capabilities(self) -> Set[str]:
+        """
+        [Function intent]
+        Determines the server's capabilities based on its configuration and available features.
+        
+        [Design principles]
+        Dynamic capability discovery based on server state.
+        Centralized capability determination for consistency.
+        
+        [Implementation details]
+        Examines server configuration and registered components to build capability set.
+        
+        Returns:
+            Set[str]: Set of capability strings supported by this server.
+        """
+        # Start with base capabilities
+        capabilities = {
+            ServerCapabilityType.TOOLS.value,
+            ServerCapabilityType.RESOURCES.value
+        }
+        
+        # Add config-based capabilities
+        config = getattr(self, 'config', {})
+        
+        # Subscription support
+        if getattr(self, '_supports_subscriptions', False):
+            capabilities.add(ServerCapabilityType.SUBSCRIPTIONS.value)
+            
+        # Streaming support    
+        if getattr(self, '_supports_streaming', False):
+            capabilities.add(ServerCapabilityType.STREAMING.value)
+            
+        # Notifications support
+        if getattr(self, '_supports_notifications', False):
+            capabilities.add(ServerCapabilityType.NOTIFICATIONS.value)
+            
+        # Examine other server features for additional capabilities
+        if hasattr(self, '_supports_prompts') and getattr(self, '_supports_prompts'):
+            capabilities.add(ServerCapabilityType.PROMPTS.value)
+            
+        # Add batch operations capability if supported
+        if hasattr(self, '_supports_batch_operations') and getattr(self, '_supports_batch_operations'):
+            capabilities.add(ServerCapabilityType.BATCH_OPERATIONS.value)
+            
+        return capabilities
 
     def _setup_routes(self, app: FastAPI):
         """
@@ -249,6 +319,202 @@ class MCPServer:
                     "error": init_status.get('error')
                 }
             }
+
+        # Register capability negotiation endpoint
+        self._register_negotiation_endpoint(app)
+        
+        # Register session middleware
+        self._register_session_middleware(app)
+    
+    def _register_negotiation_endpoint(self, app: FastAPI):
+        """
+        [Function intent]
+        Registers the capability negotiation endpoint for MCP protocol compliance.
+        
+        [Design principles]
+        Standard MCP negotiation protocol implementation.
+        Session creation and management.
+        
+        [Implementation details]
+        Creates a FastAPI POST endpoint for negotiation.
+        Processes client capabilities and creates a session.
+        Returns server capabilities and available tools/resources.
+        
+        Args:
+            app: FastAPI application to register with
+            
+        Returns:
+            None
+        """
+        self.logger.debug("Registering MCP capability negotiation endpoint...")
+        
+        @app.post("/mcp/negotiate")
+        async def negotiate_capabilities(request: Request, negotiation: NegotiationRequest):
+            """
+            MCP capability negotiation endpoint.
+            Processes client capability declaration and establishes a session.
+            """
+            self.logger.info(f"Received capability negotiation from {negotiation.client_name} v{negotiation.client_version}")
+            
+            try:
+                # Process client capabilities
+                client_capabilities = set(negotiation.supported_capabilities)
+                
+                # Extract auth context from request if present
+                auth_context = self._extract_auth_context(request)
+                
+                # Create session
+                session = self._session_manager.create_session(
+                    client_name=negotiation.client_name,
+                    client_version=negotiation.client_version,
+                    capabilities=client_capabilities,
+                    auth_context=auth_context
+                )
+                
+                # Prepare capability details
+                capability_details = {}
+                for capability in self._server_capabilities:
+                    metadata = get_capability_metadata(capability)
+                    capability_details[capability] = CapabilityDetail(
+                        name=capability,
+                        version=metadata.get("version", "1.0"),
+                        description=metadata.get("description", "")
+                    )
+                
+                # Prepare response with server capabilities
+                response = NegotiationResponse(
+                    server_name=self.name,
+                    server_version=self.version,
+                    supported_capabilities=list(self._server_capabilities),
+                    available_tools=list(self._registered_tools.keys()),
+                    available_resources=list(self._registered_resources.keys()),
+                    capability_details=capability_details
+                )
+                
+                self.logger.debug(f"Created session {session.id} for client {negotiation.client_name}")
+                
+                # Return response with session ID in header
+                return JSONResponse(
+                    content=response.dict(),
+                    headers={"X-MCP-Session-ID": session.id}
+                )
+                
+            except Exception as e:
+                self.logger.error(f"Error during capability negotiation: {str(e)}", exc_info=True)
+                return JSONResponse(
+                    status_code=500,
+                    content={"error": f"Negotiation failed: {str(e)}"}
+                )
+    
+    def _register_session_middleware(self, app: FastAPI):
+        """
+        [Function intent]
+        Registers middleware to handle session validation for all MCP endpoints.
+        
+        [Design principles]
+        Consistent session handling across all requests.
+        Capability enforcement based on session information.
+        
+        [Implementation details]
+        Creates a FastAPI middleware to extract and validate session IDs.
+        Handles anonymous sessions for backward compatibility.
+        Enforces capability requirements for specific endpoints.
+        
+        Args:
+            app: FastAPI application to register with
+            
+        Returns:
+            None
+        """
+        self.logger.debug("Registering MCP session middleware...")
+        
+        @app.middleware("http")
+        async def session_middleware(request: Request, call_next):
+            """
+            Middleware to handle session validation and capability enforcement.
+            """
+            # Skip session check for negotiation endpoint
+            if request.url.path == "/mcp/negotiate" or not request.url.path.startswith("/mcp/"):
+                return await call_next(request)
+            
+            # Get session ID from header
+            session_id = request.headers.get("X-MCP-Session-ID")
+            
+            if not session_id:
+                # If negotiation is required but no session ID provided, reject the request
+                if self.require_negotiation:
+                    return JSONResponse(
+                        status_code=401,
+                        content={"error": "Missing session ID. Please negotiate capabilities first."}
+                    )
+                else:
+                    # For backward compatibility, create an anonymous session
+                    session = create_anonymous_session()
+                    self.logger.debug(f"Created anonymous session {session.id} for backward compatibility")
+            else:
+                # Validate session
+                session = self._session_manager.get_session(session_id)
+                if not session:
+                    return JSONResponse(
+                        status_code=401,
+                        content={"error": "Invalid or expired session ID. Please negotiate capabilities again."}
+                    )
+            
+            # Attach session to request state for handlers
+            request.state.session = session
+            
+            # Check capabilities for specific endpoints
+            path = request.url.path
+            
+            if path.startswith("/mcp/tool/") and "sampling" in self._server_capabilities:
+                if not session.has_capability(ClientCapabilityType.SAMPLING.value):
+                    return JSONResponse(
+                        status_code=403,
+                        content={"error": f"Client does not support required capability: {ClientCapabilityType.SAMPLING.value}"}
+                    )
+                    
+            if path.startswith("/mcp/subscription/") and "subscriptions" in self._server_capabilities:
+                if not session.has_capability(ClientCapabilityType.NOTIFICATIONS.value):
+                    return JSONResponse(
+                        status_code=403,
+                        content={"error": f"Client does not support required capability: {ClientCapabilityType.NOTIFICATIONS.value}"}
+                    )
+            
+            # Continue with request
+            return await call_next(request)
+
+    def _extract_auth_context(self, request: Request) -> Optional[Dict[str, Any]]:
+        """
+        [Function intent]
+        Extracts authentication information from the request for session context.
+        
+        [Design principles]
+        Flexible authentication extraction for various auth mechanisms.
+        
+        [Implementation details]
+        Examines request headers and parameters for auth data.
+        
+        Args:
+            request: FastAPI Request object
+            
+        Returns:
+            Optional[Dict[str, Any]]: Authentication context if available, None otherwise
+        """
+        # Extract any authentication information from the request
+        auth_context = {}
+        
+        # JWT Token
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            auth_context["bearer_token"] = auth_header[7:]  # Remove 'Bearer ' prefix
+        
+        # API Key
+        api_key = request.headers.get("X-API-Key")
+        if api_key:
+            auth_context["api_key"] = api_key
+            
+        # Return None if no auth information was found
+        return auth_context if auth_context else None
 
     def start(self):
         """Starts the MCP server in a background thread."""
@@ -560,32 +826,32 @@ class MCPServer:
 
     # MCP-specific registration API
 
-    def register_mcp_tool(self, tool_name: str, handler: ToolHandlerFunc):
+    def register_mcp_tool(self, tool: MCPTool):
         """
         [Function intent]
-        Registers an MCP tool handler with the server.
+        Registers an MCP tool with the server.
         
         [Design principles]
         Dynamic tool registration for component-provided functionality.
-        Standardized MCP tool interface with callback mechanism.
+        Direct use of MCPTool objects with standardized interface.
         
         [Implementation details]
-        Stores the handler in the internal registry.
+        Stores the tool object in the internal registry.
         Creates a FastAPI route for the tool if not already registered.
         Thread-synchronized to prevent race conditions.
         
         Args:
-            tool_name: Name of the MCP tool
-            handler: Function to handle tool execution
+            tool: MCPTool instance to register
             
         Returns:
             None
         """
         with self._router_lock:
+            tool_name = tool.name
             self.logger.info(f"Registering MCP tool: {tool_name}")
             
-            # Store the tool handler
-            self._registered_tools[tool_name] = handler
+            # Store the tool object
+            self._registered_tools[tool_name] = tool
             
             # Create FastAPI route for this tool if not already registered
             route_key = f"POST:/mcp/tool/{tool_name}"
@@ -595,9 +861,49 @@ class MCPServer:
                     # Extract headers from FastAPI request
                     headers = dict(request.headers)
                     
+                    # Get session from request state (set by middleware)
+                    session = getattr(request.state, "session", None)
+                    
                     try:
-                        # Call the registered handler
-                        result = handler(tool_data, headers)
+                        # Call the tool's handler method with session
+                        result = tool.handle_json_rpc(tool_data, session=session)
+                        
+                        # Check if this is a streaming response
+                        if isinstance(result, dict) and "_streaming_handler" in result:
+                            # Get streaming handler and details
+                            handler = result["_streaming_handler"]
+                            req = result["_request"]
+                            sess = result["_session"]
+                            
+                            # Determine content type based on requested format
+                            stream_format = None
+                            content_type = "application/x-ndjson"  # Default
+                            
+                            # Extract streaming format from request if specified
+                            if isinstance(req, dict) and isinstance(req.get("params"), dict):
+                                format_str = req["params"].get("stream_format")
+                                if format_str:
+                                    try:
+                                        from src.dbp.mcp_server.mcp.streaming import StreamFormat
+                                        stream_format = StreamFormat(format_str)
+                                        if stream_format == StreamFormat.EVENT_STREAM:
+                                            content_type = "text/event-stream"
+                                    except (ValueError, ImportError):
+                                        pass
+                            
+                            # Create streaming response
+                            self.logger.info(f"Streaming response for tool {tool_name} initiated")
+                            generator = handler.handle_streaming_request(req, sess, stream_format)
+                            
+                            # Use streaming response handler
+                            from src.dbp.mcp_server.mcp.streaming_tool import StreamingResponse
+                            streaming_response = StreamingResponse(
+                                generator=generator,
+                                content_type=content_type
+                            )
+                            return streaming_response.create_response()
+                        
+                        # Regular JSON response
                         return JSONResponse(content=result)
                     except Exception as e:
                         self.logger.error(f"Error handling tool {tool_name}: {str(e)}", exc_info=True)
@@ -618,7 +924,7 @@ class MCPServer:
                 
             self.logger.debug(f"MCP tool registered: {tool_name}")
 
-    def unregister_mcp_tool(self, tool_name: str) -> bool:
+    def unregister_mcp_tool(self, tool: Union[MCPTool, str]) -> bool:
         """
         [Function intent]
         Unregisters a previously registered MCP tool.
@@ -639,6 +945,8 @@ class MCPServer:
             bool: True if the tool was unregistered, False if not found
         """
         with self._router_lock:
+            tool_name = tool.name if isinstance(tool, MCPTool) else tool
+            
             if tool_name not in self._registered_tools:
                 self.logger.warning(f"MCP tool not found for unregistration: {tool_name}")
                 return False
@@ -661,6 +969,7 @@ class MCPServer:
         [Design principles]
         Dynamic resource registration for component-provided functionality.
         Standardized MCP resource interface with callback mechanism.
+        Capability-aware resource access with session support.
         
         [Implementation details]
         Stores the handler in the internal registry.
@@ -689,9 +998,12 @@ class MCPServer:
                     query_params = dict(request.query_params)
                     headers = dict(request.headers)
                     
+                    # Get session from request state (set by middleware)
+                    session = getattr(request.state, "session", None)
+                    
                     try:
-                        # Call the registered handler
-                        result = handler(resource_id, query_params, headers)
+                        # Call the registered handler with session
+                        result = handler(resource_id, query_params, headers, session=session)
                         return JSONResponse(content=result)
                     except Exception as e:
                         self.logger.error(f"Error handling resource {resource_name}: {str(e)}", exc_info=True)
@@ -746,3 +1058,35 @@ class MCPServer:
             
             self.logger.info(f"Unregistered MCP resource: {resource_name}")
             return True
+            
+    def cleanup_sessions(self) -> int:
+        """
+        [Function intent]
+        Cleans up expired sessions to free resources.
+        
+        [Design principles]
+        Periodic maintenance for memory management.
+        
+        [Implementation details]
+        Delegates to the session manager's cleanup method.
+        
+        Returns:
+            int: Number of expired sessions removed
+        """
+        return self._session_manager.cleanup_expired_sessions()
+    
+    def get_session_count(self) -> int:
+        """
+        [Function intent]
+        Gets the current count of active sessions.
+        
+        [Design principles]
+        Simple status monitoring capability.
+        
+        [Implementation details]
+        Delegates to session manager's count method.
+        
+        Returns:
+            int: Count of active sessions
+        """
+        return self._session_manager.get_session_count()

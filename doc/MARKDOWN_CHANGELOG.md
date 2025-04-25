@@ -2,6 +2,7 @@
 
 This file tracks all changes made to documentation markdown files in this directory.
 
+2025-04-25T22:23:00Z : [CONFIGURATION.md] Added capability negotiation parameters to MCP Server Integration section
 2025-04-25T17:39:00Z : [CONFIGURATION.md] Added MCP Server Integration section with documented host parameter set to 127.0.0.1
 2025-04-21T00:18:22Z : [DESIGN_DECISIONS.md] Removed integrated design decisions for Explicit Dependency Validation and Centralized Component Registration
 2025-04-21T00:16:58Z : [DESIGN.md] Enhanced Component Initialization System with details on dependency validation and centralized component registration

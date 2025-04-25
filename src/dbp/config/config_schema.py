@@ -438,6 +438,10 @@ class MCPServerConfig(BaseModel):
     cors_allow_credentials: bool = Field(default=MCP_SERVER_DEFAULTS["cors_allow_credentials"], description="Allow credentials for CORS requests")
     keep_alive: int = Field(default=MCP_SERVER_DEFAULTS["keep_alive"], ge=1, le=30, description="Keep-alive timeout in seconds")
     graceful_shutdown_timeout: int = Field(default=MCP_SERVER_DEFAULTS["graceful_shutdown_timeout"], ge=1, le=60, description="Graceful shutdown timeout in seconds")
+    
+    # Capability negotiation settings
+    require_negotiation: bool = Field(default=MCP_SERVER_DEFAULTS["require_negotiation"], description="Whether to require capability negotiation for all requests")
+    session_timeout_seconds: int = Field(default=MCP_SERVER_DEFAULTS["session_timeout_seconds"], ge=300, le=86400, description="Session timeout in seconds")
 
 
 # CLI specific settings
