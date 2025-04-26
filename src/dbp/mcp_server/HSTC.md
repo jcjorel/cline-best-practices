@@ -8,6 +8,12 @@ This directory implements the Model Context Protocol (MCP) server component for 
 ### internal_tools
 This directory contains internal implementation classes for the MCP server tools that are not directly exposed to clients. These internal tools provide the underlying functionality for public-facing MCP tools defined elsewhere. Each tool follows a consistent interface pattern with proper separation between public and internal concerns, enabling maintainable code with clear boundaries while implementing various analysis and functionality capabilities.
 
+### mcp
+The mcp directory contains the core implementation of the Model Context Protocol (MCP) specification for the server-side of the Documentation-Based Programming system. It provides the foundational protocol abstractions, interfaces, and utility classes required to implement a compliant MCP server. This module separates protocol concerns from server implementation details, enabling clean architecture with proper separation of interfaces from concrete implementations. The directory includes protocol definitions for tools, resources, error handling, session management, and streaming capabilities, serving as the backbone for MCP-based communication.
+
+### examples
+The examples directory provides reference implementations and sample code for using the Model Context Protocol (MCP) server capabilities. It contains working demonstrations that showcase the MCP functionality, particularly focused on streaming features and client-server interactions. These examples serve as educational resources for developers implementing their own MCP tools and clients, and can be used for testing and validation of the MCP protocol implementation. The code here emphasizes best practices in MCP development while providing concrete patterns that developers can adapt for their own applications.
+
 ## Local Files
 
 ### `__init__.py`

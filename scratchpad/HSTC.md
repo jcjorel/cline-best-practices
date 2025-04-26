@@ -8,6 +8,12 @@ The scratchpad directory serves as a working area for temporary planning documen
 ### onboarding_kit
 Contains documentation and resources specifically designed to help new developers and contributors understand and navigate the project, including overviews, architecture diagrams, workflows, and development guides.
 
+### mcp_capability_negotiation
+This directory contains implementation planning documents for the MCP (Model Context Protocol) capability negotiation feature. It's a scratchpad area holding architectural plans, design documents, and implementation strategies focused on enhancing the MCP protocol with standardized capability discovery and negotiation mechanisms. These documents outline how clients and servers can dynamically discover each other's supported features, negotiate compatible protocol versions, and gracefully handle feature mismatches. The content serves as planning material rather than production code, providing a roadmap for implementing the capability negotiation protocol.
+
+### mcp_server_minimized
+This directory contains implementation plans and modified code for a minimized version of the Model Context Protocol (MCP) server. It serves as a scratchpad for designing a lightweight alternative to the full MCP server implementation with reduced dependencies and simplified architecture. The minimized implementation focuses on core functionality while removing advanced features that aren't essential for basic operation. This approach aims to provide faster startup times, reduced resource consumption, and easier deployment for scenarios where the full MCP server capabilities aren't required.
+
 ## Local Files
 
 ### `README.md`

@@ -11,27 +11,23 @@
 # - Respect system prompt directives at all times
 ###############################################################################
 # [Source file intent]
-# Implements a minimized version of the MCPServerComponent class for progressive
+# Implements a version of the MCPServerComponent class for progressive
 # integration testing. This component maintains the same interface as the original
 # but avoids dependencies on other system components except config_manager.
-# It allows the MCP server to run in standalone mode, serving requests with
-# standardized error responses.
+# It allows the MCP server to serve requests with standardized error responses.
 ###############################################################################
 # [Source file design principles]
 # - Maintains the Component protocol interface (`src/dbp/core/component.py`).
 # - Preserves integration with config_manager.
 # - Minimizes dependencies on other system components.
-# - Returns standardized error responses for tools/resources in standalone mode.
-# - Provides clear logging for standalone mode operation.
-# - Design Decision: Standalone Component (2025-04-25)
-#   * Rationale: Enables MCP server testing with minimal dependencies.
-#   * Alternatives considered: Dynamic component loading (more complex, harder to isolate).
+# - Returns standardized error responses for tools/resources.
+# - Provides clear logging for operation.
 ###############################################################################
 # [Source file constraints]
 # - Must maintain the same interface as the original component.
 # - Should maintain integration with config_manager.
 # - Should not attempt to access unavailable components.
-# - Must provide clear log messages when operating in standalone mode.
+# - Must provide clear log messages during operation.
 ###############################################################################
 # [Dependencies]
 # codebase:- doc/DESIGN.md
@@ -40,6 +36,14 @@
 # system:- src/dbp/config/config_manager.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-26T02:05:00Z : Removed _register_resources method by CodeAssistant
+# * Removed _register_resources method as resources are registered by external components
+# * Updated initialization to no longer call _register_resources
+# * Made code more compliant with the distributed MCP resource registration concept
+# 2025-04-26T02:00:00Z : Removed _register_tools method by CodeAssistant
+# * Removed _register_tools method as it's not needed - tools are registered by external components
+# * Updated initialization to no longer call _register_tools
+# * Made code more compliant with the distributed MCP tool registration concept
 # 2025-04-25T17:25:00Z : Implemented signal-based server control mechanism by CodeAssistant
 # * Modified start_server to wait indefinitely until explicitly stopped via stop_server()
 # * Added thread synchronization using threading.Event for clean start/stop coordination
@@ -50,15 +54,6 @@
 # * Added prominent visual log message when server is ready to serve requests
 # * Implemented timeout-based testing to ensure server is actually working
 # * Added error handling to stop server if connectivity test fails
-# 2025-04-25T15:07:00Z : Added detailed initialization status tracking for health endpoint by CodeAssistant
-# * Added _update_init_status method to track and log initialization progress
-# * Added status tracking for each step of the initialization process
-# * Implemented state sharing with server instance for health API reporting
-# * Added uptime calculation for server health monitoring
-# 2025-04-25T00:16:00Z : Created minimized component by CodeAssistant
-# * Created standalone version of MCPServerComponent for progressive integration testing
-# * Commented out dependencies on other system components while preserving config_manager integration
-# * Added clear logging for standalone mode operation
 ###############################################################################
 
 import logging
@@ -66,164 +61,33 @@ import os
 from typing import Dict, List, Optional, Any
 
 # Core component imports
-try:
-    from ..core.component import Component, InitializationContext
-    from ..core.fs_utils import ensure_directory_exists, ensure_directories_exist
-    Config = Any # Placeholder
-    MCPServerConfig = Any # Placeholder
-except ImportError:
-    logging.getLogger(__name__).error("Failed to import core component types for MCPServerComponent.", exc_info=True)
-    class Component: pass
-    class InitializationContext: pass
-    Config = Any
-    MCPServerConfig = Any
+from ..core.component import Component, InitializationContext
+from ..core.fs_utils import ensure_directory_exists, ensure_directories_exist
+Config = Any # Placeholder
+MCPServerConfig = Any # Placeholder
 
 # Imports for internal MCP server services with minimized dependencies
-try:
-    # Import local exceptions or create placeholders
-    try:
-        from .exceptions import (
-            ComponentNotInitializedError, ComponentNotFoundError,
-            AuthenticationError, AuthorizationError
-        )
-    except ImportError:
-        # Define local versions if not available
-        class ComponentNotInitializedError(Exception):
-            """Exception raised when a component is accessed before initialization."""
-            def __init__(self, component_name: str = "unknown"):
-                self.component_name = component_name
-                super().__init__(f"Component not initialized: '{component_name}'")
-                
-        class ComponentNotFoundError(Exception):
-            """Exception raised when a component is not found or not initialized."""
-            def __init__(self, component_name: str = "unknown"):
-                self.component_name = component_name
-                super().__init__(f"Component not found or not initialized: '{component_name}'")
-                
-        class AuthenticationError(Exception):
-            """Exception raised during authentication failures."""
-            pass
-            
-        class AuthorizationError(Exception):
-            """Exception raised during authorization failures."""
-            pass
+# Import adapter and MCP server components
+# Use the minimized version from the minimized_mcp directory for these imports
+from .adapter import SystemComponentAdapter
+from .auth import AuthenticationProvider
+from .error_handler import ErrorHandler
+from .registry import ToolRegistry, ResourceProvider
+from .server import MCPServer
+from .mcp_protocols import MCPTool, MCPResource
+from .exceptions import ComponentNotInitializedError, ComponentNotFoundError, AuthenticationError, AuthorizationError
     
-    # Import adapter and MCP server components
-    # Use the minimized version from the minimized_mcp directory for these imports
-    from .adapter import SystemComponentAdapter
-    from .auth import AuthenticationProvider
-    from .error_handler import ErrorHandler
-    from .registry import ToolRegistry, ResourceProvider
-    from .server import MCPServer
-    from .mcp_protocols import MCPTool, MCPResource
-    
-    # Import tools and resources - use minimized versions
-    from .tools import (
-        GeneralQueryTool, CommitMessageTool
-    )
-    from .resources import (
-        DocumentationResource, CodeMetadataResource, InconsistencyResource,
-        RecommendationResource
-    )
-    
-    # DO NOT import other components - commented out to minimize dependencies
-    # Only config_manager should be imported when needed through the adapter
-    """
-    from ..consistency_analysis.component import ConsistencyAnalysisComponent
-    from ..recommendation_generator.component import RecommendationGeneratorComponent
-    from ..doc_relationships.component import DocRelationshipsComponent
-    from ..llm_coordinator.component import LLMCoordinatorComponent
-    """
-except ImportError as e:
-    logging.getLogger(__name__).error(f"MCPServerComponent ImportError: {e}. Using mock implementations.", exc_info=True)
-    # Mock implementations for essential classes
-    class SystemComponentAdapter:
-        """Mock adapter"""
-        def __init__(self, context=None, logger_override=None): pass
-    
-    class ComponentNotFoundError(Exception): pass
-    class ComponentNotInitializedError(Exception): pass
-    class AuthenticationError(Exception): pass
-    class AuthorizationError(Exception): pass
-    class ErrorHandler: 
-        """Mock error handler"""
-        def __init__(self, logger_override=None): pass
-    
-    class ToolRegistry:
-        """Mock tool registry"""
-        def __init__(self, logger_override=None): pass
-        def register_tool(self, tool): pass
-    
-    class ResourceProvider:
-        """Mock resource provider"""
-        def __init__(self, logger_override=None): pass
-        def register_resource(self, resource): pass
-    
-    class MCPServer:
-        """Mock MCP server"""
-        def __init__(self, host, port, name, description, version, logger_override=None):
-            self.host = host
-            self.port = port
-            self.is_running = False
-            self.config = {}
-        def start(self): 
-            self.is_running = True
-        def stop(self): 
-            self.is_running = False
-        def register_mcp_tool(self, tool_name, handler): pass
-        def register_mcp_resource(self, resource_name, handler): pass
-    
-    class MCPTool:
-        """Mock MCPTool"""
-        def __init__(self, name=None, description=None, logger_override=None): pass
-    
-    class MCPResource:
-        """Mock MCPResource"""
-        def __init__(self, name=None, description=None, logger_override=None): pass
-    
-    # Mock tools and resources
-    class GeneralQueryTool:
-        """Mock tool"""
-        def __init__(self, adapter=None, logger_override=None): 
-            self.name = "dbp_general_query"
-    
-    class CommitMessageTool:
-        """Mock tool"""
-        def __init__(self, adapter=None, logger_override=None): 
-            self.name = "dbp_commit_message"
-    
-    class DocumentationResource:
-        """Mock resource"""
-        def __init__(self, adapter=None, logger_override=None): 
-            self.name = "documentation"
-    
-    class CodeMetadataResource:
-        """Mock resource"""
-        def __init__(self, adapter=None, logger_override=None): 
-            self.name = "code_metadata"
-    
-    class InconsistencyResource:
-        """Mock resource"""
-        def __init__(self, adapter=None, logger_override=None): 
-            self.name = "inconsistencies"
-    
-    class RecommendationResource:
-        """Mock resource"""
-        def __init__(self, adapter=None, logger_override=None):
-            self.name = "recommendations"
-
 
 logger = logging.getLogger(__name__)
 
 class MCPServerComponent(Component):
     """
     Minimized version of the DBP system component responsible for running the MCP server.
-    This version operates in standalone mode with minimal dependencies.
+    This version operates with minimal dependencies.
     """
     _initialized: bool = False
     _server: Optional[MCPServer] = None
     _adapter: Optional[SystemComponentAdapter] = None
-    _standalone_mode = True  # Flag indicating we're running in standalone mode
     _stop_requested = False  # Signal to stop server operations
     _server_ready = False    # Signal that server is ready to serve requests
     _stop_event = None       # Thread synchronization event for signaling stop
@@ -236,8 +100,8 @@ class MCPServerComponent(Component):
     def initialize(self, context: InitializationContext, dependencies: Dict[str, Component] = None) -> None:
         """
         [Function intent]
-        Initializes the MCP Server component in standalone mode, setting up a minimized
-        server with mock tools and resources.
+        Initializes the MCP Server component with minimized dependencies,
+        setting up a server instance ready for external tool registration.
 
         [Implementation details]
         Uses the configuration for directory setup but avoids initializing actual component
@@ -246,7 +110,7 @@ class MCPServerComponent(Component):
 
         [Design principles]
         Explicit initialization with minimal dependencies.
-        Clear logging of standalone operation mode.
+        Clear logging of initialization progress.
         Progressive initialization with detailed status tracking.
 
         Args:
@@ -258,7 +122,7 @@ class MCPServerComponent(Component):
             return
 
         self.logger = logging.getLogger(f"dbp.{self.name}")
-        self.logger.warning(f"Initializing component '{self.name}' in STANDALONE MODE with minimal dependencies")
+        self.logger.warning(f"Initializing component '{self.name}' with minimal dependencies")
         
         # Initialize status tracking for health endpoint
         self._init_status = {
@@ -295,7 +159,7 @@ class MCPServerComponent(Component):
             pid_file = config.mcp_server.pid_file
             cli_config_file = config.mcp_server.cli_config_file
 
-            # In standalone mode, we don't use the database
+            # Check for required configuration values
             if not base_dir or not logs_dir or not pid_file or not cli_config_file:
                 missing = []
                 if not base_dir: missing.append('general.base_dir')
@@ -319,7 +183,7 @@ class MCPServerComponent(Component):
                 logs_dir,
                 os.path.dirname(pid_file),
                 os.path.dirname(cli_config_file)
-                # Database path removed for standalone mode
+                # Database path removed to minimize dependencies
             ]
 
             # Create all directories
@@ -346,12 +210,12 @@ class MCPServerComponent(Component):
             self._server = MCPServer(
                 host=config.mcp_server.host,
                 port=int(config.mcp_server.port),
-                name=f"{config.mcp_server.server_name} (STANDALONE MODE)",
+                name=config.mcp_server.server_name,
                 description=f"{config.mcp_server.server_description} - Running with minimal dependencies for progressive integration testing",
                 version=config.mcp_server.server_version,
                 logger_override=self.logger.getChild("server_instance"),
                 # Add capability negotiation parameters with default values
-                require_negotiation=False,  # For backward compatibility in standalone mode
+                require_negotiation=False,  # For backward compatibility
                 session_timeout_seconds=3600  # Default 1 hour session timeout
             )
 
@@ -370,10 +234,6 @@ class MCPServerComponent(Component):
             # Share initialization status with server instance 
             self._server._init_status = self._init_status
 
-            # Register tools and resources directly with the server
-            self._register_tools()
-            self._register_resources()
-
             # Update status to ready state
             self._update_init_status('ready', 'MCP server initialization complete')
             
@@ -382,7 +242,7 @@ class MCPServerComponent(Component):
             self._server._startup_time = time.time()
             
             self._initialized = True
-            self.logger.info(f"Component '{self.name}' initialized successfully in STANDALONE MODE.")
+            self.logger.info(f"Component '{self.name}' initialized successfully.")
 
         except KeyError as e:
              self.logger.error(f"Initialization failed: Missing dependency component '{e}'. Ensure it's registered.")
@@ -397,161 +257,13 @@ class MCPServerComponent(Component):
             self._update_init_status('failed', 'Initialization failed', error=str(e))
             raise RuntimeError(f"Failed to initialize {self.name}") from e
 
-    def _register_tools(self):
-        """
-        [Function intent]
-        Registers standalone mode versions of the MCP tools that return error responses.
-
-        [Implementation details]
-        Creates handler functions that return standardized error responses
-        indicating standalone mode operation, and registers them with the server
-        using the new dynamic registration API.
-
-        [Design principles]
-        Uses callback-based registration mechanism for clean separation of concerns.
-        Maintains proper error handling and logging.
-        """
-        if not self._adapter or not self._server: 
-            raise RuntimeError("Adapter or server not initialized.")
-            
-        self.logger.info("[STANDALONE MODE] Registering authorized MCP tools...")
-
-        # Define tool handlers that return standardized error responses
-        def general_query_handler(tool_data: Dict, headers: Dict) -> Dict:
-            self.logger.info("[STANDALONE MODE] Received general query tool request")
-            return {
-                "status": "error",
-                "error": {
-                    "code": "standalone_mode",
-                    "message": "This MCP server is running in standalone mode. The general query tool is not available.",
-                    "details": "The server is running with minimal dependencies for progressive integration testing."
-                },
-                "result": None
-            }
-            
-        def commit_message_handler(tool_data: Dict, headers: Dict) -> Dict:
-            self.logger.info("[STANDALONE MODE] Received commit message tool request")
-            return {
-                "status": "error",
-                "error": {
-                    "code": "standalone_mode",
-                    "message": "This MCP server is running in standalone mode. The commit message tool is not available.",
-                    "details": "The server is running with minimal dependencies for progressive integration testing."
-                },
-                "result": None
-            }
-
-        # Register tool handlers directly with the server
-        tools_to_register = [
-            ("dbp_general_query", general_query_handler),
-            ("dbp_commit_message", commit_message_handler)
-        ]
-
-        count = 0
-        for tool_name, tool_handler in tools_to_register:
-            try:
-                self._server.register_mcp_tool(tool_name, tool_handler)
-                count += 1
-            except Exception as e:
-                self.logger.error(f"Failed to register MCP tool '{tool_name}': {e}", exc_info=True)
-
-        self.logger.info(f"[STANDALONE MODE] Registered {count}/{len(tools_to_register)} MCP tools.")
-
-
-    def _register_resources(self):
-        """
-        [Function intent]
-        Registers standalone mode versions of MCP resources that return error responses.
-
-        [Implementation details]
-        Creates handler functions that return standardized error responses
-        indicating standalone mode operation, and registers them with the server
-        using the new dynamic registration API.
-
-        [Design principles]
-        Uses callback-based registration mechanism for clean separation of concerns.
-        Maintains proper error handling and logging.
-        """
-        if not self._adapter or not self._server: 
-            raise RuntimeError("Adapter or server not initialized.")
-            
-        self.logger.info("[STANDALONE MODE] Registering MCP resources...")
-
-        # Define resource handlers that return standardized error responses
-        def documentation_resource_handler(resource_id: str, query_params: Dict, headers: Dict) -> Dict:
-            self.logger.info(f"[STANDALONE MODE] Received documentation resource request: {resource_id}")
-            return {
-                "status": "error",
-                "error": {
-                    "code": "standalone_mode",
-                    "message": "This MCP server is running in standalone mode. The documentation resource is not available.",
-                    "details": "The server is running with minimal dependencies for progressive integration testing."
-                },
-                "result": None
-            }
-            
-        def code_metadata_resource_handler(resource_id: str, query_params: Dict, headers: Dict) -> Dict:
-            self.logger.info(f"[STANDALONE MODE] Received code metadata resource request: {resource_id}")
-            return {
-                "status": "error",
-                "error": {
-                    "code": "standalone_mode",
-                    "message": "This MCP server is running in standalone mode. The code metadata resource is not available.",
-                    "details": "The server is running with minimal dependencies for progressive integration testing."
-                },
-                "result": None
-            }
-            
-        def inconsistency_resource_handler(resource_id: str, query_params: Dict, headers: Dict) -> Dict:
-            self.logger.info(f"[STANDALONE MODE] Received inconsistency resource request: {resource_id}")
-            return {
-                "status": "error",
-                "error": {
-                    "code": "standalone_mode",
-                    "message": "This MCP server is running in standalone mode. The inconsistency resource is not available.",
-                    "details": "The server is running with minimal dependencies for progressive integration testing."
-                },
-                "result": None
-            }
-            
-        def recommendation_resource_handler(resource_id: str, query_params: Dict, headers: Dict) -> Dict:
-            self.logger.info(f"[STANDALONE MODE] Received recommendation resource request: {resource_id}")
-            return {
-                "status": "error",
-                "error": {
-                    "code": "standalone_mode",
-                    "message": "This MCP server is running in standalone mode. The recommendation resource is not available.",
-                    "details": "The server is running with minimal dependencies for progressive integration testing."
-                },
-                "result": None
-            }
-
-        # Register resource handlers directly with the server
-        resources_to_register = [
-            ("documentation", documentation_resource_handler),
-            ("code_metadata", code_metadata_resource_handler),
-            ("inconsistencies", inconsistency_resource_handler),
-            ("recommendations", recommendation_resource_handler)
-        ]
-
-        count = 0
-        for resource_name, resource_handler in resources_to_register:
-            try:
-                self._server.register_mcp_resource(resource_name, resource_handler)
-                count += 1
-            except Exception as e:
-                self.logger.error(f"Failed to register MCP resource '{resource_name}': {e}", exc_info=True)
-                
-        self.logger.info(f"[STANDALONE MODE] Registered {count}/{len(resources_to_register)} MCP resources.")
-
-
     def start_server(self):
         """
         [Function intent]
         Starts the underlying MCP server process and waits indefinitely until explicitly stopped.
 
         [Implementation details]
-        Delegates to the MCPServer instance while providing clear logging about standalone operation.
+        Delegates to the MCPServer instance while providing clear logging.
         Performs HTTP connectivity tests to ensure the server is actually working.
         Uses a threading.Event as a synchronization mechanism to block until stop_server() is called.
 
@@ -563,7 +275,7 @@ class MCPServerComponent(Component):
         if not self.is_initialized or not self._server:
             raise ComponentNotInitializedError(self.name)
         if self._server.is_running:
-             self.logger.warning("[STANDALONE MODE] MCP server is already running.")
+             self.logger.warning("MCP server is already running.")
              return
         
         # Reset status flags
@@ -577,11 +289,11 @@ class MCPServerComponent(Component):
         else:
             self._stop_event.clear()  # Reset the event
              
-        self.logger.info("[STANDALONE MODE] Starting MCP server...")
+        self.logger.info("Starting MCP server...")
         self._server.start()
         
         # Test server connectivity to ensure it's actually working
-        self.logger.info("[STANDALONE MODE] Testing HTTP server connectivity...")
+        self.logger.info("Testing HTTP server connectivity...")
         
         import time
         import socket
@@ -641,7 +353,7 @@ class MCPServerComponent(Component):
         self.logger.info("=== MCP SERVER READY ===")
         self.logger.info(f"MCP server is now ready to serve HTTP requests on {host}:{port}")
         self.logger.info("======================")
-        self.logger.info("[STANDALONE MODE] MCP server started successfully and verified operational. Server will return error responses for all tool/resource requests.")
+        self.logger.info("MCP server started successfully and verified operational. Server will return error responses for externally requested tools/resources.")
         
         # Set server ready flag
         self._server_ready = True
@@ -668,7 +380,7 @@ class MCPServerComponent(Component):
 
         [Implementation details]
         Sets the stop event to unlock start_server() which will handle actual server shutdown.
-        Provides clear logging about standalone operation.
+        Provides clear logging during operation.
 
         [Design principles]
         Maintains the same interface as the original component.
@@ -679,7 +391,7 @@ class MCPServerComponent(Component):
             raise ComponentNotInitializedError(self.name)
             
         # Signal the stop event to unlock start_server() which will handle the actual shutdown
-        self.logger.info("[STANDALONE MODE] Signaling server to stop...")
+        self.logger.info("Signaling server to stop...")
         
         # Set the stop requested flag
         self._stop_requested = True
@@ -687,9 +399,9 @@ class MCPServerComponent(Component):
         # Signal the stop event to unlock start_server()
         if self._stop_event:
             self._stop_event.set()
-            self.logger.info("[STANDALONE MODE] Stop signal sent successfully.")
+            self.logger.info("Stop signal sent successfully.")
         else:
-            raise RuntimeError(f"[STANDALONE MODE] No active server event to signal for component '{self.name}'")
+            raise RuntimeError(f"No active server event to signal for component '{self.name}'")
 
     def shutdown(self) -> None:
         """
@@ -697,17 +409,17 @@ class MCPServerComponent(Component):
         Shuts down the MCP server component.
 
         [Implementation details]
-        Stops the server and cleans up resources while providing clear logging about standalone operation.
+        Stops the server and cleans up resources while providing clear logging.
 
         [Design principles]
         Maintains the same interface as the original component.
         """
-        self.logger.info(f"[STANDALONE MODE] Shutting down component '{self.name}'...")
+        self.logger.info(f"Shutting down component '{self.name}'...")
         self.stop_server() # Ensure server is stopped
         self._server = None
         self._adapter = None
         self._initialized = False
-        self.logger.info(f"[STANDALONE MODE] Component '{self.name}' shut down.")
+        self.logger.info(f"Component '{self.name}' shut down.")
 
     def _update_init_status(self, step: str, message: str, error: str = None):
         """

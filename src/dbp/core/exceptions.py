@@ -36,6 +36,10 @@
 # codebase:- doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-26T01:45:00Z : Added DBPBaseException and updated inheritance hierarchy by CodeAssistant
+# * Added DBPBaseException as the root exception class for all system exceptions
+# * Updated ComponentError to inherit from DBPBaseException instead of Exception
+# * Updated DeprecatedMethodError to inherit from DBPBaseException
 # 2025-04-25T09:58:54Z : Added DeprecatedMethodError by CodeAssistant
 # * Created a new exception class for deprecated method calls
 # * Added descriptive error messaging with migration guidance
@@ -54,7 +58,21 @@ This module defines the custom exceptions used throughout the component system
 to provide specific, actionable error messages and enable targeted exception handling.
 """
 
-class ComponentError(Exception):
+class DBPBaseException(Exception):
+    """
+    [Class intent]
+    Base exception class for all exceptions in the DBP system.
+    
+    [Design principles]
+    Root exception class that all other system-specific exceptions should inherit from.
+    Allows for catching all DBP-related exceptions with a single except clause.
+    
+    [Implementation details]
+    Simple wrapper around the standard Exception class to establish inheritance hierarchy.
+    """
+    pass
+
+class ComponentError(DBPBaseException):
     """
     [Class intent]
     Base exception class for all component-related errors in the DBP system.
@@ -172,7 +190,7 @@ class CircularDependencyError(ComponentError):
         super().__init__(message)
 
 
-class DeprecatedMethodError(Exception):
+class DeprecatedMethodError(DBPBaseException):
     """
     [Class intent]
     Exception raised when a deprecated method is called.

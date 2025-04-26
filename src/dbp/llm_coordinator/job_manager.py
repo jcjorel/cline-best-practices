@@ -45,12 +45,158 @@
 # * Implemented job scheduling, status tracking, result collection, and basic execution logic (placeholder).
 ###############################################################################
 
+import asyncio
 import logging
 import threading
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Any, Callable, Set
+from enum import Enum, auto
+from typing import Dict, List, Optional, Any, Callable, Set, Union
+
+# Define JobStatus enum
+class JobStatus(str, Enum):
+    """
+    [Class intent]
+    Represents the status of a job in the job management system.
+    
+    [Design principles]
+    Uses string enum for better readability and serialization.
+    Status values match those defined in the LLM coordination architecture.
+    
+    [Implementation details]
+    Follows standard Enum pattern with string values.
+    """
+    QUEUED = "Queued"
+    RUNNING = "Running"
+    COMPLETED = "Completed"
+    FAILED = "Failed"
+    ABORTED = "Aborted"
+    TIMED_OUT = "TimedOut"
+    BUDGET_EXCEEDED = "BudgetExceeded"
+
+# Define Job class
+class Job:
+    """
+    [Class intent]
+    Represents a job for execution by the job manager.
+    
+    [Design principles]
+    Follows the data model defined in LLM_COORDINATION.md.
+    Simple data container with validation.
+    
+    [Implementation details]
+    Implements standard job attributes needed for the job manager.
+    """
+    def __init__(
+        self, 
+        job_id: str, 
+        job_type: str, 
+        parameters: Dict[str, Any] = None,
+        priority: int = 1,
+        max_execution_time_ms: Optional[int] = None,
+        cost_budget: Optional[float] = None
+    ):
+        """
+        [Function intent]
+        Initializes a new job with provided parameters.
+        
+        [Design principles]
+        Validates inputs and sets default values where appropriate.
+        
+        [Implementation details]
+        Sets initial status to QUEUED and initializes tracking attributes.
+        
+        Args:
+            job_id: Unique identifier for this job
+            job_type: The type of job (tool name)
+            parameters: Parameters for job execution
+            priority: Priority level (lower numbers = higher priority)
+            max_execution_time_ms: Maximum allowed execution time in milliseconds
+            cost_budget: Maximum allowed cost for this job
+        """
+        self.job_id = job_id
+        self.job_type = job_type
+        self.parameters = parameters or {}
+        self.priority = priority
+        self.max_execution_time_ms = max_execution_time_ms
+        self.cost_budget = cost_budget
+        self.status = JobStatus.QUEUED
+        self.creation_timestamp = datetime.now(timezone.utc)
+        self.start_timestamp = None
+        self.end_timestamp = None
+        self.execution_time_ms = None
+        self.actual_cost = None
+        self.result_summary = None
+        self.result_payload = None
+        self.error_details = None
+        self.is_partial_result = False
+        self.metadata = {}
+        self.progress = 0  # 0-100
+
+    def mark_running(self):
+        """
+        [Function intent]
+        Mark the job as running and record the start timestamp.
+        
+        [Design principles]
+        Simple state transition with timestamp tracking.
+        
+        [Implementation details]
+        Updates status and records current time as start timestamp.
+        """
+        self.status = JobStatus.RUNNING
+        self.start_timestamp = datetime.now(timezone.utc)
+        
+    def mark_completed(self, result_payload: Any, is_partial: bool = False):
+        """
+        [Function intent]
+        Mark the job as completed and store its results.
+        
+        [Design principles]
+        Records completion state with proper timestamps and results.
+        
+        [Implementation details]
+        Updates status, timestamps, execution time, and stores results.
+        
+        Args:
+            result_payload: The results from job execution
+            is_partial: Whether the result is incomplete due to constraints
+        """
+        self.status = JobStatus.COMPLETED
+        self.end_timestamp = datetime.now(timezone.utc)
+        if self.start_timestamp:
+            self.execution_time_ms = int((self.end_timestamp - self.start_timestamp).total_seconds() * 1000)
+        self.result_payload = result_payload
+        self.is_partial_result = is_partial
+        self.progress = 100
+        
+    def mark_failed(self, error_code: str, error_message: str, reason: Optional[str] = None):
+        """
+        [Function intent]
+        Mark the job as failed with error details.
+        
+        [Design principles]
+        Records failure state with detailed error information.
+        
+        [Implementation details]
+        Updates status, timestamps, execution time, and stores error details.
+        
+        Args:
+            error_code: Error code identifier
+            error_message: Human-readable error message
+            reason: Optional reason for the failure
+        """
+        self.status = JobStatus.FAILED
+        self.end_timestamp = datetime.now(timezone.utc)
+        if self.start_timestamp:
+            self.execution_time_ms = int((self.end_timestamp - self.start_timestamp).total_seconds() * 1000)
+        self.error_details = {
+            "code": error_code,
+            "message": error_message
+        }
+        if reason:
+            self.error_details["reason"] = reason
 
 # Assuming data_models and tool_registry are accessible
 try:
@@ -311,6 +457,43 @@ class JobManager:
             metadata={}
         )
 
+    def submit_job(self, job: Union[Job, InternalToolJob]) -> str:
+        """
+        [Function intent]
+        Submits a single job for execution.
+        
+        [Design principles]
+        Provides a simpler interface than schedule_jobs for single job submission.
+        
+        [Implementation details]
+        Wraps the schedule_jobs method for a single job.
+        
+        Args:
+            job: The job to submit
+            
+        Returns:
+            The job ID if successfully scheduled, empty string otherwise
+        """
+        if isinstance(job, Job):
+            # Convert Job to InternalToolJob if needed
+            internal_job = InternalToolJob(
+                parent_request_id=job.job_id,  # Use job_id as parent_request_id
+                tool_name=job.job_type,
+                job_id=job.job_id,
+                parameters=job.parameters,
+                priority=job.priority,
+                max_execution_time_ms=job.max_execution_time_ms,
+                cost_budget=job.cost_budget,
+                status=job.status.value if isinstance(job.status, JobStatus) else job.status
+            )
+            scheduled_ids = self.schedule_jobs([internal_job])
+        else:
+            scheduled_ids = self.schedule_jobs([job])
+            
+        if scheduled_ids:
+            return scheduled_ids[0]
+        return ""
+
     def get_job_status(self, job_id: str) -> Optional[str]:
          """Gets the current status of a job."""
          with self._lock:
@@ -320,6 +503,171 @@ class JobManager:
                    result = self._results.get(job_id)
                    return result.status if result else "Completed (Result Missing)"
               return None # Not found
+    
+    def get_job_result(self, job_id: str) -> Optional[Dict[str, Any]]:
+        """
+        [Function intent]
+        Gets the result payload for a completed job.
+        
+        [Design principles]
+        Simple accessor method with proper locking.
+        
+        [Implementation details]
+        Returns None if job not found or no result available.
+        
+        Args:
+            job_id: The ID of the job to get the result for
+            
+        Returns:
+            The job result payload or None
+        """
+        with self._lock:
+            result = self._results.get(job_id)
+            if result and result.result_payload is not None:
+                return result.result_payload
+            return None
+            
+    def get_job_error(self, job_id: str) -> Optional[str]:
+        """
+        [Function intent]
+        Gets the error message for a failed job.
+        
+        [Design principles]
+        Simple accessor method with proper locking.
+        
+        [Implementation details]
+        Returns None if job not found or no error available.
+        
+        Args:
+            job_id: The ID of the job to get the error for
+            
+        Returns:
+            The job error message or None
+        """
+        with self._lock:
+            result = self._results.get(job_id)
+            if result and result.error_details:
+                return result.error_details.get("message", "Unknown error")
+            return None
+            
+    def cancel_job(self, job_id: str) -> bool:
+        """
+        [Function intent]
+        Attempts to cancel a running or pending job.
+        
+        [Design principles]
+        Simple state management with appropriate status updates.
+        
+        [Implementation details]
+        Jobs that are already completed cannot be cancelled.
+        Note: This implementation only marks the job as cancelled but doesn't
+        actually stop any running thread - that would require more complex
+        signaling or ThreadPoolExecutor use.
+        
+        Args:
+            job_id: The ID of the job to cancel
+            
+        Returns:
+            True if job was cancelled, False otherwise
+        """
+        with self._lock:
+            # Check if job exists and is in a cancellable state
+            if job_id in self._pending_jobs:
+                self._pending_jobs.discard(job_id)
+                self._completed_jobs.add(job_id)
+                
+                # Create a cancellation result
+                job = self._jobs.get(job_id)
+                if job:
+                    tool_name = job.tool_name
+                    job.status = JobStatus.ABORTED
+                else:
+                    tool_name = "unknown"
+                    
+                result = InternalToolJobResult(
+                    job_id=job_id,
+                    tool_name=tool_name,
+                    status="Aborted",
+                    end_timestamp=datetime.now(timezone.utc),
+                    error_details={"code": "CANCELLED", "message": "Job cancelled by request"}
+                )
+                self._results[job_id] = result
+                
+                # Signal completion
+                event = self._job_completion_events.get(job_id)
+                if event:
+                    event.set()
+                    
+                self.logger.info(f"Job '{job_id}' cancelled while pending.")
+                return True
+                
+            elif job_id in self._running_jobs:
+                # Mark as aborted
+                if job_id in self._jobs:
+                    self._jobs[job_id].status = JobStatus.ABORTED
+                
+                self.logger.warning(f"Job '{job_id}' marked for cancellation, but may continue running.")
+                # Note: In a more advanced implementation, this would signal the
+                # running thread to stop execution. For now, we just mark it.
+                return True
+                
+            return False
+            
+    async def get_streaming_results(self, job_id: str):
+        """
+        [Function intent]
+        Returns an async generator for streaming results from a job.
+        
+        [Design principles]
+        Supports streaming protocol for incremental result delivery.
+        
+        [Implementation details]
+        Placeholder implementation that simulates streaming results.
+        In a real implementation, this would connect to actual streaming sources.
+        
+        Args:
+            job_id: The ID of the job to stream results from
+            
+        Yields:
+            Incremental result chunks
+        """
+        self.logger.warning(f"Streaming requested for job '{job_id}', but full implementation not available.")
+        self.logger.warning("Using placeholder streaming implementation.")
+        
+        # Check if job exists and get initial status
+        job_exists = False
+        with self._lock:
+            job_exists = job_id in self._jobs
+            if not job_exists:
+                yield {"type": "error", "error_code": "JOB_NOT_FOUND", "error_message": f"Job {job_id} not found"}
+                return
+                
+        # Placeholder streaming implementation
+        yield {"type": "start", "content": "Streaming results started", "progress": 0.0}
+        
+        for i in range(1, 5):
+            # Wait to simulate processing time
+            await asyncio.sleep(0.5)
+            
+            # Check job status
+            with self._lock:
+                # If job completed while we were streaming, stop
+                if job_id in self._completed_jobs:
+                    result = self._results.get(job_id)
+                    if result and result.status == "Completed":
+                        yield {"type": "content", "content": f"Result chunk {i}", "progress": 0.9}
+                        yield {"type": "end", "content": "Streaming completed", "progress": 1.0}
+                        return
+                    elif result:
+                        yield {"type": "error", "error_code": "JOB_FAILED", "error_message": "Job failed during streaming"}
+                        return
+            
+            # Otherwise continue streaming
+            progress = min(i * 0.2, 0.8)  # Max 80% until complete
+            yield {"type": "content", "content": f"Streaming content chunk {i}", "progress": progress}
+            
+        # Final simulated chunk
+        yield {"type": "end", "content": "Streaming complete", "progress": 1.0}
 
     def shutdown(self):
         """Signals the job manager to stop accepting new jobs (doesn't cancel running jobs)."""

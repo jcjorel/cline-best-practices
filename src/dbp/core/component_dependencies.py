@@ -146,7 +146,7 @@ COMPONENT_DECLARATIONS = [
         "import_path": "dbp.llm_coordinator.component",
         "component_class": "LLMCoordinatorComponent",
         "name": "llm_coordinator",
-        "dependencies": ["config_manager"]
+        "dependencies": ["config_manager", "mcp_server"]
     },
     
     # MCP server component

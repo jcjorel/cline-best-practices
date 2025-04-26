@@ -8,6 +8,9 @@ The dbp_cli directory implements the command-line interface for the Documentatio
 ### commands
 Contains implementations of specific CLI commands that can be executed by the user, each following a consistent structure with argument parsing, execution logic, and output formatting.
 
+### mcp
+The mcp directory implements the client-side interface for the Model Context Protocol (MCP) within the DBP CLI. It provides a comprehensive set of modules for establishing connections to MCP servers, negotiating capabilities, executing tool calls, accessing resources, and handling streaming interactions. This module serves as the foundation for DBP's interactions with AI models through the standardized MCP protocol, enabling reliable communication with various MCP server implementations.
+
 ## Local Files
 
 ### `__main__.py`

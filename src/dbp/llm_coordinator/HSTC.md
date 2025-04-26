@@ -208,3 +208,41 @@ change_history:
   - timestamp: "2025-04-24T23:14:55Z"
     summary: "Created HSTC.md file"
     details: "Initial documentation of tool_registry.py in HSTC.md"
+```
+
+### `general_query_tool.py`
+```yaml
+source_file_intent: |
+  Implements the GeneralQueryMCPTool class, which provides an MCP-compliant interface for the LLM coordinator's general query functionality.
+  This enables integration with the Model Context Protocol server, allowing external LLM assistants to access system capabilities.
+  
+source_file_design_principles: |
+  - MCP-compliant implementation following strict protocol specifications
+  - Streaming response support for long-running queries
+  - Integration with LLM coordinator job management
+  - Proper error handling and progress reporting according to MCP standards
+  - Clear separation between protocol concerns and actual query execution
+  
+source_file_constraints: |
+  - Must implement MCPStreamingTool interface correctly
+  - Must handle both synchronous and streaming responses
+  - Must properly validate all inputs and outputs against schema
+  - Must implement proper cancellation and timeout handling
+  - Must integrate with the job management system for async operations
+  
+dependencies:
+  - kind: codebase
+    dependency: src/dbp/mcp_server/mcp/tool.py
+  - kind: codebase
+    dependency: src/dbp/mcp_server/mcp/streaming_tool.py
+  - kind: codebase
+    dependency: src/dbp/llm_coordinator/job_manager.py
+  - kind: codebase
+    dependency: doc/design/LLM_COORDINATION.md
+  - kind: system
+    dependency: pydantic
+  
+change_history:
+  - timestamp: "2025-04-26T00:58:00Z"
+    summary: "Initial implementation by CodeAssistant"
+    details: "Created GeneralQueryMCPTool class with streaming support and MCP compliance"

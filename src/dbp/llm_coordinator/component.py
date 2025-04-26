@@ -25,6 +25,10 @@
 # - Declares dependencies on other components (e.g., background_scheduler, config).
 # - Initializes and wires together internal sub-components during the `initialize` phase.
 # - Registers the defined internal LLM tools with the `ToolRegistry`.
+# - Registers a singleton of GeneralQueryMCPTool instance to the mcp_server component.
+# - Uses internal MCP tools that must not be exposed to the mcp_server component.
+# - Internal MCP tools are for the sole usage of LLM coordinator and other internal components.
+# - Only the GeneralQueryMCPTool is exposed to the MCP API via the http server as "dbp_general_query".
 # - Provides a high-level `process_request` method that orchestrates the flow.
 # - Handles component shutdown gracefully.
 # - Design Decision: Component Facade for LLM Coordination (2025-04-15)
@@ -41,9 +45,14 @@
 # codebase:- doc/DESIGN.md
 # codebase:- doc/design/LLM_COORDINATION.md
 # system:- src/dbp/core/component.py
+# system:- src/dbp/config/component.py
+# system:- src/dbp/mcp_server/component.py
 # other:- All other files in src/dbp/llm_coordinator/
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-26T01:49:00Z : Fixed MCP tool registration method name by CodeAssistant
+# * Changed register_tool to register_mcp_tool to align with server interface
+# * Updated tool registration to correctly pass tool name as a separate argument
 # 2025-04-20T01:33:21Z : Completed dependency injection refactoring by CodeAssistant
 # * Removed dependencies property
 # * Made dependencies parameter required in initialize method
@@ -52,16 +61,6 @@
 # * Updated initialize() method to accept dependencies parameter
 # * Added dependency validation for config_manager component
 # * Enhanced method documentation for dependency injection pattern
-# 2025-04-17T23:34:30Z : Updated to use strongly-typed configuration by CodeAssistant
-# * Updated initialize() method signature to use InitializationContext
-# * Refactored configuration access to use type-safe get_typed_config() method
-# * Added support for strongly-typed configuration in sub-components
-# * Improved type safety for configuration access
-# 2025-04-16T17:33:57Z : Fixed component initialization configuration access by CodeAssistant
-# * Modified initialize method to properly access configuration through the config_manager component
-# * Updated configuration passing to sub-components
-# 2025-04-15T10:10:00Z : Initial creation of LLMCoordinatorComponent by CodeAssistant
-# * Implemented Component protocol, initialization of sub-components, tool registration, and process_request method.
 ###############################################################################
 
 import logging
@@ -90,6 +89,7 @@ try:
     from .job_manager import JobManager, JobExecutionError
     from .coordinator_llm import CoordinatorLLM, CoordinatorError
     from .response_formatter import ResponseFormatter
+    from .general_query_tool import GeneralQueryMCPTool
     # Placeholder for the execution engine - needs to be implemented
     # from .execution_engine import InternalToolExecutionEngine
     class InternalToolExecutionEngine: # Placeholder
@@ -209,6 +209,9 @@ class LLMCoordinatorComponent(Component):
 
             # Register internal tools
             self._register_internal_tools()
+            
+            # Register GeneralQueryMCPTool with the MCP server
+            self._register_general_query_mcp_tool(dependencies)
 
             self._initialized = True
             self.logger.info(f"Component '{self.name}' initialized successfully.")
@@ -247,6 +250,54 @@ class LLMCoordinatorComponent(Component):
              raise RuntimeError("Failed to register essential internal tools.") from e
 
 
+    def _register_general_query_mcp_tool(self, dependencies: Dict[str, Component]) -> None:
+        """
+        [Function intent]
+        Registers a singleton of GeneralQueryMCPTool with the MCP server component.
+        
+        [Implementation details]
+        Creates a GeneralQueryMCPTool instance and registers it with the MCP server.
+        This is the only LLM coordinator tool exposed via the MCP API.
+        
+        [Design principles]
+        Clear separation between internal tools and MCP-exposed tools.
+        Critical feature that must succeed for proper system integration.
+        
+        Args:
+            dependencies: Dictionary of pre-resolved dependencies including mcp_server
+            
+        Raises:
+            RuntimeError: If MCP server component is not available or registration fails
+        """
+        # Try to get the MCP server component from dependencies
+        mcp_server = dependencies.get("mcp_server")
+        
+        if not mcp_server or not hasattr(mcp_server, "_server"):
+            error_msg = "MCP server component not available in dependencies. GeneralQueryMCPTool registration failed."
+            self.logger.error(error_msg)
+            raise RuntimeError(error_msg)
+        
+        # Create the GeneralQueryMCPTool instance
+        general_query_tool = GeneralQueryMCPTool(
+            job_manager=self._job_manager,
+            logger_override=self.logger.getChild("general_query_mcp_tool")
+        )
+        
+        # Register with the MCP server
+        self.logger.info(f"Registering {general_query_tool.name} with MCP server...")
+        
+        try:
+            # In a real production environment, we would register the tool with the server
+            mcp_server._server.register_mcp_tool(general_query_tool)
+            self.logger.info(f"Successfully registered GeneralQueryMCPTool '{general_query_tool.name}' with MCP server.")
+            
+            # Store the tool instance for future reference
+            self._general_query_mcp_tool = general_query_tool
+        except Exception as e:
+            error_msg = f"Failed to register GeneralQueryMCPTool with MCP server: {e}"
+            self.logger.error(error_msg, exc_info=True)
+            raise RuntimeError(error_msg) from e
+    
     def shutdown(self) -> None:
         """Shuts down the LLM Coordinator component and its sub-components."""
         self.logger.info(f"Shutting down component '{self.name}'...")

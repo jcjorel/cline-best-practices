@@ -78,7 +78,7 @@ COMPONENT_ENABLED_DEFAULTS = {
     # All other components disabled
     "file_access": False,     # Not needed for minimized MCP server
     "database": False,        # Not needed for minimized MCP server
-    "llm_coordinator": False, # Not needed for minimized MCP server
+    "llm_coordinator": True,  # Required for MCP general query API
     "fs_monitor": False,      # Not needed for minimized MCP server
     "filter": False,          # Not needed for minimized MCP server
     "change_queue": False,    # Not needed for minimized MCP server

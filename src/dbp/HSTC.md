@@ -33,7 +33,7 @@ Contains implementation of LLM client interfaces, prompt management, and special
 Coordinates LLM operations across the system, including job management, request handling, and response formatting for consistency.
 
 ### mcp_server
-Implements the Model Context Protocol server that exposes system functionality to external AI assistants through standardized tools and resources.
+Implements the Model Context Protocol (MCP) server component for the Documentation-Based Programming system. It provides the infrastructure to expose DBP functionality as MCP tools and resources, enabling LLM assistants to interact with the system via a standardized API. The component integrates with the core DBP framework, manages server lifecycle, handles authentication and authorization, provides error handling, and maintains registries of tools and resources. The implementation follows a clean architecture that separates protocols, adapters, server logic, and tool/resource implementations.
 
 ### memory_cache
 Provides in-memory caching capabilities for document analysis results, with indexing, eviction strategies, and synchronization mechanisms.
