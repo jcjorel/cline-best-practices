@@ -1,6 +1,8 @@
 # Documentation-Based Programming system .gitignore file
 
 # Exclude logs directory
+.dbp/*
+.dbp/logs/*
 coding_assistant/logs/
 
 # Python virtual environment

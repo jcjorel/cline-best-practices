@@ -8669,3 +8669,849 @@ ImportError: cannot import name 'ComponentNotInitializedError' from 'src.dbp.mcp
 2025-04-26 02:32:48,325 - dbp.mcp_server - INFO - MCP server started successfully and verified operational. Server will return error responses for externally requested tools/resources.
 2025-04-26 02:32:48,325 - dbp.mcp_server - INFO - Waiting for stop signal. Call stop_server() to terminate.
 2025-04-26 02:32:48,759 - dbp.mcp_server.server_instance - INFO - HTTP server subsystem successfully started and is accepting connections on 127.0.0.1:6231
+2025-04-26 02:33:57,863 - dbp.core.lifecycle - WARNING - Received signal SIGTERM (15). Shutting down...
+2025-04-26 02:33:57,863 - dbp.core.lifecycle - INFO - Initiating system shutdown...
+2025-04-26 02:33:57,863 - dbp.core.lifecycle - INFO - Shutting down 3 components
+2025-04-26 02:33:57,863 - dbp.core.lifecycle - INFO - Shutting down component 'llm_coordinator'...
+2025-04-26 02:33:57,863 - dbp.core.lifecycle.llm_coordinator - INFO - Shutting down component 'llm_coordinator'...
+2025-04-26 02:33:57,863 - dbp.core.lifecycle.llm_coordinator.job_manager - INFO - JobManager shutdown initiated. No new jobs will be scheduled.
+2025-04-26 02:33:57,863 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Shutting down CoordinatorLLM', 'model_name': 'nova-lite'}
+2025-04-26 02:33:57,863 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'CoordinatorLLM shutdown completed'}
+2025-04-26 02:33:57,863 - dbp.core.lifecycle.llm_coordinator - INFO - Component 'llm_coordinator' shut down.
+2025-04-26 02:33:57,863 - dbp.core.lifecycle - INFO - Shutting down component 'mcp_server'...
+2025-04-26 02:33:57,863 - dbp.mcp_server - INFO - Shutting down component 'mcp_server'...
+2025-04-26 02:33:57,863 - dbp.mcp_server - INFO - Signaling server to stop...
+2025-04-26 02:33:57,863 - dbp.mcp_server - INFO - Stop signal sent successfully.
+2025-04-26 02:33:57,863 - dbp.mcp_server - INFO - Component 'mcp_server' shut down.
+2025-04-26 02:33:57,863 - dbp.core.lifecycle - INFO - Shutting down component 'config_manager'...
+2025-04-26 02:33:57,863 - dbp.config_manager - INFO - Shutting down component 'config_manager'...
+2025-04-26 02:33:57,863 - dbp.config_manager - INFO - Component 'config_manager' shut down.
+2025-04-26 02:33:57,863 - dbp.core.lifecycle - INFO - All components shut down
+2025-04-26 02:33:57,864 - dbp.core.lifecycle - INFO - System shutdown complete.
+2025-04-26 02:33:57,864 - dbp.mcp_server.__main__ - INFO - Shutting down MCP server...
+2025-04-26 02:33:57,864 - dbp.core.watchdog - WARNING - Watchdog already running, not starting another
+2025-04-26 02:33:57,864 - dbp.mcp_server.__main__ - INFO - Watchdog reactivated with 20s timeout for shutdown process
+2025-04-26 02:33:57,864 - dbp.core.lifecycle - INFO - Application not running, shutdown not needed.
+2025-04-26 02:33:57,864 - dbp.mcp_server.__main__ - INFO - Lifecycle manager shutdown complete
+2025-04-26 02:33:57,864 - dbp.mcp_server.__main__ - WARNING - Server exit detected
+2025-04-26 02:33:57,864 - dbp.mcp_server.__main__ - WARNING - Exit source: Python interpreter shutdown
+2025-04-26 02:33:57,864 - dbp.mcp_server.__main__ - WARNING - Exit reason: Process exit via atexit
+
+
+--- SERVER START ATTEMPT AT 2025-04-26 10:50:09 ---
+
+2025-04-26 10:50:09,548 - root - DEBUG - Application logging initialized at level debug with consistent formatting
+2025-04-26 10:50:09,548 - dbp.mcp_server.__main__ - DEBUG - Using watchdog timeout from configuration: 20s
+2025-04-26 10:50:09,548 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for signal 15
+2025-04-26 10:50:09,549 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for signal 2
+2025-04-26 10:50:09,549 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 1
+2025-04-26 10:50:09,549 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 3
+2025-04-26 10:50:09,549 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 6
+2025-04-26 10:50:09,549 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 10
+2025-04-26 10:50:09,549 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for platform signal 12
+2025-04-26 10:50:09,549 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for unhandled exceptions
+2025-04-26 10:50:09,549 - dbp.mcp_server.__main__ - DEBUG - Registered exit handler for normal process termination
+2025-04-26 10:50:09,549 - dbp.core.watchdog - INFO - WATCHDOG SETUP: Initializing watchdog with 20s timeout
+2025-04-26 10:50:09,549 - dbp.core.watchdog - INFO - WATCHDOG SETUP: Initial timestamp: 1745657409.5494082
+2025-04-26 10:50:09,550 - dbp.core.watchdog - INFO - WATCHDOG THREAD STARTED: with 20 second timeout
+2025-04-26 10:50:09,550 - dbp.core.watchdog - DEBUG - Process keepalive updated at 1745657409.5502179
+2025-04-26 10:50:09,550 - dbp.core.watchdog - DEBUG - WATCHDOG THREAD INFO: id=140553735358144, name=watchdog_monitor, is_daemon=True
+2025-04-26 10:50:09,550 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-26 10:50:09,551 - dbp.core.watchdog - DEBUG - WATCHDOG LOOP 1: Waiting for activity
+2025-04-26 10:50:09,551 - dbp.mcp_server.__main__ - DEBUG - Arguments: Namespace(host='localhost', port=6231, log_level='debug', log_file=None, startup_timeout=180, watchdog_timeout=20)
+2025-04-26 10:50:09,551 - dbp.mcp_server.__main__ - DEBUG - Successfully imported MCPServerComponent
+2025-04-26 10:50:09,551 - dbp.mcp_server.__main__ - DEBUG - Environment: {'Python version': '3.12.3 (main, Feb  4 2025, 14:48:35) [GCC 13.3.0]', 'Working directory': '/home/jcjorel/cline-best-practices', 'Module path': '/home/jcjorel/cline-best-practices/src/dbp/mcp_server/__main__.py', 'PATH': '/home/jcjorel/cline-best-practices/venv/bin:/home/jcjorel/.vscode-server/bin/17baf841131aa23349f217ca7c570c76ee87b957/bin/remote-cli:/home/jcjorel/.local/bin:/home/jcjorel/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/java8path:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/javapath:/mnt/c/Program Files/Microsoft/jdk-11.0.16.101-hotspot/bin:/mnt/c/Program Files/itacsvc:/mnt/c/WINDOWS/system32:/mnt/c/WINDOWS:/mnt/c/WINDOWS/System32/Wbem:/mnt/c/WINDOWS/System32/WindowsPowerShell/v1.0/:/mnt/c/WINDOWS/System32/OpenSSH/:/mnt/c/Program Files/Microchip/xc16/v2.10/bin:/mnt/c/Program Files/dotnet/:/mnt/c/Program Files (x86)/IVI Foundation/VISA/WinNT/Bin/:/mnt/c/Program Files/IVI Foundation/VISA/Win64/Bin/:/mnt/c/Program Files (x86)/IVI Foundation/VISA/WinNT/Bin:/mnt/c/Program Files/PuTTY/:/mnt/c/Program Files (x86)/ACMEGuardian/:/mnt/c/FPC/3.2.2/bin/i386-Win32:/mnt/c/Program Files (x86)/Quarantine/:/mnt/c/Program Files/Oracle/VirtualBox:/mnt/c/Program Files/GitDefender/bin:/mnt/c/Program Files/Amazon/FOPAzureADMAnagementApp/:/mnt/c/Users/jcjorel/AppData/Local/Programs/Python/Python313/Scripts/:/mnt/c/Users/jcjorel/AppData/Local/Programs/Python/Python313/:/mnt/c/Wincupl/WINCUPL/EXE:/mnt/c/Wincupl/WINCUPL/FITTERS:/mnt/c/Users/jcjorel/AppData/Local/Programs/Git/cmd:/mnt/c/Users/jcjorel/AppData/Local/GitDefender/bin:/mnt/c/Users/jcjorel/AppData/Local/Programs/Microsoft VS Code/bin:/mnt/c/Users/jcjorel/.dotnet/tools:/mnt/c/Users/jcjorel/AppData/Local/Microsoft/WindowsApps:/snap/bin:/usr/local/bin:/home/jcjorel/.vscode-server/extensions/ms-python.debugpy-2025.6.0-linux-x64/bundled/scripts/noConfigScripts:/home/jcjorel/.vscode-server/data/User/globalStorage/github.copilot-chat/debugCommand:/usr/local/bin', 'PYTHONPATH': ''}
+2025-04-26 10:50:09,551 - dbp.mcp_server.__main__ - DEBUG - FastAPI version: 0.115.12
+2025-04-26 10:50:09,552 - dbp.mcp_server.__main__ - DEBUG - Uvicorn available: uvicorn
+2025-04-26 10:50:09,552 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-26 10:50:09,552 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-26 10:50:09,552 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-04-26 10:50:09,552 - dbp.mcp_server.__main__ - DEBUG - Successfully imported tool classes
+/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:373: UserWarning: Valid config keys have changed in V2:
+* 'schema_extra' has been renamed to 'json_schema_extra'
+  warnings.warn(message, UserWarning)
+2025-04-26 10:50:09,967 - dbp.mcp_server.__main__ - DEBUG - Successfully imported resource classes
+2025-04-26 10:50:09,967 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-26 10:50:09,967 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-26 10:50:09,967 - dbp.config.config_manager - WARNING - ConfigurationManager already initialized. Skipping re-initialization.
+2025-04-26 10:50:09,968 - dbp.core.lifecycle - INFO - Registering components with registry...
+2025-04-26 10:50:09,968 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:50:09,968 - dbp.core.lifecycle - INFO - Using component enablement configuration
+2025-04-26 10:50:09,968 - dbp.core.lifecycle - INFO - Registered component factory: 'config_manager' with dependencies: []
+2025-04-26 10:50:09,968 - dbp.core.lifecycle - INFO - Component 'file_access' disabled by configuration - skipping registration
+2025-04-26 10:50:09,968 - dbp.core.lifecycle - INFO - Component 'database' disabled by configuration - skipping registration
+2025-04-26 10:50:09,968 - dbp.core.lifecycle - INFO - Component 'change_queue' disabled by configuration - skipping registration
+2025-04-26 10:50:09,968 - dbp.core.lifecycle - INFO - Component 'fs_monitor' disabled by configuration - skipping registration
+2025-04-26 10:50:09,968 - dbp.core.lifecycle - INFO - Component 'filter' disabled by configuration - skipping registration
+2025-04-26 10:50:09,968 - dbp.core.lifecycle - INFO - Component 'memory_cache' disabled by configuration - skipping registration
+2025-04-26 10:50:09,968 - dbp.core.lifecycle - INFO - Component 'metadata_extraction' disabled by configuration - skipping registration
+2025-04-26 10:50:09,968 - dbp.core.lifecycle - INFO - Component 'doc_relationships' disabled by configuration - skipping registration
+2025-04-26 10:50:09,968 - dbp.core.lifecycle - INFO - Component 'consistency_analysis' disabled by configuration - skipping registration
+2025-04-26 10:50:09,968 - dbp.core.lifecycle - INFO - Component 'recommendation_generator' disabled by configuration - skipping registration
+2025-04-26 10:50:09,968 - dbp.core.lifecycle - INFO - Component 'scheduler' disabled by configuration - skipping registration
+2025-04-26 10:50:09,968 - dbp.core.lifecycle - INFO - Registered component class: 'llm_coordinator' with dependencies: ['config_manager', 'mcp_server']
+2025-04-26 10:50:09,968 - dbp.core.lifecycle - INFO - Registered component class: 'mcp_server' with dependencies: ['config_manager']
+2025-04-26 10:50:09,968 - dbp.core.lifecycle - INFO - Registered 3 components with registry
+2025-04-26 10:50:09,968 - dbp.core.registry - INFO - Registering 3 components with system
+2025-04-26 10:50:09,968 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-26 10:50:09,968 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager', 'mcp_server']
+2025-04-26 10:50:09,968 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['config_manager']
+2025-04-26 10:50:09,969 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-26 10:50:09,969 - dbp.core.lifecycle - INFO - Initializing 3 components
+2025-04-26 10:50:09,969 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:50:09,969 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-26 10:50:09,969 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, mcp_server, llm_coordinator
+2025-04-26 10:50:09,969 - dbp.core.lifecycle - INFO - Using component enablement configuration: config_manager=True file_access=False database=False fs_monitor=False filter=False change_queue=False memory_cache=False consistency_analysis=False doc_relationships=False recommendation_generator=False scheduler=False metadata_extraction=False llm_coordinator=True mcp_server=True
+2025-04-26 10:50:09,969 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-26 10:50:09,969 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-26 10:50:09,969 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-26 10:50:09,969 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-26 10:50:09,969 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:50:09,971 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-26 10:50:09,971 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-26 10:50:09,971 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-26 10:50:09,971 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-26 10:50:09,972 - dbp.core.lifecycle - INFO - Initializing component 'mcp_server'...
+2025-04-26 10:50:09,972 - dbp.core.lifecycle - INFO - Initializing component 'mcp_server' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-26 10:50:09,972 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-26 10:50:09,972 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:50:09,972 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'mcp_server'
+2025-04-26 10:50:09,972 - dbp.mcp_server - WARNING - Initializing component 'mcp_server' with minimal dependencies
+2025-04-26 10:50:09,972 - dbp.mcp_server - INFO - Server initialization status: config - Loading configuration
+2025-04-26 10:50:09,972 - dbp.mcp_server.adapter - WARNING - SystemComponentAdapter initialized in STANDALONE MODE - returning mock components only
+2025-04-26 10:50:09,972 - dbp.mcp_server - INFO - Server initialization status: components - Creating MCP server components
+2025-04-26 10:50:09,972 - dbp.mcp_server - INFO - Server initialization status: directories - Creating required directories
+2025-04-26 10:50:09,972 - dbp.mcp_server - INFO - Ensuring required directories exist using base directory: .dbp
+2025-04-26 10:50:09,975 - dbp.mcp_server - INFO - Required directories created or verified successfully
+2025-04-26 10:50:09,975 - dbp.mcp_server - INFO - Server initialization status: server - Creating MCP server instance
+2025-04-26 10:50:09,975 - dbp.mcp_server.server_instance - INFO - Creating FastAPI application...
+2025-04-26 10:50:09,977 - dbp.mcp_server - INFO - MCP server is now ready to serve HTTP requests on 127.0.0.1:6231
+2025-04-26 10:50:09,977 - dbp.mcp_server - INFO - Server initialization status: ready - MCP server initialization complete
+2025-04-26 10:50:09,977 - dbp.mcp_server - INFO - Component 'mcp_server' initialized successfully.
+2025-04-26 10:50:09,977 - dbp.core.lifecycle - INFO - Component 'mcp_server' initialized successfully
+2025-04-26 10:50:09,977 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator'...
+2025-04-26 10:50:09,977 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-26 10:50:09,977 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-26 10:50:09,977 - dbp.core.lifecycle - INFO - Resolved 2 dependencies for component 'llm_coordinator'
+2025-04-26 10:50:09,977 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:50:09,977 - dbp.core.lifecycle.llm_coordinator - INFO - Initializing component 'llm_coordinator'...
+2025-04-26 10:50:09,977 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Getting Bedrock client manager instance', 'region': 'us-east-1', 'component': 'CoordinatorLLM'}
+2025-04-26 10:50:09,977 - dbp.core.lifecycle.llm_coordinator.coordinator_llm.bedrock - INFO - {'message': 'Bedrock client manager initialized', 'default_region': 'us-east-1', 'prompt_manager_configured': True}
+2025-04-26 10:50:09,977 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Bedrock client manager instance retrieved successfully', 'component': 'CoordinatorLLM'}
+2025-04-26 10:50:09,978 - dbp.llm_coordinator.component - WARNING - Using Placeholder InternalToolExecutionEngine
+2025-04-26 10:50:09,978 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_context' -> execute_codebase_context_tool
+2025-04-26 10:50:09,978 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_changelog_context' -> execute_codebase_changelog_tool
+2025-04-26 10:50:09,978 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_context' -> execute_documentation_context_tool
+2025-04-26 10:50:09,978 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_changelog_context' -> execute_documentation_changelog_tool
+2025-04-26 10:50:09,978 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_expert_architect_advice' -> execute_expert_architect_advice_tool
+2025-04-26 10:50:09,978 - dbp.core.lifecycle.llm_coordinator - INFO - Registered 5 internal tools.
+2025-04-26 10:50:09,978 - dbp.core.lifecycle.llm_coordinator - INFO - Registering dbp_general_query with MCP server...
+2025-04-26 10:50:09,978 - dbp.mcp_server.server_instance - INFO - Registering MCP tool: dbp_general_query
+2025-04-26 10:50:09,978 - dbp.core.lifecycle.llm_coordinator - INFO - Successfully registered GeneralQueryMCPTool 'dbp_general_query' with MCP server.
+2025-04-26 10:50:09,978 - dbp.core.lifecycle.llm_coordinator - INFO - Component 'llm_coordinator' initialized successfully.
+2025-04-26 10:50:09,978 - dbp.core.lifecycle - INFO - Component 'llm_coordinator' initialized successfully
+2025-04-26 10:50:09,978 - dbp.core.lifecycle - INFO - All components initialized successfully
+2025-04-26 10:50:09,978 - dbp.core.lifecycle - INFO - System startup complete. Application is running.
+2025-04-26 10:50:09,978 - dbp.mcp_server.__main__ - INFO - All components started successfully
+2025-04-26 10:50:09,978 - dbp.mcp_server.__main__ - INFO - Component initialization completed successfully
+2025-04-26 10:50:09,978 - dbp.mcp_server.__main__ - INFO - Watchdog disabled after successful component initialization
+2025-04-26 10:50:09,978 - dbp.mcp_server.__main__ - INFO - Starting MCP server...
+2025-04-26 10:50:09,979 - dbp.mcp_server - INFO - Starting MCP server...
+2025-04-26 10:50:09,979 - dbp.mcp_server.server_instance - INFO - Starting MCP server 'dbp-mcp-server' on 127.0.0.1:6231...
+2025-04-26 10:50:09,979 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:50:09,979 - dbp.mcp_server.server_instance - INFO - MCP Server 'dbp-mcp-server' started.
+2025-04-26 10:50:09,980 - dbp.mcp_server - INFO - Testing HTTP server connectivity...
+2025-04-26 10:50:09,980 - dbp.mcp_server.server_instance - INFO - Starting HTTP server subsystem on 127.0.0.1:6231 with 1 worker(s)...
+2025-04-26 10:50:10,073 - dbp.mcp_server - INFO - === MCP SERVER READY ===
+2025-04-26 10:50:10,073 - dbp.mcp_server - INFO - MCP server is now ready to serve HTTP requests on 127.0.0.1:6231
+2025-04-26 10:50:10,073 - dbp.mcp_server - INFO - ======================
+2025-04-26 10:50:10,073 - dbp.mcp_server - INFO - MCP server started successfully and verified operational. Server will return error responses for externally requested tools/resources.
+2025-04-26 10:50:10,073 - dbp.mcp_server - INFO - Waiting for stop signal. Call stop_server() to terminate.
+2025-04-26 10:50:10,482 - dbp.mcp_server.server_instance - INFO - HTTP server subsystem successfully started and is accepting connections on 127.0.0.1:6231
+2025-04-26 10:50:25,935 - dbp.core.lifecycle - WARNING - Received signal SIGTERM (15). Shutting down...
+2025-04-26 10:50:25,935 - dbp.core.lifecycle - INFO - Initiating system shutdown...
+2025-04-26 10:50:25,935 - dbp.core.lifecycle - INFO - Shutting down 3 components
+2025-04-26 10:50:25,935 - dbp.core.lifecycle - INFO - Shutting down component 'llm_coordinator'...
+2025-04-26 10:50:25,935 - dbp.core.lifecycle.llm_coordinator - INFO - Shutting down component 'llm_coordinator'...
+2025-04-26 10:50:25,935 - dbp.core.lifecycle.llm_coordinator.job_manager - INFO - JobManager shutdown initiated. No new jobs will be scheduled.
+2025-04-26 10:50:25,935 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Shutting down CoordinatorLLM', 'model_name': 'nova-lite'}
+2025-04-26 10:50:25,935 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'CoordinatorLLM shutdown completed'}
+2025-04-26 10:50:25,935 - dbp.core.lifecycle.llm_coordinator - INFO - Component 'llm_coordinator' shut down.
+2025-04-26 10:50:25,935 - dbp.core.lifecycle - INFO - Shutting down component 'mcp_server'...
+2025-04-26 10:50:25,935 - dbp.mcp_server - INFO - Shutting down component 'mcp_server'...
+2025-04-26 10:50:25,935 - dbp.mcp_server - INFO - Signaling server to stop...
+2025-04-26 10:50:25,935 - dbp.mcp_server - INFO - Stop signal sent successfully.
+2025-04-26 10:50:25,935 - dbp.mcp_server - INFO - Component 'mcp_server' shut down.
+2025-04-26 10:50:25,935 - dbp.core.lifecycle - INFO - Shutting down component 'config_manager'...
+2025-04-26 10:50:25,935 - dbp.config_manager - INFO - Shutting down component 'config_manager'...
+2025-04-26 10:50:25,936 - dbp.config_manager - INFO - Component 'config_manager' shut down.
+2025-04-26 10:50:25,936 - dbp.core.lifecycle - INFO - All components shut down
+2025-04-26 10:50:25,936 - dbp.core.lifecycle - INFO - System shutdown complete.
+2025-04-26 10:50:25,936 - dbp.mcp_server.__main__ - INFO - Shutting down MCP server...
+2025-04-26 10:50:25,936 - dbp.core.watchdog - WARNING - Watchdog already running, not starting another
+2025-04-26 10:50:25,936 - dbp.mcp_server.__main__ - INFO - Watchdog reactivated with 20s timeout for shutdown process
+2025-04-26 10:50:25,936 - dbp.core.lifecycle - INFO - Application not running, shutdown not needed.
+2025-04-26 10:50:25,936 - dbp.mcp_server.__main__ - INFO - Lifecycle manager shutdown complete
+2025-04-26 10:50:25,937 - dbp.mcp_server.__main__ - WARNING - Server exit detected
+2025-04-26 10:50:25,937 - dbp.mcp_server.__main__ - WARNING - Exit source: Python interpreter shutdown
+2025-04-26 10:50:25,937 - dbp.mcp_server.__main__ - WARNING - Exit reason: Process exit via atexit
+
+
+--- SERVER START ATTEMPT AT 2025-04-26 10:51:27 ---
+
+2025-04-26 10:51:27,694 - dbp.core.watchdog - INFO - WATCHDOG SETUP: Initializing watchdog with 20s timeout
+2025-04-26 10:51:27,694 - dbp.core.watchdog - INFO - WATCHDOG SETUP: Initial timestamp: 1745657487.69428
+2025-04-26 10:51:27,694 - dbp.core.watchdog - INFO - WATCHDOG THREAD STARTED: with 20 second timeout
+2025-04-26 10:51:27,694 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-26 10:51:27,695 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-26 10:51:27,695 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-26 10:51:27,695 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:373: UserWarning: Valid config keys have changed in V2:
+* 'schema_extra' has been renamed to 'json_schema_extra'
+  warnings.warn(message, UserWarning)
+2025-04-26 10:51:28,003 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-26 10:51:28,003 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-26 10:51:28,003 - dbp.config.config_manager - WARNING - ConfigurationManager already initialized. Skipping re-initialization.
+2025-04-26 10:51:28,003 - dbp.core.lifecycle - INFO - Registering components with registry...
+2025-04-26 10:51:28,003 - dbp.core.lifecycle - INFO - Using component enablement configuration
+2025-04-26 10:51:28,003 - dbp.core.lifecycle - INFO - Registered component factory: 'config_manager' with dependencies: []
+2025-04-26 10:51:28,003 - dbp.core.lifecycle - INFO - Component 'file_access' disabled by configuration - skipping registration
+2025-04-26 10:51:28,003 - dbp.core.lifecycle - INFO - Component 'database' disabled by configuration - skipping registration
+2025-04-26 10:51:28,003 - dbp.core.lifecycle - INFO - Component 'change_queue' disabled by configuration - skipping registration
+2025-04-26 10:51:28,003 - dbp.core.lifecycle - INFO - Component 'fs_monitor' disabled by configuration - skipping registration
+2025-04-26 10:51:28,003 - dbp.core.lifecycle - INFO - Component 'filter' disabled by configuration - skipping registration
+2025-04-26 10:51:28,003 - dbp.core.lifecycle - INFO - Component 'memory_cache' disabled by configuration - skipping registration
+2025-04-26 10:51:28,003 - dbp.core.lifecycle - INFO - Component 'metadata_extraction' disabled by configuration - skipping registration
+2025-04-26 10:51:28,003 - dbp.core.lifecycle - INFO - Component 'doc_relationships' disabled by configuration - skipping registration
+2025-04-26 10:51:28,003 - dbp.core.lifecycle - INFO - Component 'consistency_analysis' disabled by configuration - skipping registration
+2025-04-26 10:51:28,003 - dbp.core.lifecycle - INFO - Component 'recommendation_generator' disabled by configuration - skipping registration
+2025-04-26 10:51:28,003 - dbp.core.lifecycle - INFO - Component 'scheduler' disabled by configuration - skipping registration
+2025-04-26 10:51:28,003 - dbp.core.lifecycle - INFO - Registered component class: 'llm_coordinator' with dependencies: ['config_manager', 'mcp_server']
+2025-04-26 10:51:28,004 - dbp.core.lifecycle - INFO - Registered component class: 'mcp_server' with dependencies: ['config_manager']
+2025-04-26 10:51:28,004 - dbp.core.lifecycle - INFO - Registered 3 components with registry
+2025-04-26 10:51:28,004 - dbp.core.registry - INFO - Registering 3 components with system
+2025-04-26 10:51:28,004 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-26 10:51:28,004 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager', 'mcp_server']
+2025-04-26 10:51:28,004 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['config_manager']
+2025-04-26 10:51:28,004 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-26 10:51:28,004 - dbp.core.lifecycle - INFO - Initializing 3 components
+2025-04-26 10:51:28,004 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-26 10:51:28,004 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, mcp_server, llm_coordinator
+2025-04-26 10:51:28,004 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:51:28,004 - dbp.core.lifecycle - INFO - Using component enablement configuration: config_manager=True file_access=False database=False fs_monitor=False filter=False change_queue=False memory_cache=False consistency_analysis=False doc_relationships=False recommendation_generator=False scheduler=False metadata_extraction=False llm_coordinator=True mcp_server=True
+2025-04-26 10:51:28,004 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-26 10:51:28,004 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-26 10:51:28,004 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-26 10:51:28,004 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-26 10:51:28,004 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:51:28,006 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-26 10:51:28,006 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-26 10:51:28,006 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-26 10:51:28,006 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-26 10:51:28,006 - dbp.core.lifecycle - INFO - Initializing component 'mcp_server'...
+2025-04-26 10:51:28,006 - dbp.core.lifecycle - INFO - Initializing component 'mcp_server' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-26 10:51:28,006 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-26 10:51:28,006 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'mcp_server'
+2025-04-26 10:51:28,006 - dbp.mcp_server - WARNING - Initializing component 'mcp_server' with minimal dependencies
+2025-04-26 10:51:28,006 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:51:28,006 - dbp.mcp_server - INFO - Server initialization status: config - Loading configuration
+2025-04-26 10:51:28,007 - dbp.mcp_server.adapter - WARNING - SystemComponentAdapter initialized in STANDALONE MODE - returning mock components only
+2025-04-26 10:51:28,007 - dbp.mcp_server - INFO - Server initialization status: components - Creating MCP server components
+2025-04-26 10:51:28,007 - dbp.mcp_server - INFO - Server initialization status: directories - Creating required directories
+2025-04-26 10:51:28,007 - dbp.mcp_server - INFO - Ensuring required directories exist using base directory: .dbp
+2025-04-26 10:51:28,010 - dbp.mcp_server - INFO - Required directories created or verified successfully
+2025-04-26 10:51:28,010 - dbp.mcp_server - INFO - Server initialization status: server - Creating MCP server instance
+2025-04-26 10:51:28,010 - dbp.mcp_server.server_instance - INFO - Creating FastAPI application...
+2025-04-26 10:51:28,010 - dbp.mcp_server - INFO - MCP server is now ready to serve HTTP requests on 127.0.0.1:6231
+2025-04-26 10:51:28,011 - dbp.mcp_server - INFO - Server initialization status: ready - MCP server initialization complete
+2025-04-26 10:51:28,011 - dbp.mcp_server - INFO - Component 'mcp_server' initialized successfully.
+2025-04-26 10:51:28,011 - dbp.core.lifecycle - INFO - Component 'mcp_server' initialized successfully
+2025-04-26 10:51:28,011 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator'...
+2025-04-26 10:51:28,011 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-26 10:51:28,011 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-26 10:51:28,011 - dbp.core.lifecycle - INFO - Resolved 2 dependencies for component 'llm_coordinator'
+2025-04-26 10:51:28,011 - dbp.core.lifecycle.llm_coordinator - INFO - Initializing component 'llm_coordinator'...
+2025-04-26 10:51:28,011 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Getting Bedrock client manager instance', 'region': 'us-east-1', 'component': 'CoordinatorLLM'}
+2025-04-26 10:51:28,011 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:51:28,011 - dbp.core.lifecycle.llm_coordinator.coordinator_llm.bedrock - INFO - {'message': 'Bedrock client manager initialized', 'default_region': 'us-east-1', 'prompt_manager_configured': True}
+2025-04-26 10:51:28,011 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Bedrock client manager instance retrieved successfully', 'component': 'CoordinatorLLM'}
+2025-04-26 10:51:28,011 - dbp.llm_coordinator.component - WARNING - Using Placeholder InternalToolExecutionEngine
+2025-04-26 10:51:28,011 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_context' -> execute_codebase_context_tool
+2025-04-26 10:51:28,011 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_changelog_context' -> execute_codebase_changelog_tool
+2025-04-26 10:51:28,011 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_context' -> execute_documentation_context_tool
+2025-04-26 10:51:28,011 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_changelog_context' -> execute_documentation_changelog_tool
+2025-04-26 10:51:28,011 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_expert_architect_advice' -> execute_expert_architect_advice_tool
+2025-04-26 10:51:28,011 - dbp.core.lifecycle.llm_coordinator - INFO - Registered 5 internal tools.
+2025-04-26 10:51:28,011 - dbp.core.lifecycle.llm_coordinator - INFO - Registering dbp_general_query with MCP server...
+2025-04-26 10:51:28,011 - dbp.mcp_server.server_instance - INFO - Registering MCP tool: dbp_general_query
+2025-04-26 10:51:28,012 - dbp.core.lifecycle.llm_coordinator - INFO - Successfully registered GeneralQueryMCPTool 'dbp_general_query' with MCP server.
+2025-04-26 10:51:28,012 - dbp.core.lifecycle.llm_coordinator - INFO - Component 'llm_coordinator' initialized successfully.
+2025-04-26 10:51:28,012 - dbp.core.lifecycle - INFO - Component 'llm_coordinator' initialized successfully
+2025-04-26 10:51:28,012 - dbp.core.lifecycle - INFO - All components initialized successfully
+2025-04-26 10:51:28,012 - dbp.core.lifecycle - INFO - System startup complete. Application is running.
+2025-04-26 10:51:28,012 - dbp.mcp_server.__main__ - INFO - All components started successfully
+2025-04-26 10:51:28,012 - dbp.mcp_server.__main__ - INFO - Component initialization completed successfully
+2025-04-26 10:51:28,012 - dbp.mcp_server.__main__ - INFO - Watchdog disabled after successful component initialization
+2025-04-26 10:51:28,012 - dbp.mcp_server.__main__ - INFO - Starting MCP server...
+2025-04-26 10:51:28,012 - dbp.mcp_server - INFO - Starting MCP server...
+2025-04-26 10:51:28,012 - dbp.mcp_server.server_instance - INFO - Starting MCP server 'dbp-mcp-server' on 127.0.0.1:6231...
+2025-04-26 10:51:28,012 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:51:28,013 - dbp.mcp_server.server_instance - INFO - Starting HTTP server subsystem on 127.0.0.1:6231 with 1 worker(s)...
+2025-04-26 10:51:28,013 - dbp.mcp_server.server_instance - INFO - MCP Server 'dbp-mcp-server' started.
+2025-04-26 10:51:28,014 - dbp.mcp_server - INFO - Testing HTTP server connectivity...
+2025-04-26 10:51:28,076 - dbp.mcp_server - INFO - === MCP SERVER READY ===
+2025-04-26 10:51:28,076 - dbp.mcp_server - INFO - MCP server is now ready to serve HTTP requests on 127.0.0.1:6231
+2025-04-26 10:51:28,076 - dbp.mcp_server - INFO - ======================
+2025-04-26 10:51:28,076 - dbp.mcp_server - INFO - MCP server started successfully and verified operational. Server will return error responses for externally requested tools/resources.
+2025-04-26 10:51:28,076 - dbp.mcp_server - INFO - Waiting for stop signal. Call stop_server() to terminate.
+2025-04-26 10:51:28,516 - dbp.mcp_server.server_instance - INFO - HTTP server subsystem successfully started and is accepting connections on 127.0.0.1:6231
+2025-04-26 10:51:40,791 - dbp.core.lifecycle - WARNING - Received signal SIGTERM (15). Shutting down...
+2025-04-26 10:51:40,792 - dbp.core.lifecycle - INFO - Initiating system shutdown...
+2025-04-26 10:51:40,792 - dbp.core.lifecycle - INFO - Shutting down 3 components
+2025-04-26 10:51:40,792 - dbp.core.lifecycle - INFO - Shutting down component 'llm_coordinator'...
+2025-04-26 10:51:40,792 - dbp.core.lifecycle.llm_coordinator - INFO - Shutting down component 'llm_coordinator'...
+2025-04-26 10:51:40,792 - dbp.core.lifecycle.llm_coordinator.job_manager - INFO - JobManager shutdown initiated. No new jobs will be scheduled.
+2025-04-26 10:51:40,792 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Shutting down CoordinatorLLM', 'model_name': 'nova-lite'}
+2025-04-26 10:51:40,792 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'CoordinatorLLM shutdown completed'}
+2025-04-26 10:51:40,793 - dbp.core.lifecycle.llm_coordinator - INFO - Component 'llm_coordinator' shut down.
+2025-04-26 10:51:40,793 - dbp.core.lifecycle - INFO - Shutting down component 'mcp_server'...
+2025-04-26 10:51:40,793 - dbp.mcp_server - INFO - Shutting down component 'mcp_server'...
+2025-04-26 10:51:40,793 - dbp.mcp_server - INFO - Signaling server to stop...
+2025-04-26 10:51:40,793 - dbp.mcp_server - INFO - Stop signal sent successfully.
+2025-04-26 10:51:40,793 - dbp.mcp_server - INFO - Component 'mcp_server' shut down.
+2025-04-26 10:51:40,793 - dbp.core.lifecycle - INFO - Shutting down component 'config_manager'...
+2025-04-26 10:51:40,793 - dbp.config_manager - INFO - Shutting down component 'config_manager'...
+2025-04-26 10:51:40,793 - dbp.config_manager - INFO - Component 'config_manager' shut down.
+2025-04-26 10:51:40,793 - dbp.core.lifecycle - INFO - All components shut down
+2025-04-26 10:51:40,793 - dbp.core.lifecycle - INFO - System shutdown complete.
+2025-04-26 10:51:40,793 - dbp.mcp_server.__main__ - INFO - Shutting down MCP server...
+2025-04-26 10:51:40,793 - dbp.core.watchdog - WARNING - Watchdog already running, not starting another
+2025-04-26 10:51:40,793 - dbp.mcp_server.__main__ - INFO - Watchdog reactivated with 20s timeout for shutdown process
+2025-04-26 10:51:40,793 - dbp.core.lifecycle - INFO - Application not running, shutdown not needed.
+2025-04-26 10:51:40,793 - dbp.mcp_server.__main__ - INFO - Lifecycle manager shutdown complete
+2025-04-26 10:51:40,794 - dbp.mcp_server.__main__ - WARNING - Server exit detected
+2025-04-26 10:51:40,794 - dbp.mcp_server.__main__ - WARNING - Exit source: Python interpreter shutdown
+2025-04-26 10:51:40,794 - dbp.mcp_server.__main__ - WARNING - Exit reason: Process exit via atexit
+
+
+--- SERVER START ATTEMPT AT 2025-04-26 10:57:01 ---
+
+2025-04-26 10:57:02,064 - dbp.core.watchdog - INFO - WATCHDOG SETUP: Initializing watchdog with 20s timeout
+2025-04-26 10:57:02,064 - dbp.core.watchdog - INFO - WATCHDOG SETUP: Initial timestamp: 1745657822.0641913
+2025-04-26 10:57:02,065 - dbp.core.watchdog - INFO - WATCHDOG THREAD STARTED: with 20 second timeout
+2025-04-26 10:57:02,065 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-26 10:57:02,066 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-26 10:57:02,066 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-26 10:57:02,066 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:373: UserWarning: Valid config keys have changed in V2:
+* 'schema_extra' has been renamed to 'json_schema_extra'
+  warnings.warn(message, UserWarning)
+2025-04-26 10:57:02,454 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-26 10:57:02,454 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-26 10:57:02,454 - dbp.config.config_manager - WARNING - ConfigurationManager already initialized. Skipping re-initialization.
+2025-04-26 10:57:02,454 - dbp.core.lifecycle - INFO - Registering components with registry...
+2025-04-26 10:57:02,454 - dbp.core.lifecycle - INFO - Using component enablement configuration
+2025-04-26 10:57:02,454 - dbp.core.lifecycle - INFO - Registered component factory: 'config_manager' with dependencies: []
+2025-04-26 10:57:02,454 - dbp.core.lifecycle - INFO - Component 'file_access' disabled by configuration - skipping registration
+2025-04-26 10:57:02,454 - dbp.core.lifecycle - INFO - Component 'database' disabled by configuration - skipping registration
+2025-04-26 10:57:02,454 - dbp.core.lifecycle - INFO - Component 'change_queue' disabled by configuration - skipping registration
+2025-04-26 10:57:02,454 - dbp.core.lifecycle - INFO - Component 'fs_monitor' disabled by configuration - skipping registration
+2025-04-26 10:57:02,454 - dbp.core.lifecycle - INFO - Component 'filter' disabled by configuration - skipping registration
+2025-04-26 10:57:02,455 - dbp.core.lifecycle - INFO - Component 'memory_cache' disabled by configuration - skipping registration
+2025-04-26 10:57:02,455 - dbp.core.lifecycle - INFO - Component 'metadata_extraction' disabled by configuration - skipping registration
+2025-04-26 10:57:02,454 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:57:02,455 - dbp.core.lifecycle - INFO - Component 'doc_relationships' disabled by configuration - skipping registration
+2025-04-26 10:57:02,455 - dbp.core.lifecycle - INFO - Component 'consistency_analysis' disabled by configuration - skipping registration
+2025-04-26 10:57:02,455 - dbp.core.lifecycle - INFO - Component 'recommendation_generator' disabled by configuration - skipping registration
+2025-04-26 10:57:02,455 - dbp.core.lifecycle - INFO - Component 'scheduler' disabled by configuration - skipping registration
+2025-04-26 10:57:02,455 - dbp.core.lifecycle - INFO - Registered component class: 'llm_coordinator' with dependencies: ['config_manager', 'mcp_server']
+2025-04-26 10:57:02,455 - dbp.core.lifecycle - INFO - Registered component class: 'mcp_server' with dependencies: ['config_manager']
+2025-04-26 10:57:02,455 - dbp.core.lifecycle - INFO - Registered 3 components with registry
+2025-04-26 10:57:02,455 - dbp.core.registry - INFO - Registering 3 components with system
+2025-04-26 10:57:02,455 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-26 10:57:02,455 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager', 'mcp_server']
+2025-04-26 10:57:02,455 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['config_manager']
+2025-04-26 10:57:02,455 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-26 10:57:02,455 - dbp.core.lifecycle - INFO - Initializing 3 components
+2025-04-26 10:57:02,455 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-26 10:57:02,455 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, mcp_server, llm_coordinator
+2025-04-26 10:57:02,455 - dbp.core.lifecycle - INFO - Using component enablement configuration: config_manager=True file_access=False database=False fs_monitor=False filter=False change_queue=False memory_cache=False consistency_analysis=False doc_relationships=False recommendation_generator=False scheduler=False metadata_extraction=False llm_coordinator=True mcp_server=True
+2025-04-26 10:57:02,455 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-26 10:57:02,456 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-26 10:57:02,456 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-26 10:57:02,456 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-26 10:57:02,455 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:57:02,457 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-26 10:57:02,457 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-26 10:57:02,457 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-26 10:57:02,457 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-26 10:57:02,458 - dbp.core.lifecycle - INFO - Initializing component 'mcp_server'...
+2025-04-26 10:57:02,458 - dbp.core.lifecycle - INFO - Initializing component 'mcp_server' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-26 10:57:02,458 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-26 10:57:02,458 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'mcp_server'
+2025-04-26 10:57:02,458 - dbp.mcp_server - WARNING - Initializing component 'mcp_server' with minimal dependencies
+2025-04-26 10:57:02,458 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:57:02,458 - dbp.mcp_server - INFO - Server initialization status: config - Loading configuration
+2025-04-26 10:57:02,458 - dbp.mcp_server.adapter - WARNING - SystemComponentAdapter initialized in STANDALONE MODE - returning mock components only
+2025-04-26 10:57:02,458 - dbp.mcp_server - INFO - Server initialization status: components - Creating MCP server components
+2025-04-26 10:57:02,458 - dbp.mcp_server - INFO - Server initialization status: directories - Creating required directories
+2025-04-26 10:57:02,458 - dbp.mcp_server - INFO - Ensuring required directories exist using base directory: .dbp
+2025-04-26 10:57:02,462 - dbp.mcp_server - INFO - Required directories created or verified successfully
+2025-04-26 10:57:02,462 - dbp.mcp_server - INFO - Server initialization status: server - Creating MCP server instance
+2025-04-26 10:57:02,462 - dbp.mcp_server.server_instance - INFO - Creating FastAPI application...
+2025-04-26 10:57:02,463 - dbp.mcp_server - INFO - MCP server is now ready to serve HTTP requests on 127.0.0.1:6231
+2025-04-26 10:57:02,463 - dbp.mcp_server - INFO - Server initialization status: ready - MCP server initialization complete
+2025-04-26 10:57:02,463 - dbp.mcp_server - INFO - Component 'mcp_server' initialized successfully.
+2025-04-26 10:57:02,463 - dbp.core.lifecycle - INFO - Component 'mcp_server' initialized successfully
+2025-04-26 10:57:02,463 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator'...
+2025-04-26 10:57:02,463 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-26 10:57:02,464 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:57:02,464 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-26 10:57:02,464 - dbp.core.lifecycle - INFO - Resolved 2 dependencies for component 'llm_coordinator'
+2025-04-26 10:57:02,464 - dbp.core.lifecycle.llm_coordinator - INFO - Initializing component 'llm_coordinator'...
+2025-04-26 10:57:02,464 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Getting Bedrock client manager instance', 'region': 'us-east-1', 'component': 'CoordinatorLLM'}
+2025-04-26 10:57:02,464 - dbp.core.lifecycle.llm_coordinator.coordinator_llm.bedrock - INFO - {'message': 'Bedrock client manager initialized', 'default_region': 'us-east-1', 'prompt_manager_configured': True}
+2025-04-26 10:57:02,464 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Bedrock client manager instance retrieved successfully', 'component': 'CoordinatorLLM'}
+2025-04-26 10:57:02,464 - dbp.llm_coordinator.component - WARNING - Using Placeholder InternalToolExecutionEngine
+2025-04-26 10:57:02,464 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_context' -> execute_codebase_context_tool
+2025-04-26 10:57:02,464 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_changelog_context' -> execute_codebase_changelog_tool
+2025-04-26 10:57:02,465 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_context' -> execute_documentation_context_tool
+2025-04-26 10:57:02,465 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_changelog_context' -> execute_documentation_changelog_tool
+2025-04-26 10:57:02,465 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_expert_architect_advice' -> execute_expert_architect_advice_tool
+2025-04-26 10:57:02,465 - dbp.core.lifecycle.llm_coordinator - INFO - Registered 5 internal tools.
+2025-04-26 10:57:02,465 - dbp.core.lifecycle.llm_coordinator - INFO - Registering dbp_general_query with MCP server...
+2025-04-26 10:57:02,465 - dbp.mcp_server.server_instance - INFO - Registering MCP tool: dbp_general_query
+2025-04-26 10:57:02,465 - dbp.core.lifecycle.llm_coordinator - INFO - Successfully registered GeneralQueryMCPTool 'dbp_general_query' with MCP server.
+2025-04-26 10:57:02,465 - dbp.core.lifecycle.llm_coordinator - INFO - Component 'llm_coordinator' initialized successfully.
+2025-04-26 10:57:02,465 - dbp.core.lifecycle - INFO - Component 'llm_coordinator' initialized successfully
+2025-04-26 10:57:02,465 - dbp.core.lifecycle - INFO - All components initialized successfully
+2025-04-26 10:57:02,465 - dbp.core.lifecycle - INFO - System startup complete. Application is running.
+2025-04-26 10:57:02,465 - dbp.mcp_server.__main__ - INFO - All components started successfully
+2025-04-26 10:57:02,465 - dbp.mcp_server.__main__ - INFO - Component initialization completed successfully
+2025-04-26 10:57:02,465 - dbp.mcp_server.__main__ - INFO - Watchdog disabled after successful component initialization
+2025-04-26 10:57:02,465 - dbp.mcp_server.__main__ - INFO - Starting MCP server...
+2025-04-26 10:57:02,465 - dbp.mcp_server - INFO - Starting MCP server...
+2025-04-26 10:57:02,465 - dbp.mcp_server.server_instance - INFO - Starting MCP server 'dbp-mcp-server' on 127.0.0.1:6231...
+2025-04-26 10:57:02,466 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:57:02,466 - dbp.mcp_server.server_instance - INFO - MCP Server 'dbp-mcp-server' started.
+2025-04-26 10:57:02,467 - dbp.mcp_server - INFO - Testing HTTP server connectivity...
+2025-04-26 10:57:02,466 - dbp.mcp_server.server_instance - INFO - Starting HTTP server subsystem on 127.0.0.1:6231 with 1 worker(s)...
+2025-04-26 10:57:02,512 - dbp.mcp_server - INFO - === MCP SERVER READY ===
+2025-04-26 10:57:02,512 - dbp.mcp_server - INFO - MCP server is now ready to serve HTTP requests on 127.0.0.1:6231
+2025-04-26 10:57:02,512 - dbp.mcp_server - INFO - ======================
+2025-04-26 10:57:02,512 - dbp.mcp_server - INFO - MCP server started successfully and verified operational. Server will return error responses for externally requested tools/resources.
+2025-04-26 10:57:02,512 - dbp.mcp_server - INFO - Waiting for stop signal. Call stop_server() to terminate.
+2025-04-26 10:57:02,973 - dbp.mcp_server.server_instance - INFO - HTTP server subsystem successfully started and is accepting connections on 127.0.0.1:6231
+2025-04-26 10:57:07,380 - dbp.core.lifecycle - WARNING - Received signal SIGTERM (15). Shutting down...
+2025-04-26 10:57:07,380 - dbp.core.lifecycle - INFO - Initiating system shutdown...
+2025-04-26 10:57:07,380 - dbp.core.lifecycle - INFO - Shutting down 3 components
+2025-04-26 10:57:07,381 - dbp.core.lifecycle - INFO - Shutting down component 'llm_coordinator'...
+2025-04-26 10:57:07,381 - dbp.core.lifecycle.llm_coordinator - INFO - Shutting down component 'llm_coordinator'...
+2025-04-26 10:57:07,381 - dbp.core.lifecycle.llm_coordinator.job_manager - INFO - JobManager shutdown initiated. No new jobs will be scheduled.
+2025-04-26 10:57:07,381 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Shutting down CoordinatorLLM', 'model_name': 'nova-lite'}
+2025-04-26 10:57:07,381 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'CoordinatorLLM shutdown completed'}
+2025-04-26 10:57:07,381 - dbp.core.lifecycle.llm_coordinator - INFO - Component 'llm_coordinator' shut down.
+2025-04-26 10:57:07,381 - dbp.core.lifecycle - INFO - Shutting down component 'mcp_server'...
+2025-04-26 10:57:07,381 - dbp.mcp_server - INFO - Shutting down component 'mcp_server'...
+2025-04-26 10:57:07,381 - dbp.mcp_server - INFO - Signaling server to stop...
+2025-04-26 10:57:07,381 - dbp.mcp_server - INFO - Stop signal sent successfully.
+2025-04-26 10:57:07,381 - dbp.mcp_server - INFO - Component 'mcp_server' shut down.
+2025-04-26 10:57:07,381 - dbp.core.lifecycle - INFO - Shutting down component 'config_manager'...
+2025-04-26 10:57:07,381 - dbp.config_manager - INFO - Shutting down component 'config_manager'...
+2025-04-26 10:57:07,381 - dbp.config_manager - INFO - Component 'config_manager' shut down.
+2025-04-26 10:57:07,381 - dbp.core.lifecycle - INFO - All components shut down
+2025-04-26 10:57:07,381 - dbp.core.lifecycle - INFO - System shutdown complete.
+2025-04-26 10:57:07,381 - dbp.mcp_server.__main__ - INFO - Shutting down MCP server...
+2025-04-26 10:57:07,381 - dbp.core.watchdog - WARNING - Watchdog already running, not starting another
+2025-04-26 10:57:07,381 - dbp.mcp_server.__main__ - INFO - Watchdog reactivated with 20s timeout for shutdown process
+2025-04-26 10:57:07,381 - dbp.core.lifecycle - INFO - Application not running, shutdown not needed.
+2025-04-26 10:57:07,381 - dbp.mcp_server.__main__ - INFO - Lifecycle manager shutdown complete
+2025-04-26 10:57:07,381 - dbp.mcp_server.__main__ - WARNING - Server exit detected
+2025-04-26 10:57:07,381 - dbp.mcp_server.__main__ - WARNING - Exit source: Python interpreter shutdown
+2025-04-26 10:57:07,381 - dbp.mcp_server.__main__ - WARNING - Exit reason: Process exit via atexit
+
+
+--- SERVER START ATTEMPT AT 2025-04-26 10:57:44 ---
+
+2025-04-26 10:57:45,035 - dbp.core.watchdog - INFO - WATCHDOG SETUP: Initializing watchdog with 20s timeout
+2025-04-26 10:57:45,036 - dbp.core.watchdog - INFO - WATCHDOG SETUP: Initial timestamp: 1745657865.0358837
+2025-04-26 10:57:45,036 - dbp.core.watchdog - INFO - WATCHDOG THREAD STARTED: with 20 second timeout
+2025-04-26 10:57:45,037 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-26 10:57:45,037 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-26 10:57:45,037 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-26 10:57:45,037 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:373: UserWarning: Valid config keys have changed in V2:
+* 'schema_extra' has been renamed to 'json_schema_extra'
+  warnings.warn(message, UserWarning)
+2025-04-26 10:57:45,453 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-26 10:57:45,453 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-26 10:57:45,453 - dbp.config.config_manager - WARNING - ConfigurationManager already initialized. Skipping re-initialization.
+2025-04-26 10:57:45,454 - dbp.core.lifecycle - INFO - Registering components with registry...
+2025-04-26 10:57:45,454 - dbp.core.lifecycle - INFO - Using component enablement configuration
+2025-04-26 10:57:45,454 - dbp.core.lifecycle - INFO - Registered component factory: 'config_manager' with dependencies: []
+2025-04-26 10:57:45,454 - dbp.core.lifecycle - INFO - Component 'file_access' disabled by configuration - skipping registration
+2025-04-26 10:57:45,454 - dbp.core.lifecycle - INFO - Component 'database' disabled by configuration - skipping registration
+2025-04-26 10:57:45,454 - dbp.core.lifecycle - INFO - Component 'change_queue' disabled by configuration - skipping registration
+2025-04-26 10:57:45,454 - dbp.core.lifecycle - INFO - Component 'fs_monitor' disabled by configuration - skipping registration
+2025-04-26 10:57:45,454 - dbp.core.lifecycle - INFO - Component 'filter' disabled by configuration - skipping registration
+2025-04-26 10:57:45,454 - dbp.core.lifecycle - INFO - Component 'memory_cache' disabled by configuration - skipping registration
+2025-04-26 10:57:45,454 - dbp.core.lifecycle - INFO - Component 'metadata_extraction' disabled by configuration - skipping registration
+2025-04-26 10:57:45,454 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:57:45,454 - dbp.core.lifecycle - INFO - Component 'doc_relationships' disabled by configuration - skipping registration
+2025-04-26 10:57:45,455 - dbp.core.lifecycle - INFO - Component 'consistency_analysis' disabled by configuration - skipping registration
+2025-04-26 10:57:45,455 - dbp.core.lifecycle - INFO - Component 'recommendation_generator' disabled by configuration - skipping registration
+2025-04-26 10:57:45,455 - dbp.core.lifecycle - INFO - Component 'scheduler' disabled by configuration - skipping registration
+2025-04-26 10:57:45,455 - dbp.core.lifecycle - INFO - Registered component class: 'llm_coordinator' with dependencies: ['config_manager', 'mcp_server']
+2025-04-26 10:57:45,455 - dbp.core.lifecycle - INFO - Registered component class: 'mcp_server' with dependencies: ['config_manager']
+2025-04-26 10:57:45,455 - dbp.core.lifecycle - INFO - Registered 3 components with registry
+2025-04-26 10:57:45,455 - dbp.core.registry - INFO - Registering 3 components with system
+2025-04-26 10:57:45,455 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-26 10:57:45,455 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager', 'mcp_server']
+2025-04-26 10:57:45,455 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['config_manager']
+2025-04-26 10:57:45,455 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-26 10:57:45,455 - dbp.core.lifecycle - INFO - Initializing 3 components
+2025-04-26 10:57:45,455 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:57:45,455 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-26 10:57:45,455 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, mcp_server, llm_coordinator
+2025-04-26 10:57:45,455 - dbp.core.lifecycle - INFO - Using component enablement configuration: config_manager=True file_access=False database=False fs_monitor=False filter=False change_queue=False memory_cache=False consistency_analysis=False doc_relationships=False recommendation_generator=False scheduler=False metadata_extraction=False llm_coordinator=True mcp_server=True
+2025-04-26 10:57:45,455 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-26 10:57:45,456 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-26 10:57:45,456 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-26 10:57:45,456 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-26 10:57:45,456 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:57:45,457 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-26 10:57:45,457 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-26 10:57:45,458 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-26 10:57:45,458 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-26 10:57:45,458 - dbp.core.lifecycle - INFO - Initializing component 'mcp_server'...
+2025-04-26 10:57:45,458 - dbp.core.lifecycle - INFO - Initializing component 'mcp_server' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-26 10:57:45,458 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-26 10:57:45,458 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'mcp_server'
+2025-04-26 10:57:45,458 - dbp.mcp_server - WARNING - Initializing component 'mcp_server' with minimal dependencies
+2025-04-26 10:57:45,458 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:57:45,458 - dbp.mcp_server - INFO - Server initialization status: config - Loading configuration
+2025-04-26 10:57:45,458 - dbp.mcp_server.adapter - WARNING - SystemComponentAdapter initialized in STANDALONE MODE - returning mock components only
+2025-04-26 10:57:45,458 - dbp.mcp_server - INFO - Server initialization status: components - Creating MCP server components
+2025-04-26 10:57:45,458 - dbp.mcp_server - INFO - Server initialization status: directories - Creating required directories
+2025-04-26 10:57:45,458 - dbp.mcp_server - INFO - Ensuring required directories exist using base directory: .dbp
+2025-04-26 10:57:45,461 - dbp.mcp_server - INFO - Required directories created or verified successfully
+2025-04-26 10:57:45,462 - dbp.mcp_server - INFO - Server initialization status: server - Creating MCP server instance
+2025-04-26 10:57:45,462 - dbp.mcp_server.server_instance - INFO - Creating FastAPI application...
+2025-04-26 10:57:45,463 - dbp.mcp_server - INFO - MCP server is now ready to serve HTTP requests on 127.0.0.1:6231
+2025-04-26 10:57:45,463 - dbp.mcp_server - INFO - Server initialization status: ready - MCP server initialization complete
+2025-04-26 10:57:45,463 - dbp.mcp_server - INFO - Component 'mcp_server' initialized successfully.
+2025-04-26 10:57:45,463 - dbp.core.lifecycle - INFO - Component 'mcp_server' initialized successfully
+2025-04-26 10:57:45,463 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator'...
+2025-04-26 10:57:45,463 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-26 10:57:45,463 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-26 10:57:45,463 - dbp.core.lifecycle - INFO - Resolved 2 dependencies for component 'llm_coordinator'
+2025-04-26 10:57:45,463 - dbp.core.lifecycle.llm_coordinator - INFO - Initializing component 'llm_coordinator'...
+2025-04-26 10:57:45,463 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Getting Bedrock client manager instance', 'region': 'us-east-1', 'component': 'CoordinatorLLM'}
+2025-04-26 10:57:45,463 - dbp.core.lifecycle.llm_coordinator.coordinator_llm.bedrock - INFO - {'message': 'Bedrock client manager initialized', 'default_region': 'us-east-1', 'prompt_manager_configured': True}
+2025-04-26 10:57:45,463 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Bedrock client manager instance retrieved successfully', 'component': 'CoordinatorLLM'}
+2025-04-26 10:57:45,463 - dbp.llm_coordinator.component - WARNING - Using Placeholder InternalToolExecutionEngine
+2025-04-26 10:57:45,463 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_context' -> execute_codebase_context_tool
+2025-04-26 10:57:45,463 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_changelog_context' -> execute_codebase_changelog_tool
+2025-04-26 10:57:45,463 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_context' -> execute_documentation_context_tool
+2025-04-26 10:57:45,463 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_changelog_context' -> execute_documentation_changelog_tool
+2025-04-26 10:57:45,464 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_expert_architect_advice' -> execute_expert_architect_advice_tool
+2025-04-26 10:57:45,464 - dbp.core.lifecycle.llm_coordinator - INFO - Registered 5 internal tools.
+2025-04-26 10:57:45,463 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:57:45,464 - dbp.core.lifecycle.llm_coordinator - INFO - Registering dbp_general_query with MCP server...
+2025-04-26 10:57:45,464 - dbp.mcp_server.server_instance - INFO - Registering MCP tool: dbp_general_query
+2025-04-26 10:57:45,465 - dbp.core.lifecycle.llm_coordinator - INFO - Successfully registered GeneralQueryMCPTool 'dbp_general_query' with MCP server.
+2025-04-26 10:57:45,465 - dbp.core.lifecycle.llm_coordinator - INFO - Component 'llm_coordinator' initialized successfully.
+2025-04-26 10:57:45,465 - dbp.core.lifecycle - INFO - Component 'llm_coordinator' initialized successfully
+2025-04-26 10:57:45,465 - dbp.core.lifecycle - INFO - All components initialized successfully
+2025-04-26 10:57:45,465 - dbp.core.lifecycle - INFO - System startup complete. Application is running.
+2025-04-26 10:57:45,465 - dbp.mcp_server.__main__ - INFO - All components started successfully
+2025-04-26 10:57:45,465 - dbp.mcp_server.__main__ - INFO - Component initialization completed successfully
+2025-04-26 10:57:45,465 - dbp.mcp_server.__main__ - INFO - Watchdog disabled after successful component initialization
+2025-04-26 10:57:45,465 - dbp.mcp_server.__main__ - INFO - Starting MCP server...
+2025-04-26 10:57:45,465 - dbp.mcp_server - INFO - Starting MCP server...
+2025-04-26 10:57:45,465 - dbp.mcp_server.server_instance - INFO - Starting MCP server 'dbp-mcp-server' on 127.0.0.1:6231...
+2025-04-26 10:57:45,465 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 10:57:45,465 - dbp.mcp_server.server_instance - INFO - MCP Server 'dbp-mcp-server' started.
+2025-04-26 10:57:45,466 - dbp.mcp_server - INFO - Testing HTTP server connectivity...
+2025-04-26 10:57:45,467 - dbp.mcp_server.server_instance - INFO - Starting HTTP server subsystem on 127.0.0.1:6231 with 1 worker(s)...
+2025-04-26 10:57:45,526 - dbp.mcp_server - INFO - === MCP SERVER READY ===
+2025-04-26 10:57:45,526 - dbp.mcp_server - INFO - MCP server is now ready to serve HTTP requests on 127.0.0.1:6231
+2025-04-26 10:57:45,526 - dbp.mcp_server - INFO - ======================
+2025-04-26 10:57:45,526 - dbp.mcp_server - INFO - MCP server started successfully and verified operational. Server will return error responses for externally requested tools/resources.
+2025-04-26 10:57:45,526 - dbp.mcp_server - INFO - Waiting for stop signal. Call stop_server() to terminate.
+2025-04-26 10:57:45,973 - dbp.mcp_server.server_instance - INFO - HTTP server subsystem successfully started and is accepting connections on 127.0.0.1:6231
+2025-04-26 11:00:12,774 - dbp.core.lifecycle - WARNING - Received signal SIGTERM (15). Shutting down...
+2025-04-26 11:00:12,775 - dbp.core.lifecycle - INFO - Initiating system shutdown...
+2025-04-26 11:00:12,775 - dbp.core.lifecycle - INFO - Shutting down 3 components
+2025-04-26 11:00:12,775 - dbp.core.lifecycle - INFO - Shutting down component 'llm_coordinator'...
+2025-04-26 11:00:12,776 - dbp.core.lifecycle.llm_coordinator - INFO - Shutting down component 'llm_coordinator'...
+2025-04-26 11:00:12,776 - dbp.core.lifecycle.llm_coordinator.job_manager - INFO - JobManager shutdown initiated. No new jobs will be scheduled.
+2025-04-26 11:00:12,776 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Shutting down CoordinatorLLM', 'model_name': 'nova-lite'}
+2025-04-26 11:00:12,777 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'CoordinatorLLM shutdown completed'}
+2025-04-26 11:00:12,777 - dbp.core.lifecycle.llm_coordinator - INFO - Component 'llm_coordinator' shut down.
+2025-04-26 11:00:12,777 - dbp.core.lifecycle - INFO - Shutting down component 'mcp_server'...
+2025-04-26 11:00:12,778 - dbp.mcp_server - INFO - Shutting down component 'mcp_server'...
+2025-04-26 11:00:12,778 - dbp.mcp_server - INFO - Signaling server to stop...
+2025-04-26 11:00:12,779 - dbp.mcp_server - INFO - Stop signal sent successfully.
+2025-04-26 11:00:12,779 - dbp.mcp_server - INFO - Component 'mcp_server' shut down.
+2025-04-26 11:00:12,779 - dbp.core.lifecycle - INFO - Shutting down component 'config_manager'...
+2025-04-26 11:00:12,779 - dbp.config_manager - INFO - Shutting down component 'config_manager'...
+2025-04-26 11:00:12,779 - dbp.config_manager - INFO - Component 'config_manager' shut down.
+2025-04-26 11:00:12,779 - dbp.core.lifecycle - INFO - All components shut down
+2025-04-26 11:00:12,779 - dbp.core.lifecycle - INFO - System shutdown complete.
+2025-04-26 11:00:12,779 - dbp.mcp_server.__main__ - INFO - Shutting down MCP server...
+2025-04-26 11:00:12,779 - dbp.core.watchdog - WARNING - Watchdog already running, not starting another
+2025-04-26 11:00:12,780 - dbp.mcp_server.__main__ - INFO - Watchdog reactivated with 20s timeout for shutdown process
+2025-04-26 11:00:12,780 - dbp.core.lifecycle - INFO - Application not running, shutdown not needed.
+2025-04-26 11:00:12,780 - dbp.mcp_server.__main__ - INFO - Lifecycle manager shutdown complete
+2025-04-26 11:00:12,781 - dbp.mcp_server.__main__ - WARNING - Server exit detected
+2025-04-26 11:00:12,781 - dbp.mcp_server.__main__ - WARNING - Exit source: Python interpreter shutdown
+2025-04-26 11:00:12,781 - dbp.mcp_server.__main__ - WARNING - Exit reason: Process exit via atexit
+
+
+--- SERVER START ATTEMPT AT 2025-04-26 11:00:13 ---
+
+2025-04-26 11:00:13,729 - dbp.core.watchdog - INFO - WATCHDOG SETUP: Initializing watchdog with 20s timeout
+2025-04-26 11:00:13,729 - dbp.core.watchdog - INFO - WATCHDOG SETUP: Initial timestamp: 1745658013.7293565
+2025-04-26 11:00:13,730 - dbp.core.watchdog - INFO - WATCHDOG THREAD STARTED: with 20 second timeout
+2025-04-26 11:00:13,730 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-26 11:00:13,730 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-26 11:00:13,730 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-26 11:00:13,730 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:373: UserWarning: Valid config keys have changed in V2:
+* 'schema_extra' has been renamed to 'json_schema_extra'
+  warnings.warn(message, UserWarning)
+2025-04-26 11:00:14,279 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-26 11:00:14,280 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-26 11:00:14,280 - dbp.config.config_manager - WARNING - ConfigurationManager already initialized. Skipping re-initialization.
+2025-04-26 11:00:14,280 - dbp.core.lifecycle - INFO - Registering components with registry...
+2025-04-26 11:00:14,280 - dbp.core.lifecycle - INFO - Using component enablement configuration
+2025-04-26 11:00:14,280 - dbp.core.lifecycle - INFO - Registered component factory: 'config_manager' with dependencies: []
+2025-04-26 11:00:14,280 - dbp.core.lifecycle - INFO - Component 'file_access' disabled by configuration - skipping registration
+2025-04-26 11:00:14,280 - dbp.core.lifecycle - INFO - Component 'database' disabled by configuration - skipping registration
+2025-04-26 11:00:14,281 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - Component 'change_queue' disabled by configuration - skipping registration
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - Component 'fs_monitor' disabled by configuration - skipping registration
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - Component 'filter' disabled by configuration - skipping registration
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - Component 'memory_cache' disabled by configuration - skipping registration
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - Component 'metadata_extraction' disabled by configuration - skipping registration
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - Component 'doc_relationships' disabled by configuration - skipping registration
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - Component 'consistency_analysis' disabled by configuration - skipping registration
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - Component 'recommendation_generator' disabled by configuration - skipping registration
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - Component 'scheduler' disabled by configuration - skipping registration
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - Registered component class: 'llm_coordinator' with dependencies: ['config_manager', 'mcp_server']
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - Registered component class: 'mcp_server' with dependencies: ['config_manager']
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - Registered 3 components with registry
+2025-04-26 11:00:14,281 - dbp.core.registry - INFO - Registering 3 components with system
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager', 'mcp_server']
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['config_manager']
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - Initializing 3 components
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, mcp_server, llm_coordinator
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - Using component enablement configuration: config_manager=True file_access=False database=False fs_monitor=False filter=False change_queue=False memory_cache=False consistency_analysis=False doc_relationships=False recommendation_generator=False scheduler=False metadata_extraction=False llm_coordinator=True mcp_server=True
+2025-04-26 11:00:14,281 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-26 11:00:14,282 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-26 11:00:14,282 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-26 11:00:14,282 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-26 11:00:14,282 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 11:00:14,283 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-26 11:00:14,284 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-26 11:00:14,284 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-26 11:00:14,284 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-26 11:00:14,284 - dbp.core.lifecycle - INFO - Initializing component 'mcp_server'...
+2025-04-26 11:00:14,284 - dbp.core.lifecycle - INFO - Initializing component 'mcp_server' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-26 11:00:14,284 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-26 11:00:14,284 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'mcp_server'
+2025-04-26 11:00:14,284 - dbp.mcp_server - WARNING - Initializing component 'mcp_server' with minimal dependencies
+2025-04-26 11:00:14,284 - dbp.mcp_server - INFO - Server initialization status: config - Loading configuration
+2025-04-26 11:00:14,284 - dbp.mcp_server.adapter - WARNING - SystemComponentAdapter initialized in STANDALONE MODE - returning mock components only
+2025-04-26 11:00:14,284 - dbp.mcp_server - INFO - Server initialization status: components - Creating MCP server components
+2025-04-26 11:00:14,284 - dbp.mcp_server - INFO - Server initialization status: directories - Creating required directories
+2025-04-26 11:00:14,284 - dbp.mcp_server - INFO - Ensuring required directories exist using base directory: .dbp
+2025-04-26 11:00:14,285 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 11:00:14,290 - dbp.mcp_server - INFO - Required directories created or verified successfully
+2025-04-26 11:00:14,290 - dbp.mcp_server - INFO - Server initialization status: server - Creating MCP server instance
+2025-04-26 11:00:14,290 - dbp.mcp_server.server_instance - INFO - Creating FastAPI application...
+2025-04-26 11:00:14,291 - dbp.mcp_server - INFO - MCP server is now ready to serve HTTP requests on 127.0.0.1:6231
+2025-04-26 11:00:14,291 - dbp.mcp_server - INFO - Server initialization status: ready - MCP server initialization complete
+2025-04-26 11:00:14,291 - dbp.mcp_server - INFO - Component 'mcp_server' initialized successfully.
+2025-04-26 11:00:14,291 - dbp.core.lifecycle - INFO - Component 'mcp_server' initialized successfully
+2025-04-26 11:00:14,291 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator'...
+2025-04-26 11:00:14,291 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-26 11:00:14,291 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 11:00:14,292 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-26 11:00:14,292 - dbp.core.lifecycle - INFO - Resolved 2 dependencies for component 'llm_coordinator'
+2025-04-26 11:00:14,292 - dbp.core.lifecycle.llm_coordinator - INFO - Initializing component 'llm_coordinator'...
+2025-04-26 11:00:14,292 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Getting Bedrock client manager instance', 'region': 'us-east-1', 'component': 'CoordinatorLLM'}
+2025-04-26 11:00:14,292 - dbp.core.lifecycle.llm_coordinator.coordinator_llm.bedrock - INFO - {'message': 'Bedrock client manager initialized', 'default_region': 'us-east-1', 'prompt_manager_configured': True}
+2025-04-26 11:00:14,292 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Bedrock client manager instance retrieved successfully', 'component': 'CoordinatorLLM'}
+2025-04-26 11:00:14,292 - dbp.llm_coordinator.component - WARNING - Using Placeholder InternalToolExecutionEngine
+2025-04-26 11:00:14,292 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_context' -> execute_codebase_context_tool
+2025-04-26 11:00:14,292 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_changelog_context' -> execute_codebase_changelog_tool
+2025-04-26 11:00:14,292 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_context' -> execute_documentation_context_tool
+2025-04-26 11:00:14,292 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_changelog_context' -> execute_documentation_changelog_tool
+2025-04-26 11:00:14,292 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_expert_architect_advice' -> execute_expert_architect_advice_tool
+2025-04-26 11:00:14,292 - dbp.core.lifecycle.llm_coordinator - INFO - Registered 5 internal tools.
+2025-04-26 11:00:14,292 - dbp.core.lifecycle.llm_coordinator - INFO - Registering dbp_general_query with MCP server...
+2025-04-26 11:00:14,292 - dbp.mcp_server.server_instance - INFO - Registering MCP tool: dbp_general_query
+2025-04-26 11:00:14,293 - dbp.core.lifecycle.llm_coordinator - INFO - Successfully registered GeneralQueryMCPTool 'dbp_general_query' with MCP server.
+2025-04-26 11:00:14,293 - dbp.core.lifecycle.llm_coordinator - INFO - Component 'llm_coordinator' initialized successfully.
+2025-04-26 11:00:14,293 - dbp.core.lifecycle - INFO - Component 'llm_coordinator' initialized successfully
+2025-04-26 11:00:14,293 - dbp.core.lifecycle - INFO - All components initialized successfully
+2025-04-26 11:00:14,293 - dbp.core.lifecycle - INFO - System startup complete. Application is running.
+2025-04-26 11:00:14,293 - dbp.mcp_server.__main__ - INFO - All components started successfully
+2025-04-26 11:00:14,293 - dbp.mcp_server.__main__ - INFO - Component initialization completed successfully
+2025-04-26 11:00:14,293 - dbp.mcp_server.__main__ - INFO - Watchdog disabled after successful component initialization
+2025-04-26 11:00:14,293 - dbp.mcp_server.__main__ - INFO - Starting MCP server...
+2025-04-26 11:00:14,293 - dbp.mcp_server - INFO - Starting MCP server...
+2025-04-26 11:00:14,293 - dbp.mcp_server.server_instance - INFO - Starting MCP server 'dbp-mcp-server' on 127.0.0.1:6231...
+2025-04-26 11:00:14,294 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 11:00:14,294 - dbp.mcp_server.server_instance - INFO - MCP Server 'dbp-mcp-server' started.
+2025-04-26 11:00:14,295 - dbp.mcp_server.server_instance - INFO - Starting HTTP server subsystem on 127.0.0.1:6231 with 1 worker(s)...
+2025-04-26 11:00:14,295 - dbp.mcp_server - INFO - Testing HTTP server connectivity...
+2025-04-26 11:00:14,370 - dbp.mcp_server - INFO - === MCP SERVER READY ===
+2025-04-26 11:00:14,371 - dbp.mcp_server - INFO - MCP server is now ready to serve HTTP requests on 127.0.0.1:6231
+2025-04-26 11:00:14,371 - dbp.mcp_server - INFO - ======================
+2025-04-26 11:00:14,371 - dbp.mcp_server - INFO - MCP server started successfully and verified operational. Server will return error responses for externally requested tools/resources.
+2025-04-26 11:00:14,371 - dbp.mcp_server - INFO - Waiting for stop signal. Call stop_server() to terminate.
+2025-04-26 11:00:14,798 - dbp.mcp_server.server_instance - INFO - HTTP server subsystem successfully started and is accepting connections on 127.0.0.1:6231
+2025-04-26 11:28:38,002 - dbp.core.lifecycle - WARNING - Received signal SIGTERM (15). Shutting down...
+2025-04-26 11:28:38,002 - dbp.core.lifecycle - INFO - Initiating system shutdown...
+2025-04-26 11:28:38,002 - dbp.core.lifecycle - INFO - Shutting down 3 components
+2025-04-26 11:28:38,002 - dbp.core.lifecycle - INFO - Shutting down component 'llm_coordinator'...
+2025-04-26 11:28:38,002 - dbp.core.lifecycle.llm_coordinator - INFO - Shutting down component 'llm_coordinator'...
+2025-04-26 11:28:38,003 - dbp.core.lifecycle.llm_coordinator.job_manager - INFO - JobManager shutdown initiated. No new jobs will be scheduled.
+2025-04-26 11:28:38,003 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Shutting down CoordinatorLLM', 'model_name': 'nova-lite'}
+2025-04-26 11:28:38,003 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'CoordinatorLLM shutdown completed'}
+2025-04-26 11:28:38,003 - dbp.core.lifecycle.llm_coordinator - INFO - Component 'llm_coordinator' shut down.
+2025-04-26 11:28:38,003 - dbp.core.lifecycle - INFO - Shutting down component 'mcp_server'...
+2025-04-26 11:28:38,003 - dbp.mcp_server - INFO - Shutting down component 'mcp_server'...
+2025-04-26 11:28:38,003 - dbp.mcp_server - INFO - Signaling server to stop...
+2025-04-26 11:28:38,003 - dbp.mcp_server - INFO - Stop signal sent successfully.
+2025-04-26 11:28:38,003 - dbp.mcp_server - INFO - Component 'mcp_server' shut down.
+2025-04-26 11:28:38,003 - dbp.core.lifecycle - INFO - Shutting down component 'config_manager'...
+2025-04-26 11:28:38,003 - dbp.config_manager - INFO - Shutting down component 'config_manager'...
+2025-04-26 11:28:38,003 - dbp.config_manager - INFO - Component 'config_manager' shut down.
+2025-04-26 11:28:38,003 - dbp.core.lifecycle - INFO - All components shut down
+2025-04-26 11:28:38,003 - dbp.core.lifecycle - INFO - System shutdown complete.
+2025-04-26 11:28:38,003 - dbp.mcp_server.__main__ - INFO - Shutting down MCP server...
+2025-04-26 11:28:38,003 - dbp.core.watchdog - WARNING - Watchdog already running, not starting another
+2025-04-26 11:28:38,003 - dbp.mcp_server.__main__ - INFO - Watchdog reactivated with 20s timeout for shutdown process
+2025-04-26 11:28:38,003 - dbp.core.lifecycle - INFO - Application not running, shutdown not needed.
+2025-04-26 11:28:38,003 - dbp.mcp_server.__main__ - INFO - Lifecycle manager shutdown complete
+2025-04-26 11:28:38,004 - dbp.mcp_server.__main__ - WARNING - Server exit detected
+2025-04-26 11:28:38,004 - dbp.mcp_server.__main__ - WARNING - Exit source: Python interpreter shutdown
+2025-04-26 11:28:38,004 - dbp.mcp_server.__main__ - WARNING - Exit reason: Process exit via atexit
+
+
+--- SERVER START ATTEMPT AT 2025-04-26 11:28:47 ---
+
+2025-04-26 11:28:48,313 - dbp.core.watchdog - INFO - WATCHDOG SETUP: Initializing watchdog with 20s timeout
+2025-04-26 11:28:48,313 - dbp.core.watchdog - INFO - WATCHDOG SETUP: Initial timestamp: 1745659728.3133948
+2025-04-26 11:28:48,313 - dbp.core.watchdog - INFO - WATCHDOG THREAD STARTED: with 20 second timeout
+2025-04-26 11:28:48,313 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-04-26 11:28:48,314 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-04-26 11:28:48,314 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-04-26 11:28:48,314 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:373: UserWarning: Valid config keys have changed in V2:
+* 'schema_extra' has been renamed to 'json_schema_extra'
+  warnings.warn(message, UserWarning)
+2025-04-26 11:28:48,731 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-04-26 11:28:48,732 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-04-26 11:28:48,732 - dbp.config.config_manager - WARNING - ConfigurationManager already initialized. Skipping re-initialization.
+2025-04-26 11:28:48,732 - dbp.core.lifecycle - INFO - Registering components with registry...
+2025-04-26 11:28:48,732 - dbp.core.lifecycle - INFO - Using component enablement configuration
+2025-04-26 11:28:48,732 - dbp.core.lifecycle - INFO - Registered component factory: 'config_manager' with dependencies: []
+2025-04-26 11:28:48,732 - dbp.core.lifecycle - INFO - Component 'file_access' disabled by configuration - skipping registration
+2025-04-26 11:28:48,732 - dbp.core.lifecycle - INFO - Component 'database' disabled by configuration - skipping registration
+2025-04-26 11:28:48,732 - dbp.core.lifecycle - INFO - Component 'change_queue' disabled by configuration - skipping registration
+2025-04-26 11:28:48,732 - dbp.core.lifecycle - INFO - Component 'fs_monitor' disabled by configuration - skipping registration
+2025-04-26 11:28:48,732 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 11:28:48,732 - dbp.core.lifecycle - INFO - Component 'filter' disabled by configuration - skipping registration
+2025-04-26 11:28:48,733 - dbp.core.lifecycle - INFO - Component 'memory_cache' disabled by configuration - skipping registration
+2025-04-26 11:28:48,733 - dbp.core.lifecycle - INFO - Component 'metadata_extraction' disabled by configuration - skipping registration
+2025-04-26 11:28:48,733 - dbp.core.lifecycle - INFO - Component 'doc_relationships' disabled by configuration - skipping registration
+2025-04-26 11:28:48,733 - dbp.core.lifecycle - INFO - Component 'consistency_analysis' disabled by configuration - skipping registration
+2025-04-26 11:28:48,733 - dbp.core.lifecycle - INFO - Component 'recommendation_generator' disabled by configuration - skipping registration
+2025-04-26 11:28:48,733 - dbp.core.lifecycle - INFO - Component 'scheduler' disabled by configuration - skipping registration
+2025-04-26 11:28:48,733 - dbp.core.lifecycle - INFO - Registered component class: 'llm_coordinator' with dependencies: ['config_manager', 'mcp_server']
+2025-04-26 11:28:48,733 - dbp.core.lifecycle - INFO - Registered component class: 'mcp_server' with dependencies: ['config_manager']
+2025-04-26 11:28:48,733 - dbp.core.lifecycle - INFO - Registered 3 components with registry
+2025-04-26 11:28:48,733 - dbp.core.registry - INFO - Registering 3 components with system
+2025-04-26 11:28:48,733 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-04-26 11:28:48,733 - dbp.core.lifecycle - INFO - Registering component: 'llm_coordinator' with dependencies: ['config_manager', 'mcp_server']
+2025-04-26 11:28:48,733 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['config_manager']
+2025-04-26 11:28:48,733 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-04-26 11:28:48,733 - dbp.core.lifecycle - INFO - Initializing 3 components
+2025-04-26 11:28:48,733 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-04-26 11:28:48,733 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 11:28:48,734 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, mcp_server, llm_coordinator
+2025-04-26 11:28:48,734 - dbp.core.lifecycle - INFO - Using component enablement configuration: config_manager=True file_access=False database=False fs_monitor=False filter=False change_queue=False memory_cache=False consistency_analysis=False doc_relationships=False recommendation_generator=False scheduler=False metadata_extraction=False llm_coordinator=True mcp_server=True
+2025-04-26 11:28:48,734 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-04-26 11:28:48,734 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-26 11:28:48,734 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-26 11:28:48,734 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 11:28:48,735 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-04-26 11:28:48,737 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-04-26 11:28:48,737 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-04-26 11:28:48,737 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-04-26 11:28:48,738 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-04-26 11:28:48,738 - dbp.core.lifecycle - INFO - Initializing component 'mcp_server'...
+2025-04-26 11:28:48,738 - dbp.core.lifecycle - INFO - Initializing component 'mcp_server' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-26 11:28:48,738 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-26 11:28:48,738 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'mcp_server'
+2025-04-26 11:28:48,738 - dbp.mcp_server - WARNING - Initializing component 'mcp_server' with minimal dependencies
+2025-04-26 11:28:48,738 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 11:28:48,738 - dbp.mcp_server - INFO - Server initialization status: config - Loading configuration
+2025-04-26 11:28:48,738 - dbp.mcp_server.adapter - WARNING - SystemComponentAdapter initialized in STANDALONE MODE - returning mock components only
+2025-04-26 11:28:48,738 - dbp.mcp_server - INFO - Server initialization status: components - Creating MCP server components
+2025-04-26 11:28:48,738 - dbp.mcp_server - INFO - Server initialization status: directories - Creating required directories
+2025-04-26 11:28:48,739 - dbp.mcp_server - INFO - Ensuring required directories exist using base directory: .dbp
+2025-04-26 11:28:48,742 - dbp.mcp_server - INFO - Required directories created or verified successfully
+2025-04-26 11:28:48,742 - dbp.mcp_server - INFO - Server initialization status: server - Creating MCP server instance
+2025-04-26 11:28:48,742 - dbp.mcp_server.server_instance - INFO - Creating FastAPI application...
+2025-04-26 11:28:48,743 - dbp.mcp_server - INFO - MCP server is now ready to serve HTTP requests on 127.0.0.1:6231
+2025-04-26 11:28:48,743 - dbp.mcp_server - INFO - Server initialization status: ready - MCP server initialization complete
+2025-04-26 11:28:48,743 - dbp.mcp_server - INFO - Component 'mcp_server' initialized successfully.
+2025-04-26 11:28:48,743 - dbp.core.lifecycle - INFO - Component 'mcp_server' initialized successfully
+2025-04-26 11:28:48,743 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator'...
+2025-04-26 11:28:48,743 - dbp.core.lifecycle - INFO - Initializing component 'llm_coordinator' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-04-26 11:28:48,743 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-04-26 11:28:48,743 - dbp.core.lifecycle - INFO - Resolved 2 dependencies for component 'llm_coordinator'
+2025-04-26 11:28:48,743 - dbp.core.lifecycle.llm_coordinator - INFO - Initializing component 'llm_coordinator'...
+2025-04-26 11:28:48,743 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Getting Bedrock client manager instance', 'region': 'us-east-1', 'component': 'CoordinatorLLM'}
+2025-04-26 11:28:48,743 - dbp.core.lifecycle.llm_coordinator.coordinator_llm.bedrock - INFO - {'message': 'Bedrock client manager initialized', 'default_region': 'us-east-1', 'prompt_manager_configured': True}
+2025-04-26 11:28:48,743 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Bedrock client manager instance retrieved successfully', 'component': 'CoordinatorLLM'}
+2025-04-26 11:28:48,743 - dbp.llm_coordinator.component - WARNING - Using Placeholder InternalToolExecutionEngine
+2025-04-26 11:28:48,743 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_context' -> execute_codebase_context_tool
+2025-04-26 11:28:48,743 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 11:28:48,743 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_codebase_changelog_context' -> execute_codebase_changelog_tool
+2025-04-26 11:28:48,743 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_context' -> execute_documentation_context_tool
+2025-04-26 11:28:48,743 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_documentation_changelog_context' -> execute_documentation_changelog_tool
+2025-04-26 11:28:48,744 - dbp.core.lifecycle.llm_coordinator.tool_registry - INFO - Internal tool registered: 'coordinator_get_expert_architect_advice' -> execute_expert_architect_advice_tool
+2025-04-26 11:28:48,744 - dbp.core.lifecycle.llm_coordinator - INFO - Registered 5 internal tools.
+2025-04-26 11:28:48,744 - dbp.core.lifecycle.llm_coordinator - INFO - Registering dbp_general_query with MCP server...
+2025-04-26 11:28:48,744 - dbp.mcp_server.server_instance - INFO - Registering MCP tool: dbp_general_query
+2025-04-26 11:28:48,744 - dbp.core.lifecycle.llm_coordinator - INFO - Successfully registered GeneralQueryMCPTool 'dbp_general_query' with MCP server.
+2025-04-26 11:28:48,744 - dbp.core.lifecycle.llm_coordinator - INFO - Component 'llm_coordinator' initialized successfully.
+2025-04-26 11:28:48,744 - dbp.core.lifecycle - INFO - Component 'llm_coordinator' initialized successfully
+2025-04-26 11:28:48,744 - dbp.core.lifecycle - INFO - All components initialized successfully
+2025-04-26 11:28:48,744 - dbp.core.lifecycle - INFO - System startup complete. Application is running.
+2025-04-26 11:28:48,744 - dbp.mcp_server.__main__ - INFO - All components started successfully
+2025-04-26 11:28:48,744 - dbp.mcp_server.__main__ - INFO - Component initialization completed successfully
+2025-04-26 11:28:48,744 - dbp.mcp_server.__main__ - INFO - Watchdog disabled after successful component initialization
+2025-04-26 11:28:48,744 - dbp.mcp_server.__main__ - INFO - Starting MCP server...
+2025-04-26 11:28:48,744 - dbp.mcp_server - INFO - Starting MCP server...
+2025-04-26 11:28:48,744 - dbp.mcp_server.server_instance - INFO - Starting MCP server 'dbp-mcp-server' on 127.0.0.1:6231...
+2025-04-26 11:28:48,745 - dbp.mcp_server.server_instance - INFO - Starting HTTP server subsystem on 127.0.0.1:6231 with 1 worker(s)...
+2025-04-26 11:28:48,745 - dbp.mcp_server.server_instance - INFO - MCP Server 'dbp-mcp-server' started.
+2025-04-26 11:28:48,745 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-04-26 11:28:48,746 - dbp.mcp_server - INFO - Testing HTTP server connectivity...
+2025-04-26 11:28:48,801 - dbp.mcp_server - INFO - === MCP SERVER READY ===
+2025-04-26 11:28:48,802 - dbp.mcp_server - INFO - MCP server is now ready to serve HTTP requests on 127.0.0.1:6231
+2025-04-26 11:28:48,802 - dbp.mcp_server - INFO - ======================
+2025-04-26 11:28:48,802 - dbp.mcp_server - INFO - MCP server started successfully and verified operational. Server will return error responses for externally requested tools/resources.
+2025-04-26 11:28:48,802 - dbp.mcp_server - INFO - Waiting for stop signal. Call stop_server() to terminate.
+2025-04-26 11:28:49,247 - dbp.mcp_server.server_instance - INFO - HTTP server subsystem successfully started and is accepting connections on 127.0.0.1:6231

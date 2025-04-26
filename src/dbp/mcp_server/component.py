@@ -76,7 +76,6 @@ from .registry import ToolRegistry, ResourceProvider
 from .server import MCPServer
 from .mcp_protocols import MCPTool, MCPResource
 from .exceptions import ComponentNotInitializedError, ComponentNotFoundError, AuthenticationError, AuthorizationError
-    
 
 logger = logging.getLogger(__name__)
 
