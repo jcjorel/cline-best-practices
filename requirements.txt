@@ -10,6 +10,7 @@ chardet>=5.1.0 # For character encoding detection in FileAccessService
 # Web server and API framework - for MCP server component
 fastapi>=0.68.0
 uvicorn>=0.15.0
+fastmcp>=2.0.0  # MCP protocol implementation
 
 # Platform-specific file system monitoring
 # Linux

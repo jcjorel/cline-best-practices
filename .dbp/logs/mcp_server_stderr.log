@@ -9515,3 +9515,102 @@ ImportError: cannot import name 'ComponentNotInitializedError' from 'src.dbp.mcp
 2025-04-26 11:28:48,802 - dbp.mcp_server - INFO - MCP server started successfully and verified operational. Server will return error responses for externally requested tools/resources.
 2025-04-26 11:28:48,802 - dbp.mcp_server - INFO - Waiting for stop signal. Call stop_server() to terminate.
 2025-04-26 11:28:49,247 - dbp.mcp_server.server_instance - INFO - HTTP server subsystem successfully started and is accepting connections on 127.0.0.1:6231
+2025-04-27 01:09:56,570 - dbp.core.lifecycle - WARNING - Received signal SIGTERM (15). Shutting down...
+2025-04-27 01:09:56,574 - dbp.core.lifecycle - INFO - Initiating system shutdown...
+2025-04-27 01:09:56,576 - dbp.core.lifecycle - INFO - Shutting down 3 components
+2025-04-27 01:09:56,577 - dbp.core.lifecycle - INFO - Shutting down component 'llm_coordinator'...
+2025-04-27 01:09:56,577 - dbp.core.lifecycle.llm_coordinator - INFO - Shutting down component 'llm_coordinator'...
+2025-04-27 01:09:56,578 - dbp.core.lifecycle.llm_coordinator.job_manager - INFO - JobManager shutdown initiated. No new jobs will be scheduled.
+2025-04-27 01:09:56,579 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'Shutting down CoordinatorLLM', 'model_name': 'nova-lite'}
+2025-04-27 01:09:56,579 - dbp.core.lifecycle.llm_coordinator.coordinator_llm - INFO - {'message': 'CoordinatorLLM shutdown completed'}
+2025-04-27 01:09:56,579 - dbp.core.lifecycle.llm_coordinator - INFO - Component 'llm_coordinator' shut down.
+2025-04-27 01:09:56,580 - dbp.core.lifecycle - INFO - Shutting down component 'mcp_server'...
+2025-04-27 01:09:56,580 - dbp.mcp_server - INFO - Shutting down component 'mcp_server'...
+2025-04-27 01:09:56,580 - dbp.mcp_server - INFO - Signaling server to stop...
+2025-04-27 01:09:56,581 - dbp.mcp_server - INFO - Stop signal sent successfully.
+2025-04-27 01:09:56,581 - dbp.mcp_server - INFO - Component 'mcp_server' shut down.
+2025-04-27 01:09:56,581 - dbp.core.lifecycle - INFO - Shutting down component 'config_manager'...
+2025-04-27 01:09:56,582 - dbp.config_manager - INFO - Shutting down component 'config_manager'...
+2025-04-27 01:09:56,582 - dbp.config_manager - INFO - Component 'config_manager' shut down.
+2025-04-27 01:09:56,582 - dbp.core.lifecycle - INFO - All components shut down
+2025-04-27 01:09:56,582 - dbp.core.lifecycle - INFO - System shutdown complete.
+2025-04-27 01:09:56,583 - dbp.mcp_server.__main__ - INFO - Shutting down MCP server...
+2025-04-27 01:09:56,584 - dbp.core.watchdog - WARNING - Watchdog already running, not starting another
+2025-04-27 01:09:56,584 - dbp.mcp_server.__main__ - INFO - Watchdog reactivated with 20s timeout for shutdown process
+2025-04-27 01:09:56,584 - dbp.core.lifecycle - INFO - Application not running, shutdown not needed.
+2025-04-27 01:09:56,584 - dbp.mcp_server.__main__ - INFO - Lifecycle manager shutdown complete
+2025-04-27 01:09:56,594 - dbp.mcp_server.__main__ - WARNING - Server exit detected
+2025-04-27 01:09:56,595 - dbp.mcp_server.__main__ - WARNING - Exit source: Python interpreter shutdown
+2025-04-27 01:09:56,595 - dbp.mcp_server.__main__ - WARNING - Exit reason: Process exit via atexit
+
+
+--- SERVER START ATTEMPT AT 2025-04-27 01:09:57 ---
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 189, in _run_module_as_main
+  File "<frozen runpy>", line 148, in _get_module_details
+  File "<frozen runpy>", line 112, in _get_module_details
+  File "/home/jcjorel/cline-best-practices/src/dbp/mcp_server/__init__.py", line 59, in <module>
+    from .mcp_protocols import MCPTool, MCPResource
+ModuleNotFoundError: No module named 'dbp.mcp_server.mcp_protocols'
+
+
+--- SERVER START ATTEMPT AT 2025-04-27 01:10:56 ---
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 189, in _run_module_as_main
+  File "<frozen runpy>", line 148, in _get_module_details
+  File "<frozen runpy>", line 112, in _get_module_details
+  File "/home/jcjorel/cline-best-practices/src/dbp/mcp_server/__init__.py", line 59, in <module>
+    from .mcp_protocols import MCPTool, MCPResource
+ModuleNotFoundError: No module named 'dbp.mcp_server.mcp_protocols'
+
+
+--- SERVER START ATTEMPT AT 2025-04-27 01:31:28 ---
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 189, in _run_module_as_main
+  File "<frozen runpy>", line 148, in _get_module_details
+  File "<frozen runpy>", line 112, in _get_module_details
+  File "/home/jcjorel/cline-best-practices/src/dbp/mcp_server/__init__.py", line 59, in <module>
+    from .mcp_protocols import MCPTool, MCPResource
+ModuleNotFoundError: No module named 'dbp.mcp_server.mcp_protocols'
+
+
+--- SERVER START ATTEMPT AT 2025-04-27 01:44:36 ---
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 189, in _run_module_as_main
+  File "<frozen runpy>", line 148, in _get_module_details
+  File "<frozen runpy>", line 112, in _get_module_details
+  File "/home/jcjorel/cline-best-practices/src/dbp/mcp_server/__init__.py", line 62, in <module>
+    from .mcp_tool import MCPTool
+  File "/home/jcjorel/cline-best-practices/src/dbp/mcp_server/mcp_tool.py", line 66, in <module>
+    from fastmcp import FastMCP
+ModuleNotFoundError: No module named 'fastmcp'
+
+
+--- SERVER START ATTEMPT AT 2025-04-27 01:45:43 ---
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 189, in _run_module_as_main
+  File "<frozen runpy>", line 148, in _get_module_details
+  File "<frozen runpy>", line 112, in _get_module_details
+  File "/home/jcjorel/cline-best-practices/src/dbp/mcp_server/__init__.py", line 62, in <module>
+    from .mcp_tool import MCPTool
+  File "/home/jcjorel/cline-best-practices/src/dbp/mcp_server/mcp_tool.py", line 67, in <module>
+    from fastmcp.tool import Tool
+ModuleNotFoundError: No module named 'fastmcp.tool'
+
+
+--- SERVER START ATTEMPT AT 2025-04-27 01:52:41 ---
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 189, in _run_module_as_main
+  File "<frozen runpy>", line 148, in _get_module_details
+  File "<frozen runpy>", line 112, in _get_module_details
+  File "/home/jcjorel/cline-best-practices/src/dbp/mcp_server/__init__.py", line 62, in <module>
+    from .mcp_tool import MCPTool
+  File "/home/jcjorel/cline-best-practices/src/dbp/mcp_server/mcp_tool.py", line 70, in <module>
+    from fastmcp.tools import StreamingTool
+ImportError: cannot import name 'StreamingTool' from 'fastmcp.tools' (/home/jcjorel/cline-best-practices/venv/lib/python3.12/site-packages/fastmcp/tools/__init__.py)

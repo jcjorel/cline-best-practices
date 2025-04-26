@@ -30,6 +30,9 @@
 # codebase:- doc/design/LLM_COORDINATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-27T01:43:00Z : Fixed import statements for MCPTool and MCPResource by CodeAssistant
+# * Updated import to use mcp_tool.py and mcp_resource.py instead of non-existent mcp_protocols.py
+# * Fixed ModuleNotFoundError that was preventing server startup
 # 2025-04-15T21:53:30Z : Fixed docstring formatting by CodeAssistant
 # * Corrected placement of docstring quotes
 # 2025-04-15T21:52:35Z : Added GenAI header to comply with documentation standards by CodeAssistant
@@ -56,7 +59,8 @@ Key components:
 
 # Expose key classes, data models, and exceptions for easier import
 from .data_models import MCPRequest, MCPResponse, MCPError
-from .mcp_protocols import MCPTool, MCPResource
+from .mcp_tool import MCPTool
+from .mcp_resource import MCPResource
 from .registry import ToolRegistry, ResourceProvider
 from .auth import AuthenticationProvider, AuthenticationError, AuthorizationError
 from .error_handler import ErrorHandler

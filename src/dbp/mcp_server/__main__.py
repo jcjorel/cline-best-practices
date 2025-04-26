@@ -506,11 +506,10 @@ def main() -> int:
                 return 1
             
             
-            # Start the server (this should block until server exit)
+            # Wait for the server to exit (this should block until server exit)
             logger.info("Starting MCP server...")
             try:
-                # Method is called start_server, not start
-                component.start_server()
+                component.wait_for_server_exit()
             except KeyboardInterrupt:
                 logger.info("Keyboard interrupt received.")
                 exit_handler(reason="Keyboard interrupt (SIGINT)", source="KeyboardInterrupt handler")

@@ -40,27 +40,11 @@
 # system:- requests
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-27T00:15:00Z : Replaced homemade MCP implementation with FastMCP by CodeAssistant
-# * Completely replaced the homemade MCP implementation with FastMCP
-# * Removed all code related to capability negotiation, session management, etc.
-# * Simplified the server implementation by delegating to FastMCP
+# 2025-04-27T00:01:00Z : Created MCPServer class using FastMCP by CodeAssistant
+# * Created MCPServer class to encapsulate FastMCP instance
+# * Added methods for server lifecycle management
+# * Added server availability checking
 # * Added design decision about using MCPTool for validation in design principles
-# 2025-04-25T18:13:54Z : Updated MCP tool registration to use MCPTool objects by CodeAssistant
-# * Modified register_mcp_tool to accept MCPTool objects instead of handler functions
-# * Updated unregister_mcp_tool to accept either MCPTool objects or tool names
-# * Added direct import of MCPTool and MCPResource classes
-# * Enhanced FastAPI integration using MCPTool's handler method
-# 2025-04-25T16:19:43Z : Redesigned server for early startup and dynamic route registration by CodeAssistant
-# * Completely refactored to start with minimal dependencies and just health endpoint
-# * Added API for dynamic route registration by other components
-# * Removed direct dependencies on other system components
-# * Added thread-safe route and tool registration mechanisms
-# * Maintained MCP protocol support through callback-based registration
-# 2025-04-25T15:53:45Z : Added HTTP server readiness verification by CodeAssistant
-# * Added socket-based connectivity test for HTTP server subsystem
-# * Modified server startup to verify server is accepting connections
-# * Added detailed logging for server readiness state
-# * Enhanced reliability by verifying actual connection acceptance
 ###############################################################################
 
 import logging

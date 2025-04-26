@@ -12,7 +12,7 @@
 # - Respect system prompt directives at all times
 ###############################################################################
 # [Source file intent]
-# Implements the MCPServerComponent class using FastMCP library.
+# Sample implementation of the MCPServerComponent class using FastMCP library.
 # This component maintains the same interface as the original but replaces the
 # homemade MCP implementation with FastMCP for better compliance with the MCP specification.
 ###############################################################################
@@ -31,34 +31,26 @@
 # - Must use FastMCP for MCP protocol implementation.
 ###############################################################################
 # [Dependencies]
-# codebase:doc/DESIGN.md
-# codebase:src/dbp/core/component.py
-# codebase:src/dbp/core/fs_utils.py
-# codebase:src/dbp/config/config_manager.py
-# codebase:src/dbp/mcp_server/server.py
-# system:fastmcp
+# codebase:- doc/DESIGN.md
+# codebase:- src/dbp/core/component.py
+# codebase:- src/dbp/core/fs_utils.py
+# codebase:- src/dbp/config/config_manager.py
+# codebase:- scratchpad/fastmcp_integration/server.py
+# system:- fastmcp
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-27T00:16:00Z : Replaced homemade MCP implementation with FastMCP by CodeAssistant
-# * Completely replaced the homemade MCP implementation with FastMCP
+# 2025-04-27T00:03:00Z : Updated implementation based on feedback by CodeAssistant
 # * Removed register_mcp_tool and register_mcp_resource methods
 # * Modified component to use MCPServer class from server.py
 # * Added wait_for_server_exit() method for __main__.py
 # * Removed start_server() method
 # * Simplified component implementation
-# 2025-04-26T02:05:00Z : Removed _register_resources method by CodeAssistant
-# * Removed _register_resources method as resources are registered by external components
-# * Updated initialization to no longer call _register_resources
-# * Made code more compliant with the distributed MCP resource registration concept
-# 2025-04-26T02:00:00Z : Removed _register_tools method by CodeAssistant
-# * Removed _register_tools method as it's not needed - tools are registered by external components
-# * Updated initialization to no longer call _register_tools
-# * Made code more compliant with the distributed MCP tool registration concept
-# 2025-04-25T17:25:00Z : Implemented signal-based server control mechanism by CodeAssistant
-# * Modified start_server to wait indefinitely until explicitly stopped via stop_server()
-# * Added thread synchronization using threading.Event for clean start/stop coordination
-# * Improved error handling with fail-fast approach that raises exceptions for invalid states
-# * Updated HTTP server shutdown to stop properly when stop signal is received
+# 
+# 2025-04-26T23:12:00Z : Created sample implementation using FastMCP by CodeAssistant
+# * Created initial implementation of MCPServerComponent using FastMCP
+# * Maintained same interface as original component
+# * Preserved FastAPI integration for health endpoint
+# * Implemented tool and resource registration adapters
 ###############################################################################
 
 import logging

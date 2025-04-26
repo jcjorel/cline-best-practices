@@ -12,14 +12,14 @@
 # - Respect system prompt directives at all times
 ###############################################################################
 # [Source file intent]
-# Provides a sample implementation of a streaming-capable MCP tool using FastMCP.
-# This serves as an example and reference for creating custom streaming tools.
+# Provides an example implementation of an MCP tool using the MCPTool base class.
+# This serves as a reference for creating custom MCP tools with the unified API.
 ###############################################################################
 # [Source file design principles]
-# - Demonstrates proper FastMCP streaming tool implementation pattern
-# - Shows how to yield data chunks incrementally
-# - Includes examples for different streaming scenarios
-# - Handles cancellation and progress reporting
+# - Demonstrates proper MCPTool implementation pattern
+# - Shows how to implement both execute and stream methods
+# - Includes examples for progress reporting and cancellation handling
+# - Demonstrates how to register the tool with FastMCP
 ###############################################################################
 # [Source file constraints]
 # - For demonstration purposes only, not for production use
@@ -29,58 +29,50 @@
 # system:asyncio
 # system:typing
 # system:pydantic
-# system:fastmcp
+# codebase:src/dbp/mcp_server/mcp_tool.py
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-27T00:20:00Z : Updated to use FastMCP instead of homemade MCP implementation by CodeAssistant
-# * Replaced MCPStreamingTool with FastMCP streaming tool implementation
-# * Updated imports to use FastMCP
-# * Simplified tool registration
-# * Removed references to homemade MCP implementation
-# 2025-04-25T22:53:00Z : Initial implementation of sample streaming tool by CodeAssistant
-# * Created SampleStreamingTool class extending MCPStreamingTool
-# * Added example streaming implementation
-# * Added sample input/output schemas
+# 2025-04-27T00:41:00Z : Created example tool implementation by CodeAssistant
+# * Implemented ExampleTool class using MCPTool base class
+# * Added input, output, and chunk models
+# * Implemented execute and stream methods
+# * Added example registration code
 ###############################################################################
 
 import asyncio
 import logging
-from enum import Enum
-from typing import Dict, List, Any, Optional, AsyncGenerator
+from typing import Dict, List, Any, Optional, AsyncIterable
 
 from pydantic import BaseModel, Field
 
-# Import FastMCP
-from fastmcp import FastMCP
-from fastmcp.streaming import StreamingTool
+from ..mcp_tool import MCPTool
 
 logger = logging.getLogger(__name__)
 
 
-# Input schema model for the sample tool
-class SampleToolInput(BaseModel):
+# Input model for the example tool
+class ExampleToolInput(BaseModel):
     """
     [Class intent]
-    Defines the input parameters for the sample streaming tool.
+    Defines the input parameters for the example tool.
     
     [Design principles]
-    Simple model with configurable options for testing streaming behavior.
+    Simple model with configurable options for testing.
     
     [Implementation details]
     Uses Pydantic model for schema validation.
     """
-    item_count: int = Field(default=10, description="Number of items to generate in the stream")
+    item_count: int = Field(default=5, description="Number of items to generate")
     delay_seconds: float = Field(default=0.5, description="Delay between items in seconds")
     streaming: bool = Field(default=True, description="Whether to use streaming response")
-    stream_format: Optional[str] = Field(default="json", description="Stream format (json or event_stream)")
     fail_at_item: Optional[int] = Field(default=None, description="Item number at which to simulate a failure")
 
 
-# Output schema model for the sample tool
-class SampleToolOutput(BaseModel):
+# Output model for the example tool
+class ExampleToolOutput(BaseModel):
     """
     [Class intent]
-    Defines the output format for the sample streaming tool.
+    Defines the output format for the example tool.
     
     [Design principles]
     Simple model for demonstration purposes.
@@ -92,11 +84,11 @@ class SampleToolOutput(BaseModel):
     total_items: int = Field(description="Total number of items processed")
 
 
-# Sample item schema for streaming chunks
-class StreamItem(BaseModel):
+# Chunk model for streaming output
+class ExampleToolChunk(BaseModel):
     """
     [Class intent]
-    Defines the format of each item in the stream.
+    Defines the format of each chunk in the stream.
     
     [Design principles]
     Simple model for demonstration purposes.
@@ -109,18 +101,18 @@ class StreamItem(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(default=None, description="Optional metadata for this item")
 
 
-class SampleStreamingTool(StreamingTool):
+class ExampleTool(MCPTool[ExampleToolInput, ExampleToolOutput, ExampleToolChunk]):
     """
     [Class intent]
-    Demonstrates a basic streaming tool implementation using FastMCP.
+    Demonstrates a basic tool implementation using the MCPTool base class.
     
     [Design principles]
-    - Shows proper inheritance from FastMCP's StreamingTool
+    - Shows proper inheritance from MCPTool
     - Implements required methods
-    - Demonstrates streaming pattern with asyncio
+    - Demonstrates progress reporting and cancellation handling
     
     [Implementation details]
-    - Uses asyncio for non-blocking streaming
+    - Uses asyncio for non-blocking delays
     - Simulates data generation with configurable delay
     - Handles cancellation and progress reporting
     """
@@ -128,49 +120,62 @@ class SampleStreamingTool(StreamingTool):
     def __init__(self):
         """
         [Class method intent]
-        Initializes the sample streaming tool.
+        Initializes the example tool.
         
         [Design principles]
         Simple initialization with clear name and description.
         
         [Implementation details]
-        Calls parent constructor with tool name and description.
+        Calls parent constructor with tool metadata and models.
         """
         super().__init__(
-            name="sample_stream",
-            description="A sample tool demonstrating MCP streaming capabilities",
-            input_schema=SampleToolInput,
-            output_schema=SampleToolOutput
+            name="example_tool",
+            description="An example tool demonstrating the MCPTool base class",
+            input_model=ExampleToolInput,
+            output_model=ExampleToolOutput,
+            chunk_model=ExampleToolChunk,
+            version="1.0.0"
         )
-        self.logger = logging.getLogger("dbp.mcp_server.examples.sample_streaming_tool")
-        self.logger.info("SampleStreamingTool initialized")
+        self.logger = logging.getLogger("dbp.mcp_server.examples.example_tool")
+        self.logger.info("ExampleTool initialized")
     
     async def execute(
         self,
-        data: SampleToolInput,
-        context: Optional[Dict[str, Any]] = None
-    ) -> SampleToolOutput:
+        data: ExampleToolInput,
+        context: Dict[str, Any]
+    ) -> ExampleToolOutput:
         """
         [Function intent]
-        Executes the tool in non-streaming mode.
+        Executes the tool and returns a complete result.
         
         [Design principles]
         - Implements standard execution for non-streaming response
         - Generates all results at once
         
+        NOTE: This is an EXCEPTIONAL CASE where we override the execute() method.
+        The recommended pattern is to ONLY implement the stream() method and let
+        MCPTool's default execute() implementation handle the conversion from
+        streaming to non-streaming responses. This example overrides execute()
+        only to demonstrate a custom non-streaming implementation for educational
+        purposes.
+        
         [Implementation details]
         - Builds complete result set immediately
-        - Used when client doesn't request streaming
+        - Reports progress using the context
+        - Checks for cancellation
         
         Args:
             data: The validated input parameters
-            context: Optional execution context
+            context: The execution context
             
         Returns:
             Complete result object with all items
         """
-        # For non-streaming execution, generate all items immediately
-        self.logger.info(f"Executing sample tool in non-streaming mode with {data.item_count} items")
+        self.logger.info(f"Executing example tool with {data.item_count} items")
+        
+        # Get progress and cancellation callbacks from context
+        progress_callback = context["progress_callback"]
+        is_cancelled = context["is_cancelled"]
         
         # Build items list
         items = []
@@ -185,35 +190,34 @@ class SampleStreamingTool(StreamingTool):
                 "content": f"Content for item {i + 1}",
                 "metadata": {
                     "timestamp": f"2025-04-27T00:{i:02d}:00Z",
-                    "type": "sample"
+                    "type": "example"
                 }
             }
             items.append(item)
             
-            # Report progress if context supports it
-            if context and "progress_callback" in context:
-                progress = (i + 1) / data.item_count
-                context["progress_callback"](progress, f"Processed item {i + 1}/{data.item_count}")
+            # Report progress
+            progress = (i + 1) / data.item_count
+            progress_callback(progress, f"Processed item {i + 1}/{data.item_count}")
                 
-            # Check for cancellation if context supports it
-            if context and "is_cancelled" in context and context["is_cancelled"]():
+            # Check for cancellation
+            if is_cancelled():
                 self.logger.info("Operation cancelled")
                 break
         
         # Return complete result
-        return SampleToolOutput(
+        return ExampleToolOutput(
             result=items,
             total_items=len(items)
         )
     
     async def stream(
         self,
-        data: SampleToolInput,
-        context: Optional[Dict[str, Any]] = None
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+        data: ExampleToolInput,
+        context: Dict[str, Any]
+    ) -> AsyncIterable[ExampleToolChunk]:
         """
         [Function intent]
-        Executes the tool in streaming mode, yielding results incrementally.
+        Streams the tool's output as chunks.
         
         [Design principles]
         - Core method for streaming implementation
@@ -228,12 +232,16 @@ class SampleStreamingTool(StreamingTool):
         
         Args:
             data: The validated input parameters
-            context: Optional execution context
+            context: The execution context
             
         Yields:
-            Individual stream items as they're generated
+            Individual chunks as they're generated
         """
-        self.logger.info(f"Executing sample tool in streaming mode with {data.item_count} items")
+        self.logger.info(f"Streaming example tool with {data.item_count} items")
+        
+        # Get progress and cancellation callbacks from context
+        progress_callback = context["progress_callback"]
+        is_cancelled = context["is_cancelled"]
         
         # Generate items with delay
         for i in range(data.item_count):
@@ -246,25 +254,23 @@ class SampleStreamingTool(StreamingTool):
                 raise ValueError(f"Simulated failure at item {i + 1}")
                 
             # Create and yield an item
-            item = StreamItem(
+            chunk = ExampleToolChunk(
                 item_id=i + 1,
                 content=f"Content for item {i + 1}",
                 metadata={
                     "timestamp": f"2025-04-27T00:{i:02d}:00Z",
-                    "type": "sample"
+                    "type": "example"
                 }
             )
             
-            # Convert to dict for yielding
-            yield item.dict()
+            yield chunk
             
-            # Report progress if context supports it
-            if context and "progress_callback" in context:
-                progress = (i + 1) / data.item_count
-                context["progress_callback"](progress, f"Streamed item {i + 1}/{data.item_count}")
+            # Report progress
+            progress = (i + 1) / data.item_count
+            progress_callback(progress, f"Streamed item {i + 1}/{data.item_count}")
                 
-            # Check for cancellation if context supports it
-            if context and "is_cancelled" in context and context["is_cancelled"]():
+            # Check for cancellation
+            if is_cancelled():
                 self.logger.info("Streaming operation cancelled")
                 break
         
@@ -272,24 +278,26 @@ class SampleStreamingTool(StreamingTool):
         self.logger.info("Streaming complete")
 
 
-# Helper function to create and register the sample tool
-def register_sample_streaming_tool(mcp: FastMCP):
+
+# Example registration code
+def register_example_tools(mcp):
     """
     [Function intent]
-    Creates and registers the sample streaming tool with a FastMCP instance.
+    Registers the example tool with the FastMCP instance.
     
     [Design principles]
     Simple helper for tool registration.
     
     [Implementation details]
-    Creates a tool instance and registers it with the FastMCP instance.
+    Creates tool instance and registers it with FastMCP.
     
     Args:
-        mcp: The FastMCP instance to register the tool with
-        
-    Returns:
-        The registered tool instance
+        mcp: The FastMCP instance to register with
     """
-    tool = SampleStreamingTool()
-    mcp.register_tool(tool)
-    return tool
+    # Create and register the example tool
+    example_tool = ExampleTool()
+    example_tool.register(mcp)
+    
+    return {
+        "example_tool": example_tool
+    }
