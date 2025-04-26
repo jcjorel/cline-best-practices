@@ -43,6 +43,16 @@
 # system:- src/dbp/mcp_server/data_models.py (MCPRequest/Response/Error structure)
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-26T11:22:00Z : Fixed health endpoint response handling by CodeAssistant
+# * Modified get_server_status() to make direct request to health endpoint
+# * Fixed issue where health endpoint response was empty (returning only {})
+# * Bypassed the _make_request() result extraction to get full health data
+# * Ensured complete health endpoint JSON is returned for server status display
+# 2025-04-26T11:08:00Z : Modified API key handling to wait for 401 response by CodeAssistant
+# * Updated _make_request() to first attempt requests without authentication
+# * Added logic to only fetch API key when server returns 401 Unauthorized
+# * Modified error handling to provide clear messages when authentication is required
+# * Improved API key usage efficiency by avoiding unnecessary key lookups
 # 2025-04-25T10:10:00Z : Updated to use get_typed_config() instead of deprecated get() method by CodeAssistant
 # * Replaced config_manager.get() calls with direct attribute access via get_typed_config()
 # * Fixed server startup error related to deprecated method exception
@@ -50,10 +60,6 @@
 # 2025-04-17T15:34:30Z : Fixed configuration key in MCPClientAPI by CodeAssistant
 # * Changed config key from "mcp_server.timeout" to "server.timeout" to match schema structure
 # * Fixed server initialization error that was preventing debug_server.sh from working correctly
-# 2025-04-17T14:58:30Z : Updated server URL computation in MCPClientAPI by CodeAssistant
-# * Modified initialize() to compute server URL from host and port instead of reading url directly
-# * Improved compatibility with CLI/server configuration sharing
-# * Fixed issue with missing mcp_server.url configuration
 ###############################################################################
 
 import logging
@@ -178,18 +184,14 @@ class MCPClientAPI:
 
         url = self.server_url + endpoint.lstrip('/') # Ensure single slash
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
-        try:
-            auth_headers = self.auth_manager.get_auth_headers()
-            headers.update(auth_headers)
-        except AuthenticationError as e:
-             # Propagate auth error if key isn't even configured client-side
-             raise e
-
-        self.logger.debug(f"Making MCP request: {method} {url}")
+        
+        # First try without authentication
+        self.logger.debug(f"Making initial MCP request without authentication: {method} {url}")
         if data: self.logger.debug(f"Request Data: {json.dumps(data)}")
         if params: self.logger.debug(f"Request Params: {params}")
 
         try:
+            # First try the request without authentication
             response = requests.request(
                 method=method.upper(),
                 url=url,
@@ -198,8 +200,35 @@ class MCPClientAPI:
                 json=data,     # For POST/PUT requests
                 timeout=self.timeout
             )
+            
+            # If we get a 401 Unauthorized, try to add authentication headers and retry
+            if response.status_code == 401:
+                self.logger.debug("Received 401 Unauthorized response, retrying with authentication")
+                try:
+                    # Now try to get auth headers
+                    auth_headers = self.auth_manager.get_auth_headers()
+                    headers.update(auth_headers)
+                    
+                    # Retry the request with authentication
+                    self.logger.debug(f"Retrying MCP request with authentication: {method} {url}")
+                    response = requests.request(
+                        method=method.upper(),
+                        url=url,
+                        headers=headers,
+                        params=params,
+                        json=data,
+                        timeout=self.timeout
+                    )
+                except AuthenticationError as e:
+                    # If we can't get auth headers, convert the original 401 to an AuthenticationError
+                    self.logger.error(f"Authentication required but no API key available: {e}")
+                    raise AuthenticationError(
+                        "Authentication required by server: No API key found. "
+                        "Set DBP_API_KEY environment variable, use --api-key flag, "
+                        "or configure 'mcp_server.api_key' in config file."
+                    ) from e
 
-            # Check for HTTP errors first
+            # Now check for HTTP errors
             response.raise_for_status()
 
             # Parse JSON response
@@ -409,7 +438,19 @@ class MCPClientAPI:
         # Use the health endpoint that's implemented in the server
         self.logger.debug("Calling get_server_status() - Making request to health endpoint")
         try:
-            result = self._make_request("GET", "health")
+            self._check_initialized()
+            if not self.server_url:
+                raise ConfigurationError("MCP server URL is not set.")
+
+            url = self.server_url + "health"
+            headers = {"Content-Type": "application/json", "Accept": "application/json"}
+            
+            # Make direct request to health endpoint without extracting result
+            response = requests.get(url, headers=headers, timeout=self.timeout)
+            response.raise_for_status()
+            
+            # Parse full JSON response without extracting a "result" key
+            result = response.json()
             self.logger.debug(f"get_server_status() success - Result: {result}")
             return result
         except Exception as e:

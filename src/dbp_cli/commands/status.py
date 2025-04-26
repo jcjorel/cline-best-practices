@@ -259,7 +259,12 @@ class StatusCommandHandler(BaseCommandHandler):
                 
                 for key, value in details.items():
                     self.output.info(f"  {key}: {value}")
-                    
+            
+            # Pretty print the full health response JSON 
+            import json
+            self.output.info("\nServer Response:")
+            self.output.info(json.dumps(result, indent=2))
+            
             self.output.print()
             return True
             

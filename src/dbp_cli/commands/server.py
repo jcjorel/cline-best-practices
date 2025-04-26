@@ -35,6 +35,11 @@
 # other:- src/dbp/mcp_server/server.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-26T10:56:00Z : Fixed server port binding and status command issues by CodeAssistant
+# * Fixed status command error "'MCPServerConfig' object has no attribute 'url'"
+# * Added socket SO_REUSEADDR option to fix "port in use" errors with TIME_WAIT sockets
+# * Improved port binding error logging for better diagnostics
+# * Constructed server URL from host and port configuration attributes
 # 2025-04-25T15:38:46Z : Added server ready log message by CodeAssistant
 # * Added explicit log message when server is ready to serve HTTP requests
 # * Displayed the server URL in the ready message for convenient access
@@ -50,11 +55,6 @@
 # * Server status is now detected solely through health API checks
 # * Eliminated startup_signal_file detection logic
 # * Improved reliability by relying only on HTTP health checks for server status
-# 2025-04-25T10:51:00Z : Replaced deprecated config_manager.get() calls by CodeAssistant
-# * Updated all configuration access to use get_typed_config() with direct attribute access
-# * Removed error checking for missing configuration values as they are guaranteed to exist
-# * Fixed server startup errors related to deprecated method usage
-# * Improved type safety through Pydantic model usage
 # 2025-04-20T23:43:45Z : Added explicit server startup timeout logging by CodeAssistant
 # * Added explicit check and error message when server startup times out
 # * Improved diagnostic output with clear TIMEOUT prefix for easier log searching
@@ -605,7 +605,7 @@ class ServerCommandHandler(BaseCommandHandler):
         Check and display the current status of the MCP server.
         
         [Implementation details]
-        Retrieves server URL from configuration and PID from the PID file.
+        Constructs server URL from host and port configuration.
         Checks if the server process is running and responsive to API requests.
         Displays detailed status information including PID, process state, and API connectivity.
         Provides guidance for starting the server if it's not running.
@@ -621,9 +621,11 @@ class ServerCommandHandler(BaseCommandHandler):
         Returns:
             Exit code (0 if server running and responsive, 1 otherwise)
         """
-        # Get server URL from config
+        # Construct server URL from host and port configuration
         config = self.mcp_client.config_manager.get_typed_config()
-        server_url = config.mcp_server.url
+        host = config.mcp_server.host
+        port = config.mcp_server.port
+        server_url = f"http://{host}:{port}"
         
         # Use the existing status command via the API client
         pid = self._get_server_pid()
@@ -643,12 +645,13 @@ class ServerCommandHandler(BaseCommandHandler):
             self.output.error("Process: Not running")
             self.output.info("To start the server, run: dbp server start")
             return 1
-            
-        # Check if server is responsive
+        
+        # Check if server is responsive by checking the health endpoint
+        health_endpoint = f"{server_url}/health"
+        self.output.info(f"Checking health endpoint: {health_endpoint}")
         try:
-            self.output.info("Checking server connectivity...")
             result = self.with_progress(
-                "Connecting to server",
+                f"Connecting to {health_endpoint}",
                 self.mcp_client.get_server_status
             )
             
@@ -656,6 +659,11 @@ class ServerCommandHandler(BaseCommandHandler):
             
             if "version" in result:
                 self.output.info(f"Version: {result['version']}")
+            
+            # Pretty print the full health response JSON
+            import json
+            self.output.info("\nServer Health Response (JSON):")
+            self.output.info(json.dumps(result, indent=2))
             
             return 0
             
@@ -779,12 +787,14 @@ class ServerCommandHandler(BaseCommandHandler):
         
         [Implementation details]
         Attempts to create a socket and bind it to the specified host and port.
+        Sets SO_REUSEADDR to handle ports in TIME_WAIT state.
         Uses context manager to ensure socket is properly closed after checking.
         Success indicates the port is available, failure means it's in use.
         
         [Design principles]
         Resource management - uses context manager for automatic socket cleanup.
         Direct verification - tests actual binding rather than port scanning.
+        Socket reusability - properly handles TIME_WAIT socket state.
         
         Args:
             host: Host address to check
@@ -795,7 +805,10 @@ class ServerCommandHandler(BaseCommandHandler):
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
+                # Set SO_REUSEADDR to allow reusing local addresses in TIME_WAIT state
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 s.bind((host, port))
                 return True
-            except socket.error:
+            except socket.error as e:
+                logger.debug(f"Port check error: {e}")
                 return False
