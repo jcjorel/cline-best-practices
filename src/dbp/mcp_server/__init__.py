@@ -67,8 +67,7 @@ from .error_handler import ErrorHandler
 from .adapter import SystemComponentAdapter, ComponentNotFoundError
 from .server import MCPServer # Placeholder server class
 from .component import MCPServerComponent, ComponentNotInitializedError
-# Concrete tools and resources are likely internal details, but can be exposed if needed
-# from .tools import AnalyzeDocumentConsistencyTool, ...
+# Concrete resources are likely internal details, but can be exposed if needed
 # from .resources import DocumentationResource, ...
 
 __all__ = [

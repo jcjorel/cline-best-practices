@@ -380,18 +380,7 @@ def main() -> int:
             "PYTHONPATH": os.environ.get("PYTHONPATH", "")
         }
         logger.debug(f"Environment: {env_info}")
-        
-        # Import system dependencies to check for errors
-        try:
-            import fastapi
-            import uvicorn
-            logger.debug(f"FastAPI version: {fastapi.__version__}")
-            logger.debug(f"Uvicorn available: {uvicorn.__name__}")
-        except ImportError as e:
-            logger.error(f"Missing dependency: {e}")
-            exit_handler(reason="Missing dependency", exception=e)
-            return 1
-            
+                    
         # Try importing module files to check for potential issues
         logger.info("Checking component dependencies and imports...")
         
@@ -407,35 +396,6 @@ def main() -> int:
             exit_handler(reason="Required dependency missing", exception=e)
             return 1
         
-        # Check if tool and resource modules exist
-        try:
-            try:
-                from .tools import (
-                    GeneralQueryTool, CommitMessageTool
-                )
-                logger.debug("Successfully imported tool classes")
-            except ImportError as e:
-                logger.critical(f"Failed to import tool classes: {e}")
-                logger.info("MCP server tools may not be fully implemented yet")
-                exit_handler(reason="Failed to import tool classes", exception=e)
-                return 1
-                
-            try:
-                from .resources import (
-                    DocumentationResource, CodeMetadataResource, 
-                    InconsistencyResource, RecommendationResource
-                )
-                logger.debug("Successfully imported resource classes")
-            except ImportError as e:
-                logger.critical(f"Failed to import resource classes: {e}")
-                logger.info("MCP server resources may not be fully implemented yet")
-                exit_handler(reason="Failed to import resource classes", exception=e)
-                return 1
-        except Exception as e:
-            logger.critical(f"Error importing MCP server modules: {e}")
-            logger.debug("Import error details:", exc_info=True)
-            exit_handler(reason="Error importing MCP server modules", exception=e)
-            return 1
         
         # Use the LifecycleManager to handle component registration and initialization
         logger.info("Starting MCP server using LifecycleManager")
@@ -507,7 +467,7 @@ def main() -> int:
             
             
             # Wait for the server to exit (this should block until server exit)
-            logger.info("Starting MCP server...")
+            logger.info("MCP server running...")
             try:
                 component.wait_for_server_exit()
             except KeyboardInterrupt:
