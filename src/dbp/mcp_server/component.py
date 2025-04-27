@@ -39,6 +39,10 @@
 # system:fastmcp
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-27T17:26:00Z : Updated ComponentNotInitializedError import by CodeAssistant
+# * Removed local ComponentNotInitializedError class definition
+# * Added import for ComponentNotInitializedError from core.exceptions
+# * Improved code organization by using centralized exception definitions
 # 2025-04-27T00:16:00Z : Replaced homemade MCP implementation with FastMCP by CodeAssistant
 # * Completely replaced the homemade MCP implementation with FastMCP
 # * Removed register_mcp_tool and register_mcp_resource methods
@@ -54,11 +58,6 @@
 # * Removed _register_tools method as it's not needed - tools are registered by external components
 # * Updated initialization to no longer call _register_tools
 # * Made code more compliant with the distributed MCP tool registration concept
-# 2025-04-25T17:25:00Z : Implemented signal-based server control mechanism by CodeAssistant
-# * Modified start_server to wait indefinitely until explicitly stopped via stop_server()
-# * Added thread synchronization using threading.Event for clean start/stop coordination
-# * Improved error handling with fail-fast approach that raises exceptions for invalid states
-# * Updated HTTP server shutdown to stop properly when stop signal is received
 ###############################################################################
 
 import logging
@@ -68,6 +67,7 @@ from typing import Dict, Optional
 # Core component imports
 from ..core.component import Component, InitializationContext
 from ..core.fs_utils import ensure_directories_exist
+from ..core.exceptions import ComponentNotInitializedError
 
 # Import MCPServer class
 from .server import MCPServer

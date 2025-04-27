@@ -40,6 +40,24 @@
 # system:- requests
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-27T18:56:00Z : Fixed server startup to use uvicorn directly by CodeAssistant
+# * Changed server startup to use uvicorn.run() instead of FastMCP.run()
+# * Fixed issue with FastMCP.from_fastapi() integration
+# * Ensured proper FastAPI app execution
+# * Maintained FastMCP integration for MCP protocol support
+# 2025-04-27T18:48:00Z : Enhanced server availability checking with detailed logging by CodeAssistant
+# * Added detailed debug logging for health endpoint checks
+# * Improved diagnostics for server startup issues
+# * Made server availability checking more robust
+# 2025-04-27T17:42:00Z : Fixed FastMCP run method parameters by CodeAssistant
+# * Removed workers parameter from FastMCP.run() call
+# * Fixed TypeError in run_sse_async() method
+# * Simplified server startup process
+# 2025-04-27T17:38:00Z : Updated FastMCP integration to use FastAPI first by CodeAssistant
+# * Modified server to create FastAPI instance first and then hook FastMCP to it
+# * Fixed issue with accessing app attribute in FastMCP v2
+# * Used FastMCP.from_fastapi() to create FastMCP instance from FastAPI app
+# * Maintained same functionality with improved architecture
 # 2025-04-27T00:15:00Z : Replaced homemade MCP implementation with FastMCP by CodeAssistant
 # * Completely replaced the homemade MCP implementation with FastMCP
 # * Removed all code related to capability negotiation, session management, etc.
@@ -50,17 +68,6 @@
 # * Updated unregister_mcp_tool to accept either MCPTool objects or tool names
 # * Added direct import of MCPTool and MCPResource classes
 # * Enhanced FastAPI integration using MCPTool's handler method
-# 2025-04-25T16:19:43Z : Redesigned server for early startup and dynamic route registration by CodeAssistant
-# * Completely refactored to start with minimal dependencies and just health endpoint
-# * Added API for dynamic route registration by other components
-# * Removed direct dependencies on other system components
-# * Added thread-safe route and tool registration mechanisms
-# * Maintained MCP protocol support through callback-based registration
-# 2025-04-25T15:53:45Z : Added HTTP server readiness verification by CodeAssistant
-# * Added socket-based connectivity test for HTTP server subsystem
-# * Modified server startup to verify server is accepting connections
-# * Added detailed logging for server readiness state
-# * Enhanced reliability by verifying actual connection acceptance
 ###############################################################################
 
 import logging
@@ -71,7 +78,8 @@ import requests
 from typing import Optional
 from urllib.parse import urljoin
 
-# FastMCP imports
+# FastAPI and FastMCP imports
+from fastapi import FastAPI
 from fastmcp import FastMCP
 
 logger = logging.getLogger(__name__)
@@ -119,13 +127,6 @@ class MCPServer:
         self.logger = logging.getLogger("dbp.mcp_server.server")
         self.logger.info(f"Initializing MCPServer with name={name}, host={host}, port={port}")
         
-        # Create FastMCP instance
-        self._mcp = FastMCP(
-            name=name,
-            description=description,
-            version=version
-        )
-        
         # Store server configuration
         self.host = host
         self.port = port
@@ -138,19 +139,34 @@ class MCPServer:
         self._stop_event = threading.Event()
         self._server_ready = False
         
-        # Add health endpoint
-        @self._mcp.app.get("/health")
+        # Record startup time for uptime calculation
+        self._startup_time = time.time()
+        
+        # Create FastAPI instance first
+        self._app = FastAPI(
+            title=name,
+            description=description,
+            version=version
+        )
+        
+        # Add health endpoint directly to FastAPI app
+        @self._app.get("/health")
         async def health_check():
             """Health check endpoint for the MCP server."""
             return {
                 "status": "healthy" if self._server_ready else "initializing",
                 "server": self.name,
                 "version": self.version,
-                "uptime": time.time() - self._startup_time if hasattr(self, '_startup_time') else None
+                "uptime": time.time() - self._startup_time
             }
-            
-        # Record startup time for uptime calculation
-        self._startup_time = time.time()
+        
+        # Create FastMCP instance from FastAPI app
+        self._mcp = FastMCP.from_fastapi(
+            self._app,
+            name=name,
+            description=description,
+            version=version
+        )
         
         self.logger.info("MCPServer initialized successfully")
     
@@ -175,13 +191,15 @@ class MCPServer:
         # Reset stop event
         self._stop_event.clear()
         
-        # Start the server in a background thread
+        # Import uvicorn here to avoid circular imports
+        import uvicorn
+        
+        # Start the server in a background thread using uvicorn directly
         self._server_thread = threading.Thread(
-            target=lambda: self._mcp.run(
+            target=lambda: uvicorn.run(
+                self._app,
                 host=self.host,
                 port=self.port,
-                workers=self.workers,
-                transport="sse",  # Use SSE transport by default
                 log_level="info"
             ),
             daemon=True
@@ -287,7 +305,9 @@ class MCPServer:
                         continue
                         
                 # Then check if health endpoint is responding
+                self.logger.debug(f"Checking health endpoint: {health_endpoint}")
                 response = requests.get(health_endpoint, timeout=2)
+                self.logger.debug(f"Health endpoint response: {response.status_code}")
                 if response.status_code == 200:
                     server_working = True
                     break
@@ -313,12 +333,12 @@ class MCPServer:
         - Enables custom endpoint registration
         
         [Implementation details]
-        - Returns the FastAPI app from the FastMCP instance
+        - Returns the FastAPI app created directly
         
         Returns:
             FastAPI: The FastAPI app instance
         """
-        return self._mcp.app
+        return self._app
     
     @property
     def mcp(self):

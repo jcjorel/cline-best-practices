@@ -39,18 +39,18 @@
 # codebase:src/dbp/mcp_server/server.py
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-27T01:50:00Z : Updated imports for Tool and StreamingTool classes by CodeAssistant
-# * Changed imports from fastmcp.tool and fastmcp.streaming to fastmcp.tools to match FastMCP v2 structure
+# 2025-04-27T02:00:00Z : Adapted MCPTool for FastMCP v2 by CodeAssistant
+# * Removed StreamingTool import and usage
+# * Updated register() method to use Tool class with stream method
+# * Simplified implementation to use single Tool instance
+# * Updated class documentation to reflect changes
+# 2025-04-27T01:50:00Z : Updated imports for Tool class by CodeAssistant
+# * Changed import from fastmcp.tool to fastmcp.tools to match FastMCP v2 structure
 # 2025-04-27T00:55:00Z : Simplified MCPTool class hierarchy by CodeAssistant
 # * Made execute() non-abstract with default implementation that collects chunks from stream()
 # * Removed SimpleMCPTool class as its functionality is now part of MCPTool
 # * Maintained backward compatibility with existing tools
 # * Simplified API by requiring only stream() method implementation
-# 2025-04-27T00:37:00Z : Created MCPTool base class by CodeAssistant
-# * Implemented unified streaming API for MCP tools
-# * Added automatic conversion between streaming and non-streaming responses
-# * Created abstract methods for tool implementation
-# * Added support for progress reporting and cancellation
 ###############################################################################
 
 import asyncio
@@ -67,7 +67,6 @@ from pydantic import BaseModel, Field, create_model
 
 from fastmcp import FastMCP
 from fastmcp.tools import Tool
-from fastmcp.tools import StreamingTool
 
 logger = logging.getLogger(__name__)
 
@@ -91,8 +90,8 @@ class MCPTool(Generic[InputType, OutputType, ChunkType], ABC):
     - Support for progress reporting and cancellation
     
     [Implementation details]
-    - Uses FastMCP's Tool and StreamingTool classes under the hood
-    - Registers both streaming and non-streaming versions of the tool
+    - Uses FastMCP's Tool class under the hood with streaming capabilities
+    - Registers a tool with both execute and stream methods
     - Handles conversion between streaming and non-streaming responses
     - Provides access to context for progress reporting and cancellation
     """
@@ -132,9 +131,8 @@ class MCPTool(Generic[InputType, OutputType, ChunkType], ABC):
         self.version = version
         self.logger = logging.getLogger(f"dbp.mcp_server.tools.{name}")
         
-        # These will be set when the tool is registered
+        # This will be set when the tool is registered
         self._tool = None
-        self._streaming_tool = None
         
     def register(self, mcp: FastMCP) -> None:
         """
@@ -142,15 +140,15 @@ class MCPTool(Generic[InputType, OutputType, ChunkType], ABC):
         Registers the tool with the FastMCP instance.
         
         [Design principles]
-        Handles registration of both streaming and non-streaming versions.
+        Handles registration of the tool with FastMCP.
         
         [Implementation details]
-        Creates and registers both Tool and StreamingTool instances.
+        Creates and registers a Tool instance with execute and stream capabilities.
         
         Args:
             mcp: The FastMCP instance to register with
         """
-        # Create and register the non-streaming tool
+        # Create and register the tool
         self._tool = Tool(
             name=self.name,
             description=self.description,
@@ -159,21 +157,13 @@ class MCPTool(Generic[InputType, OutputType, ChunkType], ABC):
             version=self.version,
             execute=self._execute_wrapper
         )
+        
+        # In FastMCP v2, we can add stream method directly to the Tool
+        self._tool.stream = self._stream_wrapper
+        
         mcp.register_tool(self._tool)
         
-        # Create and register the streaming tool
-        self._streaming_tool = StreamingTool(
-            name=f"{self.name}_stream",
-            description=f"Streaming version of {self.description}",
-            input_schema=self.input_model,
-            output_schema=self.output_model,
-            version=self.version
-        )
-        self._streaming_tool.execute = self._execute_wrapper
-        self._streaming_tool.stream = self._stream_wrapper
-        mcp.register_tool(self._streaming_tool)
-        
-        self.logger.info(f"Registered tool '{self.name}' and '{self.name}_stream'")
+        self.logger.info(f"Registered tool '{self.name}'")
         
     async def _execute_wrapper(
         self,

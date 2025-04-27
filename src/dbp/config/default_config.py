@@ -74,20 +74,22 @@ COMPONENT_ENABLED_DEFAULTS = {
     # Only essential components required for minimized MCP server operations
     "config_manager": True,   # Required for configuration
     "mcp_server": True,       # Required for API access
-    
+
+    # Filesystem events    
+    "change_queue": True,    
+    "fs_monitor": True,      
+
     # All other components disabled
-    "file_access": False,     # Not needed for minimized MCP server
-    "database": False,        # Not needed for minimized MCP server
-    "llm_coordinator": True,  # Required for MCP general query API
-    "fs_monitor": False,      # Not needed for minimized MCP server
-    "filter": False,          # Not needed for minimized MCP server
-    "change_queue": False,    # Not needed for minimized MCP server
-    "memory_cache": False,    # Not needed for minimized MCP server
-    "consistency_analysis": False,    # Not needed for minimized MCP server
-    "doc_relationships": False,       # Not needed for minimized MCP server
-    "recommendation_generator": False, # Not needed for minimized MCP server
-    "scheduler": False,       # Not needed for minimized MCP server
-    "metadata_extraction": False,     # Not needed for minimized MCP server
+    "file_access": False,    
+    "database": False,       
+    "llm_coordinator": False, 
+    "filter": False,          
+    "memory_cache": False,    
+    "consistency_analysis": False,   
+    "doc_relationships": False,     
+    "recommendation_generator": False, 
+    "scheduler": False,       
+    "metadata_extraction": False, 
 }
 
 # General application settings
