@@ -76,6 +76,7 @@ COMPONENT_ENABLED_DEFAULTS = {
     "mcp_server": True,       # Required for API access
 
     # Filesystem events    
+    "filter": True,          
     "change_queue": True,    
     "fs_monitor": True,      
 
@@ -83,7 +84,6 @@ COMPONENT_ENABLED_DEFAULTS = {
     "file_access": False,    
     "database": False,       
     "llm_coordinator": False, 
-    "filter": False,          
     "memory_cache": False,    
     "consistency_analysis": False,   
     "doc_relationships": False,     

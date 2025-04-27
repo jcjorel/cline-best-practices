@@ -84,7 +84,7 @@ COMPONENT_DECLARATIONS = [
         "import_path": "dbp.fs_monitor.component",
         "component_class": "FileSystemMonitorComponent",
         "name": "fs_monitor",
-        "dependencies": ["config_manager", "change_queue"]
+        "dependencies": ["config_manager", "change_queue", "filter"]
     },
     {
         "import_path": "dbp.fs_monitor.filter",
