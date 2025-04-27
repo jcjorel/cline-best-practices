@@ -91,6 +91,7 @@ from .default_config import (
     AWS_DEFAULTS,
     BEDROCK_DEFAULTS,
     COMPONENT_ENABLED_DEFAULTS,
+    FILE_ACCESS_DEFAULTS,
 )
 
 logger = logging.getLogger(__name__)
@@ -389,6 +390,12 @@ class AWSConfig(BaseModel):
     endpoint_url: Optional[str] = Field(default=AWS_DEFAULTS["endpoint_url"], description="Optional custom endpoint URL for AWS services")
     credentials_profile: Optional[str] = Field(default=AWS_DEFAULTS["credentials_profile"], description="AWS credentials profile name")
 
+# --- File Access Configuration ---
+
+class FileAccessConfig(BaseModel):
+    """Configuration for the File Access component."""
+    cache_size: int = Field(default=FILE_ACCESS_DEFAULTS["cache_size"], ge=10, le=10000, description="Maximum number of DBPFile instances to cache")
+
 # --- Memory Cache Configuration ---
 
 class MemoryCacheConfig(BaseModel):
@@ -505,6 +512,7 @@ class AppConfig(BaseModel):
     consistency_analysis: ConsistencyAnalysisConfig = Field(default_factory=ConsistencyAnalysisConfig, description="Consistency Analysis settings")
     metadata_extraction: MetadataExtractionConfig = Field(default_factory=MetadataExtractionConfig, description="Metadata Extraction settings")
     recommendation_generator: RecommendationGeneratorConfig = Field(default_factory=RecommendationGeneratorConfig, description="Recommendation Generator settings")
+    file_access: FileAccessConfig = Field(default_factory=FileAccessConfig, description="File Access settings")
     memory_cache: MemoryCacheConfig = Field(default_factory=MemoryCacheConfig, description="Memory Cache settings")
     mcp_server: MCPServerConfig = Field(default_factory=MCPServerConfig, description="MCP Server Integration settings")
     cli: CLIConfig = Field(default_factory=CLIConfig, description="CLI-specific settings")

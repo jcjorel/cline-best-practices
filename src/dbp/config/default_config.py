@@ -77,11 +77,11 @@ COMPONENT_ENABLED_DEFAULTS = {
 
     # Filesystem events    
     "filter": True,          
+    "file_access": True,    
     "change_queue": True,    
     "fs_monitor": True,      
 
     # All other components disabled
-    "file_access": False,    
     "database": False,       
     "llm_coordinator": False, 
     "memory_cache": False,    
@@ -249,6 +249,11 @@ METADATA_EXTRACTION_DEFAULTS = {
     "max_retries": 3,
     "retry_delay": 1.0,
     "enabled": True,
+}
+
+# File Access settings
+FILE_ACCESS_DEFAULTS = {
+    "cache_size": 100,  # Maximum number of DBPFile instances to cache
 }
 
 # Memory Cache settings

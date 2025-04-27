@@ -1,381 +1,379 @@
 # Hierarchical Semantic Tree Context: mcp_server
 
 ## Directory Purpose
-This directory implements the Model Context Protocol (MCP) server component for the Documentation-Based Programming system. It provides the infrastructure to expose DBP functionality as MCP tools and resources, enabling LLM assistants to interact with the system via a standardized API. The component integrates with the core DBP framework, manages server lifecycle, handles authentication and authorization, provides error handling, and maintains registries of tools and resources. The implementation follows a clean architecture that separates protocols, adapters, server logic, and tool/resource implementations.
+This directory implements an MCP (Model Context Protocol) server using the FastMCP library. It provides a component-based integration with the DBP system for managing the MCP server lifecycle, along with base classes for implementing MCP tools and resources. The implementation follows a clean architecture with clear separation between the component interface, server implementation, and tool/resource definitions. The server supports streaming capabilities, progress reporting, and cancellation handling.
 
 ## Child Directories
 
 ### internal_tools
-This directory contains internal implementation classes for the MCP server tools that are not directly exposed to clients. These internal tools provide the underlying functionality for public-facing MCP tools defined elsewhere. Each tool follows a consistent interface pattern with proper separation between public and internal concerns, enabling maintainable code with clear boundaries while implementing various analysis and functionality capabilities.
-
-### mcp
-The mcp directory contains the core implementation of the Model Context Protocol (MCP) specification for the server-side of the Documentation-Based Programming system. It provides the foundational protocol abstractions, interfaces, and utility classes required to implement a compliant MCP server. This module separates protocol concerns from server implementation details, enabling clean architecture with proper separation of interfaces from concrete implementations. The directory includes protocol definitions for tools, resources, error handling, session management, and streaming capabilities, serving as the backbone for MCP-based communication.
+This directory contains internal MCP tools that provide implementation for functionality exposed through public tools. These internal tools are not intended to be used directly by MCP clients but are accessed through the public tools defined in the MCP server. The directory implements a clear separation between public and internal tools with consistent interfaces, proper naming conventions, and common error handling patterns.
 
 ### examples
-The examples directory provides reference implementations and sample code for using the Model Context Protocol (MCP) server capabilities. It contains working demonstrations that showcase the MCP functionality, particularly focused on streaming features and client-server interactions. These examples serve as educational resources for developers implementing their own MCP tools and clients, and can be used for testing and validation of the MCP protocol implementation. The code here emphasizes best practices in MCP development while providing concrete patterns that developers can adapt for their own applications.
+This directory contains example implementations of MCP tools and resources for demonstration and reference purposes. It serves as a practical guide for developers creating custom MCP tools and resources using the unified API. The examples demonstrate proper implementation patterns, including streaming capabilities, progress reporting, cancellation handling, and parameter validation using Pydantic models.
 
 ## Local Files
 
 ### `__init__.py`
 ```yaml
 source_file_intent: |
-  MCP Server Integration package for the Documentation-Based Programming system.
-  Provides module-level imports and defines the public API for the mcp_server package.
+  Initializes the mcp_server package and exports key classes and functions.
   
 source_file_design_principles: |
-  - Exports only the public interfaces needed by other components
-  - Maintains clean import hierarchy to avoid circular dependencies
-  - Uses explicit imports rather than wildcard imports
-  - Organizes imports by logical function groups
+  - Clean package exports
+  - Simplified imports for consumers
+  - Clear documentation of public API
   
 source_file_constraints: |
-  - Must avoid circular imports at all costs
-  - Should maintain backward compatibility for public interfaces
+  - Only export public API elements
   
 dependencies:
   - kind: codebase
     dependency: doc/DESIGN.md
-  - kind: codebase
-    dependency: doc/design/LLM_COORDINATION.md
   
 change_history:
-  - timestamp: "2025-04-15T21:53:30Z"
-    summary: "Fixed docstring formatting by CodeAssistant"
-    details: "Corrected placement of docstring quotes"
-  - timestamp: "2025-04-15T21:52:35Z"
-    summary: "Added GenAI header to comply with documentation standards by CodeAssistant"
-    details: "Added complete header template with appropriate sections"
+  - timestamp: "2025-04-27T22:15:00Z"
+    summary: "Updated package exports for FastMCP integration"
+    details: "Modified exports to include FastMCP-compatible classes and functions"
 ```
 
 ### `__main__.py`
 ```yaml
 source_file_intent: |
-  Provides a command-line entry point for running the MCP server as a standalone application.
+  Provides the entry point for running the MCP server as a standalone application.
   
 source_file_design_principles: |
-  - Clean command-line interface with argument parsing
-  - Direct server instantiation and control
-  - Proper signal handling for graceful shutdown
+  - Simple command-line interface
+  - Component-based initialization
+  - Clean error handling and logging
   
 source_file_constraints: |
-  - Must handle proper server initialization and shutdown
-  - Should provide clear error messages for configuration issues
+  - Must initialize the MCPServerComponent
+  - Must handle command-line arguments
+  - Must provide proper error handling
   
 dependencies:
   - kind: codebase
-    dependency: doc/DESIGN.md
+    dependency: src/dbp/mcp_server/component.py
+  - kind: codebase
+    dependency: src/dbp/core/system.py
   
 change_history:
-  - timestamp: "2025-04-15T11:00:00Z"
-    summary: "Created MCP server entry point by CodeAssistant"
-    details: "Implemented command-line interface for server management"
+  - timestamp: "2025-04-27T22:18:00Z"
+    summary: "Updated main entry point for FastMCP integration"
+    details: "Modified to use wait_for_server_exit() instead of start_server()"
 ```
 
 ### `adapter.py`
 ```yaml
 source_file_intent: |
-  Implements the SystemComponentAdapter class that provides MCP tools and resources
-  with safe access to the core DBP components they depend upon.
+  Provides adapter functions to convert between FastMCP and DBP system components.
   
 source_file_design_principles: |
-  - Adapter pattern to bridge MCP server with core components
-  - Centralized access control for system components
-  - Component dependency resolution and validation
+  - Clean adaptation between FastMCP and DBP
+  - Support for both synchronous and asynchronous execution
+  - Proper error handling and conversion
   
 source_file_constraints: |
-  - Must verify component initialization state
-  - Should handle component access errors gracefully
+  - Must maintain compatibility with existing interfaces
+  - Must properly convert between error types
   
 dependencies:
+  - kind: system
+    dependency: fastmcp
   - kind: codebase
-    dependency: doc/DESIGN.md
+    dependency: src/dbp/core/component.py
   
 change_history:
-  - timestamp: "2025-04-15T11:30:00Z"
-    summary: "Created system component adapter by CodeAssistant"
-    details: "Implemented adapter for accessing core components"
+  - timestamp: "2025-04-25T08:14:00Z"
+    summary: "Created adapter functions for FastMCP integration"
+    details: "Implemented functions to convert between FastMCP and DBP components"
 ```
 
 ### `auth.py`
 ```yaml
 source_file_intent: |
-  Implements the AuthenticationProvider class that manages API key authentication
-  and authorization for MCP server requests.
+  Implements authentication and authorization for the MCP server.
   
 source_file_design_principles: |
-  - Separation of authentication and authorization concerns
-  - Configurable authentication methods
-  - Clean error handling for auth failures
+  - Secure authentication mechanisms
+  - Role-based authorization
+  - Integration with FastMCP auth system
   
 source_file_constraints: |
-  - Must implement secure API key validation
-  - Should support different permission levels
+  - Must maintain security best practices
+  - Must integrate with FastMCP auth system
   
 dependencies:
+  - kind: system
+    dependency: fastmcp
   - kind: codebase
-    dependency: doc/DESIGN.md
-  - kind: codebase
-    dependency: doc/SECURITY.md
+    dependency: src/dbp/core/auth.py
   
 change_history:
-  - timestamp: "2025-04-15T12:00:00Z"
-    summary: "Created authentication provider by CodeAssistant"
-    details: "Implemented API key authentication and authorization"
+  - timestamp: "2025-04-23T14:58:00Z"
+    summary: "Implemented authentication and authorization"
+    details: "Created authentication and authorization mechanisms for MCP server"
 ```
 
 ### `component.py`
 ```yaml
 source_file_intent: |
-  Implements the MCPServerComponent class, the main entry point for the MCP
-  server integration within the DBP application framework. It conforms to the
-  Component protocol, initializes the MCP server and its dependencies (adapter,
-  auth, registries, handlers), registers tools and resources, and manages the
-  server's lifecycle (start/stop).
+  Implements the MCPServerComponent class using FastMCP library.
+  This component maintains the same interface as the original but replaces the
+  homemade MCP implementation with FastMCP for better compliance with the MCP specification.
   
 source_file_design_principles: |
-  - Conforms to the Component protocol (`src/dbp/core/component.py`).
-  - Encapsulates the entire MCP server logic.
-  - Declares dependencies on core DBP components needed by its tools/resources.
-  - Initializes and wires together internal MCP server parts in `initialize`.
-  - Registers concrete MCP tools and resources.
-  - Provides methods to start and stop the actual server process.
-  - Design Decision: Component Facade for MCP Server (2025-04-15)
-    * Rationale: Integrates the MCP server functionality cleanly into the application's component lifecycle.
-    * Alternatives considered: Running the MCP server as a separate process (harder integration).
+  - Maintains the Component protocol interface (`src/dbp/core/component.py`).
+  - Preserves integration with config_manager.
+  - Uses FastMCP for MCP protocol implementation.
+  - Maintains the same lifecycle management API.
+  - Provides clear logging for operation.
+  - Simplifies component implementation by delegating to MCPServer class.
   
 source_file_constraints: |
-  - Depends on the core component framework and various DBP system components.
-  - Requires all helper classes within the `mcp_server` package.
-  - Assumes configuration for the MCP server is available via InitializationContext.
-  - Relies on placeholder implementations for the actual web server and tool/resource logic.
+  - Must maintain the same interface as the original component.
+  - Should maintain integration with config_manager.
+  - Must provide clear log messages during operation.
+  - Must use FastMCP for MCP protocol implementation.
   
 dependencies:
   - kind: codebase
     dependency: doc/DESIGN.md
-  - kind: system
+  - kind: codebase
     dependency: src/dbp/core/component.py
-  - kind: other
-    dependency: All other files in src/dbp/mcp_server/
+  - kind: codebase
+    dependency: src/dbp/core/fs_utils.py
+  - kind: codebase
+    dependency: src/dbp/config/config_manager.py
+  - kind: codebase
+    dependency: src/dbp/mcp_server/server.py
+  - kind: system
+    dependency: fastmcp
   
 change_history:
-  - timestamp: "2025-04-20T01:35:42Z"
-    summary: "Completed dependency injection refactoring by CodeAssistant"
-    details: "Removed dependencies property, made dependencies parameter required in initialize method, updated documentation for dependency injection pattern"
-  - timestamp: "2025-04-20T00:31:26Z" 
-    summary: "Added dependency injection support by CodeAssistant"
-    details: "Updated initialize() method to accept dependencies parameter, enhanced method documentation for dependency injection, updated import statements to include Dict type"
-  - timestamp: "2025-04-17T23:39:00Z"
-    summary: "Updated to use strongly-typed configuration by CodeAssistant"
-    details: "Modified initialize() to use InitializationContext with proper typing, updated configuration access to use context.get_typed_config() instead of string-based keys, added the required documentation sections for the initialize method"
-  - timestamp: "2025-04-17T11:54:21Z"
-    summary: "Added directory creation for required paths by CodeAssistant"
-    details: "Integrated with fs_utils to ensure required directories exist, added validation of configuration values from config_manager, removed hardcoded default values in server configuration"
+  - timestamp: "2025-04-27T17:26:00Z"
+    summary: "Updated ComponentNotInitializedError import by CodeAssistant"
+    details: "Removed local ComponentNotInitializedError class definition"
 ```
 
 ### `data_models.py`
 ```yaml
 source_file_intent: |
-  Defines the data models used by the MCP server component, including
-  request and response structures, error formats, and related types.
+  Defines data models for MCP server operations.
   
 source_file_design_principles: |
-  - Strong typing with Pydantic models
-  - Compliance with MCP protocol specifications
-  - Clean serialization for JSON responses
+  - Clear data model definitions
+  - Pydantic models for validation
+  - Consistent naming conventions
   
 source_file_constraints: |
-  - Must align with official MCP protocol standards
-  - Should handle validation of request/response data
+  - Must use Pydantic for validation
+  - Must maintain consistent naming conventions
   
 dependencies:
-  - kind: codebase
-    dependency: doc/DESIGN.md
+  - kind: system
+    dependency: pydantic
   
 change_history:
-  - timestamp: "2025-04-15T10:30:00Z"
-    summary: "Created MCP data models by CodeAssistant"
-    details: "Implemented request, response, and error data structures"
+  - timestamp: "2025-04-23T14:58:00Z"
+    summary: "Created data models for MCP server"
+    details: "Defined Pydantic models for MCP server operations"
 ```
 
 ### `error_handler.py`
 ```yaml
 source_file_intent: |
-  Implements the ErrorHandler class for standardizing error responses
-  across all MCP server tools and resources.
+  Implements error handling for the MCP server.
   
 source_file_design_principles: |
-  - Consistent error formatting and codes
-  - Centralized error handling logic
-  - Standardized logging of errors
+  - Consistent error handling
+  - Clear error messages
+  - Proper logging of errors
   
 source_file_constraints: |
-  - Must handle various error types consistently
-  - Should provide appropriate error details without leaking sensitive information
+  - Must maintain consistent error handling
+  - Must provide clear error messages
   
 dependencies:
-  - kind: codebase
-    dependency: doc/DESIGN.md
+  - kind: system
+    dependency: fastapi
+  - kind: system
+    dependency: fastmcp
   
 change_history:
-  - timestamp: "2025-04-15T12:30:00Z"
-    summary: "Created error handler by CodeAssistant"
-    details: "Implemented standardized error formatting and handling"
+  - timestamp: "2025-04-23T14:58:00Z"
+    summary: "Implemented error handling for MCP server"
+    details: "Created error handling mechanisms for MCP server"
 ```
 
 ### `exceptions.py`
 ```yaml
 source_file_intent: |
-  Defines custom exceptions used throughout the MCP server component.
+  Defines exceptions for the MCP server.
   
 source_file_design_principles: |
   - Clear exception hierarchy
-  - Descriptive exception types for different error scenarios
-  - Consistent error message formatting
+  - Descriptive error messages
+  - Consistent exception naming
   
 source_file_constraints: |
-  - Should provide informative error messages
-  - Must maintain backward compatibility for exception handling
+  - Must maintain consistent exception naming
+  - Must provide descriptive error messages
   
 dependencies:
   - kind: codebase
-    dependency: doc/DESIGN.md
+    dependency: src/dbp/core/exceptions.py
   
 change_history:
-  - timestamp: "2025-04-15T10:15:00Z"
-    summary: "Created MCP server exceptions by CodeAssistant"
-    details: "Defined exception classes for various error scenarios"
+  - timestamp: "2025-04-23T14:58:00Z"
+    summary: "Created exceptions for MCP server"
+    details: "Defined exception classes for MCP server"
 ```
 
-### `mcp_protocols.py`
+### `mcp_resource.py`
 ```yaml
 source_file_intent: |
-  Defines the core protocols (interfaces) for MCP tools and resources.
+  Defines the MCPResource base class for implementing MCP resources.
   
 source_file_design_principles: |
-  - Clean interface definitions using abstract base classes
-  - Clear contract for tool and resource implementations
-  - Separation of interface from implementation
+  - Clean base class for resource implementation
+  - Support for parameter validation
+  - Integration with FastMCP
   
 source_file_constraints: |
-  - Must align with MCP protocol specifications
-  - Should be extensible for future protocol changes
+  - Must use Pydantic for validation
+  - Must integrate with FastMCP
   
 dependencies:
-  - kind: codebase
-    dependency: doc/DESIGN.md
-  - kind: codebase
-    dependency: doc/design/LLM_COORDINATION.md
+  - kind: system
+    dependency: fastmcp
+  - kind: system
+    dependency: pydantic
   
 change_history:
-  - timestamp: "2025-04-15T10:45:00Z"
-    summary: "Created MCP protocols by CodeAssistant"
-    details: "Implemented tool and resource interface definitions"
+  - timestamp: "2025-04-27T01:51:00Z"
+    summary: "Updated MCPResource for FastMCP integration"
+    details: "Modified MCPResource to work with FastMCP"
+```
+
+### `mcp_tool.py`
+```yaml
+source_file_intent: |
+  Defines the MCPTool base class for implementing MCP tools.
+  
+source_file_design_principles: |
+  - Clean base class for tool implementation
+  - Support for input/output validation
+  - Support for streaming and progress reporting
+  - Integration with FastMCP
+  
+source_file_constraints: |
+  - Must use Pydantic for validation
+  - Must support streaming and progress reporting
+  - Must integrate with FastMCP
+  
+dependencies:
+  - kind: system
+    dependency: fastmcp
+  - kind: system
+    dependency: pydantic
+  - kind: system
+    dependency: asyncio
+  
+change_history:
+  - timestamp: "2025-04-27T02:03:00Z"
+    summary: "Updated MCPTool for FastMCP integration"
+    details: "Modified MCPTool to work with FastMCP"
 ```
 
 ### `registry.py`
 ```yaml
 source_file_intent: |
-  Implements the ToolRegistry and ResourceProvider classes for managing
-  registered MCP tools and resources.
+  Implements the registry for MCP tools and resources.
   
 source_file_design_principles: |
-  - Registry pattern for tool and resource management
-  - Validation of registered components
-  - Safe lookup operations
+  - Clean registry implementation
+  - Support for tool and resource registration
+  - Thread-safe operations
   
 source_file_constraints: |
-  - Must prevent duplicate registrations
-  - Should provide efficient lookup mechanisms
+  - Must be thread-safe
+  - Must support dynamic registration and unregistration
   
 dependencies:
-  - kind: codebase
-    dependency: doc/DESIGN.md
+  - kind: system
+    dependency: fastmcp
   
 change_history:
-  - timestamp: "2025-04-15T11:15:00Z"
-    summary: "Created MCP registries by CodeAssistant"
-    details: "Implemented tool and resource registry classes"
+  - timestamp: "2025-04-23T14:58:00Z"
+    summary: "Created registry for MCP tools and resources"
+    details: "Implemented registry for MCP tools and resources"
 ```
 
 ### `resources.py`
 ```yaml
 source_file_intent: |
-  Implements concrete MCP resource classes for accessing DBP system data.
+  Implements built-in MCP resources.
   
 source_file_design_principles: |
-  - Each resource focuses on a specific data domain
-  - Consistent resource interface implementation
-  - Clean separation of resource definition from access logic
+  - Clean resource implementations
+  - Consistent interface
+  - Clear documentation
   
 source_file_constraints: |
-  - Must implement MCPResource protocol
-  - Should handle resource access securely
+  - Must follow MCPResource pattern
+  - Must provide clear documentation
   
 dependencies:
   - kind: codebase
-    dependency: doc/DESIGN.md
+    dependency: src/dbp/mcp_server/mcp_resource.py
   
 change_history:
-  - timestamp: "2025-04-15T13:30:00Z"
-    summary: "Created MCP resources by CodeAssistant"
-    details: "Implemented concrete resource classes for DBP data access"
+  - timestamp: "2025-04-23T14:58:00Z"
+    summary: "Created built-in MCP resources"
+    details: "Implemented built-in MCP resources"
 ```
 
 ### `server.py`
 ```yaml
 source_file_intent: |
-  Implements the actual MCP server class that handles HTTP requests
-  using a web framework like FastAPI.
+  Provides the MCPServer class that encapsulates the FastMCP server instance.
+  This class is responsible for creating and managing the FastMCP instance and
+  providing a clean API for server lifecycle management.
   
 source_file_design_principles: |
-  - Clean separation of server logic from component lifecycle
-  - Proper request routing and handling
-  - Graceful startup and shutdown
+  - Encapsulates FastMCP instance
+  - Provides clean API for server lifecycle management
+  - Handles server startup and shutdown
+  - Maintains proper error handling and logging
+  - Future developments should still use MCPTool for Pydantic validation to benefit
+    from mandatory input/output schema validation. While FastMCP provides its own
+    validation, using MCPTool ensures consistent validation across the codebase.
   
 source_file_constraints: |
-  - Must handle concurrent requests safely
-  - Should implement proper logging and error handling
+  - Must use FastMCP for MCP protocol implementation
+  - Must provide clear log messages during operation
+  - Must maintain proper error handling
+  - Must support health endpoint
   
 dependencies:
-  - kind: codebase
-    dependency: doc/DESIGN.md
   - kind: system
-    dependency: fastapi
+    dependency: fastmcp
   - kind: system
-    dependency: uvicorn
+    dependency: logging
+  - kind: system
+    dependency: threading
+  - kind: system
+    dependency: time
+  - kind: system
+    dependency: socket
+  - kind: system
+    dependency: requests
   
 change_history:
-  - timestamp: "2025-04-15T14:00:00Z"
-    summary: "Created MCP server implementation by CodeAssistant"
-    details: "Implemented FastAPI-based server with request handling"
-```
-
-### `tools.py`
-```yaml
-source_file_intent: |
-  Implements concrete MCP tool classes that expose DBP functionality
-  to LLM assistants.
-  
-source_file_design_principles: |
-  - Each tool implements a specific capability
-  - Consistent tool interface implementation
-  - Clear separation of tool definition from execution logic
-  
-source_file_constraints: |
-  - Must implement MCPTool protocol
-  - Should validate inputs thoroughly
-  - Must handle errors gracefully
-  
-dependencies:
-  - kind: codebase
-    dependency: doc/DESIGN.md
-  - kind: codebase
-    dependency: doc/design/LLM_COORDINATION.md
-  
-change_history:
-  - timestamp: "2025-04-15T13:00:00Z"
-    summary: "Created MCP tools by CodeAssistant"
-    details: "Implemented concrete tool classes for DBP functionality"
+  - timestamp: "2025-04-27T18:56:00Z"
+    summary: "Fixed server startup to use uvicorn directly by CodeAssistant"
+    details: "Changed server startup to use uvicorn.run() instead of FastMCP.run()"
 ```
 
 <!-- End of HSTC.md file -->

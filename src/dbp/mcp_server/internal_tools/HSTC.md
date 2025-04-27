@@ -1,7 +1,7 @@
 # Hierarchical Semantic Tree Context: internal_tools
 
 ## Directory Purpose
-This directory contains internal implementation classes for the MCP server tools that are not directly exposed to clients. These internal tools provide the underlying functionality for public-facing MCP tools defined elsewhere. Each tool follows a consistent interface pattern with proper separation between public and internal concerns, enabling maintainable code with clear boundaries while implementing various analysis and functionality capabilities.
+This directory contains internal MCP tools that provide implementation for functionality exposed through public tools. These internal tools are not intended to be used directly by MCP clients but are accessed through the public tools defined in the MCP server. The directory implements a clear separation between public and internal tools with consistent interfaces, proper naming conventions, and common error handling patterns.
 
 ## Child Directories
 <!-- No child directories with HSTC.md -->
@@ -64,99 +64,93 @@ change_history:
 ### `consistency.py`
 ```yaml
 source_file_intent: |
-  Implements internal tools for consistency analysis between code and documentation.
-  These tools support the public dbp_general_query tool but are not directly exposed.
+  Implements internal tools for consistency analysis within the MCP server.
   
 source_file_design_principles: |
-  - Prefix class names with 'Internal' to indicate private status
-  - Maintain the same functionality as original tool
-  - Use common base class and error handling
-  - Follow consistent interface pattern
+  - Provides consistency checking functionality for MCP resources and tools
+  - Follows the internal tool interface pattern
   
 source_file_constraints: |
   - Not to be used directly by MCP clients
-  - Only accessed through the public tools defined in tools.py
-  - Must maintain compatibility with existing AnalyzeDocumentConsistencyTool
+  - Only accessed through public tools
   
 dependencies:
   - kind: codebase
     dependency: doc/DESIGN.md
   
 change_history:
-  - timestamp: "2025-04-16T08:55:00Z"
-    summary: "Created consistency analysis internal tool by CodeAssistant"
-    details: "Migrated AnalyzeDocumentConsistencyTool to internal implementation"
+  - timestamp: "2025-04-23T14:58:00Z"
+    summary: "Created consistency analysis tool"
+    details: "Implemented internal consistency analysis functionality"
 ```
 
 ### `recommendations.py`
 ```yaml
 source_file_intent: |
-  Implements internal tools for recommendation generation and application.
+  Implements internal tools for generating and applying recommendations within the MCP server.
   
 source_file_design_principles: |
-  - Standardized internal tool interface pattern
-  - Clear separation from public-facing tools
-  - Consistent error handling and reporting
+  - Provides recommendation generation and application functionality
+  - Follows the internal tool interface pattern
   
 source_file_constraints: |
-  - Only to be used by public-facing MCP tools
-  - Not exposed directly to MCP clients
+  - Not to be used directly by MCP clients
+  - Only accessed through public tools
   
 dependencies:
   - kind: codebase
     dependency: doc/DESIGN.md
   
 change_history:
-  - timestamp: "2025-04-16T09:00:00Z"
-    summary: "Created recommendations internal tools by CodeAssistant"
-    details: "Implemented recommendation generator and applicator tools"
+  - timestamp: "2025-04-23T14:58:00Z"
+    summary: "Created recommendations tools"
+    details: "Implemented internal recommendation generation and application functionality"
 ```
 
 ### `relationships.py`
 ```yaml
 source_file_intent: |
-  Implements internal tools for document relationship management.
+  Implements internal tools for managing document relationships within the MCP server.
   
 source_file_design_principles: |
-  - Consistent interface with other internal tools
-  - Clear separation from public API
-  - Follows standard error handling patterns
+  - Provides document relationship management functionality
+  - Follows the internal tool interface pattern
   
 source_file_constraints: |
-  - For internal use only
-  - Must be called through public tools
+  - Not to be used directly by MCP clients
+  - Only accessed through public tools
   
 dependencies:
   - kind: codebase
     dependency: doc/DESIGN.md
   
 change_history:
-  - timestamp: "2025-04-16T09:15:00Z"
-    summary: "Created document relationships internal tool by CodeAssistant"
-    details: "Implemented tool for managing document relationships"
+  - timestamp: "2025-04-23T14:58:00Z"
+    summary: "Created document relationships tool"
+    details: "Implemented internal document relationship management functionality"
 ```
 
 ### `visualization.py`
 ```yaml
 source_file_intent: |
-  Implements internal tools for generating Mermaid diagrams from document and code relationships.
+  Implements internal tools for visualization generation within the MCP server.
   
 source_file_design_principles: |
-  - Consistent interface with other internal tools
-  - Separation of diagram generation logic from public tools
+  - Provides visualization generation functionality, particularly for Mermaid diagrams
+  - Follows the internal tool interface pattern
   
 source_file_constraints: |
-  - For internal use only
-  - Must be called through public visualization tools
+  - Not to be used directly by MCP clients
+  - Only accessed through public tools
   
 dependencies:
   - kind: codebase
     dependency: doc/DESIGN.md
   
 change_history:
-  - timestamp: "2025-04-16T09:20:00Z"
-    summary: "Created visualization internal tool by CodeAssistant"
-    details: "Implemented Mermaid diagram generation capabilities"
+  - timestamp: "2025-04-23T14:58:00Z"
+    summary: "Created visualization tool"
+    details: "Implemented internal Mermaid diagram generation functionality"
 ```
 
 <!-- End of HSTC.md file -->

@@ -6,6 +6,7 @@ colorama>=0.4.4
 pydantic>=1.9.0
 networkx>=2.6.0
 chardet>=5.1.0 # For character encoding detection in FileAccessService
+python-magic>=0.4.27 # For file type detection in DBPFile
 
 # Web server and API framework - for MCP server component
 fastapi>=0.68.0

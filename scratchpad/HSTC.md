@@ -5,6 +5,9 @@ The scratchpad directory serves as a working area for temporary planning documen
 
 ## Child Directories
 
+### fastmcp_integration
+This directory contains a sample implementation for replacing the homemade MCP server implementation with the fastmcp library. The goal is to achieve optimal integration with fastmcp while preserving existing FastAPI usage and health route functionality. The implementation follows key principles including complete replacement of homemade MCP code, preservation of FastAPI integration, maintenance of the component architecture, and no backward compatibility requirements.
+
 ### onboarding_kit
 Contains documentation and resources specifically designed to help new developers and contributors understand and navigate the project, including overviews, architecture diagrams, workflows, and development guides.
 

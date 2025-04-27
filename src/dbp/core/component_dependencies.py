@@ -62,7 +62,7 @@ COMPONENT_DECLARATIONS = [
         "import_path": "dbp.core.file_access_component",
         "component_class": "FileAccessComponent",
         "name": "file_access",
-        "dependencies": []
+        "dependencies": ["filter", "config_manager"]
     },
     
     # Database component
