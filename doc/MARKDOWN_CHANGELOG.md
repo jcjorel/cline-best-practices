@@ -2,6 +2,8 @@
 
 This file tracks all changes made to documentation markdown files in this directory.
 
+2025-04-28T21:59:00Z : [CONFIGURATION.md] Updated File System Monitoring section with new fs_monitor configuration options
+2025-04-28T21:50:00Z : [design/FILE_SYSTEM_MONITOR.md] Created new documentation for redesigned fs_monitor component
 2025-04-25T22:23:00Z : [CONFIGURATION.md] Added capability negotiation parameters to MCP Server Integration section
 2025-04-25T17:39:00Z : [CONFIGURATION.md] Added MCP Server Integration section with documented host parameter set to 127.0.0.1
 2025-04-21T00:18:22Z : [DESIGN_DECISIONS.md] Removed integrated design decisions for Explicit Dependency Validation and Centralized Component Registration

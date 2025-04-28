@@ -87,9 +87,16 @@ This approach provides several benefits:
 
 | Parameter | Description | Default | Valid Values |
 |-----------|-------------|---------|-------------|
-| `monitor.enabled` | Enable file system monitoring | `true` | `true, false` |
-| `monitor.ignore_patterns` | Additional patterns to ignore beyond .gitignore | `["*.tmp", "*.log"]` | Array of glob patterns |
-| `monitor.recursive` | Monitor subdirectories recursively | `true` | `true, false` |
+| `fs_monitor.enabled` | Enable file system monitoring | `true` | `true, false` |
+| `fs_monitor.follow_symlinks` | Whether to follow symbolic links | `true` | `true, false` |
+| `fs_monitor.max_watches` | Maximum number of OS watches to create | `1000` | `1-10000` |
+| `fs_monitor.default_debounce_ms` | Default debounce delay in milliseconds | `100` | `0-10000` |
+| `fs_monitor.thread_priority` | Priority of the event dispatcher thread | `normal` | `low`, `normal`, `high` |
+| `fs_monitor.symlink_max_depth` | Maximum depth for symlink resolution | `10` | `1-100` |
+| `fs_monitor.directory_scan_batch_size` | Number of entries to process in each directory scan batch | `1000` | `100-10000` |
+| `fs_monitor.ignore_patterns` | Additional patterns to ignore beyond .gitignore | `["*.tmp", "*.log"]` | Array of glob patterns |
+
+For detailed implementation specifics, see [File System Monitor](design/FILE_SYSTEM_MONITOR.md).
 
 ### Database Settings
 

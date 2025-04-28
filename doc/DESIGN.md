@@ -520,6 +520,10 @@ For detailed implementation specifics, see [Component Initialization](design/COM
   - **Rationale**: Ensures continuous monitoring with minimal resource usage, provides thread-safe metadata access, and enables efficient metadata extraction
   - **Key Implications**: Improved responsiveness, better concurrency handling, more efficient resource utilization
   - **For detailed implementation specifics**: See [Background Task Scheduler](design/BACKGROUND_TASK_SCHEDULER.md)
+- **Design Decision (2025-04-28)**: Redesign File System Monitor component
+  - **Rationale**: Improves efficiency and flexibility with a listener-based architecture and direct config_manager dependency
+  - **Key Implications**: Simplified API, better resource utilization, enhanced support for symlinks and directory events
+  - **For detailed implementation specifics**: See [File System Monitor](design/FILE_SYSTEM_MONITOR.md)
 
 ### Security and Data Handling
 

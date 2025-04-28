@@ -22,6 +22,7 @@ graph TD
     COMPONENT_INIT[design/COMPONENT_INITIALIZATION.md]
     BACKGROUND_TASK[design/BACKGROUND_TASK_SCHEDULER.md]
     MCP_DATA_MODEL[design/MCP_SERVER_ENHANCED_DATA_MODEL.md]
+    FS_MONITOR_DOC[design/FILE_SYSTEM_MONITOR.md]
     
     %% Code Components
     SCHEDULER[src/dbp/scheduler]
@@ -69,6 +70,11 @@ graph TD
     LLM_COORD --> INTERNAL_TOOLS
     LLM_COORD --> MCP_DATA_MODEL
     LLM_COORD --> LLM_COORD_COMP
+    
+    FS_MONITOR_DOC --> DESIGN
+    FS_MONITOR_DOC --> CONFIG
+    FS_MONITOR_DOC --> FS_MONITOR
+    FS_MONITOR_DOC --> SCHEDULER
     
     LLM_PROMPTS --> INTERNAL_TOOLS
     LLM_PROMPTS --> LLM_COORD_COMP
@@ -291,8 +297,15 @@ When documentation files are updated:
 - Depends on: [src/dbp/fs_monitor] - Topic: Implementation - Scope: Filesystem event handling
 - Impacts: None
 
+## design/FILE_SYSTEM_MONITOR.md
+- Depends on: [DESIGN.md](#designmd) - Topic: Middleware and Support Functions - Documentation Monitoring - Scope: Filesystem monitoring architecture
+- Depends on: [CONFIGURATION.md](#configurationmd) - Topic: Configuration options - Scope: File system monitor settings
+- Impacts: [src/dbp/fs_monitor] - Topic: Implementation - Scope: File system monitor component design
+- Impacts: [src/dbp/scheduler] - Topic: Implementation - Scope: Event-based task scheduling integration
+
 ## src/dbp/fs_monitor
 - Depends on: [DESIGN.md](#designmd) - Topic: Middleware and Support Functions - Documentation Monitoring - Scope: Filesystem monitoring strategy
+- Depends on: [design/FILE_SYSTEM_MONITOR.md](#designfile_system_monitormd) - Topic: Implementation - Scope: File system monitor component design
 - Impacts: [src/dbp/scheduler] - Topic: Implementation - Scope: Event-based task scheduling
 
 ## src/dbp/mcp_server
