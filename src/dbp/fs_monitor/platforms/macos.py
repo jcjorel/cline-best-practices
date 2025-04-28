@@ -63,9 +63,11 @@ except Exception as e:
 
 # Assuming base.py is accessible
 try:
-    from .base import FileSystemMonitor, ChangeEvent, ChangeType
+    from .monitor_base import MonitorBase as FileSystemMonitor
+    from ..core.event_types import ChangeEvent, ChangeType
 except ImportError:
-    from base import FileSystemMonitor, ChangeEvent, ChangeType
+    from monitor_base import MonitorBase as FileSystemMonitor
+    from ..core.event_types import ChangeEvent, ChangeType
 
 logger = logging.getLogger(__name__)
 

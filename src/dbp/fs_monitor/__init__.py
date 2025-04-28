@@ -12,74 +12,86 @@
 # - Respect system prompt directives at all times
 ###############################################################################
 # [Source file intent]
-# Fs Monitor package for the Documentation-Based Programming system.
-# Implements file system monitoring for detecting changes to documentation and code.
+# Provides the public API for the fs_monitor module, exposing the core
+# functionality for file system event monitoring. This file acts as the main
+# entry point for interacting with the fs_monitor subsystem.
 ###############################################################################
 # [Source file design principles]
-# - Exports only the essential classes and functions needed by other components
-# - Maintains a clean public API with implementation details hidden
-# - Uses explicit imports rather than wildcard imports
+# - Expose only stable public APIs
+# - Hide implementation details from consumers
+# - Provide convenient imports for commonly used classes
+# - Support backward compatibility for existing code
 ###############################################################################
 # [Source file constraints]
-# - Must avoid circular imports
-# - Should maintain backward compatibility for public interfaces
+# - Must maintain backward compatibility
+# - Should avoid exposing implementation details
 ###############################################################################
 # [Dependencies]
-# codebase:- doc/DESIGN.md
+# codebase:src/dbp/fs_monitor/core/__init__.py
+# codebase:src/dbp/fs_monitor/dispatch/__init__.py
+# codebase:src/dbp/fs_monitor/platforms/__init__.py
+# codebase:src/dbp/fs_monitor/platforms/factory.py
+# codebase:src/dbp/fs_monitor/component.py
+# codebase:src/dbp/fs_monitor/git_filter.py
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-15T21:58:23Z : Added GenAI header to comply with documentation standards by CodeAssistant
-# * Added complete header template with appropriate sections
+# 2025-04-29T00:54:00Z : Updated __init__.py for fs_monitor reorganization by CodeAssistant
+# * Updated imports to use new module structure
+# * Reorganized exports to maintain backward compatibility
 ###############################################################################
 
-
-# src/dbp/fs_monitor/__init__.py
-
 """
-File System Monitoring package for the Documentation-Based Programming system.
+File system monitoring module for the DBP system.
 
-Provides platform-specific and fallback mechanisms for detecting file changes
-and queuing them for processing.
-
-Key components:
-- FileSystemMonitorFactory: Creates the appropriate monitor for the OS.
-- FileSystemMonitor: Abstract base class for monitors.
-- ChangeEvent: Data class for change events.
-- ChangeDetectionQueue: Thread-safe queue with debouncing.
-- GitIgnoreFilter: Filters paths based on .gitignore rules.
+This module provides functionality for monitoring file system events such as
+file creation, modification, deletion, and moves.
 """
 
-from .base import FileSystemMonitor, ChangeEvent, ChangeType
-from .queue import ChangeDetectionQueue
-from .filter import GitIgnoreFilter
-from .factory import FileSystemMonitorFactory
+# Re-export core types
+from .core import (
+    ChangeType, ChangeEvent, FileSystemListener, WatchHandle,
+    FSMonitorError, WatchError, WatchLimitError, WatchExistsError,
+    WatchNotFoundError, PlatformNotSupportedError
+)
 
-# Platform-specific monitors (importing them might raise errors if deps are missing)
-try:
-    from .linux import LinuxFileSystemMonitor
-except ImportError:
-    LinuxFileSystemMonitor = None # type: ignore
-try:
-    from .macos import MacOSFileSystemMonitor
-except ImportError:
-    MacOSFileSystemMonitor = None # type: ignore
-try:
-    from .windows import WindowsFileSystemMonitor
-except ImportError:
-    WindowsFileSystemMonitor = None # type: ignore
-from .fallback import FallbackFileSystemMonitor
+# Re-export top-level component and factory
+from .component import FSMonitorComponent
+from .platforms.factory import FileSystemMonitorFactory
+from .git_filter import FilterComponent, GitIgnoreFilter
 
+# Backward compatibility exports from platforms
+from .platforms import (
+    MonitorBase, LinuxMonitor, PollingMonitor
+)
 
+# Define public exports
 __all__ = [
-    "FileSystemMonitorFactory",
-    "FileSystemMonitor",
-    "ChangeEvent",
-    "ChangeType",
-    "ChangeDetectionQueue",
-    "GitIgnoreFilter",
-    # Expose specific monitors only if they are likely available
-    "LinuxFileSystemMonitor",
-    "MacOSFileSystemMonitor",
-    "WindowsFileSystemMonitor",
-    "FallbackFileSystemMonitor",
+    # Core exports
+    'ChangeType',
+    'ChangeEvent',
+    'FileSystemListener',
+    'WatchHandle',
+    
+    # Error types
+    'FSMonitorError',
+    'WatchError',
+    'WatchLimitError',
+    'WatchExistsError',
+    'WatchNotFoundError',
+    'PlatformNotSupportedError',
+    
+    # Components
+    'FSMonitorComponent',
+    'FilterComponent',
+    
+    # Factory
+    'FileSystemMonitorFactory',
+    
+    # Monitor implementations
+    'MonitorBase',
+    'LinuxMonitor',
+    'PollingMonitor',
+    
+    # Utilities
+    'GitIgnoreFilter',
 ]

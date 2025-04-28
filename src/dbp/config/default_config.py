@@ -126,6 +126,14 @@ MONITOR_DEFAULTS = {
     "enabled": True,
     "ignore_patterns": ["*.tmp", "*.log", "*.swp", "*~", ".git/", ".hg/", ".svn/", "__pycache__/"],
     "recursive": True,
+    "thread_count": 1,
+    "thread_priority": "normal",
+    "default_debounce_ms": 100,
+    "polling_fallback": {
+        "enabled": True,
+        "poll_interval": 1.0,
+        "hash_size": 4096
+    }
 }
 
 # Database settings

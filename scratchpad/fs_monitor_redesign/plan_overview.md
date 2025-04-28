@@ -81,7 +81,11 @@ The implementation will be divided into the following phases:
 - [plan_abstract_listener.md](plan_abstract_listener.md) - Implementation plan for the abstract listener class
 - [plan_watch_manager.md](plan_watch_manager.md) - Implementation plan for the watch manager
 - [plan_event_dispatcher.md](plan_event_dispatcher.md) - Implementation plan for the event dispatcher
-- [plan_platform_implementations.md](plan_platform_implementations.md) - Implementation plan for platform-specific implementations
+- [plan_platform_implementations_part1.md](plan_platform_implementations_part1.md) - Implementation plan for platform-specific implementations (Part 1)
+- [plan_platform_implementations_part2.md](plan_platform_implementations_part2.md) - Implementation plan for platform-specific implementations (Part 2)
+- [plan_platform_implementations_part3.md](plan_platform_implementations_part3.md) - Implementation plan for platform-specific implementations (Part 3)
+- [plan_platform_implementations_part4.md](plan_platform_implementations_part4.md) - Implementation plan for platform-specific implementations (Part 4)
+- [plan_platform_implementations_part5.md](plan_platform_implementations_part5.md) - Implementation plan for platform-specific implementations (Part 5)
 - [plan_component_integration.md](plan_component_integration.md) - Implementation plan for component integration
 
 ## Progress Tracking

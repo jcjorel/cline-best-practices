@@ -192,11 +192,28 @@ class SchedulerConfig(BaseModel):
     max_queue_size: int = Field(default=SCHEDULER_DEFAULTS["max_queue_size"], ge=100, le=10000, description="Maximum size of change queue")
     batch_size: int = Field(default=SCHEDULER_DEFAULTS["batch_size"], ge=1, le=100, description="Files processed in one batch")
 
+class PollingFallbackConfig(BaseModel):
+    """Configuration for the polling fallback monitor."""
+    enabled: bool = Field(default=MONITOR_DEFAULTS["polling_fallback"]["enabled"], description="Enable polling fallback when native APIs are unavailable")
+    poll_interval: float = Field(default=MONITOR_DEFAULTS["polling_fallback"]["poll_interval"], ge=0.1, le=60.0, description="Polling interval in seconds")
+    hash_size: int = Field(default=MONITOR_DEFAULTS["polling_fallback"]["hash_size"], ge=0, le=1048576, description="Number of bytes to hash for file change detection")
+
 class FSMonitorConfig(BaseModel):
     """File system monitoring settings."""
     enabled: bool = Field(default=MONITOR_DEFAULTS["enabled"], description="Enable file system monitoring")
     ignore_patterns: List[str] = Field(default=MONITOR_DEFAULTS["ignore_patterns"], description="Glob patterns to ignore during monitoring")
     recursive: bool = Field(default=MONITOR_DEFAULTS["recursive"], description="Monitor subdirectories recursively")
+    thread_count: int = Field(default=MONITOR_DEFAULTS["thread_count"], ge=1, le=16, description="Number of worker threads for event dispatching")
+    thread_priority: str = Field(default=MONITOR_DEFAULTS["thread_priority"], description="Priority for worker threads")
+    default_debounce_ms: int = Field(default=MONITOR_DEFAULTS["default_debounce_ms"], ge=0, le=10000, description="Default debounce delay in milliseconds")
+    polling_fallback: PollingFallbackConfig = Field(default_factory=PollingFallbackConfig, description="Polling fallback configuration")
+    
+    @validator('thread_priority')
+    def validate_thread_priority(cls, v):
+        allowed = ["low", "normal", "high"]
+        if v not in allowed:
+            raise ValueError(f"Thread priority must be one of: {allowed}")
+        return v
 
 class DatabaseConfig(BaseModel):
     """Database settings."""

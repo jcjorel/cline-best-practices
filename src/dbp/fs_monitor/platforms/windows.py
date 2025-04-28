@@ -68,11 +68,13 @@ except Exception as e:
     logging.getLogger(__name__).error(f"Failed to import 'pywin32' library: {e}", exc_info=True)
 
 
-# Assuming base.py is accessible
+# Import from monitor_base instead of base
 try:
-    from .base import FileSystemMonitor, ChangeEvent, ChangeType
+    from .monitor_base import MonitorBase as FileSystemMonitor
+    from ..core.event_types import ChangeEvent, ChangeType
 except ImportError:
-    from base import FileSystemMonitor, ChangeEvent, ChangeType
+    from monitor_base import MonitorBase as FileSystemMonitor
+    from ..core.event_types import ChangeEvent, ChangeType
 
 logger = logging.getLogger(__name__)
 

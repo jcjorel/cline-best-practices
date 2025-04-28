@@ -12,309 +12,369 @@
 # - Respect system prompt directives at all times
 ###############################################################################
 # [Source file intent]
-# Implements the FileSystemMonitorComponent class which provides file system
-# change detection functionality to the application. This component monitors
-# the file system for changes and notifies interested components.
+# This file implements the main component class for the file system monitor.
+# It coordinates the various subcomponents (watch manager, event dispatcher,
+# and platform monitor) and provides a simplified interface for other components
+# to register listeners for file system events.
 ###############################################################################
 # [Source file design principles]
-# - Conforms to the Component protocol (`src/dbp/core/component.py`)
-# - Encapsulates platform-specific file system monitoring implementations
-# - Provides cross-platform and fallback monitoring capabilities
-# - Uses factory pattern to create appropriate monitor for the current platform
-# - Operates with a change queue for efficient event processing
+# - Centralized coordination of fs_monitor subcomponents
+# - Simplified interface for other components
+# - Configuration-driven behavior
+# - Clean lifecycle management
+# - Thread-safe operations
 ###############################################################################
 # [Source file constraints]
-# - Depends on the core component framework and other system components
-# - Platform-specific implementations may have their own dependencies
-# - Expects configuration for monitoring settings via InitializationContext
+# - Must properly initialize and manage subcomponents 
+# - Must maintain thread safety for concurrent operations
+# - Must handle configuration changes gracefully
+# - Must provide a clean API for other components
+# - Must ensure proper resource cleanup during shutdown
 ###############################################################################
 # [Dependencies]
-# codebase:- doc/DESIGN.md
-# system:- src/dbp/core/component.py
-# other:- src/dbp/fs_monitor/factory.py
+# system:logging
+# system:os
+# system:threading
+# system:typing
+# codebase:src/dbp/core/component.py
+# codebase:src/dbp/config/config_manager.py
+# codebase:src/dbp/fs_monitor/watch_manager.py
+# codebase:src/dbp/fs_monitor/dispatch/event_dispatcher.py
+# codebase:src/dbp/fs_monitor/platforms/factory.py 
+# codebase:src/dbp/fs_monitor/core/listener.py
+# codebase:src/dbp/fs_monitor/dispatch/thread_manager.py
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-20T01:41:39Z : Completed dependency injection refactoring by CodeAssistant
-# * Removed dependencies property
-# * Made dependencies parameter required in initialize method
-# * Removed conditional logic for backwards compatibility
-# 2025-04-19T23:56:00Z : Added dependency injection support by CodeAssistant
-# * Updated initialize() method to accept dependencies parameter
-# * Modified initialization to use injected dependencies when available
-# * Improved dependency resolution with explicit error handling
-# 2025-04-17T23:22:30Z : Updated to use strongly-typed configuration by CodeAssistant
-# * Refactored configuration access to use type-safe get_typed_config() method
-# * Enhanced config access for both component configuration and project settings
-# * Improved type safety with direct attribute access to configuration properties
-# 2025-04-16T20:04:42Z : Initial creation of FileSystemMonitorComponent by CodeAssistant
-# * Implemented Component protocol methods and integration with fs_monitor factory
-# 2025-04-16T23:47:26Z : Fixed component dependencies by CodeAssistant
-# * Added explicit dependency on "change_queue" component to fix initialization order
+# 2025-04-29T01:04:00Z : Updated import paths for module reorganization by CodeAssistant
+# * Updated imports to use core/, dispatch/, and platforms/ submodules  
+# * Updated dependencies section to reflect the new file locations
+# 2025-04-29T00:28:00Z : Initial implementation of FSMonitorComponent for fs_monitor redesign by CodeAssistant
+# * Created FSMonitorComponent class with lifecycle management
+# * Implemented configuration handling
+# * Added listener registration methods
 ###############################################################################
 
 import logging
-from typing import List, Optional, Any, Dict
+import os
+import threading
+from typing import Dict, List, Optional, Set, Any
 
-from ..core.component import Component, InitializationContext
-from .factory import FileSystemMonitorFactory
-from .base import FileSystemMonitor
-from .queue import ChangeDetectionQueue
+from ..core.component import Component
+from ..config.config_manager import ConfigManager
+from .watch_manager import WatchManager
+from .dispatch.event_dispatcher import EventDispatcher
+from .dispatch.thread_manager import ThreadPriority
+from .platforms.factory import create_platform_monitor
+from .core.listener import FileSystemEventListener
 
 logger = logging.getLogger(__name__)
 
-class FileSystemMonitorComponent(Component):
+
+class FSMonitorComponent(Component):
     """
     [Class intent]
-    Component wrapper for the file system monitoring functionality that detects
-    file system changes and provides them to interested components.
-    
-    [Implementation details]
-    Uses a factory to create the appropriate platform-specific monitor implementation
-    and integrates with the change queue for efficient event processing.
+    Main component class for the file system monitor.
     
     [Design principles]
-    Single responsibility for file system change detection.
-    Platform independence through factory-created implementations.
+    - Centralized coordination of fs_monitor subcomponents
+    - Simplified interface for other components
+    - Configuration-driven behavior
+    - Clean lifecycle management
+    
+    [Implementation details]
+    - Manages watch_manager, event_dispatcher, and platform_monitor
+    - Handles component configuration
+    - Provides registration methods for other components
     """
     
-    def __init__(self):
+    def __init__(self, config_manager: ConfigManager) -> None:
         """
         [Function intent]
-        Initializes a new FileSystemMonitorComponent instance.
-        
-        [Implementation details]
-        Sets up initial state variables.
+        Initialize the FSMonitorComponent.
         
         [Design principles]
-        Minimal initialization with deferred monitor creation.
-        """
-        self._monitor: Optional[FileSystemMonitor] = None
-        self._initialized: bool = False
-        self._change_queue: Optional[ChangeDetectionQueue] = None
-        self.logger = logger
-    
-    @property
-    def name(self) -> str:
-        """
-        [Function intent]
-        Returns the unique name of the component.
+        - Component-based architecture
+        - Dependency injection
         
         [Implementation details]
-        Simple string return.
-        
-        [Design principles]
-        Clear component identification.
-        
-        Returns:
-            str: The component name
-        """
-        return "fs_monitor"
-    
-    def initialize(self, context: InitializationContext, dependencies: Dict[str, Component]) -> None:
-        """
-        [Function intent]
-        Initializes the file system monitor component.
-        
-        [Implementation details]
-        Uses the factory to create the appropriate platform-specific monitor
-        and starts monitoring based on configuration.
-        
-        [Design principles]
-        Platform-independent initialization with configuration-based behavior.
-        For Linux systems, strictly enforces the requirement for inotify.
+        - Stores reference to config_manager
+        - Initializes internal state
         
         Args:
-            context: The initialization context
-            dependencies: Dictionary of pre-resolved dependencies {name: component_instance}
+            config_manager: Reference to the application's configuration manager
         """
-        if self._initialized:
-            self.logger.warning("FileSystemMonitorComponent already initialized")
-            return
+        super().__init__(name="fs_monitor", dependencies=["config"])
+        self._config_manager = config_manager
+        self._watch_manager = None
+        self._event_dispatcher = None
+        self._platform_monitor = None
+        self._lock = threading.RLock()
+        self._started = False
+    
+    def initialize(self) -> None:
+        """
+        [Function intent]
+        Initialize the component.
         
-        # Add robust logger initialization with detailed error handling
-        try:
-            # First try to get logger from context as per API expectation
-            if hasattr(context, 'logger') and context.logger is not None:
-                self.logger = context.logger.getChild(self.name)
-                self.logger.debug(f"Logger obtained from context.logger: {type(context.logger)}")
-            # Fall back to direct access if context doesn't have logger attribute
-            else:
-                self.logger.debug(f"Context doesn't have logger attribute or it's None: {type(context)}")
-                self.logger.debug(f"Context attributes: {dir(context)}")
-                # Keep existing logger initialized in __init__
-        except Exception as e:
-            # Catch any logger initialization issues and log details
-            logger.error(f"Logger initialization failed: {e}, context type: {type(context)}")
-            logger.error(f"Available context attributes: {dir(context)}")
-            # Continue with the existing logger
-            
-        self.logger.info(f"Initializing component '{self.name}'...")
+        [Design principles]
+        - Clean initialization sequence
+        - Order-dependent initialization
         
-        try:
-            # Get configuration and dependencies
-            self.logger.debug("Using injected dependencies")
-            # Get config from the config_manager component in dependencies
-            config_manager = self.get_dependency(dependencies, "config_manager")
-            typed_config = config_manager.get_typed_config()
+        [Implementation details]
+        - Creates watch_manager, event_dispatcher, and platform_monitor
+        - Does not start monitoring (start() must be called separately)
+        """
+        with self._lock:
+            logger.info("Initializing FSMonitorComponent")
             
-            # Get change queue component from dependencies
-            queue_component = self.get_dependency(dependencies, "change_queue")
+            # Create watch manager
+            self._watch_manager = WatchManager()
             
-            # Validate configuration
-            config = typed_config.fs_monitor
-            if not config:
-                error_msg = f"Missing configuration section for '{self.name}'"
-                self.logger.error(error_msg)
-                raise RuntimeError(error_msg)
+            # Get configuration
+            config = self._config_manager.get_config()
+            fs_monitor_config = config.fs_monitor
             
-            # Validate change queue component
-            if not hasattr(queue_component, 'get_queue'):
-                error_msg = "Queue component missing get_queue method"
-                self.logger.error(error_msg)
-                raise RuntimeError(error_msg)
-                
-            self._change_queue = queue_component.get_queue()
-            self.logger.info("Change queue component successfully initialized")
+            # Thread priority mapping
+            thread_priority = ThreadPriority.NORMAL
+            if fs_monitor_config.thread_priority.lower() == "low":
+                thread_priority = ThreadPriority.LOW
+            elif fs_monitor_config.thread_priority.lower() == "high":
+                thread_priority = ThreadPriority.HIGH
             
-            # Get project root from typed configuration
-            project_root = typed_config.project.root_path
-            if project_root is None:
-                error_msg = "Project root path not found in configuration"
-                self.logger.error(error_msg)
-                raise RuntimeError(error_msg)
-            
-            # Create filesystem monitor using factory
-            self.logger.info(f"Creating monitor for platform with project root: {project_root}")
-            self._monitor = FileSystemMonitorFactory.create_monitor(
-                config=config,
-                project_root=project_root
+            # Create event dispatcher
+            self._event_dispatcher = EventDispatcher(self._watch_manager)
+            self._event_dispatcher.configure(
+                thread_count=fs_monitor_config.thread_count,
+                thread_priority=thread_priority,
+                default_debounce_ms=fs_monitor_config.default_debounce_ms
             )
             
-            # Start monitoring - strict approach with no conditional checks
-            # We assume monitoring should always be enabled
-            self._monitor.start()
-            self.logger.info("File system monitoring started")
+            # Create platform-specific monitor
+            self._platform_monitor = create_platform_monitor(
+                self._watch_manager, 
+                self._event_dispatcher,
+                polling_fallback_enabled=fs_monitor_config.polling_fallback.enabled,
+                polling_interval=fs_monitor_config.polling_fallback.poll_interval,
+                hash_size=fs_monitor_config.polling_fallback.hash_size
+            )
             
-            self._initialized = True
-            self.logger.info(f"Component '{self.name}' initialized successfully")
+            logger.info("FSMonitorComponent initialized")
+    
+    def start(self) -> None:
+        """
+        [Function intent]
+        Start the component.
+        
+        [Design principles]
+        - Clean startup sequence
+        
+        [Implementation details]
+        - Starts event dispatcher and platform monitor
+        - Sets started flag
+        """
+        with self._lock:
+            if self._started:
+                logger.warning("FSMonitorComponent already started")
+                return
             
-        except Exception as e:
-            self.logger.error(f"Failed to initialize FileSystemMonitorComponent: {e}", exc_info=True)
-            raise RuntimeError(f"Failed to initialize {self.name}: {e}") from e
+            if not self._platform_monitor or not self._event_dispatcher:
+                raise RuntimeError("FSMonitorComponent not initialized")
+            
+            # Check if component is enabled in configuration
+            config = self._config_manager.get_config()
+            if not config.fs_monitor.enabled:
+                logger.info("FSMonitorComponent is disabled in configuration, not starting")
+                return
+                
+            logger.info("Starting FSMonitorComponent")
+            
+            # Start event dispatcher
+            self._event_dispatcher.start()
+            
+            # Start platform monitor
+            self._platform_monitor.start()
+            
+            self._started = True
+            
+            logger.info("FSMonitorComponent started")
+    
+    def stop(self) -> None:
+        """
+        [Function intent]
+        Stop the component.
+        
+        [Design principles]
+        - Clean shutdown sequence
+        - Resource cleanup
+        
+        [Implementation details]
+        - Stops platform monitor and event dispatcher
+        - Clears started flag
+        """
+        with self._lock:
+            if not self._started:
+                logger.debug("FSMonitorComponent already stopped")
+                return
+            
+            logger.info("Stopping FSMonitorComponent")
+            
+            # Stop platform monitor (this will stop watching all directories)
+            if self._platform_monitor:
+                self._platform_monitor.stop()
+            
+            # Stop event dispatcher
+            if self._event_dispatcher:
+                self._event_dispatcher.stop()
+            
+            self._started = False
+            
+            logger.info("FSMonitorComponent stopped")
     
     def shutdown(self) -> None:
         """
         [Function intent]
-        Performs graceful shutdown of the file system monitor component.
-        
-        [Implementation details]
-        Stops the monitor if it's running.
+        Shut down the component.
         
         [Design principles]
-        Clean resource management and shutdown.
+        - Clean shutdown sequence
+        - Complete resource cleanup
+        
+        [Implementation details]
+        - Ensures component is stopped
+        - Releases all resources
         """
-        self.logger.info(f"Shutting down component '{self.name}'...")
-        
-        if self._monitor:
-            try:
-                self._monitor.stop()
-                self.logger.info("File system monitor stopped")
-            except Exception as e:
-                self.logger.error(f"Error stopping file system monitor: {e}", exc_info=True)
-        
-        self._initialized = False
-        self._monitor = None
-        self.logger.info(f"Component '{self.name}' shut down")
+        with self._lock:
+            logger.info("Shutting down FSMonitorComponent")
+            
+            # Make sure we're stopped
+            self.stop()
+            
+            # Clear references
+            self._watch_manager = None
+            self._event_dispatcher = None
+            self._platform_monitor = None
+            
+            logger.info("FSMonitorComponent shut down")
     
-    @property
-    def is_initialized(self) -> bool:
+    def register_listener(self, listener: FileSystemEventListener, patterns: List[str] = None) -> int:
         """
         [Function intent]
-        Returns whether the component is initialized.
-        
-        [Implementation details]
-        Simple boolean return.
+        Register a file system event listener.
         
         [Design principles]
-        Clear state reporting.
-        
-        Returns:
-            bool: True if initialized, False otherwise
-        """
-        return self._initialized
-    
-    def get_monitor(self) -> Optional[FileSystemMonitor]:
-        """
-        [Function intent]
-        Returns the underlying file system monitor instance.
+        - Simple public API
+        - Delegation to specialized components
         
         [Implementation details]
-        Returns the monitor created during initialization.
-        
-        [Design principles]
-        Controlled access to internal implementation.
-        
-        Returns:
-            Optional[FileSystemMonitor]: The monitor instance or None if not initialized
-        """
-        return self._monitor if self._initialized else None
-    
-    def register_change_listener(self, listener):
-        """
-        [Function intent]
-        Registers a change listener to receive file system change notifications.
-        
-        [Implementation details]
-        Delegates to the change queue if available.
-        
-        [Design principles]
-        Observer pattern for change notifications.
+        - Delegates to watch_manager for listener registration
+        - Returns listener ID for future reference
         
         Args:
-            listener: Callable that accepts FileChange objects
+            listener: The listener to register
+            patterns: List of path patterns to watch
             
         Returns:
-            bool: True if registered successfully, False otherwise
-        """
-        if not self._initialized or not self._change_queue:
-            self.logger.warning("Cannot register listener, component not fully initialized")
-            return False
+            Listener ID
             
-        try:
-            # Check if change_queue has register_listener method, add it if not
-            if not hasattr(self._change_queue, 'register_listener'):
-                self.logger.info("Adding listener support to change queue")
-                # The queue doesn't have a register_listener method, so we need to add it directly
-                if not hasattr(self._change_queue, '_listeners'):
-                    self._change_queue._listeners = []
+        Raises:
+            RuntimeError: If the component is not initialized
+        """
+        with self._lock:
+            if not self._watch_manager:
+                raise RuntimeError("FSMonitorComponent not initialized")
+            
+            return self._watch_manager.register_listener(listener, patterns)
+    
+    def unregister_listener(self, listener_id: int) -> None:
+        """
+        [Function intent]
+        Unregister a file system event listener.
+        
+        [Design principles]
+        - Simple public API
+        - Resource cleanup
+        
+        [Implementation details]
+        - Delegates to watch_manager for listener unregistration
+        
+        Args:
+            listener_id: ID of the listener to unregister
+            
+        Raises:
+            RuntimeError: If the component is not initialized
+        """
+        with self._lock:
+            if not self._watch_manager:
+                raise RuntimeError("FSMonitorComponent not initialized")
+            
+            self._watch_manager.unregister_listener(listener_id)
+    
+    def update_listener_patterns(self, listener_id: int, patterns: List[str]) -> None:
+        """
+        [Function intent]
+        Update the patterns for a registered listener.
+        
+        [Design principles]
+        - Dynamic configuration
+        - Simple public API
+        
+        [Implementation details]
+        - Delegates to watch_manager for pattern update
+        
+        Args:
+            listener_id: ID of the listener
+            patterns: New list of path patterns
+            
+        Raises:
+            RuntimeError: If the component is not initialized
+        """
+        with self._lock:
+            if not self._watch_manager:
+                raise RuntimeError("FSMonitorComponent not initialized")
+            
+            self._watch_manager.update_listener_patterns(listener_id, patterns)
+    
+    def configure(self) -> None:
+        """
+        [Function intent]
+        Handle configuration changes.
+        
+        [Design principles]
+        - Dynamic configuration
+        - Configuration-driven behavior
+        
+        [Implementation details]
+        - Reinitializes component with new configuration if needed
+        - Otherwise updates subcomponent configurations
+        """
+        with self._lock:
+            if not self._started:
+                # If not started, just reinitialize
+                self.initialize()
+                return
                 
-                # Add the listener directly to the queue's internal list
-                self._change_queue._listeners.append(listener)
-                
-                # Monkey patch the add_change method if needed to notify listeners
-                if not hasattr(self._change_queue, '_original_add_change'):
-                    self._change_queue._original_add_change = self._change_queue.add_event
-                    
-                    def enhanced_add_event(event):
-                        # Call the original method first
-                        self._change_queue._original_add_change(event)
-                        # Then notify all listeners
-                        for l in self._change_queue._listeners:
-                            try:
-                                l(event)
-                            except Exception as e:
-                                self.logger.error(f"Error notifying listener about change: {e}")
-                    
-                    # Replace the method
-                    self._change_queue.add_event = enhanced_add_event
-                
-                self.logger.info("Successfully added listener support to change queue")
-                return True
-            else:
-                # The queue has a register_listener method, use it
-                self._change_queue.register_listener(listener)
-                return True
-                
-        except Exception as e:
-            self.logger.error(f"Failed to register change listener: {e}")
-            return False
+            # If already started, update configurations dynamically
+            config = self._config_manager.get_config()
+            fs_monitor_config = config.fs_monitor
+            
+            # Thread priority mapping
+            thread_priority = ThreadPriority.NORMAL
+            if fs_monitor_config.thread_priority.lower() == "low":
+                thread_priority = ThreadPriority.LOW
+            elif fs_monitor_config.thread_priority.lower() == "high":
+                thread_priority = ThreadPriority.HIGH
+            
+            # Update event dispatcher configuration
+            if self._event_dispatcher:
+                self._event_dispatcher.configure(
+                    thread_count=fs_monitor_config.thread_count,
+                    thread_priority=thread_priority,
+                    default_debounce_ms=fs_monitor_config.default_debounce_ms
+                )
+            
+            # Update platform monitor configuration (if applicable)
+            if self._platform_monitor and hasattr(self._platform_monitor, "set_poll_interval"):
+                # This is likely the fallback monitor
+                self._platform_monitor.set_poll_interval(fs_monitor_config.polling_fallback.poll_interval)
+            
+            logger.debug("FSMonitorComponent configuration updated")
