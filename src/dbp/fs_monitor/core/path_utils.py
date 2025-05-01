@@ -38,6 +38,10 @@
 # codebase:src/dbp/fs_monitor/exceptions.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-29T08:29:00Z : Added centralized log file filtering function by CodeAssistant
+# * Implemented is_log_file() function for detecting log files
+# * Standardized log file detection across all fs_monitor components
+# * Prevents infinite monitoring loops from log file changes
 # 2025-04-29T00:00:00Z : Initial implementation of path utilities for fs_monitor redesign by CodeAssistant
 # * Created path resolution functions for absolute and Git-root relative paths
 # * Implemented pattern matching utilities with support for wildcards
@@ -321,6 +325,56 @@ def is_subpath(path: str, potential_parent: str) -> bool:
         potential_parent += os.path.sep
     
     return path.startswith(potential_parent)
+
+
+def is_log_file(path: str) -> bool:
+    """
+    [Function intent]
+    Determine if a file is a log file that should be excluded from monitoring.
+    
+    [Design principles]
+    - Prevent infinite event loops caused by watching log files
+    - Centralized log file detection logic for consistent behavior
+    
+    [Implementation details]
+    - Checks file extensions and path patterns
+    - Platform-agnostic implementation
+    - Covers common log file naming conventions
+    
+    Args:
+        path: Path to check
+        
+    Returns:
+        True if the path is a log file that should be excluded, False otherwise
+    """
+    # Check for common log file extensions
+    if path.endswith('.log'):
+        return True
+        
+    # Check for log directories
+    log_dir_patterns = [
+        r'/logs/',
+        r'[\\/]logs[\\/]',
+        r'[\\/]log[\\/]',
+    ]
+    
+    for pattern in log_dir_patterns:
+        if re.search(pattern, path):
+            return True
+            
+    # Check for other common log file patterns
+    log_file_patterns = [
+        r'\.log\.\d+$',  # log.1, log.2, etc.
+        r'\.log\.\d{8}$',  # log.20250429, etc.
+        r'\.log\.\d{6}$',  # log.202504, etc.
+        r'\.log\.\w+$',    # log.bak, log.old, etc.
+    ]
+    
+    for pattern in log_file_patterns:
+        if re.search(pattern, path):
+            return True
+            
+    return False
 
 
 def get_common_parent_dir(paths: List[str]) -> Optional[str]:

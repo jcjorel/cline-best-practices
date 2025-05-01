@@ -45,13 +45,19 @@
 # codebase:src/dbp/fs_monitor/dispatch/thread_manager.py
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-29T01:04:00Z : Updated import paths for module reorganization by CodeAssistant
-# * Updated imports to use core/, dispatch/, and platforms/ submodules  
-# * Updated dependencies section to reflect the new file locations
-# 2025-04-29T00:28:00Z : Initial implementation of FSMonitorComponent for fs_monitor redesign by CodeAssistant
-# * Created FSMonitorComponent class with lifecycle management
-# * Implemented configuration handling
-# * Added listener registration methods
+# 2025-05-01T11:43:00Z : Fixed initialization flag setting by CodeAssistant
+# * Added explicit setting of _initialized flag to True
+# * Fixed "Component failed to set is_initialized flag to True" error
+# * Resolved server startup failure caused by missing initialized state
+# 2025-05-01T11:41:00Z : Fixed config access method by CodeAssistant
+# * Changed all calls to get_config() to get_typed_config()
+# * Fixed "'ConfigManagerComponent' object has no attribute 'get_config'" error
+# * Updated component to use typed configuration access for type safety
+# 2025-05-01T11:39:00Z : Updated initialize and configure methods by CodeAssistant
+# * Fixed initialize method signature to match Component base class requirements
+# * Added proper context and dependencies parameters to initialize method
+# * Updated configure method to raise error when called without initialization
+# * Fixed "initialize() takes 1 positional argument but 3 were given" error 
 ###############################################################################
 
 import logging
@@ -60,11 +66,11 @@ import threading
 from typing import Dict, List, Optional, Set, Any
 
 from ..core.component import Component
-from ..config.config_manager import ConfigManager
+from ..config.config_manager import ConfigurationManager as ConfigManager
 from .watch_manager import WatchManager
 from .dispatch.event_dispatcher import EventDispatcher
 from .dispatch.thread_manager import ThreadPriority
-from .platforms.factory import create_platform_monitor
+from .platforms.factory import FileSystemMonitorFactory
 from .core.listener import FileSystemEventListener
 
 logger = logging.getLogger(__name__)
@@ -87,7 +93,25 @@ class FSMonitorComponent(Component):
     - Provides registration methods for other components
     """
     
-    def __init__(self, config_manager: ConfigManager) -> None:
+    @property
+    def name(self) -> str:
+        """
+        [Function intent]
+        Returns the unique name of this component for registration and dependency references.
+        
+        [Design principles]
+        - Explicit component identification
+        - Consistent naming for dependency resolution
+        
+        [Implementation details]
+        - Returns a static string that uniquely identifies this component type
+        
+        Returns:
+            str: The component name "fs_monitor"
+        """
+        return "fs_monitor"
+    
+    def __init__(self, config_manager: Optional[ConfigManager] = None) -> None:
         """
         [Function intent]
         Initialize the FSMonitorComponent.
@@ -95,15 +119,19 @@ class FSMonitorComponent(Component):
         [Design principles]
         - Component-based architecture
         - Dependency injection
+        - Registry-compatible initialization that supports both parameter-less construction
+          for component registration and dependency-injected construction for actual usage
         
         [Implementation details]
-        - Stores reference to config_manager
-        - Initializes internal state
+        - Stores reference to config_manager when provided
+        - Initializes internal state with safe defaults
+        - Allows creation with no arguments for registry system
         
         Args:
-            config_manager: Reference to the application's configuration manager
+            config_manager: Reference to the application's configuration manager, can be None when
+                           created by the registry system for registration purposes
         """
-        super().__init__(name="fs_monitor", dependencies=["config"])
+        super().__init__()  # No parameters to Component constructor
         self._config_manager = config_manager
         self._watch_manager = None
         self._event_dispatcher = None
@@ -111,7 +139,7 @@ class FSMonitorComponent(Component):
         self._lock = threading.RLock()
         self._started = False
     
-    def initialize(self) -> None:
+    def initialize(self, context: 'InitializationContext', dependencies: Dict[str, 'Component'] = None) -> None:
         """
         [Function intent]
         Initialize the component.
@@ -119,19 +147,31 @@ class FSMonitorComponent(Component):
         [Design principles]
         - Clean initialization sequence
         - Order-dependent initialization
+        - Component dependency injection support
         
         [Implementation details]
         - Creates watch_manager, event_dispatcher, and platform_monitor
         - Does not start monitoring (start() must be called separately)
+        - Uses provided context and dependencies if available
+        
+        Args:
+            context: Initialization context with configuration and resources
+            dependencies: Dictionary of pre-resolved dependencies {name: component_instance}
         """
         with self._lock:
-            logger.info("Initializing FSMonitorComponent")
+            # Set up logger from context
+            self.logger = context.logger
+            self.logger.info("Initializing FSMonitorComponent")
+            
+            # Get config_manager from dependencies or use the one from constructor
+            if dependencies and 'config_manager' in dependencies:
+                self._config_manager = dependencies['config_manager']
             
             # Create watch manager
             self._watch_manager = WatchManager()
             
             # Get configuration
-            config = self._config_manager.get_config()
+            config = self._config_manager.get_typed_config()
             fs_monitor_config = config.fs_monitor
             
             # Thread priority mapping
@@ -150,7 +190,7 @@ class FSMonitorComponent(Component):
             )
             
             # Create platform-specific monitor
-            self._platform_monitor = create_platform_monitor(
+            self._platform_monitor = FileSystemMonitorFactory.create(
                 self._watch_manager, 
                 self._event_dispatcher,
                 polling_fallback_enabled=fs_monitor_config.polling_fallback.enabled,
@@ -158,6 +198,8 @@ class FSMonitorComponent(Component):
                 hash_size=fs_monitor_config.polling_fallback.hash_size
             )
             
+            # Mark component as initialized
+            self._initialized = True
             logger.info("FSMonitorComponent initialized")
     
     def start(self) -> None:
@@ -181,7 +223,7 @@ class FSMonitorComponent(Component):
                 raise RuntimeError("FSMonitorComponent not initialized")
             
             # Check if component is enabled in configuration
-            config = self._config_manager.get_config()
+            config = self._config_manager.get_typed_config()
             if not config.fs_monitor.enabled:
                 logger.info("FSMonitorComponent is disabled in configuration, not starting")
                 return
@@ -349,12 +391,11 @@ class FSMonitorComponent(Component):
         """
         with self._lock:
             if not self._started:
-                # If not started, just reinitialize
-                self.initialize()
-                return
+                # Can't reinitialize without context and dependencies
+                raise RuntimeError("Cannot configure component that is not initialized: missing required initialize() context")
                 
             # If already started, update configurations dynamically
-            config = self._config_manager.get_config()
+            config = self._config_manager.get_typed_config()
             fs_monitor_config = config.fs_monitor
             
             # Thread priority mapping

@@ -35,6 +35,15 @@
 # codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-01T11:42:00Z : Fixed MonitorBase initialization by CodeAssistant
+# * Fixed variable reference errors in __init__ method
+# * Replaced references to undefined 'config' and 'change_queue' variables
+# * Used proper '_watch_manager' and '_event_dispatcher' variables
+# * Fixed "name 'config' is not defined" error
+# 2025-04-29T08:33:30Z : Centralized log file filtering logic by CodeAssistant
+# * Removed local _is_log_file() method in favor of centralized implementation
+# * Updated import to use shared path_utils.is_log_file function
+# * Updated dispatch_event to use centralized is_log_file implementation
 # 2025-04-15T09:40:40Z : Initial creation of base monitor components by CodeAssistant
 # * Defined ChangeType, ChangeEvent, and FileSystemMonitor ABC.
 ###############################################################################
@@ -46,6 +55,8 @@ from pathlib import Path
 import logging
 import threading
 import time
+
+from ..core.path_utils import is_log_file
 
 logger = logging.getLogger(__name__)
 
@@ -106,28 +117,41 @@ class ChangeEvent:
         else:
             return f"ChangeEvent(type={self.change_type.name}, path='{self.path}')"
 
-class FileSystemMonitor(ABC):
+class MonitorBase(ABC):
     """
+    [Class intent]
     Abstract base class for platform-specific file system monitors.
-
-    Defines the common interface for starting, stopping, and managing
-    monitored directories. Implementations should handle the specifics
-    of the underlying OS notification mechanism (e.g., inotify, FSEvents,
-    ReadDirectoryChangesW) or polling.
+    
+    [Design principles]
+    - Common interface for all platform monitors
+    - Log file filtering to prevent infinite event loops
+    - Thread safety for concurrent access
+    
+    [Implementation details]
+    - Provides methods for starting, stopping, and managing watches
+    - Includes log file detection to prevent monitoring log files
+    - Implements thread-safe operations
     """
 
-    def __init__(self, config: Any, change_queue: Any):
+    def __init__(self, watch_manager: Any, event_dispatcher: Any):
         """
-        Initializes the file system monitor.
-
+        [Function intent]
+        Initialize the file system monitor.
+        
+        [Design principles]
+        - Clean initialization
+        - Resource management
+        
+        [Implementation details]
+        - Sets up references to watch manager and event dispatcher
+        - Initializes internal state
+        
         Args:
-            config: An object providing access to configuration values (e.g., ConfigurationManager instance).
-                    Expected keys: 'monitor.recursive'.
-            change_queue: A queue-like object with an `add_event(event: ChangeEvent)` method
-                          where detected changes should be placed.
+            watch_manager: The watch manager instance
+            event_dispatcher: The event dispatcher instance
         """
-        self.config = config
-        self.change_queue = change_queue
+        self._watch_manager = watch_manager
+        self._event_dispatcher = event_dispatcher
         self._watched_directories: Set[str] = set() # Store normalized absolute paths
         self._running = False
         self.monitor_thread: Optional[threading.Thread] = None
@@ -227,3 +251,32 @@ class FileSystemMonitor(ABC):
         """Returns a copy of the set of currently watched directories."""
         with self._lock:
             return list(self._watched_directories)
+            
+        
+    def dispatch_event(self, event_type: Any, path: str, old_path: Optional[str] = None, extra_data: Optional[Any] = None) -> None:
+        """
+        [Function intent]
+        Dispatch a file system event.
+        
+        [Design principles]
+        - Central event dispatch
+        - Log file filtering
+        
+        [Implementation details]
+        - Filters out events for log files
+        - Delegates to event dispatcher for actual dispatch
+        - Handles additional event data
+        
+        Args:
+            event_type: Type of the event
+            path: Path of the changed file
+            old_path: Original path for rename events
+            extra_data: Any additional event data
+        """
+        # Skip events for log files to prevent infinite event loops
+        if is_log_file(path) or (old_path and is_log_file(old_path)):
+            # Intentionally not logging anything here to prevent log file changes
+            return
+            
+        # Dispatch the event to the event dispatcher
+        self._event_dispatcher.dispatch_event(event_type, path, old_path, extra_data)

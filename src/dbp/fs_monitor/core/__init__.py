@@ -32,6 +32,18 @@
 # codebase:src/dbp/fs_monitor/core/path_utils.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-29T08:51:00Z : Fixed path_utils imports to match actual functions by CodeAssistant
+# * Updated path_utils imports to use functions that actually exist in the module
+# * Changed imports like normalize_path to resolve_path
+# * Updated __all__ list with correct path_utils function names
+# 2025-04-29T08:49:00Z : Fixed listener class name mismatches by CodeAssistant
+# * Updated listener import from FileSystemListener to FileSystemEventListener
+# * Added import for BaseFileSystemEventListener
+# * Updated __all__ list with correct listener class names
+# 2025-04-29T08:47:00Z : Fixed exception class name mismatches by CodeAssistant
+# * Updated exception imports to match actual class names in exceptions.py
+# * Changed FSMonitorError to FileSystemMonitorError
+# * Updated __all__ list with correct exception class names
 # 2025-04-29T00:49:00Z : Created core/__init__.py as part of fs_monitor reorganization by CodeAssistant
 # * Added exports for core module components
 # * Added header documentation
@@ -46,42 +58,51 @@ and the listener interface.
 """
 
 # Re-export key types from core modules for easier access
-from .event_types import ChangeType, ChangeEvent
+from .event_types import EventType, FileSystemEvent
 from .exceptions import (
-    FSMonitorError, WatchError, WatchLimitError, WatchExistsError,
-    WatchNotFoundError, PlatformNotSupportedError
+    FileSystemMonitorError, WatchNotActiveError, WatchCreationError, PatternError,
+    SymlinkError, PathResolutionError, WatchLimitExceededError, ListenerRegistrationError,
+    NotASymlinkError, DirectoryAccessError, ResourceExhaustedError
 )
-from .listener import FileSystemListener
+from .listener import FileSystemEventListener, BaseFileSystemEventListener
 from .handle import WatchHandle
 from .path_utils import (
-    normalize_path, is_path_excluded, glob_matches_path, 
-    contains_excluded_pattern, make_absolute_path
+    resolve_path, pattern_to_regex, matches_pattern, 
+    find_matching_files, is_subpath, is_log_file, get_common_parent_dir
 )
 
 # Define what's available when doing "from fs_monitor.core import *"
 __all__ = [
     # From event_types
-    'ChangeType',
-    'ChangeEvent',
+    'EventType',
+    'FileSystemEvent',
     
     # From exceptions
-    'FSMonitorError',
-    'WatchError',
-    'WatchLimitError',
-    'WatchExistsError',
-    'WatchNotFoundError',
-    'PlatformNotSupportedError',
+    'FileSystemMonitorError',
+    'WatchNotActiveError',
+    'WatchCreationError',
+    'PatternError',
+    'SymlinkError',
+    'PathResolutionError',
+    'WatchLimitExceededError',
+    'ListenerRegistrationError',
+    'NotASymlinkError',
+    'DirectoryAccessError',
+    'ResourceExhaustedError',
     
     # From listener
-    'FileSystemListener',
+    'FileSystemEventListener',
+    'BaseFileSystemEventListener',
     
     # From handle
     'WatchHandle',
     
     # From path_utils
-    'normalize_path',
-    'is_path_excluded',
-    'glob_matches_path',
-    'contains_excluded_pattern',
-    'make_absolute_path',
+    'resolve_path',
+    'pattern_to_regex',
+    'matches_pattern',
+    'find_matching_files',
+    'is_subpath',
+    'is_log_file',
+    'get_common_parent_dir',
 ]

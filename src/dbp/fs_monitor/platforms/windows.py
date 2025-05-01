@@ -127,8 +127,19 @@ if not HAS_WIN32:
 
 class WindowsFileSystemMonitor(FileSystemMonitor):
     """
+    [Class intent]
     Windows-specific file system monitor implementation using the Win32 API
     function ReadDirectoryChangesW via the 'pywin32' library.
+    
+    [Design principles]
+    - Uses pywin32 for efficient native file system monitoring
+    - Inherits filter logic from MonitorBase to prevent log file events
+    - No generation of logs for log file events to prevent infinite loops
+    
+    [Implementation details]
+    - Uses ReadDirectoryChangesW for efficient async file system monitoring
+    - Manages multiple background threads for watch operations
+    - Silently skips log file events without generating logs
     """
 
     # Flags for ReadDirectoryChangesW

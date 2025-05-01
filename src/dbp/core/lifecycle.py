@@ -34,6 +34,9 @@
 # codebase:- doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-29T07:11:00Z : Modified error handling in component registration by CodeAssistant
+# * Removed try-except block in register_component_class to allow stack traces to propagate
+# * This change enables better debugging of component import issues by showing full stack traces
 # 2025-04-25T13:21:47Z : Fixed component enablement configuration handling by CodeAssistant
 # * Updated is_component_enabled to properly access Pydantic model attributes instead of treating it as a dictionary
 # * Improved error handling to throw explicit errors when component names are missing from configuration
@@ -47,20 +50,6 @@
 # * Modified _register_components_with_registry to use the centralized declarations
 # * Improved documentation to reflect the new component registration approach
 # * Added type hints for better code quality and IDE support
-# 2025-04-20T19:21:00Z : Added watchdog keepalive calls by CodeAssistant
-# * Added keepalive before and after component registration
-# * Added keepalive at the start of the initialization process
-# * Fixed issue with watchdog not detecting deadlocks during component initialization
-# * Maintained KISS approach with simple, strategic keepalive calls
-# 2025-04-19T23:43:00Z : Added ComponentRegistry integration by CodeAssistant
-# * Added ComponentRegistry import and initialization
-# * Replaced _register_components with _register_components_with_registry
-# * Implemented explicit dependency declaration for all components
-# * Added support for component factories with config_manager as an example
-# 2025-04-18T17:02:00Z : Fixed component registration import mechanism by CodeAssistant
-# * Changed relative imports to absolute imports to solve "No module named '.'" errors
-# * Updated register_if_enabled to handle absolute imports correctly
-# * Improved log messages to show component dependencies for better debugging
 ###############################################################################
 
 import logging
@@ -194,14 +183,10 @@ class LifecycleManager:
             logger.error("ConfigurationManager class not available")
             return None
             
-        try:
-            logger.info("Loading application configuration...")
-            config_manager = ConfigurationManager()
-            config_manager.initialize(args=cli_args)
-            return config_manager
-        except Exception as e:
-            logger.critical(f"Failed to load configuration: {e}", exc_info=True)
-            return None
+        logger.info("Loading application configuration...")
+        config_manager = ConfigurationManager()
+        config_manager.initialize(args=cli_args)
+        return config_manager
 
     def _setup_signal_handlers(self) -> None:
         """
@@ -214,12 +199,9 @@ class LifecycleManager:
         [Design principles]
         Simple signal handling for graceful shutdown.
         """
-        try:
-            for sig in [signal.SIGINT, signal.SIGTERM]:
-                signal.signal(sig, self._handle_shutdown_signal)
-                logger.debug(f"Registered handler for signal {sig}")
-        except (ValueError, AttributeError) as e:
-            logger.warning(f"Could not setup signal handlers: {e}")
+        for sig in [signal.SIGINT, signal.SIGTERM]:
+            signal.signal(sig, self._handle_shutdown_signal)
+            logger.debug(f"Registered handler for signal {sig}")
 
     def _handle_shutdown_signal(self, signum, frame) -> None:
         """
@@ -236,11 +218,8 @@ class LifecycleManager:
             signum: Signal number received
             frame: Current stack frame
         """
-        try:
-            signal_name = signal.Signals(signum).name
-            logger.warning(f"Received signal {signal_name} ({signum}). Shutting down...")
-        except (ValueError, AttributeError):
-            logger.warning(f"Received signal {signum}. Shutting down...")
+        signal_name = signal.Signals(signum).name
+        logger.warning(f"Received signal {signal_name} ({signum}). Shutting down...")
             
         # Initiate shutdown
         self.shutdown()
@@ -298,41 +277,32 @@ class LifecycleManager:
                 logger.info(f"Component '{name}' disabled by configuration")
                 return False
                 
-            try:
-                # Import the component class
-                module_path = import_path.replace("..", "dbp")
-                module = __import__(module_path, fromlist=[component_class])
-                component_cls = getattr(module, component_class)
-                
-                # Register with the registry
-                self.registry.register_component(component_cls, dependencies=dependencies, enabled=enabled)
-                
-                logger.info(f"Registered component class: '{name}' with dependencies: {dependencies}")
-                return True
-            except ImportError as e:
-                logger.error(f"Failed to import component class '{name}': {e}")
-                return False
-            except Exception as e:
-                logger.error(f"Failed to register component '{name}': {e}")
-                return False
+            # Import the component class 
+            # We're not catching ImportError here to let the stack trace propagate
+            module_path = import_path.replace("..", "dbp")
+            module = __import__(module_path, fromlist=[component_class])
+            component_cls = getattr(module, component_class)
+            
+            # Register with the registry
+            self.registry.register_component(component_cls, dependencies=dependencies, enabled=enabled)
+            
+            logger.info(f"Registered component class: '{name}' with dependencies: {dependencies}")
+            return True
         
         # Register ConfigManagerComponent directly since it needs special handling
         if ConfigManagerComponent and self.config_manager:
-            try:
-                # Create a factory function that will create the component with the config_manager
-                def config_manager_factory():
-                    return ConfigManagerComponent(self.config_manager)
-                
-                # Register the factory with no dependencies
-                self.registry.register_component_factory(
-                    name="config_manager",
-                    factory=config_manager_factory,
-                    dependencies=[],
-                    enabled=True
-                )
-                logger.info("Registered component factory: 'config_manager' with dependencies: []")
-            except Exception as e:
-                logger.error(f"Failed to register config_manager component: {e}")
+            # Create a factory function that will create the component with the config_manager
+            def config_manager_factory():
+                return ConfigManagerComponent(self.config_manager)
+            
+            # Register the factory with no dependencies
+            self.registry.register_component_factory(
+                name="config_manager",
+                factory=config_manager_factory,
+                dependencies=[],
+                enabled=True
+            )
+            logger.info("Registered component factory: 'config_manager' with dependencies: []")
         
         # Register only enabled components from the centralized COMPONENT_DECLARATIONS list
         for component_info in COMPONENT_DECLARATIONS:

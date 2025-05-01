@@ -46,6 +46,20 @@
 # codebase:src/dbp/fs_monitor/event_dispatcher.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-30T05:58:00Z : Updated EventDispatcher import path by CodeAssistant
+# * Changed import from ..event_dispatcher to ..dispatch.event_dispatcher
+# * Fixed "No module named 'dbp.fs_monitor.event_dispatcher'" error
+# 2025-04-29T09:03:00Z : Fixed import path for WatchManager and EventDispatcher by CodeAssistant
+# * Changed import from .watch_manager to ..watch_manager
+# * Changed import from .event_dispatcher to ..event_dispatcher
+# * Fixed another import error that caused server startup failure
+# 2025-04-29T09:01:00Z : Fixed import path for exceptions by CodeAssistant
+# * Changed import from .exceptions to ..core for WatchCreationError
+# * Added import for FileSystemMonitorError
+# * Fixed another import error that caused server startup failure
+# 2025-04-29T08:58:00Z : Fixed import path for event types by CodeAssistant
+# * Changed import from .event_types to ..core for EventType and FileSystemEvent
+# * Fixed import error that caused server startup failure
 # 2025-04-29T00:20:00Z : Initial implementation of Linux monitor for fs_monitor redesign by CodeAssistant
 # * Created LinuxMonitor class using inotify API
 # * Implemented event translation from inotify to uniform model
@@ -62,10 +76,10 @@ import ctypes
 import ctypes.util
 
 from .monitor_base import MonitorBase
-from .event_types import EventType, FileSystemEvent
-from .exceptions import WatchCreationError
-from .watch_manager import WatchManager
-from .event_dispatcher import EventDispatcher
+from ..core import EventType, FileSystemEvent
+from ..core import FileSystemMonitorError, WatchCreationError
+from ..watch_manager import WatchManager
+from ..dispatch.event_dispatcher import EventDispatcher
 
 logger = logging.getLogger(__name__)
 
@@ -119,11 +133,13 @@ class LinuxMonitor(MonitorBase):
     - Direct use of Linux inotify API
     - Efficient event translation
     - Resource management
+    - No generation of logs for log file events to prevent infinite loops
     
     [Implementation details]
     - Uses inotify for file system monitoring
     - Translates inotify events to our event model
     - Manages inotify watch descriptors
+    - Silently skips log file events without generating logs
     """
     
     def __init__(self, watch_manager: WatchManager, event_dispatcher: EventDispatcher) -> None:

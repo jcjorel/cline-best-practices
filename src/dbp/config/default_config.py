@@ -76,9 +76,7 @@ COMPONENT_ENABLED_DEFAULTS = {
     "mcp_server": True,       # Required for API access
 
     # Filesystem events    
-    "filter": True,          
     "file_access": True,    
-    "change_queue": True,    
     "fs_monitor": True,      
 
     # All other components disabled

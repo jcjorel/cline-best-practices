@@ -73,8 +73,19 @@ logger = logging.getLogger(__name__)
 
 class MacOSFileSystemMonitor(FileSystemMonitor):
     """
+    [Class intent]
     macOS-specific file system monitor implementation using the FSEvents API
     via the 'fsevents' library.
+    
+    [Design principles]
+    - Uses fsevents for efficient native file system monitoring
+    - Inherits filter logic from MonitorBase to prevent log file events
+    - No generation of logs for log file events to prevent infinite loops
+    
+    [Implementation details]
+    - Uses FSEvents observer/stream pattern for efficient event monitoring
+    - Manages event streams for each watched directory
+    - Silently skips log file events without generating logs
     """
 
     def __init__(self, config, change_queue):

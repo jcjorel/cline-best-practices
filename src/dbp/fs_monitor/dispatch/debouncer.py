@@ -40,6 +40,15 @@
 # codebase:src/dbp/fs_monitor/event_types.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-29T15:25:00Z : Renamed Debouncer class to EventDebouncer by CodeAssistant
+# * Changed class name to match import in dispatch/__init__.py
+# * Fixed "cannot import name 'EventDebouncer'" error during server startup
+# 2025-04-29T14:00:00Z : Fixed import path for watch_manager by CodeAssistant
+# * Changed import from .watch_manager to ..watch_manager
+# * Fixed import error causing server startup failure
+# 2025-04-29T13:40:00Z : Fixed import path for event_types by CodeAssistant
+# * Changed import from .event_types to ..core.event_types 
+# * Fixed "No module named 'dbp.fs_monitor.dispatch.event_types'" error
 # 2025-04-29T00:08:00Z : Initial implementation of debouncer for fs_monitor redesign by CodeAssistant
 # * Created Debouncer class for event debouncing
 # * Implemented PendingEvent dataclass for priority queue
@@ -53,7 +62,7 @@ from typing import Dict, Set, List, Any, Optional, Callable
 from dataclasses import dataclass
 import heapq
 
-from .event_types import EventType, FileSystemEvent
+from ..core.event_types import EventType, FileSystemEvent
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +90,7 @@ class PendingEvent:
     event: FileSystemEvent = None  # This will be compared by reference, so it's fine
 
 
-class Debouncer:
+class EventDebouncer:
     """
     [Class intent]
     Manages event debouncing for file system events.
@@ -262,7 +271,7 @@ class Debouncer:
                 try:
                     # Get matching listeners - we can't import WatchManager here due to circular imports
                     # The watch manager instance must be passed in by the event dispatcher
-                    from .watch_manager import WatchManager  # This is a placeholder
+                    from ..watch_manager import WatchManager  # This is a placeholder
                     manager = WatchManager()  # This is a placeholder, actual implementation will get the manager instance
                     listener_ids = manager.get_matching_listeners(event.path)
                     if listener_ids:

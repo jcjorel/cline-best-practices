@@ -500,8 +500,6 @@ class ComponentEnabledConfig(BaseModel):
     file_access: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["file_access"], description="Enable file access component")
     database: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["database"], description="Enable database component")
     fs_monitor: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["fs_monitor"], description="Enable file system monitor component")
-    filter: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["filter"], description="Enable file filter component")
-    change_queue: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["change_queue"], description="Enable change queue component")
     memory_cache: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["memory_cache"], description="Enable memory cache component")
     consistency_analysis: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["consistency_analysis"], description="Enable consistency analysis component")
     doc_relationships: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["doc_relationships"], description="Enable document relationships component")

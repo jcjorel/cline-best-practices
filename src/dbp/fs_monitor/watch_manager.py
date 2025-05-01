@@ -45,6 +45,18 @@
 # codebase:src/dbp/fs_monitor/core/path_utils.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-29T08:29:00Z : Centralized log file filtering logic by CodeAssistant
+# * Moved is_log_file() to path_utils.py to ensure consistent filtering across components
+# * Updated WatchManager to use the centralized is_log_file() function
+# * Eliminated duplicate log file filtering logic
+# 2025-04-29T08:12:00Z : Enhanced log file filtering in event routing by CodeAssistant
+# * Modified get_matching_listeners to filter out events for log files
+# * Ensured platform watchers never generate events for log files
+# * Completely prevents log file monitoring at all levels of the system
+# 2025-04-29T08:09:00Z : Added log file filtering to prevent monitoring log files by CodeAssistant
+# * Implemented _is_log_file() method to identify log files by extension and path patterns
+# * Added checks in register_listener and add_watch to skip log files
+# * Added detailed log file pattern detection to prevent infinite event loops
 # 2025-04-29T01:01:00Z : Updated import paths for module reorganization by CodeAssistant
 # * Updated imports to use the new module structure with core/ and dispatch/ submodules
 # * Updated dependencies section to reflect the new file locations
@@ -57,7 +69,6 @@
 import os
 import threading
 import logging
-import re
 from typing import Dict, Set, List, Optional, Callable, Tuple, Any
 
 from .core.listener import FileSystemEventListener
@@ -69,7 +80,8 @@ from .core.path_utils import (
     pattern_to_regex, 
     matches_pattern, 
     find_matching_files, 
-    get_git_root
+    get_git_root,
+    is_log_file
 )
 
 logger = logging.getLogger(__name__)
@@ -93,6 +105,7 @@ class WatchManager:
     - Handles pattern matching
     """
     
+        
     def __init__(self) -> None:
         """
         [Function intent]
@@ -190,6 +203,11 @@ class WatchManager:
             # Add resources for each matching file
             watched_paths = set()
             for file_path in matching_files:
+                # Skip log files, never watch them regardless of what listener wants
+                if is_log_file(file_path):
+                    logger.debug(f"Skipping log file: {file_path}")
+                    continue
+                    
                 # Apply additional filter if provided
                 if listener.filter_function and not listener.filter_function(file_path):
                     continue
@@ -272,10 +290,12 @@ class WatchManager:
         
         [Design principles]
         - Efficient event routing
+        - Exclude log files from notification
         
         [Implementation details]
         - Checks path against all registered patterns
         - Applies additional filters if provided
+        - Never returns listeners for log files
         
         Args:
             path: Path to check
@@ -284,6 +304,10 @@ class WatchManager:
             List of listener IDs that match the path
         """
         with self._lock:
+            # Never dispatch events for log files
+            if is_log_file(path):
+                return []
+                
             matching_listeners = []
             
             for listener_id, (pattern, regex, has_wildcards) in self._listener_patterns.items():
@@ -310,10 +334,12 @@ class WatchManager:
         [Design principles]
         - Support for dynamically discovered paths
         - Reference counting
+        - Exclude log files from being watched
         
         [Implementation details]
         - Adds resource to tracker
         - Updates listener watches
+        - Skips log files to prevent event loops
         
         Args:
             path: Absolute path to watch
@@ -325,6 +351,12 @@ class WatchManager:
                 return
             
             path = os.path.abspath(path)
+            
+            # Skip log files, never watch them regardless of what listener wants
+            if is_log_file(path):
+                logger.debug(f"Skipping log file: {path}")
+                return
+                
             self._resource_tracker.add_resource(path, listener_id)
             self._listener_watches[listener_id].add(path)
     

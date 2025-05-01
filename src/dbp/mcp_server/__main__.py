@@ -37,6 +37,11 @@
 # codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-29T07:44:00Z : Enhanced error logging to display stacktraces at CRITICAL level by CodeAssistant
+# * Added stacktrace logging for ImportError exceptions at CRITICAL log level
+# * Improved error visibility by displaying full exception context in logs
+# * Ensured consistent error reporting across different exception types
+# * Maintained backward compatibility with existing debug-level logging
 # 2025-04-25T15:21:00Z : Removed file-based startup signal mechanism by CodeAssistant
 # * Removed all logic that creates and manages startup signal files
 # * Server status is now detected solely through health API checks
@@ -47,25 +52,6 @@
 # * Fixed UnboundLocalError during server startup
 # * Ensured proper watchdog operation during initialization
 # 2025-04-25T14:48:00Z : Modified watchdog behavior to disable after successful component initialization by CodeAssistant
-# * Changed watchdog to stop after all components have started successfully
-# * Removed the always-active watchdog behavior that was causing false triggers
-# * Improved log message to clearly indicate watchdog is being disabled
-# * Fixed the deadlock detection issue that occurred after all components started
-# 2025-04-20T19:23:00Z : Fixed watchdog deadlock detection by CodeAssistant
-# * Modified watchdog behavior to remain active during application lifetime
-# * Removed code that was stopping watchdog after component initialization
-# * Ensured watchdog can detect deadlocks in all operations including Alembic migrations 
-# * Added detailed logging for watchdog status changes
-# 2025-04-20T10:53:00Z : Moved watchdog implementation to dedicated core module by CodeAssistant
-# * Extracted watchdog functionality to src/dbp/core/watchdog.py
-# * Implemented watchdog with condition variables for better responsiveness
-# * Updated imports in __main__.py to use the new watchdog module
-# * Removed duplicate code to improve maintainability
-# 2025-04-20T03:52:00Z : Fixed startup timeout parameter to use configuration values by CodeAssistant
-# * Modified parse_arguments() to get default values from ConfigurationManager
-# * Added strict exception handling for configuration access
-# * Made default argument values consistent with system-wide configuration
-# * Improved help text to show correct default values from configuration
 ###############################################################################
 
 import argparse
@@ -514,7 +500,18 @@ def main() -> int:
         
     except ImportError as e:
         logger.critical(f"Failed to import required modules: {e}")
-        logger.debug(f"Import error details:", exc_info=True)
+        
+        # Get the formatted traceback
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        tb_formatted = traceback.format_exception(exc_type, exc_value, exc_traceback)
+        stacktrace = ''.join(tb_formatted)
+        
+        # Log the stacktrace at CRITICAL level
+        logger.critical(f"Stacktrace:\n{stacktrace}")
+        
+        # Also log to debug for consistency
+        logger.debug("Import error details:", exc_info=True)
+        
         exit_handler(reason="Failed to import required modules", exception=e)
         return 1
     except Exception as e:

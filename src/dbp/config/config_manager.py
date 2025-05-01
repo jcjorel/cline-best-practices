@@ -66,19 +66,6 @@
 # * Modified _apply_configuration_hierarchy to resolve all templates before marking config as ready
 # * Updated get() method to expect pre-resolved values with backward compatibility support
 # * Improved logging for template resolution activities
-# 2025-04-17T23:04:30Z : Simplified ConfigurationManager with Pydantic-first approach by CodeAssistant
-# * Refactored configuration loading to use direct Pydantic model manipulation
-# * Enhanced error handling and improved descriptive error messages
-# * Added helper methods for attribute path navigation
-# * Improved type safety throughout configuration handling
-# 2025-04-17T23:02:00Z : Implemented type-safe configuration setting by CodeAssistant
-# * Added _set_config_attr_by_path helper for safely navigating configuration paths
-# * Refactored set() method to use Pydantic model validation
-# * Improved error reporting for configuration setting operations
-# 2025-04-17T23:01:00Z : Enhanced get() method with direct model access by CodeAssistant
-# * Refactored get() method to use attribute access instead of dictionary lookups
-# * Improved error handling with better diagnostics for missing keys
-# * Enhanced type safety through direct Pydantic model usage
 ###############################################################################
 
 import os

@@ -35,6 +35,13 @@
 # codebase:src/dbp/fs_monitor/git_filter.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-29T08:55:00Z : Fixed class name mismatches to maintain backward compatibility by CodeAssistant
+# * Updated import of FileSystemEventListener to alias as FileSystemListener
+# * Updated import of error classes to maintain backward compatibility with new names
+# * Added aliases for renamed exception classes to maintain API stability
+# 2025-04-29T07:40:00Z : Fixed import path to use the correct ChangeType class by CodeAssistant
+# * Changed to import ChangeType from platforms.monitor_base instead of core
+# * Fixed alias for FileSystemEvent as ChangeEvent
 # 2025-04-29T00:54:00Z : Updated __init__.py for fs_monitor reorganization by CodeAssistant
 # * Updated imports to use new module structure
 # * Reorganized exports to maintain backward compatibility
@@ -49,10 +56,13 @@ file creation, modification, deletion, and moves.
 
 # Re-export core types
 from .core import (
-    ChangeType, ChangeEvent, FileSystemListener, WatchHandle,
-    FSMonitorError, WatchError, WatchLimitError, WatchExistsError,
-    WatchNotFoundError, PlatformNotSupportedError
+    FileSystemEventListener as FileSystemListener, WatchHandle,
+    FileSystemMonitorError as FSMonitorError, WatchNotActiveError as WatchError, 
+    WatchLimitExceededError as WatchLimitError, WatchCreationError as WatchExistsError,
+    PathResolutionError as WatchNotFoundError, NotASymlinkError as PlatformNotSupportedError
 )
+from .platforms.monitor_base import ChangeType
+from .core import FileSystemEvent as ChangeEvent
 
 # Re-export top-level component and factory
 from .component import FSMonitorComponent

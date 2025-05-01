@@ -44,6 +44,10 @@
 # codebase:src/dbp/fs_monitor/exceptions.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-30T05:59:00Z : Updated import paths by CodeAssistant
+# * Changed imports to use parent modules properly
+# * Fixed "No module named 'dbp.fs_monitor.platforms.event_types'" error
+# * Updated paths: event_types, exceptions, event_dispatcher
 # 2025-04-29T00:24:00Z : Initial implementation of fallback monitor for fs_monitor redesign by CodeAssistant
 # * Created FallbackMonitor class with polling-based implementation
 # * Implemented snapshot-based comparison for detecting changes
@@ -59,10 +63,10 @@ from pathlib import Path
 from typing import Dict, Set, List, Optional, Callable, Any, Tuple
 
 from .monitor_base import MonitorBase
-from .event_types import EventType, FileSystemEvent
-from .exceptions import WatchCreationError
-from .watch_manager import WatchManager
-from .event_dispatcher import EventDispatcher
+from ..core.event_types import EventType, FileSystemEvent
+from ..core.exceptions import WatchCreationError
+from ..watch_manager import WatchManager
+from ..dispatch.event_dispatcher import EventDispatcher
 
 logger = logging.getLogger(__name__)
 
@@ -305,11 +309,14 @@ class FallbackMonitor(MonitorBase):
     - Cross-platform compatibility
     - Efficient polling algorithm
     - Accurate change detection
+    - Inherits filter logic from MonitorBase to prevent log file events
+    - No generation of logs for log file events to prevent infinite loops
     
     [Implementation details]
     - Uses periodic polling to detect file system changes
     - Compares directory snapshots to identify changes
     - Dispatches events for created, deleted, and modified files
+    - Silently skips log file events without generating logs
     """
     
     def __init__(self, watch_manager: WatchManager, event_dispatcher: EventDispatcher) -> None:

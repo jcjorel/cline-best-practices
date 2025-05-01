@@ -34,6 +34,10 @@
 # codebase:src/dbp/fs_monitor/platforms/fallback.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-30T06:00:00Z : Updated fallback monitor import by CodeAssistant
+# * Changed import from "from .fallback import PollingMonitor" 
+# * To "from .fallback import FallbackMonitor as PollingMonitor"
+# * Fixed "cannot import name 'PollingMonitor'" error
 # 2025-04-29T00:51:00Z : Created platforms/__init__.py as part of fs_monitor reorganization by CodeAssistant
 # * Added exports for platform-specific monitor implementations
 # * Added header documentation
@@ -50,7 +54,7 @@ monitor implementation follows the common interface defined by MonitorBase.
 # Re-export key types from platform modules for easier access
 from .monitor_base import MonitorBase
 from .linux import LinuxMonitor
-from .fallback import PollingMonitor
+from .fallback import FallbackMonitor as PollingMonitor
 
 # Conditionally import platform-specific monitors if they exist
 # These are placeholders for future implementations

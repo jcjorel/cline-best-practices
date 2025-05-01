@@ -42,6 +42,21 @@
 # codebase:src/dbp/fs_monitor/watch_manager.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-04-30T05:57:00Z : Updated debouncer class references by CodeAssistant
+# * Changed import from Debouncer to EventDebouncer
+# * Updated instance creation to use EventDebouncer
+# * Fixed "cannot import name 'Debouncer'" error
+# 2025-04-29T11:02:00Z : Fixed import paths for local modules by CodeAssistant
+# * Changed imports for debouncer from ..debouncer to .debouncer
+# * Changed imports for thread_manager from ..thread_manager to .thread_manager
+# * Fixed "No module named 'dbp.fs_monitor.debouncer'" error
+# 2025-04-29T09:14:00Z : Fixed import paths to use core module by CodeAssistant
+# * Changed imports to use ..core.event_types and ..core.listener
+# * Fixed "No module named 'dbp.fs_monitor.event_types'" error
+# 2025-04-29T09:08:00Z : Fixed import paths to use parent directory by CodeAssistant
+# * Changed imports from .event_types to ..event_types
+# * Fixed imports for listener, debouncer, and thread_manager to use parent module
+# * Fixed "No module named 'dbp.fs_monitor.dispatch.event_types'" error
 # 2025-04-29T00:12:00Z : Initial implementation of event dispatcher for fs_monitor redesign by CodeAssistant
 # * Created EventDispatcher class for event routing and coordination
 # * Implemented integration with WatchManager, Debouncer, and ThreadManager
@@ -52,9 +67,9 @@ import threading
 import logging
 from typing import Dict, List, Optional, Any, Set, Callable
 
-from .event_types import EventType, FileSystemEvent
-from .listener import FileSystemEventListener
-from .debouncer import Debouncer
+from ..core.event_types import EventType, FileSystemEvent
+from ..core.listener import FileSystemEventListener
+from .debouncer import EventDebouncer
 from .thread_manager import ThreadManager, ThreadPriority
 
 logger = logging.getLogger(__name__)
@@ -94,7 +109,7 @@ class EventDispatcher:
         """
         self._watch_manager = watch_manager
         self._lock = threading.RLock()
-        self._debouncer = Debouncer(self._dispatch_debounced_event)
+        self._debouncer = EventDebouncer(self._dispatch_debounced_event)
         self._thread_manager = ThreadManager(num_threads=1, priority=ThreadPriority.NORMAL)
         self._started = False
     

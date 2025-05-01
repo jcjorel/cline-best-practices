@@ -62,7 +62,7 @@ COMPONENT_DECLARATIONS = [
         "import_path": "dbp.core.file_access_component",
         "component_class": "FileAccessComponent",
         "name": "file_access",
-        "dependencies": ["filter", "config_manager"]
+        "dependencies": ["config_manager"]
     },
     
     # Database component
@@ -78,12 +78,6 @@ COMPONENT_DECLARATIONS = [
         "import_path": "dbp.fs_monitor.component",
         "component_class": "FSMonitorComponent",
         "name": "fs_monitor",
-        "dependencies": ["config_manager"]
-    },
-    {
-        "import_path": "dbp.fs_monitor.filter",
-        "component_class": "FilterComponent",
-        "name": "filter",
         "dependencies": ["config_manager"]
     },
     
