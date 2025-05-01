@@ -437,6 +437,13 @@ All code must be documented at TWO distinct levels without exception:
    - ALWAYS follow the exact template provided in `GENAI_FUNCTION_TEMPLATE.txt`
    - These sections are required for all functions and class methods regardless of complexity or size
 
+   **Documentation Quality Standards:**
+   - Write insightful comments that allow developers to understand key aspects of file and class/methods/functions without reading code
+   - When using adjectives (like "clear", "simple", "efficient", "appropriate", "optimal", "robust", etc.), ALWAYS provide one or more specific justifications in the same sentence to prove the adjective is deserved
+   - Avoid vague wording in justifications and provide precise technical reasons
+   - "Design principles" section should hold meaningful information to use the file and its content elsewhere in the codebase (architectural patterns, limitations if any)
+   - "Implementation details" section should contain information needed to understand and maintain the file content itself
+
    **Python Function Documentation Example**:
    ```python
    def authenticate_user(credentials, options=None):
