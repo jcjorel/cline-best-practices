@@ -1,73 +1,59 @@
 # Hierarchical Semantic Tree Context: dbp
 
 ## Directory Purpose
-The dbp directory implements the core functionality of the Documentation-Based Programming system. It follows a modular architecture where each major concern is encapsulated in a dedicated component with well-defined interfaces and responsibilities. This module provides capabilities for document analysis, consistency checking, document relationship tracking, metadata extraction, file system monitoring, database management, and LLM integration. Components follow a consistent lifecycle pattern for initialization, dependency resolution, and graceful shutdown, enabling robust system operation.
-
-## Child Directories
-
-### config
-Provides configuration management for the entire system, including schema definitions, default values, component-specific configurations, and CLI-based configuration tools.
-
-### consistency_analysis
-Implements functionality for analyzing consistency between documentation files and code, identifying discrepancies, and generating reports on potential issues requiring attention.
-
-### core
-Contains core infrastructure shared across all components, including the component registry, lifecycle management, file access utilities, and logging infrastructure.
-
-### database
-Manages database connectivity, models, migrations, and repositories for persistent storage of system data including document relationships and analysis results.
-
-### doc_relationships
-Implements tracking and analysis of relationships between documentation files, including graph-based representation, change detection, and impact analysis.
-
-### fs_monitor
-Provides file system monitoring capabilities with platform-specific implementations, change filtering, and event queuing for documentation and code changes.
-
-### internal_tools
-Implements internal tools for code and document analysis, LLM interaction, context assembly, and other utilities used across the system.
-
-### llm
-Contains implementation of LLM client interfaces, prompt management, and specialized clients for different model providers like Claude and Nova.
-
-### llm_coordinator
-Coordinates LLM operations across the system, including job management, request handling, and response formatting for consistency.
-
-### mcp_server
-Implements the Model Context Protocol (MCP) server component for the Documentation-Based Programming system. It provides the infrastructure to expose DBP functionality as MCP tools and resources, enabling LLM assistants to interact with the system via a standardized API. The component integrates with the core DBP framework, manages server lifecycle, handles authentication and authorization, provides error handling, and maintains registries of tools and resources. The implementation follows a clean architecture that separates protocols, adapters, server logic, and tool/resource implementations.
-
-### memory_cache
-Provides in-memory caching capabilities for document analysis results, with indexing, eviction strategies, and synchronization mechanisms.
-
-### metadata_extraction
-Implements extraction of metadata from documentation and code files, including semantic analysis and structure identification.
-
-### recommendation_generator
-Generates recommendations for documentation improvements based on consistency analysis and document relationship insights.
-
-### scheduler
-Implements background task scheduling for system maintenance, periodic analysis, and asynchronous operations.
+This directory contains the core implementation of the Document-Based Programming (DBP) system, which provides a comprehensive framework for managing, analyzing, and enhancing documentation and code in software projects. The system is built around a modular component architecture that follows strict dependency management principles. It leverages large language models (LLMs) for advanced analysis, maintains consistency between documentation and implementation, and provides a Model Context Protocol (MCP) server for extensible integrations. The system emphasizes type safety, clean separation of concerns, robust error handling, and efficient resource management throughout its design.
 
 ## Local Files
 
 ### `__init__.py`
 ```yaml
 source_file_intent: |
-  Package initialization file that defines the dbp package and establishes it as a proper Python module.
+  Exports core DBP classes and functions for use by external modules.
   
 source_file_design_principles: |
-  - Minimal package initialization without side effects
-  - Clear package version definition
-  - Expose only essential public interfaces
+  - Minimalist exports to control public API surface
+  - Version information
+  - Package-level documentation
   
 source_file_constraints: |
-  - Must not perform any I/O operations during import
-  - Must not import modules with heavy dependencies
+  - Should maintain backward compatibility for public APIs
+  - Must not contain implementation logic
   
-dependencies:
-  - kind: system
-    dependency: Python package system
+dependencies: []
   
 change_history:
-  - timestamp: "2025-04-24T23:39:15Z"
-    summary: "Created HSTC.md file"
-    details: "Initial documentation of __init__.py in HSTC.md"
+  - timestamp: "2025-04-01T09:00:00Z"
+    summary: "Initial creation of DBP package"
+    details: "Created __init__.py with package exports and version information"
+```
+
+## Child Directories
+
+### config
+This directory implements the configuration management system for the DBP application, providing a robust framework for defining, validating, loading, and accessing strongly-typed configuration parameters throughout the application. The system uses Pydantic models for schema definition and validation, supports multiple configuration sources (files, environment variables, CLI arguments), and provides a central component for configuration management. The separation of schema definition from default values ensures consistent configuration across the application while maintaining a single source of truth for documentation.
+
+### core
+This directory implements the fundamental component framework and core system utilities for the DBP application. It defines the Component architecture that serves as the backbone for the entire system, providing essential services for component lifecycle management, dependency injection, system initialization, error handling, and resource management. The core module enforces consistent patterns across all components while maintaining a minimalist approach that follows KISS principles - providing just enough structure to ensure proper system operation without unnecessary complexity.
+
+### database
+This directory implements the database subsystem for the DBP application, providing persistent storage capabilities through both SQLite and PostgreSQL database backends. It includes components for database connection management, session handling, schema management, data models, and repository access patterns. The database architecture follows a layered approach with clear separation between connection management (database.py), schema migrations (alembic_manager.py), data models (models.py), and data access repositories (repositories.py). This subsystem implements thread-safe database access with connection pooling, transaction management, retry logic for transient errors, and automated schema migrations using Alembic.
+
+### fs_monitor
+This directory implements the file system monitoring subsystem for the DBP application, providing real-time tracking of file system changes across different operating system platforms. It uses a hierarchical architecture that separates platform-specific monitoring implementations from event dispatching and listening interfaces. The system supports multiple concurrent file watchers, thread-safe event dispatching, and pattern-based filtering. It includes a fallback polling mechanism for environments where native file system monitoring APIs are unavailable and implements debouncing to prevent event storms during rapid file changes.
+
+### internal_tools
+This directory implements the internal tools subsystem for the DBP application, providing reusable utilities for code and documentation analysis, LLM prompt management, and execution engines that power various DBP features. It offers specialized components for processing code and documentation, extracting semantic context, and managing the execution flow between different analysis steps. The internal tools module serves as a bridge between raw file data and higher-level DBP functionality, providing abstractions that simplify complex processing tasks while maintaining flexibility for various use cases.
+
+### llm
+This directory implements the LLM (Large Language Model) services for the DBP application, providing a unified framework for interacting with different Foundation Models through Amazon Bedrock. It offers model-specific clients, a central manager for coordinating client usage, common utilities for handling prompts and responses, and abstraction layers to support multiple model types. The architecture ensures consistent interaction patterns, efficient resource management, and robust error handling while hiding provider-specific implementation details from the rest of the application.
+
+### llm_coordinator
+This directory implements the LLM Coordination subsystem for the DBP system, which orchestrates interactions between Large Language Models and internal tools. It serves as a central hub for processing natural language requests, determining required tool operations, executing tool jobs, and formatting responses. The LLMCoordinatorComponent follows the core Component protocol and acts as a facade for the complex coordination logic, exposing a simplified interface while managing internal sub-components for request handling, tool registry, job management, LLM interactions, and response formatting.
+
+### mcp_server
+This directory implements the Model Context Protocol (MCP) server component for the DBP system, providing a standardized interface for large language model (LLM) interactions through tools and resources. The MCP server enables LLMs to access external capabilities like data retrieval, file operations, specialized processing, and API integrations. It uses the FastMCP library to ensure protocol compliance while maintaining a clean Component-based architecture. The implementation includes authentication, request validation, error handling, and extensibility through a tool/resource registration system that allows other components to provide domain-specific functionality to LLMs.
+
+### scheduler
+This directory implements the background task scheduler subsystem for the DBP application, providing an asynchronous job processing framework for handling non-interactive operations. It enables components to schedule tasks for deferred execution, manages worker threads for parallel processing, and implements priority-based job scheduling. The scheduler provides retry mechanisms for failed tasks, supports cancellation and monitoring of long-running jobs, and ensures graceful system shutdown by handling in-progress tasks appropriately.
+
+End of HSTC.md file

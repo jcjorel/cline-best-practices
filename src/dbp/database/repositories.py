@@ -61,7 +61,6 @@ from .repositories.project_repository import ProjectRepository
 from .repositories.relationship_repository import RelationshipRepository
 from .repositories.function_repository import FunctionRepository
 from .repositories.class_repository import ClassRepository
-from .repositories.inconsistency_repository import InconsistencyRepository
 from .repositories.recommendation_repository import RecommendationRepository
 from .repositories.developer_decision_repository import DeveloperDecisionRepository
 from .repositories.design_decision_repository import DesignDecisionRepository
@@ -75,11 +74,8 @@ __all__ = [
     'RelationshipRepository',
     'FunctionRepository',
     'ClassRepository',
-    'InconsistencyRepository',
     'RecommendationRepository',
     'DeveloperDecisionRepository',
     'DesignDecisionRepository',
     'ChangeRecordRepository',
 ]
-
-

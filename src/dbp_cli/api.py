@@ -43,6 +43,8 @@
 # system:- src/dbp/mcp_server/data_models.py (MCPRequest/Response/Error structure)
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-02T00:40:26Z : Deprecated analyze_consistency method by CodeAssistant
+# * Made the method return a deprecation error since the consistency_analysis component has been removed
 # 2025-04-26T11:22:00Z : Fixed health endpoint response handling by CodeAssistant
 # * Modified get_server_status() to make direct request to health endpoint
 # * Fixed issue where health endpoint response was empty (returning only {})
@@ -57,9 +59,6 @@
 # * Replaced config_manager.get() calls with direct attribute access via get_typed_config()
 # * Fixed server startup error related to deprecated method exception
 # * Updated configuration access to follow new type-safe pattern
-# 2025-04-17T15:34:30Z : Fixed configuration key in MCPClientAPI by CodeAssistant
-# * Changed config key from "mcp_server.timeout" to "server.timeout" to match schema structure
-# * Fixed server initialization error that was preventing debug_server.sh from working correctly
 ###############################################################################
 
 import logging
@@ -307,25 +306,10 @@ class MCPClientAPI:
 
     def analyze_consistency(self, code_file_path: str, doc_file_path: str, **kwargs) -> Dict[str, Any]:
         """
-        Calls the general query tool for consistency analysis.
-        
-        Following the MCP server refactoring, this now routes through the dbp_general_query tool
-        with an operation-specific structure.
+        [DEPRECATED] This method is no longer supported as the consistency_analysis component has been removed.
         """
-        tool_data = {
-            "query": {
-                "operation": "consistency_analysis",
-                "code_file_path": code_file_path,
-                "doc_file_path": doc_file_path
-            },
-            "context": kwargs.get("context", {}),
-            "parameters": {k: v for k, v in kwargs.items() if k != "context"}
-        }
-        result = self.call_tool("dbp_general_query", tool_data)
-        # Extract the actual result data from the wrapper response
-        if isinstance(result, dict) and "result" in result:
-            return result["result"]
-        return result
+        self.logger.error("analyze_consistency method is deprecated - consistency_analysis component has been removed")
+        raise APIError("Operation not supported: consistency_analysis component has been removed", code="DEPRECATED_OPERATION")
 
     def generate_recommendations(self, inconsistency_ids: List[str], **kwargs) -> Dict[str, Any]:
         """

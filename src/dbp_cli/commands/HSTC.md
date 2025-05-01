@@ -1,217 +1,219 @@
 # Hierarchical Semantic Tree Context: commands
 
 ## Directory Purpose
-The commands directory implements the command-line interface (CLI) commands for the Documentation-Based Programming system. It provides a set of executable commands that users can invoke through the dbp_cli tool to interact with various system features. Each command follows a consistent structure with argument parsing, execution logic, and output formatting. The commands are designed to be user-friendly, with clear help messages, error handling, and consistent return codes. This directory organizes commands in a modular fashion, making it easy to add new functionality to the CLI.
+This directory contains command handler implementations for the Document Based Programming (DBP) CLI. Each command handler follows the Command pattern and extends a common BaseCommandHandler abstract class that enforces a consistent interface. The handlers provide specific CLI command implementations with argument parsing, execution logic, and formatted output. Together these command handlers form the core functionality of the CLI, exposing various features of the MCP server through a consistent command-line interface.
 
 ## Local Files
-<!-- The directory may not have any existing files yet if commands are being developed -->
-<!-- The following documentation represents expected files based on the project structure -->
 
 ### `__init__.py`
 ```yaml
 source_file_intent: |
-  Marks the commands directory as a Python package and provides command registration functionality.
+  Command handlers for the DBP CLI.
   
 source_file_design_principles: |
-  - Dynamic command discovery and registration
-  - Consistent command interface definition
-  - Lazy loading of command implementations
+  - Simple module structure
+  - Exports command handler classes
   
 source_file_constraints: |
-  - No side effects during import
-  - Must maintain backward compatibility for command interfaces
+  - Should not contain implementation logic
+  
+dependencies: []
+  
+change_history:
+  - timestamp: "2025-04-16T10:00:00Z"
+    summary: "Initial commit"
+    details: "Added module docstring"
+```
+
+### `base.py`
+```yaml
+source_file_intent: |
+  Defines the base command handler abstract class that all CLI command handlers
+  must inherit from. Provides common functionality and a standard interface for
+  command execution.
+  
+source_file_design_principles: |
+  - Uses abstract base class to enforce interface.
+  - Provides common helper methods for all command handlers.
+  - Simplifies command implementation by standardizing parameters and dependencies.
+  - Takes dependencies via constructor for better testability.
+  - Design Decision: Abstract Base Class (2025-04-15)
+    * Rationale: Enforces consistent interface across all command handlers.
+    * Alternatives considered: Function-based commands (less enforced structure), 
+      class-based without ABC (less explicit contract).
+  
+source_file_constraints: |
+  - Requires Python 3.8+ for TypedDict usage.
+  - Command execution must return an integer exit code.
+  - Must have explicit error handling within execute().
   
 dependencies:
   - kind: system
-    dependency: Python package system
+    dependency: argparse
+  - kind: system
+    dependency: logging
+  - kind: system
+    dependency: abc
   - kind: codebase
-    dependency: src/dbp_cli/cli.py
+    dependency: src/dbp_cli/api.py
+  - kind: codebase
+    dependency: src/dbp_cli/output.py
+  - kind: codebase
+    dependency: src/dbp_cli/progress.py
+  - kind: codebase
+    dependency: src/dbp_cli/exceptions.py
   
 change_history:
-  - timestamp: "2025-04-24T23:18:25Z"
-    summary: "Created HSTC.md file"
-    details: "Initial documentation of __init__.py in HSTC.md"
+  - timestamp: "2025-04-15T13:04:40Z"
+    summary: "Initial creation of BaseCommandHandler"
+    details: "Implemented abstract base class with execute method and helper methods."
 ```
 
-### `analyze_command.py`
+### `commit.py`
 ```yaml
 source_file_intent: |
-  Implements the 'analyze' command for analyzing documentation and code consistency.
+  Implements the CommitCommandHandler for the 'commit' CLI command, which exposes
+  the commit message generation functionality of the MCP server's dbp_commit_message tool.
   
 source_file_design_principles: |
-  - Clear command structure with argument parsing
-  - Progress reporting during analysis
-  - Structured output formatting
+  - Extends the BaseCommandHandler to implement the 'commit' command.
+  - Provides options to control commit message generation.
+  - Displays formatted results including supporting metadata.
+  - Offers ability to save generated messages to file.
   
 source_file_constraints: |
-  - Must follow command interface conventions
-  - Must handle analysis failures gracefully
+  - Depends on the MCP server supporting the 'dbp_commit_message' tool.
   
 dependencies:
   - kind: codebase
-    dependency: src/dbp_cli/cli.py
-  - kind: codebase
-    dependency: src/dbp/consistency_analysis/component.py
+    dependency: doc/DESIGN.md
+  - kind: other
+    dependency: src/dbp_cli/commands/base.py
   
 change_history:
-  - timestamp: "2025-04-24T23:18:25Z"
-    summary: "Created HSTC.md file"
-    details: "Initial documentation of analyze_command.py in HSTC.md"
+  - timestamp: "2025-04-16T10:12:00Z"
+    summary: "Initial creation of CommitCommandHandler"
+    details: "Implemented command handler for commit message generation"
 ```
 
-### `config_command.py`
+### `query.py`
 ```yaml
 source_file_intent: |
-  Implements the 'config' command for viewing and modifying system configuration.
+  Implements the QueryCommandHandler for the 'query' CLI command, which exposes
+  the natural language query functionality of the MCP server's dbp_general_query tool.
   
 source_file_design_principles: |
-  - Subcommand pattern for get/set/list operations
-  - Config validation before saving changes
-  - Clear formatting of config values
+  - Extends the BaseCommandHandler to implement the 'query' command.
+  - Provides direct natural language access to the dbp_general_query MCP tool.
+  - Simplifies interaction by focusing only on natural language.
+  - Formats and displays results consistently.
   
 source_file_constraints: |
-  - Must follow command interface conventions
-  - Must validate config values against schema
+  - Depends on the MCP server supporting the 'dbp_general_query' tool.
+  - Query handling ultimately depends on the server's ability to interpret queries.
   
 dependencies:
   - kind: codebase
-    dependency: src/dbp_cli/cli.py
-  - kind: codebase
-    dependency: src/dbp/config/config_manager.py
+    dependency: doc/DESIGN.md
+  - kind: other
+    dependency: src/dbp_cli/commands/base.py
   
 change_history:
-  - timestamp: "2025-04-24T23:18:25Z"
-    summary: "Created HSTC.md file"
-    details: "Initial documentation of config_command.py in HSTC.md"
+  - timestamp: "2025-04-16T10:08:00Z"
+    summary: "Initial creation of QueryCommandHandler"
+    details: "Implemented command handler for natural language queries"
 ```
 
-### `init_command.py`
+### `config.py`
 ```yaml
 source_file_intent: |
-  Implements the 'init' command for initializing a new project with Documentation-Based Programming structure.
+  Implements the ConfigCommandHandler for the 'config' CLI command, which allows
+  users to view and modify configuration settings for the DBP CLI and MCP server.
   
 source_file_design_principles: |
-  - Template-based project initialization
-  - Interactive mode for guided setup
-  - Validation of project structure
+  - Extends the BaseCommandHandler to implement the 'config' command.
+  - Provides get, set, and list subcommands for configuration management.
+  - Supports configuration scopes (user, project, default).
+  - Clean interface for configuration operations.
   
 source_file_constraints: |
-  - Must follow command interface conventions
-  - Must not overwrite existing files without confirmation
+  - Must handle different configuration storage locations.
+  - Must validate configuration values based on schema.
   
 dependencies:
   - kind: codebase
-    dependency: src/dbp_cli/cli.py
-  - kind: codebase
-    dependency: src/dbp/config/project_config.py
+    dependency: src/dbp_cli/config.py
+  - kind: other
+    dependency: src/dbp_cli/commands/base.py
   
 change_history:
-  - timestamp: "2025-04-24T23:18:25Z"
-    summary: "Created HSTC.md file"
-    details: "Initial documentation of init_command.py in HSTC.md"
+  - timestamp: "2025-04-16T10:15:00Z"
+    summary: "Initial creation of ConfigCommandHandler"
+    details: "Implemented command handler for configuration management"
 ```
 
-### `relationships_command.py`
+### `server.py`
 ```yaml
 source_file_intent: |
-  Implements the 'relationships' command for managing and visualizing document relationships.
+  Implements the ServerCommandHandler for the 'server' CLI command, which provides
+  functionality to start, stop, and manage the MCP server instance.
   
 source_file_design_principles: |
-  - Subcommand pattern for different relationship operations
-  - Visual representation of relationships
-  - Filtering and query capabilities
+  - Extends the BaseCommandHandler to implement the 'server' command.
+  - Provides start, stop, status, and restart subcommands.
+  - Handles server process management and status reporting.
+  - Supports configuration options for server startup.
   
 source_file_constraints: |
-  - Must follow command interface conventions
-  - Must handle complex relationship structures
+  - Must manage server process lifecycle correctly.
+  - Must handle edge cases like already running servers.
+  - Requires proper error handling for process management.
+  
+dependencies:
+  - kind: system
+    dependency: subprocess
+  - kind: system
+    dependency: os
+  - kind: system
+    dependency: signal
+  - kind: codebase
+    dependency: src/dbp_cli/config.py
+  - kind: other
+    dependency: src/dbp_cli/commands/base.py
+  
+change_history:
+  - timestamp: "2025-04-16T10:20:00Z"
+    summary: "Initial creation of ServerCommandHandler"
+    details: "Implemented command handler for server management"
+```
+
+### `status.py`
+```yaml
+source_file_intent: |
+  Implements the StatusCommandHandler for the 'status' CLI command, which provides
+  information about the current state of the DBP system, including the server status,
+  active components, and recent activity.
+  
+source_file_design_principles: |
+  - Extends the BaseCommandHandler to implement the 'status' command.
+  - Collects and organizes system status information.
+  - Provides formatted output with visual indicators.
+  - Supports various output formats (text, JSON, detailed).
+  
+source_file_constraints: |
+  - Must handle cases where the server is not running.
+  - Should provide useful information even with limited connectivity.
   
 dependencies:
   - kind: codebase
-    dependency: src/dbp_cli/cli.py
-  - kind: codebase
-    dependency: src/dbp/doc_relationships/component.py
-  - kind: codebase
-    dependency: src/dbp/doc_relationships/graph.py
+    dependency: src/dbp_cli/api.py
+  - kind: other
+    dependency: src/dbp_cli/commands/base.py
   
 change_history:
-  - timestamp: "2025-04-24T23:18:25Z"
-    summary: "Created HSTC.md file"
-    details: "Initial documentation of relationships_command.py in HSTC.md"
+  - timestamp: "2025-04-16T10:25:00Z"
+    summary: "Initial creation of StatusCommandHandler"
+    details: "Implemented command handler for system status reporting"
 ```
 
-### `server_command.py`
-```yaml
-source_file_intent: |
-  Implements the 'server' command for managing the MCP server functionality.
-  
-source_file_design_principles: |
-  - Subcommand pattern for start/stop/status operations
-  - Process management for server instance
-  - Configuration and port management
-  
-source_file_constraints: |
-  - Must follow command interface conventions
-  - Must handle server process lifecycle properly
-  
-dependencies:
-  - kind: codebase
-    dependency: src/dbp_cli/cli.py
-  - kind: codebase
-    dependency: src/dbp/mcp_server/component.py
-  
-change_history:
-  - timestamp: "2025-04-24T23:18:25Z"
-    summary: "Created HSTC.md file"
-    details: "Initial documentation of server_command.py in HSTC.md"
-```
-
-### `update_command.py`
-```yaml
-source_file_intent: |
-  Implements the 'update' command for updating HSTC files and other generated documentation.
-  
-source_file_design_principles: |
-  - Targeted updates based on file changes
-  - Progress reporting during updates
-  - Validation of updated content
-  
-source_file_constraints: |
-  - Must follow command interface conventions
-  - Must handle partial update failures gracefully
-  
-dependencies:
-  - kind: codebase
-    dependency: src/dbp_cli/cli.py
-  - kind: codebase
-    dependency: src/dbp/metadata_extraction/component.py
-  
-change_history:
-  - timestamp: "2025-04-24T23:18:25Z"
-    summary: "Created HSTC.md file"
-    details: "Initial documentation of update_command.py in HSTC.md"
-```
-
-### `validate_command.py`
-```yaml
-source_file_intent: |
-  Implements the 'validate' command for validating documentation structure and content.
-  
-source_file_design_principles: |
-  - Comprehensive validation rules
-  - Clear error reporting
-  - Severity levels for validation issues
-  
-source_file_constraints: |
-  - Must follow command interface conventions
-  - Must provide actionable validation feedback
-  
-dependencies:
-  - kind: codebase
-    dependency: src/dbp_cli/cli.py
-  - kind: codebase
-    dependency: src/dbp/consistency_analysis/component.py
-  
-change_history:
-  - timestamp: "2025-04-24T23:18:25Z"
-    summary: "Created HSTC.md file"
-    details: "Initial documentation of validate_command.py in HSTC.md"
+End of HSTC.md file

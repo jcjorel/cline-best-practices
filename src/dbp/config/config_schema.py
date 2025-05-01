@@ -47,17 +47,19 @@
 # system:logging
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-02T01:21:15Z : Removed scheduler component from ComponentEnabledConfig by CodeAssistant
+# * Removed scheduler field from ComponentEnabledConfig class
+# * Kept SchedulerConfig and scheduler field in AppConfig for configuration documentation
+# 2025-05-02T01:12:00Z : Removed metadata_extraction references by CodeAssistant
+# * Removed MetadataExtractionConfig class
+# * Removed metadata_extraction field from main AppConfig class
+# * Updated imports to remove METADATA_EXTRACTION_DEFAULTS
+# 2025-05-02T00:39:23Z : Removed consistency_analysis references by CodeAssistant
+# * Removed consistency_analysis field from ComponentEnabledConfig class
+# * Removed ConsistencyAnalysisConfig class
 # 2025-04-25T14:36:00Z : Added missing COMPONENT_ENABLED_DEFAULTS import by CodeAssistant
 # * Added COMPONENT_ENABLED_DEFAULTS to the imports from default_config.py
 # * Fixed NameError in ComponentEnabledConfig class
-# 2025-04-25T14:31:47Z : Updated ComponentEnabledConfig to use default values from COMPONENT_ENABLED_DEFAULTS by CodeAssistant
-# * Replaced hardcoded 'True' values with references to corresponding values in COMPONENT_ENABLED_DEFAULTS
-# 2025-04-25T14:26:02Z : Updated validators to raise exceptions instead of using fallbacks by CodeAssistant
-# * Modified all validator methods to raise ValueError instead of returning fallback values
-# * Includes format, verbosity, file path expansion, cache_dir, response_format, and prompt_templates_dir validators
-# 2025-04-25T11:39:07Z : Clarified design decision to apply specifically to Field default parameter by CodeAssistant
-# * Updated the design decision to specify it only applies to the Field default parameter
-# * Added note clarifying that default_factory parameter is not subject to this restriction
 ###############################################################################
 
 from pydantic import BaseModel, Field, validator, DirectoryPath, FilePath
@@ -82,11 +84,9 @@ from .default_config import (
     LLM_COORDINATOR_DEFAULTS,
     NOVA_LITE_DEFAULTS,
     CLAUDE_DEFAULTS,
-    CONSISTENCY_ANALYSIS_DEFAULTS,
     RECOMMENDATION_GENERATOR_DEFAULTS,
     MCP_SERVER_DEFAULTS,
     CLI_DEFAULTS,
-    METADATA_EXTRACTION_DEFAULTS,
     MEMORY_CACHE_DEFAULTS,
     AWS_DEFAULTS,
     BEDROCK_DEFAULTS,
@@ -363,31 +363,6 @@ class AppConfig(BaseModel):
     llm_coordinator: LLMCoordinatorConfig = Field(default_factory=LLMCoordinatorConfig, description="LLM Coordinator settings")
     internal_tools: InternalToolsConfig = Field(default_factory=InternalToolsConfig, description="Internal LLM Tools settings")
 
-# --- Consistency Analysis Configuration ---
-
-class ConsistencyAnalysisConfig(BaseModel):
-    """Configuration for the Consistency Analysis component."""
-    enabled_analyzers: List[str] = Field(default=CONSISTENCY_ANALYSIS_DEFAULTS["enabled_analyzers"], description="List of analyzer IDs to enable.")
-    # Thresholds below are currently placeholders, actual usage depends on analyzer implementations
-    high_severity_threshold: float = Field(default=CONSISTENCY_ANALYSIS_DEFAULTS["high_severity_threshold"], ge=0.0, le=1.0, description="Confidence threshold for classifying an inconsistency as high severity.")
-    medium_severity_threshold: float = Field(default=CONSISTENCY_ANALYSIS_DEFAULTS["medium_severity_threshold"], ge=0.0, le=1.0, description="Confidence threshold for classifying an inconsistency as medium severity.")
-    background_check_interval_minutes: int = Field(default=CONSISTENCY_ANALYSIS_DEFAULTS["background_check_interval_minutes"], ge=5, le=1440, description="Interval in minutes for periodic background consistency checks.")
-    max_inconsistencies_per_report: int = Field(default=CONSISTENCY_ANALYSIS_DEFAULTS["max_inconsistencies_per_report"], ge=10, le=10000, description="Maximum number of inconsistencies to include in a single report.")
-
-# --- Metadata Extraction Configuration ---
-
-class MetadataExtractionConfig(BaseModel):
-    """Configuration for the Metadata Extraction component."""
-    # Add basic configuration fields needed for metadata extraction
-    model_id: str = Field(default=METADATA_EXTRACTION_DEFAULTS["model_id"], description="AWS Bedrock model ID for metadata extraction")
-    temperature: float = Field(default=METADATA_EXTRACTION_DEFAULTS["temperature"], ge=0.0, le=1.0, description="Temperature parameter for LLM generation (0.0 for deterministic)")
-    max_tokens: int = Field(default=METADATA_EXTRACTION_DEFAULTS["max_tokens"], ge=1, le=8192, description="Maximum tokens for LLM response")
-    max_file_size_kb: int = Field(default=METADATA_EXTRACTION_DEFAULTS["max_file_size_kb"], ge=1, le=10240, description="Maximum file size in KB to process")
-    extraction_timeout_seconds: int = Field(default=METADATA_EXTRACTION_DEFAULTS["extraction_timeout_seconds"], ge=5, le=300, description="Timeout for extraction operations in seconds")
-    batch_size: int = Field(default=METADATA_EXTRACTION_DEFAULTS["batch_size"], ge=1, le=100, description="Number of files to process in a batch")
-    max_retries: int = Field(default=METADATA_EXTRACTION_DEFAULTS["max_retries"], ge=0, le=10, description="Maximum number of retry attempts for failed operations")
-    retry_delay: float = Field(default=METADATA_EXTRACTION_DEFAULTS["retry_delay"], ge=0.1, le=10.0, description="Delay in seconds between retry attempts")
-    enabled: bool = Field(default=METADATA_EXTRACTION_DEFAULTS["enabled"], description="Enable metadata extraction")
 
 # --- Recommendation Generator Configuration ---
 
@@ -501,11 +476,7 @@ class ComponentEnabledConfig(BaseModel):
     database: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["database"], description="Enable database component")
     fs_monitor: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["fs_monitor"], description="Enable file system monitor component")
     memory_cache: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["memory_cache"], description="Enable memory cache component")
-    consistency_analysis: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["consistency_analysis"], description="Enable consistency analysis component")
-    doc_relationships: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["doc_relationships"], description="Enable document relationships component")
-    recommendation_generator: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["recommendation_generator"], description="Enable recommendation generator component")
-    scheduler: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["scheduler"], description="Enable scheduler component")
-    metadata_extraction: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["metadata_extraction"], description="Enable metadata extraction component") 
+    metadata_extraction: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["metadata_extraction"], description="Enable metadata extraction component")
     llm_coordinator: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["llm_coordinator"], description="Enable LLM coordinator component (required for MCP server LLM functions)")
     mcp_server: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["mcp_server"], description="Enable MCP server component")
 
@@ -524,9 +495,6 @@ class AppConfig(BaseModel):
     initialization: InitializationConfig = Field(default_factory=InitializationConfig, description="Initialization settings")
     llm_coordinator: LLMCoordinatorConfig = Field(default_factory=LLMCoordinatorConfig, description="LLM Coordinator settings")
     internal_tools: InternalToolsConfig = Field(default_factory=InternalToolsConfig, description="Internal LLM Tools settings")
-    consistency_analysis: ConsistencyAnalysisConfig = Field(default_factory=ConsistencyAnalysisConfig, description="Consistency Analysis settings")
-    metadata_extraction: MetadataExtractionConfig = Field(default_factory=MetadataExtractionConfig, description="Metadata Extraction settings")
-    recommendation_generator: RecommendationGeneratorConfig = Field(default_factory=RecommendationGeneratorConfig, description="Recommendation Generator settings")
     file_access: FileAccessConfig = Field(default_factory=FileAccessConfig, description="File Access settings")
     memory_cache: MemoryCacheConfig = Field(default_factory=MemoryCacheConfig, description="Memory Cache settings")
     mcp_server: MCPServerConfig = Field(default_factory=MCPServerConfig, description="MCP Server Integration settings")

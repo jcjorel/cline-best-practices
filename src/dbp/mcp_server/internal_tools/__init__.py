@@ -28,6 +28,9 @@
 # codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-02T00:37:49Z : Removed consistency analysis tool by CodeAssistant
+# * Removed import and export of InternalConsistencyAnalysisTool 
+# * Removed reference from __all__ list
 # 2025-04-16T09:25:00Z : Created internal tools package by CodeAssistant
 # * Added exports for internal tool classes
 ###############################################################################
@@ -44,13 +47,6 @@ from .base import (
     InternalToolExecutionError
 )
 
-from .consistency import InternalConsistencyAnalysisTool
-from .recommendations import (
-    InternalRecommendationsGeneratorTool,
-    InternalRecommendationApplicatorTool,
-    RecommendationNotFoundError
-)
-from .relationships import InternalDocumentRelationshipsTool
 from .visualization import InternalMermaidDiagramTool
 
 __all__ = [
@@ -61,12 +57,5 @@ __all__ = [
     'InternalToolExecutionError',
     
     # Tool implementations
-    'InternalConsistencyAnalysisTool',
-    'InternalRecommendationsGeneratorTool',
-    'InternalRecommendationApplicatorTool',
-    'InternalDocumentRelationshipsTool',
     'InternalMermaidDiagramTool',
-    
-    # Exceptions
-    'RecommendationNotFoundError',
 ]

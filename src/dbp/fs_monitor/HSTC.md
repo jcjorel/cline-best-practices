@@ -1,270 +1,169 @@
 # Hierarchical Semantic Tree Context: fs_monitor
 
 ## Directory Purpose
-The fs_monitor directory implements file system monitoring capabilities with cross-platform support for detecting changes to documentation and code files. It provides efficient event detection and filtering mechanisms to track file creation, modification, deletion, and movement within project directories. This component is designed with platform-specific optimizations for Windows, macOS, and Linux, with a fallback implementation for unsupported platforms. The module follows a factory pattern to select the appropriate implementation based on the current operating system while maintaining a consistent interface for consumers.
+This directory implements the file system monitoring subsystem for the DBP application, providing real-time tracking of file system changes across different operating system platforms. It uses a hierarchical architecture that separates platform-specific monitoring implementations from event dispatching and listening interfaces. The system supports multiple concurrent file watchers, thread-safe event dispatching, and pattern-based filtering. It includes a fallback polling mechanism for environments where native file system monitoring APIs are unavailable and implements debouncing to prevent event storms during rapid file changes.
 
 ## Local Files
 
 ### `__init__.py`
 ```yaml
 source_file_intent: |
-  Marks the fs_monitor directory as a Python package and defines its public interface.
+  Exports file system monitoring classes and functions for use throughout the DBP system.
   
 source_file_design_principles: |
-  - Minimal package initialization
-  - Clear definition of public interfaces
-  - Platform-agnostic imports
+  - Provides clean imports for fs_monitor classes
+  - Maintains hierarchical package structure
+  - Prevents circular imports
   
 source_file_constraints: |
-  - No side effects during import
-  - No heavy dependencies loaded during initialization
+  - Should only export necessary classes and functions
+  - Must not contain implementation logic
   
-dependencies:
-  - kind: system
-    dependency: Python package system
+dependencies: []
   
 change_history:
-  - timestamp: "2025-04-24T23:20:15Z"
-    summary: "Created HSTC.md file"
-    details: "Initial documentation of __init__.py in HSTC.md"
-```
-
-### `base.py`
-```yaml
-source_file_intent: |
-  Defines the base abstract classes and interfaces for file system monitoring functionality.
-  
-source_file_design_principles: |
-  - Abstract base classes for monitor implementations
-  - Common event types and data structures
-  - Clear interface contracts
-  
-source_file_constraints: |
-  - Must define a complete interface for all monitor implementations
-  - Must be platform-agnostic
-  
-dependencies:
-  - kind: system
-    dependency: Python abc module
-  
-change_history:
-  - timestamp: "2025-04-24T23:20:15Z"
-    summary: "Created HSTC.md file"
-    details: "Initial documentation of base.py in HSTC.md"
+  - timestamp: "2025-04-14T09:00:00Z"
+    summary: "Initial creation of fs_monitor package"
+    details: "Created __init__.py with exports for key file monitoring classes"
 ```
 
 ### `component.py`
 ```yaml
 source_file_intent: |
-  Implements the FileSystemMonitorComponent class that provides a unified interface for file system monitoring across the system.
+  This file implements the main component class for the file system monitor.
+  It coordinates the various subcomponents (watch manager, event dispatcher,
+  and platform monitor) and provides a simplified interface for other components
+  to register listeners for file system events.
   
 source_file_design_principles: |
-  - Component lifecycle management following system patterns
-  - Dependency injection for configuration and event handlers
-  - Factory pattern usage for platform-specific monitor selection
+  - Centralized coordination of fs_monitor subcomponents
+  - Simplified interface for other components
+  - Configuration-driven behavior
+  - Clean lifecycle management
+  - Thread-safe operations
   
 source_file_constraints: |
-  - Must implement standard component interfaces
-  - Must handle monitoring initialization and shutdown gracefully
-  - Must manage resource usage efficiently
+  - Must properly initialize and manage subcomponents 
+  - Must maintain thread safety for concurrent operations
+  - Must handle configuration changes gracefully
+  - Must provide a clean API for other components
+  - Must ensure proper resource cleanup during shutdown
   
 dependencies:
+  - kind: system
+    dependency: logging
+  - kind: system
+    dependency: os
+  - kind: system
+    dependency: threading
+  - kind: system
+    dependency: typing
   - kind: codebase
     dependency: src/dbp/core/component.py
   - kind: codebase
-    dependency: src/dbp/config/component.py
+    dependency: src/dbp/config/config_manager.py
   - kind: codebase
-    dependency: src/dbp/fs_monitor/factory.py
+    dependency: src/dbp/fs_monitor/watch_manager.py
+  - kind: codebase
+    dependency: src/dbp/fs_monitor/dispatch/event_dispatcher.py
+  - kind: codebase
+    dependency: src/dbp/fs_monitor/platforms/factory.py
+  - kind: codebase
+    dependency: src/dbp/fs_monitor/core/listener.py
+  - kind: codebase
+    dependency: src/dbp/fs_monitor/dispatch/thread_manager.py
   
 change_history:
-  - timestamp: "2025-04-24T23:20:15Z"
-    summary: "Created HSTC.md file"
-    details: "Initial documentation of component.py in HSTC.md"
+  - timestamp: "2025-05-01T11:43:00Z"
+    summary: "Fixed initialization flag setting"
+    details: "Added explicit setting of _initialized flag to True, fixed 'Component failed to set is_initialized flag to True' error, resolved server startup failure caused by missing initialized state"
+  - timestamp: "2025-05-01T11:41:00Z"
+    summary: "Fixed config access method"
+    details: "Changed all calls to get_config() to get_typed_config(), fixed 'ConfigManagerComponent' object has no attribute 'get_config' error, updated component to use typed configuration access for type safety"
+  - timestamp: "2025-05-01T11:39:00Z"
+    summary: "Updated initialize and configure methods"
+    details: "Fixed initialize method signature to match Component base class requirements, added proper context and dependencies parameters to initialize method, updated configure method to raise error when called without initialization, fixed 'initialize() takes 1 positional argument but 3 were given' error"
 ```
 
-### `factory.py`
+### `git_filter.py`
 ```yaml
 source_file_intent: |
-  Implements a factory for creating the appropriate file system monitor implementation based on the current platform.
+  Implements a filter for file system events to ignore Git-related files and directories,
+  preventing unnecessary processing of Git's internal file operations.
   
 source_file_design_principles: |
-  - Factory pattern for platform-specific implementation selection
-  - Lazy instantiation of monitor implementations
-  - Fallback mechanism for unsupported platforms
+  - Pattern-based filtering of Git-related paths
+  - Configurable inclusion/exclusion of specific Git patterns
+  - Simple filter interface compatible with watch_manager
+  - Efficient path matching for minimal overhead
   
 source_file_constraints: |
-  - Must detect platform correctly
-  - Must provide graceful fallback for unsupported platforms
+  - Must properly identify Git-related files and directories
+  - Must handle Git worktrees and submodules
+  - Must not block legitimate file events
+  - Should be efficient for high-volume event processing
   
 dependencies:
-  - kind: codebase
-    dependency: src/dbp/fs_monitor/base.py
-  - kind: codebase
-    dependency: src/dbp/fs_monitor/linux.py
-  - kind: codebase
-    dependency: src/dbp/fs_monitor/macos.py
-  - kind: codebase
-    dependency: src/dbp/fs_monitor/windows.py
-  - kind: codebase
-    dependency: src/dbp/fs_monitor/fallback.py
-  
-change_history:
-  - timestamp: "2025-04-24T23:20:15Z"
-    summary: "Created HSTC.md file"
-    details: "Initial documentation of factory.py in HSTC.md"
-```
-
-### `fallback.py`
-```yaml
-source_file_intent: |
-  Implements a fallback file system monitor using polling for platforms without native monitoring support.
-  
-source_file_design_principles: |
-  - Polling-based implementation with configurable interval
-  - Resource-efficient scanning algorithm
-  - Compatible interface with native implementations
-  
-source_file_constraints: |
-  - Must implement the monitor interface defined in base.py
-  - Must minimize resource usage during polling
-  - Must handle large directory trees efficiently
-  
-dependencies:
-  - kind: codebase
-    dependency: src/dbp/fs_monitor/base.py
-  
-change_history:
-  - timestamp: "2025-04-24T23:20:15Z"
-    summary: "Created HSTC.md file"
-    details: "Initial documentation of fallback.py in HSTC.md"
-```
-
-### `filter.py`
-```yaml
-source_file_intent: |
-  Implements filtering mechanisms for file system events to focus on relevant changes and reduce noise.
-  
-source_file_design_principles: |
-  - Declarative filter rules with pattern matching
-  - Composable filter chains
-  - Path-based and content-based filtering
-  
-source_file_constraints: |
-  - Must provide efficient filtering of events
-  - Must support complex pattern matching
-  
-dependencies:
-  - kind: codebase
-    dependency: src/dbp/fs_monitor/base.py
-  
-change_history:
-  - timestamp: "2025-04-24T23:20:15Z"
-    summary: "Created HSTC.md file"
-    details: "Initial documentation of filter.py in HSTC.md"
-```
-
-### `linux.py`
-```yaml
-source_file_intent: |
-  Implements Linux-specific file system monitoring using inotify or similar mechanisms.
-  
-source_file_design_principles: |
-  - Native Linux monitoring APIs for efficiency
-  - Event translation to common format
-  - Resource management for watch descriptors
-  
-source_file_constraints: |
-  - Must implement the monitor interface defined in base.py
-  - Must handle Linux-specific limitations (e.g., watch descriptor limits)
-  - Must manage native resources properly
-  
-dependencies:
-  - kind: codebase
-    dependency: src/dbp/fs_monitor/base.py
   - kind: system
-    dependency: Linux inotify or equivalent libraries
+    dependency: re
+  - kind: system
+    dependency: os.path
   
 change_history:
-  - timestamp: "2025-04-24T23:20:15Z"
-    summary: "Created HSTC.md file"
-    details: "Initial documentation of linux.py in HSTC.md"
+  - timestamp: "2025-04-14T10:00:00Z"
+    summary: "Initial implementation of Git filter"
+    details: "Created pattern-based filter for Git-related files and directories"
 ```
 
-### `macos.py`
+### `watch_manager.py`
 ```yaml
 source_file_intent: |
-  Implements macOS-specific file system monitoring using FSEvents API.
+  Implements the WatchManager class responsible for managing file system watchers,
+  tracked directories, and registered event listeners. It serves as the central
+  registry for the file system monitoring subsystem.
   
 source_file_design_principles: |
-  - Native macOS monitoring APIs for efficiency
-  - Event translation to common format
-  - Efficient handling of volume-level events
+  - Centralized watcher management
+  - Thread-safe directory and listener registration
+  - Pattern-based file path filtering
+  - Clean listener registration and notification interface
+  - Efficient path matching for high-volume event processing
   
 source_file_constraints: |
-  - Must implement the monitor interface defined in base.py
-  - Must handle macOS-specific behaviors (e.g., coalesced events)
-  - Must manage native resources properly
+  - Must maintain thread safety for concurrent operations
+  - Must handle pattern matching efficiently
+  - Must support dynamic addition/removal of watchers and listeners
+  - Must provide clear listener notification mechanism
   
 dependencies:
-  - kind: codebase
-    dependency: src/dbp/fs_monitor/base.py
   - kind: system
-    dependency: macOS FSEvents API
+    dependency: logging
+  - kind: system
+    dependency: os
+  - kind: system
+    dependency: re
+  - kind: system
+    dependency: threading
+  - kind: codebase
+    dependency: src/dbp/fs_monitor/core/listener.py
+  - kind: codebase
+    dependency: src/dbp/fs_monitor/core/events.py
   
 change_history:
-  - timestamp: "2025-04-24T23:20:15Z"
-    summary: "Created HSTC.md file"
-    details: "Initial documentation of macos.py in HSTC.md"
+  - timestamp: "2025-04-14T11:00:00Z"
+    summary: "Initial implementation of WatchManager"
+    details: "Created watch manager with thread-safe watcher and listener registration"
 ```
 
-### `queue.py`
-```yaml
-source_file_intent: |
-  Implements a thread-safe queue for file system events to decouple event production from consumption.
-  
-source_file_design_principles: |
-  - Thread-safe event queueing
-  - Event batching and coalescing
-  - Blocking and non-blocking queue operations
-  
-source_file_constraints: |
-  - Must be thread-safe for concurrent access
-  - Must handle backpressure when consumers are slow
-  
-dependencies:
-  - kind: codebase
-    dependency: src/dbp/fs_monitor/base.py
-  - kind: system
-    dependency: Python threading and queue modules
-  
-change_history:
-  - timestamp: "2025-04-24T23:20:15Z"
-    summary: "Created HSTC.md file"
-    details: "Initial documentation of queue.py in HSTC.md"
-```
+## Child Directories
 
-### `windows.py`
-```yaml
-source_file_intent: |
-  Implements Windows-specific file system monitoring using ReadDirectoryChangesW or similar APIs.
-  
-source_file_design_principles: |
-  - Native Windows monitoring APIs for efficiency
-  - Event translation to common format
-  - Completion port usage for efficient notification
-  
-source_file_constraints: |
-  - Must implement the monitor interface defined in base.py
-  - Must handle Windows-specific behaviors (e.g., USN journal)
-  - Must manage native resources properly
-  
-dependencies:
-  - kind: codebase
-    dependency: src/dbp/fs_monitor/base.py
-  - kind: system
-    dependency: Windows file notification APIs
-  
-change_history:
-  - timestamp: "2025-04-24T23:20:15Z"
-    summary: "Created HSTC.md file"
-    details: "Initial documentation of windows.py in HSTC.md"
+### core
+This directory contains core abstractions, interfaces, and data structures for the file system monitoring subsystem. It defines the essential building blocks like event types, listener interfaces, and shared utilities that are used throughout the subsystem. The core module provides a foundation of consistent data types that enable the platform-specific implementations and dispatch mechanisms to interoperate seamlessly.
+
+### dispatch
+This directory implements the event dispatching system for file system events. It manages a thread pool for concurrent event processing, implements event debouncing to prevent event storms, and provides an execution context for event listeners. The dispatch subsystem ensures that file system events are delivered to registered listeners in a reliable and efficient manner, while managing thread priorities and resource utilization.
+
+### platforms
+This directory contains platform-specific implementations of file system monitoring for different operating systems. It provides a common interface that abstracts away the underlying OS-specific monitoring APIs (such as inotify on Linux, FSEvents on macOS, and ReadDirectoryChangesW on Windows), along with a polling-based fallback implementation for environments where native APIs are not available or accessible. The factory pattern allows the system to select the appropriate monitor implementation for the current platform.
+
+End of HSTC.md file

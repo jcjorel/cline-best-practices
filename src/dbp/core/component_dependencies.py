@@ -31,6 +31,10 @@
 # codebase:- doc/design/COMPONENT_INITIALIZATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-02T01:16:35Z : Removed scheduler component by CodeAssistant
+# * Removed scheduler component declaration from component dependencies
+# 2025-05-02T00:27:18Z : Removed consistency_analysis component by CodeAssistant
+# * Removed consistency_analysis from component declarations
 # 2025-04-25T09:07:45Z : Created component_dependencies.py by CodeAssistant
 # * Extracted component declarations from lifecycle.py
 # * Created centralized component declaration list
@@ -79,54 +83,6 @@ COMPONENT_DECLARATIONS = [
         "component_class": "FSMonitorComponent",
         "name": "fs_monitor",
         "dependencies": ["config_manager"]
-    },
-    
-    # Memory cache component
-    {
-        "import_path": "dbp.memory_cache.component",
-        "component_class": "MemoryCacheComponent",
-        "name": "memory_cache",
-        "dependencies": ["database", "config_manager"]
-    },
-    
-    # Metadata extraction component
-    {
-        "import_path": "dbp.metadata_extraction.component",
-        "component_class": "MetadataExtractionComponent",
-        "name": "metadata_extraction",
-        "dependencies": ["database"]
-    },
-    
-    # Document relationships component
-    {
-        "import_path": "dbp.doc_relationships.component",
-        "component_class": "DocRelationshipsComponent",
-        "name": "doc_relationships",
-        "dependencies": ["database", "metadata_extraction", "file_access"]
-    },
-    
-    # Consistency analysis component
-    {
-        "import_path": "dbp.consistency_analysis.component",
-        "component_class": "ConsistencyAnalysisComponent",
-        "name": "consistency_analysis",
-        "dependencies": ["database", "doc_relationships", "metadata_extraction"]
-    },
-    
-    # Recommendation generator component
-    {
-        "import_path": "dbp.recommendation_generator.component",
-        "component_class": "RecommendationGeneratorComponent",
-        "name": "recommendation_generator",
-        "dependencies": ["consistency_analysis", "database", "llm_coordinator"]
-    },
-    
-    # Scheduler component
-    {
-        "import_path": "dbp.scheduler.component",
-        "component_class": "SchedulerComponent",
-        "name": "scheduler",
-        "dependencies": ["config_manager", "fs_monitor", "metadata_extraction"]
     },
     
     # LLM coordinator component

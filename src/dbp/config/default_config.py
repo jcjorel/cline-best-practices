@@ -35,6 +35,13 @@
 # codebase:- doc/DESIGN.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-02T01:20:50Z : Removed scheduler implementation by CodeAssistant
+# * Removed scheduler component implementation (directory and files)
+# * Maintained scheduler configuration settings for documentation purposes
+# 2025-05-02T01:11:50Z : Removed METADATA_EXTRACTION_DEFAULTS by CodeAssistant
+# * Removed metadata extraction component configuration as part of component removal
+# 2025-05-02T00:29:00Z : Removed CONSISTENCY_ANALYSIS_DEFAULTS dictionary by CodeAssistant
+# * Removed consistency_analysis component configuration as part of component removal
 # 2025-04-25T17:33:00Z : Changed MCP server default host from 0.0.0.0 to 127.0.0.1 by CodeAssistant
 # * Fixed security issue by changing default host binding from all interfaces to localhost only
 # * Aligned implementation with security requirements specified in doc/SECURITY.md
@@ -46,9 +53,6 @@
 # 2025-04-25T11:42:23Z : Removed COMPONENT_DEFAULT_FACTORIES dictionary by CodeAssistant
 # * Removed unused COMPONENT_DEFAULT_FACTORIES dictionary following design decision clarification
 # * The design decision now explicitly applies only to Field default parameter
-# 2025-04-25T11:30:16Z : Added missing default values to comply with "No Hardcoded Default Values" decision by CodeAssistant
-# * Added root_path default to PROJECT_DEFAULTS
-# * Added BEDROCK_DEFAULTS dictionary for Bedrock configuration
 # 2025-04-17T15:16:00Z : Reorganized configuration structure for clarity by CodeAssistant
 # * Renamed SERVER_DEFAULTS to CLI_SERVER_CONNECTION_DEFAULTS
 # * Renamed OUTPUT_DEFAULTS to CLI_OUTPUT_DEFAULTS
@@ -75,19 +79,17 @@ COMPONENT_ENABLED_DEFAULTS = {
     "config_manager": True,   # Required for configuration
     "mcp_server": True,       # Required for API access
 
-    # Filesystem events    
-    "file_access": True,    
-    "fs_monitor": True,      
+    # Filesystem events
+    "file_access": True,
+    "fs_monitor": True,
 
     # All other components disabled
-    "database": False,       
-    "llm_coordinator": False, 
-    "memory_cache": False,    
-    "consistency_analysis": False,   
-    "doc_relationships": False,     
-    "recommendation_generator": False, 
-    "scheduler": False,       
-    "metadata_extraction": False, 
+    "database": False,
+    "llm_coordinator": False,
+    "memory_cache": False,
+    "consistency_analysis": False,
+    "scheduler": False,
+    "metadata_extraction": False,
 }
 
 # General application settings
@@ -203,15 +205,6 @@ CLAUDE_DEFAULTS = {
     "retry_delay_seconds": 1,
 }
 
-# Consistency Analysis settings
-CONSISTENCY_ANALYSIS_DEFAULTS = {
-    "enabled_analyzers": ["code_doc_metadata", "cross_reference_consistency"],
-    "high_severity_threshold": 0.8,
-    "medium_severity_threshold": 0.5,
-    "background_check_interval_minutes": 60,
-    "max_inconsistencies_per_report": 1000,
-}
-
 # Recommendation Generator settings
 RECOMMENDATION_GENERATOR_DEFAULTS = {
     "enabled_strategies": ["doc_link_fix", "doc_content_update", "code_comment_update"],
@@ -244,18 +237,6 @@ MCP_SERVER_DEFAULTS = {
     "session_timeout_seconds": 3600,  # Session timeout in seconds (1 hour)
 }
 
-# Metadata Extraction settings
-METADATA_EXTRACTION_DEFAULTS = {
-    "model_id": "amazon.titan-text-lite-v1",
-    "temperature": 0.0,
-    "max_tokens": 4096,
-    "max_file_size_kb": 1024,
-    "extraction_timeout_seconds": 30,
-    "batch_size": 10,
-    "max_retries": 3,
-    "retry_delay": 1.0,
-    "enabled": True,
-}
 
 # File Access settings
 FILE_ACCESS_DEFAULTS = {

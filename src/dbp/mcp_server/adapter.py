@@ -35,6 +35,14 @@
 # system:- src/dbp/core/component.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-02T01:05:20Z : Removed metadata_extraction component by CodeAssistant
+# * Removed MockMetadataExtractionComponent class
+# * Removed metadata_extraction from mock component dictionary
+# * Removed metadata_extraction property accessor
+# 2025-05-02T00:34:51Z : Removed consistency_analysis component by CodeAssistant
+# * Removed MockConsistencyAnalysisComponent class
+# * Removed consistency_analysis from mock component dictionary
+# * Removed consistency_analysis property accessor
 # 2025-04-25T00:10:00Z : Created minimized adapter by CodeAssistant
 # * Created standalone version of SystemComponentAdapter for progressive integration testing
 # * Implemented mock component returns instead of actual component access
@@ -108,39 +116,6 @@ class MockComponent(Component):
     def is_initialized(self) -> bool:
         return self._initialized
 
-class MockConsistencyAnalysisComponent(MockComponent):
-    """Mock implementation of ConsistencyAnalysisComponent."""
-    
-    def analyze_document_consistency(self, document_paths=None, **kwargs):
-        logger.info("[MOCK] ConsistencyAnalysisComponent.analyze_document_consistency called")
-        return {
-            "status": "error",
-            "message": "Running in standalone mode - ConsistencyAnalysisComponent not available",
-            "error_code": "COMPONENT_UNAVAILABLE"
-        }
-
-class MockRecommendationGeneratorComponent(MockComponent):
-    """Mock implementation of RecommendationGeneratorComponent."""
-    
-    def generate_recommendations(self, **kwargs):
-        logger.info("[MOCK] RecommendationGeneratorComponent.generate_recommendations called")
-        return {
-            "status": "error",
-            "message": "Running in standalone mode - RecommendationGeneratorComponent not available",
-            "error_code": "COMPONENT_UNAVAILABLE"
-        }
-
-class MockDocRelationshipsComponent(MockComponent):
-    """Mock implementation of DocRelationshipsComponent."""
-    
-    def get_relationships(self, document_path=None, **kwargs):
-        logger.info("[MOCK] DocRelationshipsComponent.get_relationships called")
-        return {
-            "status": "error",
-            "message": "Running in standalone mode - DocRelationshipsComponent not available",
-            "error_code": "COMPONENT_UNAVAILABLE"
-        }
-
 class MockLLMCoordinatorComponent(MockComponent):
     """Mock implementation of LLMCoordinatorComponent."""
     
@@ -155,28 +130,6 @@ class MockLLMCoordinatorComponent(MockComponent):
             'metadata': {},
             'budget_info': {}
         })
-
-class MockMetadataExtractionComponent(MockComponent):
-    """Mock implementation of MetadataExtractionComponent."""
-    
-    def extract_metadata(self, file_path=None, **kwargs):
-        logger.info("[MOCK] MetadataExtractionComponent.extract_metadata called")
-        return {
-            "status": "error",
-            "message": "Running in standalone mode - MetadataExtractionComponent not available",
-            "error_code": "COMPONENT_UNAVAILABLE"
-        }
-
-class MockMemoryCacheComponent(MockComponent):
-    """Mock implementation of MemoryCacheComponent."""
-    
-    def get_cached_item(self, key, **kwargs):
-        logger.info("[MOCK] MemoryCacheComponent.get_cached_item called")
-        return None
-    
-    def set_cached_item(self, key, value, **kwargs):
-        logger.info("[MOCK] MemoryCacheComponent.set_cached_item called")
-        return False
 
 
 class SystemComponentAdapter:
@@ -216,12 +169,7 @@ class SystemComponentAdapter:
         
         # Map of component names to their mock implementations
         mock_components = {
-            "consistency_analysis": MockConsistencyAnalysisComponent("consistency_analysis"),
-            "recommendation_generator": MockRecommendationGeneratorComponent("recommendation_generator"),
-            "doc_relationships": MockDocRelationshipsComponent("doc_relationships"),
             "llm_coordinator": MockLLMCoordinatorComponent("llm_coordinator"),
-            "metadata_extraction": MockMetadataExtractionComponent("metadata_extraction"),
-            "memory_cache": MockMemoryCacheComponent("memory_cache"),
         }
         
         # First try to get from mock components
@@ -267,31 +215,6 @@ class SystemComponentAdapter:
         return type('MockRepositories', (), {})
 
     @property
-    def consistency_analysis(self):
-        """Provides mock access to the ConsistencyAnalysisComponent."""
-        return self.get_component("consistency_analysis")
-
-    @property
-    def recommendation_generator(self):
-        """Provides mock access to the RecommendationGeneratorComponent."""
-        return self.get_component("recommendation_generator")
-
-    @property
-    def doc_relationships(self):
-        """Provides mock access to the DocRelationshipsComponent."""
-        return self.get_component("doc_relationships")
-
-    @property
     def llm_coordinator(self):
         """Provides mock access to the LLMCoordinatorComponent."""
         return self.get_component("llm_coordinator")
-
-    @property
-    def metadata_extraction(self):
-        """Provides mock access to the MetadataExtractionComponent."""
-        return self.get_component("metadata_extraction")
-
-    @property
-    def memory_cache(self):
-        """Provides mock access to the MemoryCacheComponent."""
-        return self.get_component("memory_cache")

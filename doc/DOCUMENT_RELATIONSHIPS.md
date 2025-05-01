@@ -30,8 +30,6 @@ graph TD
     MCP_SERVER[src/dbp/mcp_server]
     CONFIG_COMP[src/dbp/config]
     LLM_COORD_COMP[src/dbp/llm_coordinator]
-    CONSIST_ANALYSIS[src/dbp/consistency_analysis]
-    DOC_REL_COMP[src/dbp/doc_relationships]
     META_EXTRACT[src/dbp/metadata_extraction]
     DATABASE[src/dbp/database]
     ALEMBIC_MGR[src/dbp/database/alembic_manager.py]
@@ -96,7 +94,6 @@ graph TD
     SCHEDULER --> FS_MONITOR
     MCP_SERVER --> LLM_COORD_COMP
     CONFIG_COMP --> MCP_SERVER
-    DOC_REL_COMP --> CONSIST_ANALYSIS
     META_EXTRACT --> LLM_COORD_COMP
     DATABASE --> ALEMBIC_MGR
     
@@ -105,7 +102,7 @@ graph TD
     class CONFIG,SECURITY,DATA_MODEL,DOC_REL,WORKING_BACKWARDS leafNode
     class LLM_COORD,INTERNAL_TOOLS,COMPONENT_INIT,BACKGROUND_TASK,MCP_DATA_MODEL designDoc
     class LLM_PROMPTS resource
-    class SCHEDULER,FS_MONITOR,MCP_SERVER,CONFIG_COMP,LLM_COORD_COMP,CONSIST_ANALYSIS,DOC_REL_COMP,META_EXTRACT codeComp
+    class SCHEDULER,FS_MONITOR,MCP_SERVER,CONFIG_COMP,LLM_COORD_COMP,META_EXTRACT codeComp
 ```
 
 ## Database Documentation Relationships
@@ -198,8 +195,6 @@ This graph structure helps the system determine the correct order for propagatin
 
 ## DOCUMENT_RELATIONSHIPS.md
 - Depends on: [DESIGN.md](#designmd) - Topic: Documentation structure - Scope: File structure and workflow
-- Impacts: [src/dbp/doc_relationships/graph.py] - Topic: Implementation - Scope: Relationship graph generation
-- Impacts: [src/dbp/doc_relationships/data_models.py] - Topic: Implementation - Scope: Relationship data structures
 
 ## PR-FAQ.md
 - Depends on: None
