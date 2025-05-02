@@ -410,10 +410,11 @@ class BedrockTestCommandHandler:
         
         [Design principles]
         - Use correct model-specific implementation
-        - Graceful fallback if model class not found
+        - Validate model availability before initializing
         - Proper configuration from system settings
         
         [Implementation details]
+        - First checks if model exists in Bedrock
         - Uses the model class from discovery when available
         - Falls back to generic class if needed
         - Gets AWS credentials from config manager
@@ -422,7 +423,7 @@ class BedrockTestCommandHandler:
             model_id: ID of the model to initialize
             
         Raises:
-            ValueError: If the model initialization fails
+            ValueError: If the model is not available or initialization fails
         """
         # Get AWS configuration from config manager
         from dbp.config.config_manager import ConfigurationManager
@@ -430,6 +431,19 @@ class BedrockTestCommandHandler:
         config_manager = ConfigurationManager()
         config = config_manager.get_typed_config()
         
+        # First check if model exists in Bedrock
+        from dbp.llm.bedrock.model_discovery import BedrockModelDiscovery
+        discovery = BedrockModelDiscovery(
+            profile_name=config.aws.credentials_profile,
+            logger=logger
+        )
+        
+        # Verify model availability
+        available_regions = discovery.get_model_regions(model_id)
+        if not available_regions:
+            raise ValueError(f"Model '{model_id}' is not available in any region. Please verify the model ID.")
+            
+        # Get the appropriate model class
         # If we already have the model class from selection, use it
         if hasattr(self, 'model_class') and self.model_class is not None:
             model_class = self.model_class
@@ -444,10 +458,12 @@ class BedrockTestCommandHandler:
                 model_class = available_models[model_id]['class']
         
         # Initialize the model client using the discovered class
+        # Enable model discovery to automatically find the best region where the model is available
         self.model_client = model_class(
             model_id=model_id,
             region_name=config.aws.region,
-            profile_name=config.aws.credentials_profile
+            profile_name=config.aws.credentials_profile,
+            use_model_discovery=True  # Enable model discovery to handle region availability
         )
         
         # Test the client initialization

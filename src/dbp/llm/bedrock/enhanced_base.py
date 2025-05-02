@@ -328,7 +328,9 @@ class EnhancedBedrockBase(BedrockBase):
         credentials: Optional[Dict[str, str]] = None,
         max_retries: int = BedrockBase.DEFAULT_RETRIES,
         timeout: int = BedrockBase.DEFAULT_TIMEOUT,
-        logger: Optional[logging.Logger] = None
+        logger: Optional[logging.Logger] = None,
+        use_model_discovery: bool = False,
+        preferred_regions: Optional[List[str]] = None
     ):
         """
         [Method intent]
@@ -359,7 +361,9 @@ class EnhancedBedrockBase(BedrockBase):
             credentials=credentials,
             max_retries=max_retries,
             timeout=timeout,
-            logger=logger or logging.getLogger("EnhancedBedrockBase")
+            logger=logger or logging.getLogger("EnhancedBedrockBase"),
+            use_model_discovery=use_model_discovery,
+            preferred_regions=preferred_regions
         )
         
         # Initialize capability registry
@@ -544,6 +548,74 @@ class EnhancedBedrockBase(BedrockBase):
         messages = [{"role": "user", "content": prompt}]
         async for chunk in self.stream_chat(messages, **kwargs):
             yield chunk
+    
+    async def _process_converse_stream(self, stream) -> AsyncIterator[Dict[str, Any]]:
+        """
+        [Method intent]
+        Process a raw Bedrock converse stream into standardized format chunks.
+        
+        [Design principles]
+        - Common stream processing for all Bedrock models
+        - Standardized chunk format for consumers
+        - Clean event type handling
+        
+        [Implementation details]
+        - Uses _iterate_stream_events for raw event processing
+        - Converts events to standardized format
+        - Handles all relevant event types (messageStart, contentBlockDelta, messageStop)
+        
+        Args:
+            stream: Raw stream from Bedrock Converse API response
+            
+        Yields:
+            Dict[str, Any]: Standardized event chunks with type information
+        """
+        # Handle case where stream is in a dictionary (common with boto3 responses)
+        actual_stream = stream
+        
+        # If stream is a dict with a 'stream' key, extract the actual stream
+        if isinstance(stream, dict) and "stream" in stream:
+            actual_stream = stream["stream"]
+            
+        # Use the base class method to iterate over events with the actual stream
+        async for event in self._iterate_stream_events(actual_stream):
+            # Process events into the expected format
+            if "messageStart" in event:
+                message_start = event["messageStart"]
+                yield {
+                    "type": "message_start",
+                    "message": {"role": message_start["role"]}
+                }
+            
+            elif "contentBlockStart" in event:
+                content_start = event["contentBlockStart"]
+                block_type = content_start.get("contentType", "text/plain")
+                
+                yield {
+                    "type": "content_block_start",
+                    "content_type": block_type
+                }
+            
+            elif "contentBlockDelta" in event:
+                delta = event["contentBlockDelta"]
+                if "delta" in delta and "text" in delta["delta"]:
+                    text_chunk = delta["delta"]["text"]
+                    yield {
+                        "type": "content_block_delta",
+                        "delta": {"text": text_chunk}
+                    }
+            
+            elif "contentBlockStop" in event:
+                yield {
+                    "type": "content_block_stop"
+                }
+            
+            elif "messageStop" in event:
+                stop_reason = event["messageStop"].get("stopReason")
+                yield {
+                    "type": "message_stop",
+                    "stop_reason": stop_reason
+                }
     
     async def process_content(
         self,

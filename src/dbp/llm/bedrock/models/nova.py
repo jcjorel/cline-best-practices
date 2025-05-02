@@ -61,6 +61,7 @@ import logging
 import json
 import asyncio
 import base64
+import botocore.exceptions
 from typing import Dict, Any, List, Optional, AsyncIterator, Union, cast
 
 from ..enhanced_base import EnhancedBedrockBase, ModelCapability
@@ -129,7 +130,9 @@ class NovaClient(EnhancedBedrockBase):
         credentials: Optional[Dict[str, str]] = None,
         max_retries: int = 3,  # Default to 3 retries
         timeout: int = 30,     # Default to 30 seconds timeout
-        logger: Optional[logging.Logger] = None
+        logger: Optional[logging.Logger] = None,
+        use_model_discovery: bool = False,
+        preferred_regions: Optional[List[str]] = None
     ):
         """
         [Method intent]
@@ -159,7 +162,8 @@ class NovaClient(EnhancedBedrockBase):
         """
         # Validate model is a Nova model
         base_model_id = model_id.split(":")[0]
-        is_nova_model = any(model in base_model_id for model in self._NOVA_MODELS)
+        # Fix the validation logic to check if the base_model_id equals any of the supported model IDs
+        is_nova_model = any(model.split(":")[0] == base_model_id for model in self._NOVA_MODELS)
         
         if not is_nova_model:
             raise ValueError(f"Model {model_id} is not a supported Nova model. Supported models: {', '.join(self._NOVA_MODELS)}")
@@ -172,7 +176,9 @@ class NovaClient(EnhancedBedrockBase):
             credentials=credentials,
             max_retries=max_retries,
             timeout=timeout,
-            logger=logger or logging.getLogger("NovaClient")
+            logger=logger or logging.getLogger("NovaClient"),
+            use_model_discovery=use_model_discovery,
+            preferred_regions=preferred_regions
         )
         
         # Register Nova capabilities
@@ -254,13 +260,21 @@ class NovaClient(EnhancedBedrockBase):
                 self.logger.warning(f"Unsupported role '{role}' for Nova, using 'user' as default")
                 nova_role = "user"
             
-            # Format for Nova's expected structure
-            # Handle content formatting
-            msg_text = content if isinstance(content, str) else json.dumps(content)
-            formatted_messages.append({
-                "role": nova_role,
-                "text": msg_text
-            })
+            # Format for Bedrock Converse API's expected structure for Nova models
+            # Nova requires content as a list with objects
+            if isinstance(content, str):
+                # For simple text, wrap in a list with a text object
+                formatted_messages.append({
+                    "role": nova_role,
+                    "content": [{"text": content}]
+                })
+            else:
+                # For other content types, use as is if it's a list, otherwise wrap
+                content_list = content if isinstance(content, list) else [{"text": json.dumps(content)}]
+                formatted_messages.append({
+                    "role": nova_role,
+                    "content": content_list
+                })
         
         # Build the result with messages array
         result = {"messages": formatted_messages}
@@ -271,6 +285,43 @@ class NovaClient(EnhancedBedrockBase):
         
         return result
     
+    def _handle_bedrock_error(self, error: Exception, operation_name: str):
+        """
+        [Method intent]
+        Handle Bedrock API errors consistently, mapping them to appropriate exception types.
+        
+        [Design principles]
+        - Centralized error handling following DRY principles
+        - Consistent error mapping and logging
+        - Proper API error classification
+        
+        [Implementation details]
+        - Maps boto3/botocore errors to application exceptions
+        - Logs errors with context information
+        - Preserves original error details
+        
+        Args:
+            error: The error that occurred
+            operation_name: Name of the operation that failed, for context
+            
+        Raises:
+            LLMError: Rethrows appropriate mapped exception
+        """
+        if isinstance(error, botocore.exceptions.ClientError):
+            # Map AWS errors to our exception types
+            if "Error" in error.response:
+                error_code = error.response["Error"].get("Code", "UnknownError")
+                error_message = error.response["Error"].get("Message", str(error))
+                mapped_error = BedrockErrorMapper.map_api_error(error_code, error_message, error)
+                self.logger.error(f"Error in {operation_name}: {str(mapped_error)}")
+                raise mapped_error
+            else:
+                self.logger.error(f"Error in {operation_name}: {str(error)}")
+                raise LLMError(f"Failed in {operation_name}: {str(error)}", error)
+        else:
+            self.logger.error(f"Error in {operation_name}: {str(error)}")
+            raise LLMError(f"Failed in {operation_name}: {str(error)}", error)
+            
     def _format_model_kwargs(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         """
         [Method intent]
@@ -335,6 +386,10 @@ class NovaClient(EnhancedBedrockBase):
         Raises:
             LLMError: If chat generation fails
         """
+        # Validate initialization
+        if not self.is_initialized():
+            await self.initialize()
+        
         # Format messages and parameters for Nova
         formatted_payload = self._format_messages(messages)
         model_params = self._format_model_kwargs(kwargs)
@@ -348,30 +403,25 @@ class NovaClient(EnhancedBedrockBase):
         
         # Stream response from API
         try:
-            # Use the ConverseStream API
-            response_stream = await self.bedrock_runtime.converse_stream(
-                model_id=self.model_id,
-                converse_mode="STREAMING",
-                content_type="application/json",
-                accept="application/json",
-                body=json.dumps(formatted_payload)
+            # Make streaming API call - run in executor to avoid blocking
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None, 
+                lambda: self.bedrock_runtime.converse_stream(
+                    modelId=self.model_id,
+                    **formatted_payload
+                )
             )
             
-            # Initialize response processor
-            processor = ConverseStreamProcessor(
-                response_stream=response_stream,
-                model_id=self.model_id
-            )
+            # Get the stream from the response
+            stream = response.get("stream")
             
-            # Stream the response chunks
-            async for chunk in processor.stream():
+            # Use the shared method from EnhancedBedrockBase to process the stream
+            async for chunk in self._process_converse_stream(stream):
                 yield chunk
                 
         except Exception as e:
-            # Map AWS errors to our exception types
-            error = BedrockErrorMapper.map_error(e)
-            self.logger.error(f"Error in stream_chat: {str(error)}")
-            raise error
+            self._handle_bedrock_error(e, "stream_chat")
 
     async def stream_generate_with_options(
         self, 
@@ -520,30 +570,25 @@ class NovaClient(EnhancedBedrockBase):
         
         # Stream response
         try:
-            # Use the ConverseStream API
-            response_stream = await self.bedrock_runtime.converse_stream(
-                model_id=self.model_id,
-                converse_mode="STREAMING",
-                content_type="application/json",
-                accept="application/json",
-                body=json.dumps(formatted_payload)
+            # Make streaming API call - run in executor to avoid blocking
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None, 
+                lambda: self.bedrock_runtime.converse_stream(
+                    modelId=self.model_id,
+                    **formatted_payload
+                )
             )
             
-            # Initialize response processor
-            processor = ConverseStreamProcessor(
-                response_stream=response_stream,
-                model_id=self.model_id
-            )
+            # Get the stream from the response
+            stream = response.get("stream")
             
-            # Stream the response chunks
-            async for chunk in processor.stream():
+            # Use the shared method from EnhancedBedrockBase to process the stream
+            async for chunk in self._process_converse_stream(stream):
                 yield chunk
                 
         except Exception as e:
-            # Map AWS errors to our exception types
-            error = BedrockErrorMapper.map_error(e)
-            self.logger.error(f"Error in multimodal processing: {str(error)}")
-            raise error
+            self._handle_bedrock_error(e, "multimodal processing")
     
     async def extract_keywords(
         self, 

@@ -42,6 +42,10 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-02T23:11:00Z : Refactored to use shared stream processing method by CodeAssistant
+# * Removed duplicated _process_converse_stream_events method
+# * Now using _process_converse_stream from EnhancedBedrockBase
+# * Improved code DRYness and maintainability
 # 2025-05-02T13:08:00Z : Enhanced with capability-based API integration by CodeAssistant
 # * Updated to extend EnhancedBedrockBase instead of BedrockBase
 # * Added capability registration for reasoning and structured output
@@ -51,11 +55,6 @@
 # * Removed older Claude 3 models from supported models list
 # * Updated documentation to reflect focus on Claude 3.5+ models only
 # * Changed model validation to only accept Claude 3.5 and newer
-# 2025-05-02T12:50:00Z : Fixed model IDs and Converse API compatibility by Cline
-# * Updated Claude model IDs with proper version tags and suffixes
-# * Improved parameter handling for the Converse API structure
-# * Added proper system prompt and model-specific parameters handling
-# * Implemented complete stream_chat method for the Converse API
 ###############################################################################
 
 import logging
@@ -119,7 +118,9 @@ class ClaudeClient(EnhancedBedrockBase):
         credentials: Optional[Dict[str, str]] = None,
         max_retries: int = 3,  # Default to 3 retries
         timeout: int = 30,     # Default to 30 seconds timeout
-        logger: Optional[logging.Logger] = None
+        logger: Optional[logging.Logger] = None,
+        use_model_discovery: bool = False,
+        preferred_regions: Optional[List[str]] = None
     ):
         """
         [Method intent]
@@ -162,7 +163,9 @@ class ClaudeClient(EnhancedBedrockBase):
             credentials=credentials,
             max_retries=max_retries,
             timeout=timeout,
-            logger=logger or logging.getLogger("ClaudeClient")
+            logger=logger or logging.getLogger("ClaudeClient"),
+            use_model_discovery=use_model_discovery,
+            preferred_regions=preferred_regions
         )
         
         # Initialize fields for additional parameters
@@ -218,10 +221,27 @@ class ClaudeClient(EnhancedBedrockBase):
             
             # Handle content formatting
             if isinstance(content, str):
-                formatted_msg["content"] = [{"type": "text", "text": content}]
+                # For simple text, we use the direct 'text' key without a 'type' field
+                formatted_msg["content"] = [{"text": content}]
             elif isinstance(content, list):
-                # Assume already in correct format for multimodal
-                formatted_msg["content"] = content
+                # For multimodal content, convert each item to proper format
+                formatted_content = []
+                for item in content:
+                    # If the item already has the right format (no 'type' field), use as is
+                    if isinstance(item, dict) and ("text" in item or "image" in item):
+                        formatted_content.append(item)
+                    # If it has a 'type' field, convert to proper format
+                    elif isinstance(item, dict) and "type" in item:
+                        if item["type"] == "text":
+                            formatted_content.append({"text": item.get("text", "")})
+                        elif item["type"] == "image":
+                            formatted_content.append({
+                                "image": item.get("image", {})
+                            })
+                    else:
+                        self.logger.warning(f"Unsupported content item: {item}")
+                
+                formatted_msg["content"] = formatted_content
             else:
                 raise ValueError(f"Unsupported content format: {type(content)}")
             
@@ -344,7 +364,8 @@ class ClaudeClient(EnhancedBedrockBase):
         
         # Add system content if provided
         if hasattr(self, '_system_content') and self._system_content:
-            request["system"] = [{"text": self._system_content}]
+            # Format system content without 'type' field - Claude expects plain 'text' key
+            request["system"] = {"text": self._system_content}
             # Clear for next call
             self._system_content = None
         
@@ -364,94 +385,14 @@ class ClaudeClient(EnhancedBedrockBase):
             )
             stream = response["stream"]
             
-            # Process streams into processable chunks
-            async for event in self._process_converse_stream_events(stream):
-                yield event
+            # Use the shared method from EnhancedBedrockBase to process the stream
+            async for chunk in self._process_converse_stream(stream):
+                yield chunk
                 
         except Exception as e:
             if isinstance(e, LLMError):
                 raise e
             raise LLMError(f"Failed to stream chat response: {str(e)}", e)
-    
-    async def _process_converse_stream_events(self, stream) -> AsyncIterator[Dict[str, Any]]:
-        """
-        [Method intent]
-        Process the raw Bedrock Converse stream events into a format that's easier to use.
-        
-        [Design principles]
-        - Consistent event processing
-        - Clean transformation of raw API events
-        - Complete handling of all event types
-        
-        [Implementation details]
-        - Processes all event types from the Converse API
-        - Converts raw events into a more usable format
-        - Handles text content and metadata
-        
-        Args:
-            stream: Raw stream from Bedrock Converse API
-            
-        Yields:
-            Dict[str, Any]: Processed stream events
-        """
-        try:
-            # Process synchronous stream in a way that plays well with asyncio
-            loop = asyncio.get_event_loop()
-            
-            def get_next_event():
-                try:
-                    return next(stream)
-                except StopIteration:
-                    return None
-                except Exception as e:
-                    raise e
-            
-            # Get events one at a time to avoid blocking
-            event = await loop.run_in_executor(None, get_next_event)
-            while event is not None:
-                if "messageStart" in event:
-                    message_start = event["messageStart"]
-                    yield {
-                        "type": "message_start",
-                        "message": {"role": message_start["role"]}
-                    }
-                
-                elif "contentBlockStart" in event:
-                    content_start = event["contentBlockStart"]
-                    block_type = content_start.get("contentType", "text/plain")
-                    
-                    yield {
-                        "type": "content_block_start",
-                        "content_type": block_type
-                    }
-                
-                elif "contentBlockDelta" in event:
-                    delta = event["contentBlockDelta"]
-                    if "delta" in delta:
-                        text_chunk = delta["delta"].get("text", "")
-                        yield {
-                            "type": "content_block_delta",
-                            "delta": {"text": text_chunk}
-                        }
-                
-                elif "contentBlockStop" in event:
-                    yield {
-                        "type": "content_block_stop"
-                    }
-                
-                elif "messageStop" in event:
-                    stop_reason = event["messageStop"].get("stopReason")
-                    yield {
-                        "type": "message_stop",
-                        "stop_reason": stop_reason
-                    }
-                
-                # Let asyncio execute other tasks while processing
-                await asyncio.sleep(0)  # Cooperative multitasking yield point
-                event = await loop.run_in_executor(None, get_next_event)
-                
-        except Exception as e:
-            raise LLMError(f"Error processing Converse stream events: {str(e)}", e)
     
     async def stream_chat_with_reasoning(
         self, 
