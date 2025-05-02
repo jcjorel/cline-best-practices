@@ -46,7 +46,7 @@ Asynchronous streaming interfaces for LLM interactions.
 
 import asyncio
 from abc import ABC, abstractmethod
-from typing import AsyncGenerator, Dict, List, Optional, TypeVar, Generic, Any, Union
+from typing import AsyncGenerator, Dict, List, Optional, TypeVar, Generic, Any, Union, Callable
 
 from .exceptions import StreamingError, StreamingTimeoutError
 

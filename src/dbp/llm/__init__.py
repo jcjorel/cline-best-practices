@@ -40,21 +40,38 @@
 ###############################################################################
 
 try:
-    from .prompt_manager import LLMPromptManager, PromptLoadError
-    from .bedrock_base import BedrockModelClientBase, BedrockClientError
-    from .nova_lite_client import NovaLiteClient
-    from .claude3_7_client import Claude37SonnetClient
-    from .bedrock_manager import BedrockClientManager
+    # Import from common module
+    from .common.prompt_manager import LLMPromptManager
+    from .common.exceptions import LLMError, ModelError, ClientError, PromptError, InvocationError
+    
+    # Import from bedrock module
+    from .bedrock.base import BedrockBase
+    from .bedrock import BedrockModelClientBase  # Import the alias
+    from .bedrock.enhanced_base import EnhancedBedrockBase
+    from .bedrock.client_common import BedrockClientError
+    
+    # Import from bedrock models module
+    from .bedrock.models.nova import NovaClient
+    from .bedrock.models.claude3 import ClaudeClient
     
     # Export public interfaces
     __all__ = [
+        # Common
         "LLMPromptManager",
-        "PromptLoadError",
+        "LLMError",
+        "ModelError",
+        "ClientError",
+        "PromptError",
+        "InvocationError",
+        
+        # Bedrock base
         "BedrockModelClientBase",
         "BedrockClientError",
-        "NovaLiteClient",
-        "Claude37SonnetClient",
-        "BedrockClientManager"
+        "EnhancedBedrockBase",
+        
+        # Model implementations
+        "NovaClient",
+        "ClaudeClient"
     ]
 except ImportError as e:
     import logging

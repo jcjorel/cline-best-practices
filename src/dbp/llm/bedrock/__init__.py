@@ -36,7 +36,8 @@
 # * Added exports for Bedrock interfaces and errors
 ###############################################################################
 
-from .base import BedrockModelClientBase, BedrockClientError
+from .base import BedrockBase as BedrockModelClientBase
+from .client_common import BedrockClientError
 from .client_common import BedrockRequestFormatter, BedrockClientMixin, invoke_bedrock_model
 
 __all__ = [

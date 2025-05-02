@@ -54,6 +54,7 @@ flake8>=3.9.2
 # CLI enhancements
 rich>=10.0.0 # Better terminal output
 click>=8.0.0 # Command line interface toolkit
+prompt_toolkit>=3.0.0 # Interactive terminal UI and command history
 
 # Optional visualization support
 matplotlib>=3.4.0 # For potential graph visualization beyond Mermaid

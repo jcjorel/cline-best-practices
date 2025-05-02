@@ -43,7 +43,7 @@
 Exceptions for the LLM module.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 
 class UnsupportedFeatureError(Exception):
@@ -219,20 +219,6 @@ class RateLimitError(LLMError):
         self.retry_after = retry_after
 
 
-class PromptError(LLMError):
-    """
-    [Class intent]
-    Exception raised when there are issues with prompts or templates.
-    
-    [Design principles]
-    Identifies errors in prompt construction or rendering.
-    
-    [Implementation details]
-    Extends LLMError with prompt-specific context.
-    """
-    pass
-
-
 class ToolError(LLMError):
     """
     [Class intent]
@@ -279,6 +265,258 @@ class ConnectionError(LLMError):
     Extends LLMError with connection-specific information.
     """
     pass
+
+
+class ClientError(LLMError):
+    """
+    [Class intent]
+    Exception raised when the LLM client encounters an error.
+    
+    [Design principles]
+    Indicates errors in the client side processing or configuration.
+    
+    [Implementation details]
+    Extends LLMError with client-specific context information.
+    """
+    
+    def __init__(
+        self,
+        message: str,
+        client_type: str = "LLM Client",
+        context: Optional[Dict[str, Any]] = None
+    ):
+        """
+        [Class method intent]
+        Initialize a client error with client details.
+        
+        [Design principles]
+        Captures the client type and specific context for error handling.
+        
+        [Implementation details]
+        Adds client_type parameter and extends context with client information.
+        
+        Args:
+            message: Error message
+            client_type: Type of client that caused the error
+            context: Additional context information
+        """
+        context = context or {}
+        context["client_type"] = client_type
+        super().__init__(message, context)
+        self.client_type = client_type
+
+
+class ModelClientError(ClientError):
+    """
+    [Class intent]
+    Exception raised when a model client encounters an error.
+    
+    [Design principles]
+    Specializes ClientError for model-specific client errors.
+    
+    [Implementation details]
+    Extends ClientError with "Model Client" as the default client type.
+    """
+    
+    def __init__(
+        self,
+        message: str,
+        client_type: str = "Model Client",
+        context: Optional[Dict[str, Any]] = None
+    ):
+        """
+        [Class method intent]
+        Initialize a model client error with client details.
+        
+        [Design principles]
+        Specializes client error for model clients.
+        
+        [Implementation details]
+        Passes model client as the default client type.
+        """
+        super().__init__(message, client_type, context)
+
+
+class PromptError(LLMError):
+    """
+    [Class intent]
+    Exception raised when there are issues with prompts or templates.
+    
+    [Design principles]
+    Identifies errors in prompt construction or rendering.
+    
+    [Implementation details]
+    Extends LLMError with prompt-specific context.
+    """
+    pass
+
+
+class PromptNotFoundError(PromptError):
+    """
+    [Class intent]
+    Exception raised when a prompt template cannot be found.
+    
+    [Design principles]
+    Specifically identifies missing template files.
+    
+    [Implementation details]
+    Extends PromptError with template name information.
+    """
+    
+    def __init__(
+        self,
+        message: str,
+        template_name: Optional[str] = None,
+        context: Optional[Dict[str, Any]] = None
+    ):
+        """
+        [Class method intent]
+        Initialize a prompt not found error with template details.
+        
+        [Design principles]
+        Captures the specific template that could not be found.
+        
+        [Implementation details]
+        Adds template_name as an optional parameter and extends context.
+        
+        Args:
+            message: Error message
+            template_name: Name of the template that could not be found
+            context: Additional context information
+        """
+        context = context or {}
+        if template_name:
+            context["template_name"] = template_name
+        super().__init__(message, context)
+        self.template_name = template_name
+
+
+class PromptRenderingError(PromptError):
+    """
+    [Class intent]
+    Exception raised when rendering a prompt template fails.
+    
+    [Design principles]
+    Identifies specific issues with template variable substitution.
+    
+    [Implementation details]
+    Extends PromptError with template rendering context.
+    """
+    
+    def __init__(
+        self,
+        message: str,
+        template_name: Optional[str] = None,
+        missing_variables: Optional[List[str]] = None,
+        context: Optional[Dict[str, Any]] = None
+    ):
+        """
+        [Class method intent]
+        Initialize a prompt rendering error with template details.
+        
+        [Design principles]
+        Captures the specific template and missing variables.
+        
+        [Implementation details]
+        Adds template_name and missing_variables as optional parameters and extends context.
+        
+        Args:
+            message: Error message
+            template_name: Name of the template that failed to render
+            missing_variables: List of variable names that were missing
+            context: Additional context information
+        """
+        context = context or {}
+        if template_name:
+            context["template_name"] = template_name
+        if missing_variables:
+            context["missing_variables"] = missing_variables
+        super().__init__(message, context)
+        self.template_name = template_name
+        self.missing_variables = missing_variables
+
+
+class ModelNotAvailableError(ModelError):
+    """
+    [Class intent]
+    Exception raised when a requested model is not available.
+    
+    [Design principles]
+    Clearly indicates when a specific model cannot be used.
+    
+    [Implementation details]
+    Extends ModelError with information about the unavailable model.
+    """
+    
+    def __init__(
+        self,
+        model_name: str,
+        message: Optional[str] = None,
+        context: Optional[Dict[str, Any]] = None
+    ):
+        """
+        [Class method intent]
+        Initialize a model not available error with model information.
+        
+        [Design principles]
+        Provides clear message about which model is not available.
+        
+        [Implementation details]
+        Constructs a descriptive message if not provided.
+        
+        Args:
+            model_name: Name of the unavailable model
+            message: Optional custom error message
+            context: Additional context information
+        """
+        if message is None:
+            message = f"Model '{model_name}' is not available"
+        super().__init__(message, model_name, context)
+
+
+class InvocationError(LLMError):
+    """
+    [Class intent]
+    Exception raised when there's an error invoking the LLM service.
+    
+    [Design principles]
+    Indicates errors that occur during the invocation process.
+    
+    [Implementation details]
+    Extends LLMError with invocation-specific context.
+    """
+    
+    def __init__(
+        self,
+        message: str,
+        invocation_id: Optional[str] = None,
+        model_name: Optional[str] = None,
+        context: Optional[Dict[str, Any]] = None
+    ):
+        """
+        [Class method intent]
+        Initialize an invocation error with invocation details.
+        
+        [Design principles]
+        Captures the specific invocation details for debugging.
+        
+        [Implementation details]
+        Adds invocation_id and model_name parameters and extends context.
+        
+        Args:
+            message: Error message
+            invocation_id: ID of the invocation that failed
+            model_name: Name of the model being invoked
+            context: Additional context information
+        """
+        context = context or {}
+        if invocation_id:
+            context["invocation_id"] = invocation_id
+        if model_name:
+            context["model_name"] = model_name
+        super().__init__(message, context)
+        self.invocation_id = invocation_id
+        self.model_name = model_name
 
 
 class ServiceError(LLMError):

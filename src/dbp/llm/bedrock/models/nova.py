@@ -105,6 +105,9 @@ class NovaClient(EnhancedBedrockBase):
         "amazon.nova-reel-v1:0"
     ]
     
+    # Public attribute for model discovery
+    SUPPORTED_MODELS = _NOVA_MODELS
+    
     # Nova models context window sizes
     CONTEXT_WINDOW_SIZES = {
         "nova-micro": 128000,   # 128K tokens
@@ -124,8 +127,8 @@ class NovaClient(EnhancedBedrockBase):
         region_name: Optional[str] = None,
         profile_name: Optional[str] = None,
         credentials: Optional[Dict[str, str]] = None,
-        max_retries: int = BedrockBase.DEFAULT_RETRIES,
-        timeout: int = BedrockBase.DEFAULT_TIMEOUT,
+        max_retries: int = 3,  # Default to 3 retries
+        timeout: int = 30,     # Default to 30 seconds timeout
         logger: Optional[logging.Logger] = None
     ):
         """
@@ -346,7 +349,7 @@ class NovaClient(EnhancedBedrockBase):
         # Stream response from API
         try:
             # Use the ConverseStream API
-            response_stream = await self.client.converse_stream(
+            response_stream = await self.bedrock_runtime.converse_stream(
                 model_id=self.model_id,
                 converse_mode="STREAMING",
                 content_type="application/json",
@@ -518,7 +521,7 @@ class NovaClient(EnhancedBedrockBase):
         # Stream response
         try:
             # Use the ConverseStream API
-            response_stream = await self.client.converse_stream(
+            response_stream = await self.bedrock_runtime.converse_stream(
                 model_id=self.model_id,
                 converse_mode="STREAMING",
                 content_type="application/json",

@@ -74,6 +74,7 @@ from .commands.commit import CommitCommandHandler
 from .commands.config import ConfigCommandHandler
 from .commands.status import StatusCommandHandler
 from .commands.server import ServerCommandHandler
+from .commands.test import TestCommandHandler  # Imported from __init__.py
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -182,6 +183,7 @@ class DocumentationProgrammingCLI:
             "config": ConfigCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
             "status": StatusCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
             "server": ServerCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
+            "test": TestCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
         }
     
     def _create_parser(self) -> argparse.ArgumentParser:

@@ -41,9 +41,9 @@
 ###############################################################################
 
 from .claude3 import ClaudeClient
-from .nova_lite import NovaLiteClient
+from .nova import NovaClient
 
 __all__ = [
     "ClaudeClient",
-    "NovaLiteClient"
+    "NovaClient"
 ]

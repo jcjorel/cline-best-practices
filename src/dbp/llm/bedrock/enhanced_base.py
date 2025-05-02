@@ -297,6 +297,29 @@ class EnhancedBedrockBase(BedrockBase):
     - Handles capability differences gracefully
     """
     
+    # Class variable for model discovery
+    SUPPORTED_MODELS = []
+    
+    @classmethod
+    def get_supported_models(cls) -> List[str]:
+        """
+        [Method intent]
+        Get the list of model IDs supported by this model class.
+        
+        [Design principles]
+        - Support dynamic model discovery
+        - Clean class method interface
+        - Consistent model identification
+        
+        [Implementation details]
+        - Returns class-level SUPPORTED_MODELS list
+        - Can be overridden by subclasses
+        
+        Returns:
+            List[str]: List of supported model IDs
+        """
+        return cls.SUPPORTED_MODELS
+    
     def __init__(
         self,
         model_id: str,

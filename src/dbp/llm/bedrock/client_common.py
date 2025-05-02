@@ -56,6 +56,7 @@ Common utilities for Amazon Bedrock clients using the Converse API.
 
 import json
 import asyncio
+import botocore.exceptions
 from typing import Dict, Any, List, AsyncIterator, Optional, Union, Callable, Tuple
 
 from ..common.exceptions import (
@@ -64,6 +65,40 @@ from ..common.exceptions import (
     RateLimitError
 )
 from ..common.streaming import StreamingResponse, TextStreamingResponse
+
+
+class BedrockClientError(ClientError):
+    """
+    [Class intent]
+    Exception raised when a Bedrock client encounters an error.
+    
+    [Design principles]
+    Specializes ClientError for Bedrock-specific client errors.
+    
+    [Implementation details]
+    Extends ClientError with "Bedrock Client" as the default client type.
+    """
+    
+    def __init__(
+        self,
+        message: str,
+        context: Optional[Dict[str, Any]] = None
+    ):
+        """
+        [Class method intent]
+        Initialize a Bedrock client error with error details.
+        
+        [Design principles]
+        Specializes client error for Bedrock clients.
+        
+        [Implementation details]
+        Passes "Bedrock Client" as the client type.
+        
+        Args:
+            message: Error message
+            context: Additional context information
+        """
+        super().__init__(message, client_type="Bedrock Client", context=context)
 
 
 class ConverseStreamProcessor:
@@ -428,6 +463,188 @@ class BedrockErrorMapper:
             return ModelNotAvailableError(f"Resource not found: {error_message}", original_error)
         else:
             return LLMError(f"Bedrock API error: {error_code} - {error_message}", original_error)
+
+
+class BedrockRequestFormatter:
+    """
+    [Class intent]
+    Formats requests for the Bedrock API, ensuring they conform to the
+    expected structure and content type.
+    
+    [Design principles]
+    - Consistent request formatting across models
+    - Support for different Bedrock API endpoints
+    - Parameter validation and formatting
+    
+    [Implementation details]
+    - Formats request payloads for Bedrock APIs
+    - Handles content type headers
+    - Provides model-specific formatting
+    """
+    
+    @staticmethod
+    def format_converse_request(
+        messages: List[Dict[str, Any]],
+        inference_params: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        [Method intent]
+        Format a request for the Bedrock Converse API.
+        
+        [Design principles]
+        - Clean request formatting
+        - Parameter validation
+        - Support for all Converse API options
+        
+        [Implementation details]
+        - Formats messages according to Converse API requirements
+        - Adds inference parameters if provided
+        - Returns a well-formed request payload
+        
+        Args:
+            messages: List of message objects
+            inference_params: Optional inference parameters
+            
+        Returns:
+            Dict[str, Any]: Formatted request payload
+        """
+        request = {
+            "messages": BedrockMessageConverter.to_bedrock_messages(messages)
+        }
+        
+        if inference_params:
+            request["inferenceConfig"] = inference_params
+            
+        return request
+
+
+class BedrockClientMixin:
+    """
+    [Class intent]
+    Provides common Bedrock client functionality that can be mixed into
+    different client implementations. This allows code reuse across
+    different client types while preserving specific behavior.
+    
+    [Design principles]
+    - Code reuse across different client types
+    - Clean integration with various client implementations
+    - Consistent error handling and request formatting
+    
+    [Implementation details]
+    - Implements common Bedrock API interactions
+    - Provides helper methods for API calls
+    - Handles error mapping and response processing
+    """
+    
+    def __init__(self):
+        """
+        [Method intent]
+        Initialize the mixin with common properties.
+        
+        [Design principles]
+        - Minimal initialization for mixin functionality
+        
+        [Implementation details]
+        - Sets up common properties
+        """
+        self._error_mapper = BedrockErrorMapper()
+    
+    def _map_error(self, error):
+        """
+        [Method intent]
+        Map AWS/Bedrock errors to application-specific exceptions.
+        
+        [Design principles]
+        - Consistent error handling
+        - Descriptive error messages
+        
+        [Implementation details]
+        - Extracts error code and message
+        - Uses error mapper to create appropriate exception
+        
+        Args:
+            error: The original AWS error
+            
+        Returns:
+            Exception: Mapped exception
+        """
+        if hasattr(error, "response") and "Error" in error.response:
+            error_code = error.response["Error"].get("Code", "UnknownError")
+            error_message = error.response["Error"].get("Message", str(error))
+            return self._error_mapper.map_api_error(error_code, error_message, error)
+        return LLMError(f"Bedrock error: {str(error)}", error)
+
+
+async def invoke_bedrock_model(
+    bedrock_runtime_client,
+    model_id: str,
+    request_body: Dict[str, Any],
+    stream: bool = True,
+) -> Union[Dict[str, Any], AsyncIterator[Dict[str, Any]]]:
+    """
+    [Function intent]
+    Invoke a Bedrock model with the provided request body, supporting both
+    streaming and non-streaming responses.
+    
+    [Design principles]
+    - Clean interface for Bedrock API calls
+    - Support for both streaming and non-streaming
+    - Consistent error handling
+    
+    [Implementation details]
+    - Uses the appropriate Bedrock API based on stream flag
+    - Processes API responses into standardized format
+    - Handles errors with appropriate mapping
+    
+    Args:
+        bedrock_runtime_client: Boto3 Bedrock Runtime client
+        model_id: ID of the model to invoke
+        request_body: Request payload for the model
+        stream: Whether to stream the response
+        
+    Returns:
+        Union[Dict[str, Any], AsyncIterator[Dict[str, Any]]]:
+        Either a complete response or a streaming iterator
+        
+    Raises:
+        LLMError: If invocation fails
+    """
+    loop = asyncio.get_event_loop()
+    
+    try:
+        if stream:
+            # Streaming invocation
+            response = await loop.run_in_executor(
+                None,
+                lambda: bedrock_runtime_client.converse_stream(
+                    modelId=model_id,
+                    **request_body
+                )
+            )
+            # Return the stream
+            return response["stream"]
+        else:
+            # Non-streaming invocation
+            response = await loop.run_in_executor(
+                None,
+                lambda: bedrock_runtime_client.converse(
+                    modelId=model_id,
+                    **request_body
+                )
+            )
+            # Return the response
+            return response
+    except botocore.exceptions.ClientError as e:
+        # Map error to appropriate exception
+        error_mapper = BedrockErrorMapper()
+        if "Error" in e.response:
+            error_code = e.response["Error"].get("Code", "UnknownError")
+            error_message = e.response["Error"].get("Message", str(e))
+            raise error_mapper.map_api_error(error_code, error_message, e)
+        raise LLMError(f"Error invoking Bedrock model: {str(e)}", e)
+    except Exception as e:
+        # Catch-all for other errors
+        raise LLMError(f"Error invoking Bedrock model: {str(e)}", e)
 
 
 class InferenceParameterFormatter:

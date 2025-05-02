@@ -103,6 +103,9 @@ class ClaudeClient(EnhancedBedrockBase):
         "anthropic.claude-3-7-sonnet-20250219-v1:0"
     ]
     
+    # Set the class-level SUPPORTED_MODELS for model discovery
+    SUPPORTED_MODELS = _CLAUDE_MODELS
+    
     # Default Claude parameters
     DEFAULT_TEMPERATURE = 0.7
     DEFAULT_MAX_TOKENS = 4096
@@ -114,8 +117,8 @@ class ClaudeClient(EnhancedBedrockBase):
         region_name: Optional[str] = None,
         profile_name: Optional[str] = None,
         credentials: Optional[Dict[str, str]] = None,
-        max_retries: int = BedrockBase.DEFAULT_RETRIES,
-        timeout: int = BedrockBase.DEFAULT_TIMEOUT,
+        max_retries: int = 3,  # Default to 3 retries
+        timeout: int = 30,     # Default to 30 seconds timeout
         logger: Optional[logging.Logger] = None
     ):
         """

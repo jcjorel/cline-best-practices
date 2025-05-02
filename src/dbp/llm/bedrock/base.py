@@ -264,11 +264,16 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
         try:
             # Run a non-blocking task to get the model list
             loop = asyncio.get_event_loop()
-            paginator = self._bedrock.get_paginator('list_foundation_models')
             
-            found = False
-            for page in await loop.run_in_executor(None, lambda: list(paginator.paginate())):
-                for model in page.get("modelSummaries", []):
+            try:
+                # Use direct API call instead of paginator
+                response = await loop.run_in_executor(
+                    None, 
+                    lambda: self._bedrock.list_foundation_models()
+                )
+                
+                found = False
+                for model in response.get("modelSummaries", []):
                     if model["modelId"] == base_model_id:
                         found = True
                         # Check model status
@@ -279,14 +284,18 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
                             )
                         break
                 
-                if found:
-                    break
-            
-            # If model was not found in the list
-            if not found:
-                raise ModelNotAvailableError(f"Model {self.model_id} is not available in region {self.region_name}")
-            
-            self.logger.debug(f"Validated access to model {self.model_id}")
+                # If model was not found in the list
+                if not found:
+                    raise ModelNotAvailableError(f"Model {self.model_id} is not available in region {self.region_name}")
+                
+                self.logger.debug(f"Validated access to model {self.model_id}")
+            except botocore.exceptions.ClientError as e:
+                # If we can't list models, log a warning but continue
+                # This allows the test command to work even without full permissions
+                error_code = e.response['Error']['Code']
+                error_message = e.response['Error']['Message']
+                self.logger.warning(f"Could not validate model access: {error_code} - {error_message}")
+                self.logger.warning(f"Continuing without model validation - model {self.model_id} will be attempted")
         except botocore.exceptions.ClientError as e:
             error_code = e.response['Error']['Code']
             error_message = e.response['Error']['Message']
@@ -660,6 +669,52 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
                         yield chunk["delta"]["text"]
         except Exception as e:
             raise StreamingError(f"Error in stream provider: {str(e)}", e)
+    
+    @property
+    def bedrock_runtime(self):
+        """
+        [Method intent]
+        Property accessor for the Bedrock Runtime client used for model invocation.
+        
+        [Design principles]
+        - Encapsulate internal client access
+        - Provide controlled access to runtime client
+        
+        [Implementation details]
+        - Returns the internal boto3 bedrock-runtime client
+        
+        Returns:
+            The boto3 bedrock-runtime client for API calls
+        
+        Raises:
+            ClientError: If client is not initialized
+        """
+        if not self.is_initialized():
+            raise ClientError("Bedrock client is not initialized")
+        return self._bedrock_runtime
+    
+    @property
+    def bedrock(self):
+        """
+        [Method intent]
+        Property accessor for the Bedrock client used for management operations.
+        
+        [Design principles]
+        - Encapsulate internal client access
+        - Provide controlled access to management client
+        
+        [Implementation details]
+        - Returns the internal boto3 bedrock client
+        
+        Returns:
+            The boto3 bedrock client for management API calls
+            
+        Raises:
+            ClientError: If client is not initialized
+        """
+        if not self.is_initialized():
+            raise ClientError("Bedrock client is not initialized")
+        return self._bedrock
     
     async def shutdown(self) -> None:
         """

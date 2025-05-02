@@ -50,7 +50,7 @@ import abc
 import logging
 from typing import Dict, Optional, Any, AsyncIterator, Union, List
 
-from .exceptions import LLMError, ModelError, ClientError
+from .exceptions import LLMError, ModelError, ClientError, ModelClientError
 
 class Message:
     """
@@ -98,7 +98,7 @@ class Message:
         return result
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'ModelMessage':
+    def from_dict(cls, data: Dict[str, Any]) -> 'Message':
         """Create a message from a dictionary representation."""
         message_id = data.get("message_id")
         metadata = data.get("metadata")

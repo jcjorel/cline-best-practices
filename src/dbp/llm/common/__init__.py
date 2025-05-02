@@ -36,13 +36,36 @@
 # * Added exports for base interfaces and types
 ###############################################################################
 
-from .base import ModelClientBase, ModelClientError, ModelMessage
-from .prompt_manager import LLMPromptManager, PromptLoadError
+from .base import ModelClientBase, Message
+from .prompt_manager import LLMPromptManager
+from .exceptions import (
+    LLMError,
+    ModelError,
+    ClientError,
+    ModelClientError,
+    ModelNotAvailableError,
+    InvocationError,
+    PromptError,
+    PromptNotFoundError,
+    PromptRenderingError
+)
 
 __all__ = [
+    # Base classes
     "ModelClientBase",
-    "ModelClientError",
-    "ModelMessage",
+    "Message",
+    
+    # Prompt Manager
     "LLMPromptManager",
-    "PromptLoadError"
+    
+    # Exceptions
+    "LLMError",
+    "ModelError",
+    "ClientError",
+    "ModelClientError",
+    "ModelNotAvailableError",
+    "InvocationError",
+    "PromptError",
+    "PromptNotFoundError",
+    "PromptRenderingError"
 ]
