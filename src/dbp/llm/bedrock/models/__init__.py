@@ -31,15 +31,19 @@
 # codebase:- doc/design/LLM_COORDINATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-02T12:14:00Z : Consolidated Claude model implementations by Cline
+# * Removed Claude37SonnetClient export
+# * Added ClaudeClient export from claude3.py
+# * Consolidated to use single Claude implementation
 # 2025-05-02T07:26:00Z : Initial creation of models package by Cline
 # * Created package initialization file for model implementations
 # * Added exports for model-specific client classes
 ###############################################################################
 
-from .claude3_7 import Claude37SonnetClient
+from .claude3 import ClaudeClient
 from .nova_lite import NovaLiteClient
 
 __all__ = [
-    "Claude37SonnetClient",
+    "ClaudeClient",
     "NovaLiteClient"
 ]

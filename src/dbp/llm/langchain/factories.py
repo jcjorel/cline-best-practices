@@ -40,6 +40,11 @@
 # system:langchain.agents
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-02T13:16:00Z : Added capability-aware LangChain integration by CodeAssistant
+# * Added capability-aware adapter and chain creation methods
+# * Implemented specialized chains for reasoning, structured output, and multimodal
+# * Enhanced retrieval QA to use capability-aware adapters when available
+# * Added support for model-specific capability detection
 # 2025-05-02T11:28:00Z : Initial creation for LangChain/LangGraph integration by CodeAssistant
 # * Implemented LangChainFactory for component creation
 # * Added methods for creating chains and agents
@@ -61,7 +66,8 @@ from langchain.chains import LLMChain, ConversationChain, RetrievalQA
 from langchain.agents import AgentExecutor, initialize_agent, AgentType
 
 from ..common.base import ModelClientBase
-from .adapters import LangChainLLMAdapter
+from ..bedrock.enhanced_base import EnhancedBedrockBase, ModelCapability
+from .adapters import LangChainLLMAdapter, CapabilityAwareLLMAdapter
 from .chat_adapters import LangChainChatAdapter
 
 class LangChainFactory:
@@ -370,6 +376,240 @@ class LangChainFactory:
         
         return agent
     
+    def create_capability_aware_adapter(
+        self, 
+        model_client: EnhancedBedrockBase,
+        streaming: bool = True,
+        **kwargs
+    ) -> CapabilityAwareLLMAdapter:
+        """
+        [Method intent]
+        Create a capability-aware LangChain adapter for an enhanced model client.
+        
+        [Design principles]
+        - Support for model-specific capabilities
+        - Unified API for diverse model families
+        - Type-safe interface
+        
+        [Implementation details]
+        - Verifies model client is capability-aware
+        - Creates CapabilityAwareLLMAdapter with model client
+        - Passes through additional kwargs
+        
+        Args:
+            model_client: EnhancedBedrockBase model client instance
+            streaming: Whether to use streaming by default
+            **kwargs: Additional LangChain configuration
+            
+        Returns:
+            CapabilityAwareLLMAdapter: LangChain-compatible capability-aware adapter
+            
+        Raises:
+            TypeError: If model_client is not an EnhancedBedrockBase instance
+        """
+        # Verify model client is capability-aware
+        if not isinstance(model_client, EnhancedBedrockBase):
+            raise TypeError("Capability-aware adapter requires an EnhancedBedrockBase model client")
+        
+        return CapabilityAwareLLMAdapter(model_client, streaming=streaming, **kwargs)
+    
+    def create_capability_chain(
+        self,
+        model_client: EnhancedBedrockBase,
+        prompt: Union[str, PromptTemplate],
+        output_key: str = "text",
+        enhancement_type: Optional[str] = None,
+        processing_type: Optional[str] = None,
+        **kwargs
+    ) -> LLMChain:
+        """
+        [Method intent]
+        Create an LLMChain that leverages model-specific capabilities.
+        
+        [Design principles]
+        - Support for enhanced model capabilities
+        - Flexible configuration of capability options
+        - Consistent chain interface
+        
+        [Implementation details]
+        - Creates capability-aware adapter for model client
+        - Configures chain with capability parameters
+        - Handles prompt formatting
+        
+        Args:
+            model_client: EnhancedBedrockBase model client instance
+            prompt: String template or PromptTemplate
+            output_key: Key to use for chain output
+            enhancement_type: Optional capability enhancement type
+            processing_type: Optional capability processing type
+            **kwargs: Additional LLMChain and capability parameters
+            
+        Returns:
+            LLMChain: Configured LangChain LLMChain with capability support
+            
+        Raises:
+            TypeError: If model_client is not an EnhancedBedrockBase instance
+        """
+        # Create capability-aware adapter
+        llm = self.create_capability_aware_adapter(model_client)
+        
+        # Handle prompt format
+        if isinstance(prompt, str):
+            prompt = PromptTemplate.from_template(prompt)
+        
+        # Extract capability options from kwargs
+        capability_kwargs = {}
+        if enhancement_type:
+            capability_kwargs["enhancement_type"] = enhancement_type
+        if processing_type:
+            capability_kwargs["processing_type"] = processing_type
+        
+        # Add reasoning flag if specified
+        if kwargs.pop("use_reasoning", False):
+            capability_kwargs["use_reasoning"] = True
+        
+        # Add structured output flag if specified
+        if kwargs.pop("structured_output", False):
+            capability_kwargs["structured_output"] = True
+            
+        # Extract enhancement options if provided
+        enhancement_options = kwargs.pop("enhancement_options", None)
+        if enhancement_options:
+            capability_kwargs["enhancement_options"] = enhancement_options
+            
+        # Merge capability kwargs into main kwargs
+        kwargs.update(capability_kwargs)
+        
+        # Create LLM chain with capability-aware adapter
+        return LLMChain(
+            llm=llm,
+            prompt=prompt,
+            output_key=output_key,
+            **kwargs
+        )
+    
+    def create_reasoning_chain(
+        self,
+        model_client: EnhancedBedrockBase,
+        prompt: Union[str, PromptTemplate],
+        output_key: str = "text",
+        **kwargs
+    ) -> LLMChain:
+        """
+        [Method intent]
+        Create an LLMChain with reasoning capability.
+        
+        [Design principles]
+        - Simplified setup for reasoning chain
+        - Easy access to Claude reasoning capabilities
+        - Consistent chain interface
+        
+        [Implementation details]
+        - Uses capability_chain with reasoning enhancement
+        - Validates model supports reasoning capability
+        - Sets appropriate parameters for reasoning
+        
+        Args:
+            model_client: EnhancedBedrockBase model client instance
+            prompt: String template or PromptTemplate
+            output_key: Key to use for chain output
+            **kwargs: Additional chain and reasoning parameters
+            
+        Returns:
+            LLMChain: Configured LangChain LLMChain with reasoning capability
+        """
+        return self.create_capability_chain(
+            model_client=model_client,
+            prompt=prompt,
+            output_key=output_key,
+            enhancement_type="reasoning",
+            **kwargs
+        )
+    
+    def create_structured_output_chain(
+        self,
+        model_client: EnhancedBedrockBase,
+        prompt: Union[str, PromptTemplate],
+        output_key: str = "structured_output",
+        format_instructions: Optional[str] = None,
+        **kwargs
+    ) -> LLMChain:
+        """
+        [Method intent]
+        Create an LLMChain that produces structured output.
+        
+        [Design principles]
+        - Simplified setup for structured output generation
+        - Support for custom formatting instructions
+        - Consistent output handling
+        
+        [Implementation details]
+        - Uses capability_chain with structured_output processing
+        - Configures format instructions as enhancement options
+        - Sets appropriate output key for structured data
+        
+        Args:
+            model_client: EnhancedBedrockBase model client instance
+            prompt: String template or PromptTemplate
+            output_key: Key to use for chain output
+            format_instructions: Optional instructions for output format
+            **kwargs: Additional chain parameters
+            
+        Returns:
+            LLMChain: Configured LangChain LLMChain with structured output capability
+        """
+        # Set up enhancement options for format instructions
+        enhancement_options = kwargs.pop("enhancement_options", {}) or {}
+        if format_instructions:
+            enhancement_options["format_instructions"] = format_instructions
+        
+        return self.create_capability_chain(
+            model_client=model_client,
+            prompt=prompt,
+            output_key=output_key,
+            processing_type="structured_output",
+            enhancement_options=enhancement_options,
+            **kwargs
+        )
+    
+    def create_multimodal_chain(
+        self,
+        model_client: EnhancedBedrockBase,
+        prompt: Union[str, PromptTemplate],
+        output_key: str = "text",
+        **kwargs
+    ) -> LLMChain:
+        """
+        [Method intent]
+        Create an LLMChain with multimodal capability for processing mixed content.
+        
+        [Design principles]
+        - Support for multimodal inputs
+        - Consistent chain interface for mixed content
+        - Easy access to Nova multimodal capabilities
+        
+        [Implementation details]
+        - Uses capability_chain with multimodal processing
+        - Sets up chain for mixed content types
+        - Configures appropriate content handling
+        
+        Args:
+            model_client: EnhancedBedrockBase model client instance
+            prompt: String template or PromptTemplate
+            output_key: Key to use for chain output
+            **kwargs: Additional chain and multimodal parameters
+            
+        Returns:
+            LLMChain: Configured LangChain LLMChain with multimodal capability
+        """
+        return self.create_capability_chain(
+            model_client=model_client,
+            prompt=prompt,
+            output_key=output_key,
+            enhancement_type="multimodal",
+            **kwargs
+        )
+    
     def create_retrieval_qa(
         self,
         model_client: ModelClientBase,
@@ -404,8 +644,11 @@ class LangChainFactory:
             # Import necessary components
             from langchain.chains import RetrievalQA
             
-            # Create LLM adapter
-            llm = self.create_llm_adapter(model_client)
+            # Create LLM adapter - use capability-aware adapter if possible
+            if isinstance(model_client, EnhancedBedrockBase):
+                llm = self.create_capability_aware_adapter(model_client)
+            else:
+                llm = self.create_llm_adapter(model_client)
             
             # Create RetrievalQA chain
             return RetrievalQA.from_chain_type(

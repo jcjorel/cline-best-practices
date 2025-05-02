@@ -40,6 +40,11 @@
 # system:langgraph.graph
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-02T13:20:00Z : Added capability-aware LangGraph nodes by CodeAssistant
+# * Added create_capability_agent_node for model-specific capability support
+# * Updated summarize_node to use capability-aware adapters when available
+# * Added support for structured output and reasoning capabilities
+# * Integrated with enhanced model capabilities for better workflow control
 # 2025-05-02T11:35:00Z : Initial creation for LangChain/LangGraph integration by CodeAssistant
 # * Implemented reusable node definitions for LangGraph workflows
 # * Added agent, router, tool, memory, and summarizer nodes
@@ -83,7 +88,8 @@ except ImportError:
         pass
 
 from ..common.base import ModelClientBase
-from ..langchain.adapters import LangChainLLMAdapter
+from ..langchain.adapters import LangChainLLMAdapter, CapabilityAwareLLMAdapter
+from ..bedrock.enhanced_base import EnhancedBedrockBase, ModelCapability
 
 # Type definition for state
 State = Dict[str, Any]
@@ -178,6 +184,130 @@ def create_agent_node(
         return agent_node
     except Exception as e:
         raise NodeCreationError(f"Failed to create agent node: {str(e)}")
+
+
+def create_capability_agent_node(
+    model_client: ModelClientBase,
+    system_prompt: str,
+    enhancement_type: Optional[str] = None,
+    processing_type: Optional[str] = None,
+    output_parser: Optional[Callable] = None,
+    logger: Optional[logging.Logger] = None,
+    **capability_options
+) -> Callable[[State], State]:
+    """
+    [Function intent]
+    Create a reusable agent node function that utilizes model-specific capabilities.
+    
+    [Design principles]
+    - Capability-aware agent node creation
+    - Support for model-specific enhancements
+    - Graceful fallback to standard agent node
+    
+    [Implementation details]
+    - Creates capability-aware adapter for enhanced models
+    - Falls back to standard adapter for basic models
+    - Configures capability options for enhanced generation
+    - Returns a function that processes state with capabilities
+    
+    Args:
+        model_client: Our model client instance
+        system_prompt: System prompt for the agent
+        enhancement_type: Optional capability enhancement to use (e.g., "reasoning")
+        processing_type: Optional processing capability to use (e.g., "structured_output")
+        output_parser: Optional function to parse agent output
+        logger: Optional logger instance
+        **capability_options: Additional capability-specific options
+        
+    Returns:
+        Callable[[State], State]: Node function for LangGraph
+    """
+    if not LANGCHAIN_AVAILABLE:
+        raise ImportError("LangChain is required for agent nodes. Please install it with 'pip install langchain'")
+    
+    # Set up logger
+    node_logger = logger or logging.getLogger("CapabilityAgentNode")
+    
+    try:
+        # Check if model client supports capabilities
+        is_capability_aware = isinstance(model_client, EnhancedBedrockBase)
+        
+        # Create appropriate adapter
+        if is_capability_aware:
+            # Use capability-aware adapter
+            llm_adapter = CapabilityAwareLLMAdapter(model_client)
+            node_logger.info(f"Using capability-aware adapter for {model_client.__class__.__name__}")
+        else:
+            # Fall back to standard adapter
+            llm_adapter = LangChainLLMAdapter(model_client)
+            node_logger.info(f"Using standard adapter for {model_client.__class__.__name__}")
+        
+        # Create prompt template
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", system_prompt),
+            ("user", "{input}")
+        ])
+        
+        # Prepare capability options
+        adapter_kwargs = {}
+        if enhancement_type:
+            adapter_kwargs["enhancement_type"] = enhancement_type
+        if processing_type:
+            adapter_kwargs["processing_type"] = processing_type
+        if capability_options:
+            adapter_kwargs["enhancement_options"] = capability_options
+        
+        def capability_agent_node(state: State) -> State:
+            """Capability-aware agent node function."""
+            try:
+                # Get input from state
+                input_text = state.get("input", "")
+                context = state.get("context", {})
+                memory = state.get("memory", [])
+                
+                # Prepare full input
+                full_input = {
+                    "input": input_text,
+                    **context
+                }
+                
+                # Add memory to input if available
+                if memory:
+                    memory_text = "\n\n".join([
+                        f"User: {item.get('input', '')}\nAssistant: {item.get('output', '')}"
+                        for item in memory
+                    ])
+                    full_input["memory"] = memory_text
+                
+                # Generate response with capabilities
+                chain = prompt | llm_adapter
+                response = chain.invoke(full_input, **adapter_kwargs)
+                
+                # Handle structured output
+                if processing_type == "structured_output" and isinstance(response, dict):
+                    # Check if we have structured_output in generation_info
+                    if "structured_output" in response.get("generation_info", {}):
+                        structured_data = response["generation_info"]["structured_output"]
+                        if output_parser:
+                            # Apply custom parser to structured data
+                            parsed_output = output_parser(structured_data)
+                            return {**state, "output": parsed_output}
+                        return {**state, "output": structured_data}
+                
+                # Standard output parsing
+                if output_parser:
+                    parsed_output = output_parser(response)
+                    return {**state, "output": parsed_output}
+                
+                # Return raw response
+                return {**state, "output": response}
+            except Exception as e:
+                node_logger.error(f"Error in capability agent node: {str(e)}")
+                return {**state, "error": str(e)}
+        
+        return capability_agent_node
+    except Exception as e:
+        raise NodeCreationError(f"Failed to create capability agent node: {str(e)}")
 
 def create_router_node(
     options: List[str],
@@ -406,8 +536,16 @@ def summarize_node(
     # Set up logger
     node_logger = logger or logging.getLogger("SummarizeNode")
     
-    # Create LLM adapter
-    llm_adapter = LangChainLLMAdapter(model_client)
+    # Create appropriate LLM adapter based on model capabilities
+    if isinstance(model_client, EnhancedBedrockBase):
+        # Use capability-aware adapter for enhanced models
+        llm_adapter = CapabilityAwareLLMAdapter(model_client)
+        use_capabilities = True
+        node_logger.info(f"Using capability-aware adapter for {model_client.__class__.__name__}")
+    else:
+        # Fall back to standard adapter
+        llm_adapter = LangChainLLMAdapter(model_client)
+        use_capabilities = False
     
     # Create prompt template
     prompt = ChatPromptTemplate.from_messages([

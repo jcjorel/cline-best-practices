@@ -32,6 +32,9 @@
 # system:typing
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-02T13:04:00Z : Added UnsupportedFeatureError for capability checking by CodeAssistant
+# * Added exception for feature capability checks
+# * Used by EnhancedBedrockBase for model capability validation
 # 2025-05-02T10:32:00Z : Initial creation for LangChain/LangGraph integration by CodeAssistant
 # * Created exception hierarchy for LLM module
 ###############################################################################
@@ -41,6 +44,20 @@ Exceptions for the LLM module.
 """
 
 from typing import Any, Dict, Optional
+
+
+class UnsupportedFeatureError(Exception):
+    """
+    [Class intent]
+    Exception raised when a requested feature is not supported by a model.
+    
+    [Design principles]
+    Clear indication of capability mismatches between request and model support.
+    
+    [Implementation details]
+    Simple exception for feature capability checking.
+    """
+    pass
 
 
 class LLMError(Exception):

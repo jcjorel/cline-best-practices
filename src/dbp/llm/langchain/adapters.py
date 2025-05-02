@@ -37,6 +37,11 @@
 # system:langchain_core
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-02T13:13:00Z : Added capability-aware LangChain integration by CodeAssistant
+# * Implemented CapabilityAwareLLMAdapter to use with EnhancedBedrockBase models
+# * Added capability-based method routing for specialized features
+# * Added convenience methods for common capabilities like reasoning, summarization
+# * Implemented graceful fallbacks for unsupported capabilities
 # 2025-05-02T11:25:00Z : Initial creation for LangChain/LangGraph integration by CodeAssistant
 # * Implemented LangChainLLMAdapter for integration with LangChain
 # * Added streaming support with callbacks

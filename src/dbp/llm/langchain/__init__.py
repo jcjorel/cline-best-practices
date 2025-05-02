@@ -50,6 +50,7 @@ chains, agents, and other LangChain components.
 # Core adapter imports
 from .adapters import LangChainLLMAdapter
 from .chat_adapters import LangChainChatAdapter
+from .capability_adapters import CapabilityAwareLLMAdapter
 
 # Factory utilities
 from .factories import LangChainFactory
@@ -61,6 +62,7 @@ __all__ = [
     # Adapters
     "LangChainLLMAdapter",
     "LangChainChatAdapter",
+    "CapabilityAwareLLMAdapter",
     
     # Factories
     "LangChainFactory",

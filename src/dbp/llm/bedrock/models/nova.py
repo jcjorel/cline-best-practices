@@ -37,16 +37,20 @@
 # system:typing
 # system:asyncio
 # system:json
+# system:base64
 # system:langchain_core
 ###############################################################################
 # [GenAI tool change history]
-# 2025-05-02T11:22:00Z : Implemented for LangChain/LangGraph integration by CodeAssistant
-# * Created NovaClient for Amazon Titan models
-# * Implemented Converse API with async/streaming support
-# * Added Nova-specific parameter handling and response formatting
-# * Added model validation for Nova model variants
-# 2025-05-02T10:49:00Z : Initial creation for LangChain/LangGraph integration by CodeAssistant
-# * Created placeholder for Nova model implementation
+# 2025-05-02T13:06:00Z : Enhanced with capability-based API integration by CodeAssistant
+# * Updated to extend EnhancedBedrockBase instead of BedrockBase
+# * Added capability registration for model features
+# * Implemented capability handlers for features like multimodal, summarization
+# * Added support for unified capability-based API access
+# 2025-05-02T12:32:00Z : Fixed implementation to target actual Nova models by CodeAssistant
+# * Updated model IDs from Titan to correct Nova models
+# * Restructured parameter formatting for Nova's API format
+# * Added multimodal support specific to Nova models
+# * Updated message formatting for Converse API structure
 ###############################################################################
 
 """
@@ -56,9 +60,10 @@ Amazon Bedrock Nova model implementation.
 import logging
 import json
 import asyncio
+import base64
 from typing import Dict, Any, List, Optional, AsyncIterator, Union, cast
 
-from ..base import BedrockBase
+from ..enhanced_base import EnhancedBedrockBase, ModelCapability
 from ..client_common import (
     ConverseStreamProcessor, BedrockMessageConverter, 
     BedrockErrorMapper, InferenceParameterFormatter
@@ -69,41 +74,49 @@ from ...common.streaming import (
 from ...common.exceptions import LLMError, InvocationError
 
 
-class NovaClient(BedrockBase):
+class NovaClient(EnhancedBedrockBase):
     """
     [Class intent]
-    Implements a specialized client for Amazon Bedrock's Nova (Amazon Titan) models.
+    Implements a specialized client for Amazon Bedrock's Nova models.
     This client adds Nova-specific features and parameter handling while
-    maintaining the streaming-focused approach.
+    maintaining the streaming-focused approach for multimodal understanding capabilities.
     
     [Design principles]
     - Nova-specific parameter optimization
     - Specialized message formatting for Nova models
     - Clean extension of BedrockBase
     - Streaming-only interface
+    - Multimodal capabilities support
     
     [Implementation details]
-    - Supports all Nova model variants
-    - Implements Nova-specific parameter mapping
-    - Optimizes default parameters for Nova
+    - Supports all Nova model variants (Lite, Micro, Pro, Premier, Reel)
+    - Implements Nova-specific parameter mapping for Converse API
+    - Optimizes default parameters for Nova models
     - Handles Nova's response format
+    - Provides multimodal support for image and video inputs
     """
     
     # Supported Nova models - helps with validation
     _NOVA_MODELS = [
-        "amazon.titan-text-lite-v1",
-        "amazon.titan-text-express-v1",
-        "amazon.titan-embed-text-v1",
-        "amazon.titan-text-premier-v1",
-        "amazon.titan-tg1-medium",
-        "amazon.titan-tg1-lite"
+        "amazon.nova-lite-v1:0",
+        "amazon.nova-micro-v1:0",
+        "amazon.nova-pro-v1:0",
+        "amazon.nova-premier-v1:0",
+        "amazon.nova-reel-v1:0"
     ]
+    
+    # Nova models context window sizes
+    CONTEXT_WINDOW_SIZES = {
+        "nova-micro": 128000,   # 128K tokens
+        "nova-pro": 300000,     # 300K tokens
+        "nova-lite": 300000,    # 300K tokens (estimated)
+        "nova-premier": 1000000  # 1M tokens
+    }
     
     # Default Nova parameters
     DEFAULT_TEMPERATURE = 0.7
-    DEFAULT_MAX_TOKENS = 1024
+    DEFAULT_MAX_TOKENS = 5000  # Maximum output tokens for Nova models
     DEFAULT_TOP_P = 0.9
-    DEFAULT_TOP_K = 250
     
     def __init__(
         self,
@@ -143,10 +156,10 @@ class NovaClient(BedrockBase):
         """
         # Validate model is a Nova model
         base_model_id = model_id.split(":")[0]
-        is_nova_model = any(base_model_id.startswith(model) for model in self._NOVA_MODELS)
+        is_nova_model = any(model in base_model_id for model in self._NOVA_MODELS)
         
         if not is_nova_model:
-            raise ValueError(f"Model {model_id} is not a supported Nova model")
+            raise ValueError(f"Model {model_id} is not a supported Nova model. Supported models: {', '.join(self._NOVA_MODELS)}")
         
         # Initialize base class
         super().__init__(
@@ -158,11 +171,46 @@ class NovaClient(BedrockBase):
             timeout=timeout,
             logger=logger or logging.getLogger("NovaClient")
         )
+        
+        # Register Nova capabilities
+        self.register_capabilities([
+            ModelCapability.SYSTEM_PROMPT,
+            ModelCapability.KEYWORD_EXTRACTION,
+            ModelCapability.SUMMARIZATION
+        ])
+        
+        # Register model-specific capabilities
+        base_model = model_id.split(":")[0].lower()
+        
+        # Check for Pro, Premier, or Lite models which support multimodal input
+        if any(mm in base_model for mm in ["nova-pro", "nova-premier", "nova-lite"]):
+            self.register_capabilities([
+                ModelCapability.MULTIMODAL,
+                ModelCapability.IMAGE_INPUT
+            ])
+            
+            # Register capability handlers
+            self.register_handler(
+                ModelCapability.MULTIMODAL,
+                self._handle_multimodal_content
+            )
+            self.register_handler(
+                ModelCapability.KEYWORD_EXTRACTION,
+                self._handle_keyword_extraction
+            )
+            self.register_handler(
+                ModelCapability.SUMMARIZATION,
+                self._handle_summarization
+            )
+            
+        # Nova Reel supports video input
+        if "nova-reel" in base_model:
+            self.register_capability(ModelCapability.VIDEO_INPUT)
     
-    def _format_messages(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _format_messages(self, messages: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
         [Method intent]
-        Format messages specifically for Nova models.
+        Format messages specifically for Nova models using the Converse API format.
         
         [Design principles]
         - Nova-specific message formatting
@@ -170,32 +218,28 @@ class NovaClient(BedrockBase):
         - Handle content format variations
         
         [Implementation details]
-        - Properly formats system messages for Nova
-        - Handles content blocks for different content types
-        - Ensures proper message role mapping
+        - Creates properly structured messages array
+        - Separates system prompts into dedicated field
+        - Handles content format variations
         
         Args:
             messages: List of message objects in standard format
             
         Returns:
-            List[Dict[str, Any]]: Messages formatted for Nova API
+            Dict[str, Any]: Message payload formatted for Nova's Converse API
         """
         formatted_messages = []
-        system_message = None
+        system_prompts = []
         
-        # First pass to find system message if present
-        for msg in messages:
-            if msg["role"] == "system":
-                system_message = msg["content"] if isinstance(msg["content"], str) else json.dumps(msg["content"])
-                break
-        
-        # Now process all messages
+        # Process all messages
         for msg in messages:
             role = msg["role"]
             content = msg["content"]
             
-            # Skip system message as we'll handle it separately
+            # Handle system messages separately for Nova
             if role == "system":
+                system_text = content if isinstance(content, str) else json.dumps(content)
+                system_prompts.append({"text": system_text})
                 continue
                 
             # Map role names to Nova expected roles
@@ -208,43 +252,26 @@ class NovaClient(BedrockBase):
                 nova_role = "user"
             
             # Format for Nova's expected structure
-            formatted_msg = {"role": nova_role}
-            
             # Handle content formatting
-            if isinstance(content, str):
-                formatted_msg["content"] = content
-            else:
-                # Currently Nova doesn't support complex content, convert to string
-                try:
-                    formatted_msg["content"] = json.dumps(content)
-                except (TypeError, ValueError):
-                    self.logger.warning(f"Failed to convert complex content to string for Nova, using str() fallback")
-                    formatted_msg["content"] = str(content)
-            
-            formatted_messages.append(formatted_msg)
+            msg_text = content if isinstance(content, str) else json.dumps(content)
+            formatted_messages.append({
+                "role": nova_role,
+                "text": msg_text
+            })
         
-        # If we have a system message, add it as a special message at the beginning
-        if system_message:
-            # Nova expects system prompts to be included with the first user message
-            # Check if we have a user message we can prepend to
-            for msg in formatted_messages:
-                if msg["role"] == "user":
-                    # Prepend system message to the first user message
-                    msg["content"] = f"[SYSTEM]\n{system_message}\n\n[USER]\n{msg['content']}"
-                    break
-            else:
-                # No user message found, add one
-                formatted_messages.insert(0, {
-                    "role": "user",
-                    "content": f"[SYSTEM]\n{system_message}\n\n[USER]\nHello"
-                })
+        # Build the result with messages array
+        result = {"messages": formatted_messages}
         
-        return formatted_messages
+        # Add system prompts if present
+        if system_prompts:
+            result["system"] = system_prompts
+        
+        return result
     
     def _format_model_kwargs(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         """
         [Method intent]
-        Format model parameters specifically for Nova models.
+        Format model parameters specifically for Nova models using the Converse API format.
         
         [Design principles]
         - Nova-specific parameter mapping
@@ -252,44 +279,97 @@ class NovaClient(BedrockBase):
         - Support for Nova-specific features
         
         [Implementation details]
-        - Maps standard parameters to Nova-specific names
-        - Adds Nova-specific parameters
+        - Maps standard parameters to Nova's inferenceConfig structure
         - Provides Nova-optimized defaults
+        - Handles additional parameters like stopSequences
         
         Args:
             kwargs: Model-specific parameters
             
         Returns:
-            Dict[str, Any]: Parameters formatted for Nova API
+            Dict[str, Any]: Parameters formatted for Nova Converse API
         """
-        # Start with basic parameters
-        formatted_kwargs = {
+        # Nova uses inferenceConfig for parameters
+        inference_config = {
             "temperature": kwargs.get("temperature", self.DEFAULT_TEMPERATURE),
-            "maxTokenCount": kwargs.get("max_tokens", self.DEFAULT_MAX_TOKENS),
-            "topP": kwargs.get("top_p", self.DEFAULT_TOP_P),
+            "maxTokens": kwargs.get("max_tokens", self.DEFAULT_MAX_TOKENS),
+            "topP": kwargs.get("top_p", self.DEFAULT_TOP_P)
         }
         
-        # Add Nova-specific parameters
-        if "top_k" in kwargs:
-            formatted_kwargs["topK"] = int(kwargs["top_k"])
-        else:
-            formatted_kwargs["topK"] = self.DEFAULT_TOP_K
-            
+        # Add stop sequences if provided
         if "stop_sequences" in kwargs:
-            formatted_kwargs["stopSequences"] = kwargs["stop_sequences"]
+            inference_config["stopSequences"] = kwargs["stop_sequences"]
             
-        # Handle additional Nova parameters
-        if "return_likelihood" in kwargs:
-            formatted_kwargs["returnLikelihood"] = kwargs["return_likelihood"]
-            
-        if "do_sample" in kwargs:
-            formatted_kwargs["doSample"] = bool(kwargs["do_sample"])
-            
-        if "typical_p" in kwargs:
-            formatted_kwargs["typicalP"] = float(kwargs["typical_p"])
-            
-        return formatted_kwargs
+        # Return in Nova's expected format with inferenceConfig object
+        return {"inferenceConfig": inference_config}
     
+    async def stream_chat(
+        self, 
+        messages: List[Dict[str, Any]], 
+        **kwargs
+    ) -> AsyncIterator[Dict[str, Any]]:
+        """
+        [Method intent]
+        Stream a conversational response from a Nova model.
+        
+        [Design principles]
+        - Proper Nova API integration
+        - Efficient streaming implementation
+        - Correct error handling
+        
+        [Implementation details]
+        - Formats messages for Nova's Converse API
+        - Handles parameter formatting
+        - Properly streams response chunks
+        
+        Args:
+            messages: List of message dictionaries with role and content
+            **kwargs: Additional parameters for the model
+            
+        Yields:
+            Dict[str, Any]: Response chunks from the model
+            
+        Raises:
+            LLMError: If chat generation fails
+        """
+        # Format messages and parameters for Nova
+        formatted_payload = self._format_messages(messages)
+        model_params = self._format_model_kwargs(kwargs)
+        
+        # Combine into full Nova payload
+        formatted_payload.update(model_params)
+        
+        # Log the request if debug enabled
+        if self.logger.isEnabledFor(logging.DEBUG):
+            self.logger.debug(f"Nova stream_chat payload: {json.dumps(formatted_payload)}")
+        
+        # Stream response from API
+        try:
+            # Use the ConverseStream API
+            response_stream = await self.client.converse_stream(
+                model_id=self.model_id,
+                converse_mode="STREAMING",
+                content_type="application/json",
+                accept="application/json",
+                body=json.dumps(formatted_payload)
+            )
+            
+            # Initialize response processor
+            processor = ConverseStreamProcessor(
+                response_stream=response_stream,
+                model_id=self.model_id
+            )
+            
+            # Stream the response chunks
+            async for chunk in processor.stream():
+                yield chunk
+                
+        except Exception as e:
+            # Map AWS errors to our exception types
+            error = BedrockErrorMapper.map_error(e)
+            self.logger.error(f"Error in stream_chat: {str(error)}")
+            raise error
+
     async def stream_generate_with_options(
         self, 
         prompt: str, 
@@ -325,6 +405,142 @@ class NovaClient(BedrockBase):
         # Stream chat with the provided options
         async for chunk in self.stream_chat(messages, **options):
             yield chunk
+            
+    async def process_multimodal_message(
+        self,
+        text: str,
+        images: List[Union[str, bytes]] = None,
+        videos: List[Union[str, bytes]] = None,
+        **kwargs
+    ) -> AsyncIterator[Dict[str, Any]]:
+        """
+        [Method intent]
+        Process a multimodal message with text and media inputs using Nova's capabilities.
+        
+        [Design principles]
+        - Support for Nova's multimodal features
+        - Clean media processing and encoding
+        - Unified streaming response interface
+        
+        [Implementation details]
+        - Supports both text and media inputs (images/videos)
+        - Properly encodes media for Nova's API
+        - Uses streaming for efficient response handling
+        
+        Args:
+            text: The text prompt
+            images: Optional list of images (paths or bytes)
+            videos: Optional list of videos (paths or bytes)
+            **kwargs: Additional parameters for the model
+            
+        Yields:
+            Dict[str, Any]: Response chunks from Nova
+            
+        Raises:
+            ValueError: If model doesn't support multimodal inputs
+            LLMError: If processing fails
+        """
+        # Only Pro, Premier, and Lite support multimodal inputs
+        base_model_id = self.model_id.split(":")[0]
+        if not any(mm in base_model_id for mm in ["nova-pro", "nova-premier", "nova-lite"]):
+            raise ValueError(f"Model {self.model_id} does not support multimodal inputs")
+        
+        # Prepare the multimodal message
+        message_content = []
+        
+        # Add text content if provided
+        if text:
+            message_content.append({
+                "type": "text",
+                "text": text
+            })
+        
+        # Process images if provided
+        if images:
+            for img in images:
+                # Handle image encoding logic
+                if isinstance(img, str):
+                    # Assume it's a file path, load and encode
+                    with open(img, "rb") as f:
+                        img_bytes = f.read()
+                    img_b64 = base64.b64encode(img_bytes).decode('utf-8')
+                else:
+                    # Assume it's already bytes
+                    img_b64 = base64.b64encode(img).decode('utf-8')
+                    
+                message_content.append({
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",  # Assume JPEG, could be detected
+                        "data": img_b64
+                    }
+                })
+        
+        # Process videos if provided
+        if videos:
+            for video in videos:
+                # Handle video encoding logic
+                if isinstance(video, str):
+                    # Assume it's a file path, load and encode
+                    with open(video, "rb") as f:
+                        video_bytes = f.read()
+                    video_b64 = base64.b64encode(video_bytes).decode('utf-8')
+                else:
+                    # Assume it's already bytes
+                    video_b64 = base64.b64encode(video).decode('utf-8')
+                    
+                message_content.append({
+                    "type": "video",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "video/mp4",  # Assume MP4, could be detected
+                        "data": video_b64
+                    }
+                })
+        
+        # Create message in Nova format
+        formatted_payload = {
+            "messages": [{
+                "role": "user",
+                "content": message_content
+            }]
+        }
+        
+        # Add model parameters
+        model_params = self._format_model_kwargs(kwargs)
+        formatted_payload.update(model_params)
+        
+        # Log the request if debug enabled
+        if self.logger.isEnabledFor(logging.DEBUG):
+            self.logger.debug(f"Nova multimodal request prepared (content types: {[item['type'] for item in message_content]})")
+        
+        # Stream response
+        try:
+            # Use the ConverseStream API
+            response_stream = await self.client.converse_stream(
+                model_id=self.model_id,
+                converse_mode="STREAMING",
+                content_type="application/json",
+                accept="application/json",
+                body=json.dumps(formatted_payload)
+            )
+            
+            # Initialize response processor
+            processor = ConverseStreamProcessor(
+                response_stream=response_stream,
+                model_id=self.model_id
+            )
+            
+            # Stream the response chunks
+            async for chunk in processor.stream():
+                yield chunk
+                
+        except Exception as e:
+            # Map AWS errors to our exception types
+            error = BedrockErrorMapper.map_error(e)
+            self.logger.error(f"Error in multimodal processing: {str(error)}")
+            raise error
     
     async def extract_keywords(
         self, 
@@ -381,6 +597,170 @@ class NovaClient(BedrockBase):
             return keywords[:max_results]
         except Exception as e:
             raise LLMError(f"Failed to process keyword extraction response: {str(e)}", e)
+    
+    async def _handle_multimodal_content(
+        self,
+        content: Union[str, Dict[str, Any], List[Dict[str, Any]]],
+        **kwargs
+    ) -> AsyncIterator[Dict[str, Any]]:
+        """
+        [Method intent]
+        Process multimodal content through the Nova capabilities API.
+        This is a handler for the MULTIMODAL capability.
+        
+        [Design principles]
+        - Clean mapping to multimodal API
+        - Support for both text and media inputs
+        - Consistent streaming response
+        
+        [Implementation details]
+        - Adapts the content format for process_multimodal_message
+        - Extracts images and text from mixed content
+        - Delegates to specialized processing method
+        
+        Args:
+            content: Multimodal content to process
+            **kwargs: Additional parameters
+            
+        Yields:
+            Dict[str, Any]: Streaming response chunks
+            
+        Raises:
+            ValueError: If content format is invalid
+            LLMError: If processing fails
+        """
+        # Extract text and images based on content format
+        text = ""
+        images = []
+        videos = []
+        
+        if isinstance(content, str):
+            # Simple text input
+            text = content
+        elif isinstance(content, dict):
+            # Structured input with text and possibly images
+            if "text" in content:
+                text = content["text"]
+            if "images" in content:
+                images = content["images"]
+            if "videos" in content:
+                videos = content["videos"]
+        elif isinstance(content, list):
+            # List of content blocks
+            for item in content:
+                if isinstance(item, str):
+                    text += item + "\n"
+                elif isinstance(item, dict):
+                    if item.get("type") == "text":
+                        text += item.get("text", "") + "\n"
+                    elif item.get("type") == "image":
+                        images.append(item.get("data"))
+                    elif item.get("type") == "video":
+                        videos.append(item.get("data"))
+        else:
+            raise ValueError(f"Unsupported content format: {type(content)}")
+        
+        # Process the multimodal content
+        async for chunk in self.process_multimodal_message(
+            text=text,
+            images=images if images else None,
+            videos=videos if videos else None,
+            **kwargs
+        ):
+            yield chunk
+    
+    async def _handle_keyword_extraction(
+        self,
+        content: str,
+        max_results: int = 10,
+        **kwargs
+    ) -> List[str]:
+        """
+        [Method intent]
+        Extract keywords from text content through the capability API.
+        This is a handler for the KEYWORD_EXTRACTION capability.
+        
+        [Design principles]
+        - Clean mapping to keyword extraction API
+        - Support for standard parameters
+        - Direct result return
+        
+        [Implementation details]
+        - Converts content format for extract_keywords
+        - Handles parameter mapping
+        - Returns structured keyword list
+        
+        Args:
+            content: Text content to extract keywords from
+            max_results: Maximum keywords to return
+            **kwargs: Additional parameters
+            
+        Returns:
+            List[str]: Extracted keywords
+            
+        Raises:
+            ValueError: If content format is invalid
+            LLMError: If extraction fails
+        """
+        if not isinstance(content, str):
+            if isinstance(content, dict) and "text" in content:
+                content = content["text"]
+            else:
+                raise ValueError("Keyword extraction requires text content")
+                
+        # Delegate to specialized method
+        return await self.extract_keywords(
+            text=content,
+            max_results=max_results
+        )
+    
+    async def _handle_summarization(
+        self,
+        content: str,
+        max_length: int = 200,
+        focus_on: Optional[str] = None,
+        **kwargs
+    ) -> str:
+        """
+        [Method intent]
+        Summarize text content through the capability API.
+        This is a handler for the SUMMARIZATION capability.
+        
+        [Design principles]
+        - Clean mapping to summarization API
+        - Support for standard parameters
+        - Direct result return
+        
+        [Implementation details]
+        - Converts content format for summarize_text
+        - Handles parameter mapping
+        - Returns summarized text
+        
+        Args:
+            content: Text content to summarize
+            max_length: Maximum length of summary
+            focus_on: Optional aspect to focus on
+            **kwargs: Additional parameters
+            
+        Returns:
+            str: Summarized text
+            
+        Raises:
+            ValueError: If content format is invalid
+            LLMError: If summarization fails
+        """
+        if not isinstance(content, str):
+            if isinstance(content, dict) and "text" in content:
+                content = content["text"]
+            else:
+                raise ValueError("Summarization requires text content")
+                
+        # Delegate to specialized method
+        return await self.summarize_text(
+            text=content,
+            max_length=max_length,
+            focus_on=focus_on
+        )
     
     async def summarize_text(
         self, 
