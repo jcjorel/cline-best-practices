@@ -31,6 +31,9 @@
 # codebase:- doc/design/LLM_COORDINATION.md
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-02T22:12:00Z : Added model discovery exports by CodeAssistant
+# * Added import and export for BedrockModelDiscovery class
+# * Updated __all__ list to include new model discovery component
 # 2025-05-02T07:20:00Z : Initial creation of AWS Bedrock package by Cline
 # * Created Bedrock LLM provider package initialization file
 # * Added exports for Bedrock interfaces and errors
@@ -39,11 +42,13 @@
 from .base import BedrockBase as BedrockModelClientBase
 from .client_common import BedrockClientError
 from .client_common import BedrockRequestFormatter, BedrockClientMixin, invoke_bedrock_model
+from .model_discovery import BedrockModelDiscovery
 
 __all__ = [
     "BedrockModelClientBase",
     "BedrockClientError",
     "BedrockRequestFormatter",
     "BedrockClientMixin",
-    "invoke_bedrock_model"
+    "invoke_bedrock_model",
+    "BedrockModelDiscovery"
 ]

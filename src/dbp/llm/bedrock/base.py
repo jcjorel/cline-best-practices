@@ -45,6 +45,10 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-02T22:19:00Z : Fixed EventStream streaming issue by CodeAssistant
+# * Fixed EventStream iteration by creating explicit iterator from stream
+# * Updated documentation to reflect EventStream handling
+# * Enhanced error handling specificity for streaming operations
 # 2025-05-02T11:13:00Z : Enhanced for LangChain/LangGraph integration by CodeAssistant
 # * Updated to use Converse API exclusively
 # * Implemented fully async interface for all operations
@@ -66,6 +70,8 @@ from typing import Dict, Any, List, Optional, AsyncIterator, Union, Tuple, cast
 import boto3
 import botocore.exceptions
 from botocore.config import Config
+
+from .model_discovery import BedrockModelDiscovery
 
 from ..common.base import ModelClientBase
 from ..common.exceptions import (
@@ -113,7 +119,9 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
         credentials: Optional[Dict[str, str]] = None,
         max_retries: int = DEFAULT_RETRIES,
         timeout: int = DEFAULT_TIMEOUT,
-        logger: Optional[logging.Logger] = None
+        logger: Optional[logging.Logger] = None,
+        use_model_discovery: bool = False,
+        preferred_regions: Optional[List[str]] = None
     ):
         """
         [Method intent]
@@ -148,6 +156,17 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
         self.credentials = credentials
         self.max_retries = max_retries
         self.timeout = timeout
+        self.use_model_discovery = use_model_discovery
+        self.preferred_regions = preferred_regions or []
+        
+        # Model discovery - will be initialized if enabled
+        self._model_discovery = None
+        if self.use_model_discovery:
+            self._model_discovery = BedrockModelDiscovery(
+                profile_name=self.profile_name,
+                credentials=self.credentials,
+                logger=self.logger
+            )
         
         # Bedrock client - will be initialized later
         self._bedrock_runtime = None
@@ -247,10 +266,13 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
         - Early failure for invalid models
         - Separation of validation from initialization
         - Clear error messages
+        - Model discovery support for region selection
         
         [Implementation details]
-        - Uses ListFoundationModels API to check model existence
+        - Uses Model Discovery if enabled
+        - Falls back to ListFoundationModels API if discovery disabled
         - Checks model status for availability
+        - Attempts region fallback if model not available in current region
         - Raises specific exceptions for different failure cases
         - Handles API access asynchronously
         
@@ -261,6 +283,40 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
         model_parts = self.model_id.split(":")
         base_model_id = model_parts[0]
         
+        # If model discovery is enabled, use it to find the best region
+        if self.use_model_discovery and self._model_discovery:
+            try:
+                # Check if the model is available in current region
+                is_available = self._model_discovery.is_model_available_in_region(self.model_id, self.region_name)
+                
+                if is_available:
+                    self.logger.debug(f"Model {self.model_id} is available in region {self.region_name}")
+                    return
+                
+                # If model not available in current region, look for alternative regions
+                best_regions = self._model_discovery.get_best_regions_for_model(
+                    self.model_id, 
+                    preferred_regions=self.preferred_regions
+                )
+                
+                if not best_regions:
+                    raise ModelNotAvailableError(f"Model {self.model_id} is not available in any AWS region")
+                
+                # If current region is not in the best regions, switch to first available region
+                if self.region_name not in best_regions:
+                    new_region = best_regions[0]
+                    self.logger.info(
+                        f"Model {self.model_id} not available in {self.region_name}, "
+                        f"switching to {new_region}"
+                    )
+                    self.region_name = new_region
+                    return
+                
+            except Exception as e:
+                self.logger.warning(f"Error using model discovery, falling back to direct validation: {str(e)}")
+                # Fall through to traditional validation
+        
+        # Traditional validation using direct API call
         try:
             # Run a non-blocking task to get the model list
             loop = asyncio.get_event_loop()
@@ -308,6 +364,37 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
             raise
         except Exception as e:
             raise LLMError(f"Failed to validate model access: {str(e)}", e)
+    
+    def get_best_regions_for_model(self) -> List[str]:
+        """
+        [Method intent]
+        Get the best regions for the current model based on availability and preferences.
+        
+        [Design principles]
+        - Seamless integration with model discovery
+        - Preference-based region selection
+        - Efficient caching of results
+        
+        [Implementation details]
+        - Uses model discovery if enabled
+        - Returns empty list if discovery is disabled
+        - Prioritizes regions based on user preferences
+        - Caches results for efficiency
+        
+        Returns:
+            List[str]: Ordered list of regions where the model is available
+        """
+        if not self.use_model_discovery or not self._model_discovery:
+            return []
+            
+        try:
+            return self._model_discovery.get_best_regions_for_model(
+                self.model_id,
+                preferred_regions=self.preferred_regions
+            )
+        except Exception as e:
+            self.logger.warning(f"Error getting best regions for model: {str(e)}")
+            return []
     
     async def _converse_stream(
         self, 
@@ -447,13 +534,14 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
         - Optimized for streaming performance
         
         [Implementation details]
-        - Handles boto3's synchronous iterator in an async-friendly way
+        - Handles boto3's EventStream object properly
+        - Creates an iterator from the EventStream
         - Yields individual events
         - Propagates errors appropriately
         - Allows asyncio cooperative multitasking
         
         Args:
-            stream: Boto3 stream response
+            stream: Boto3 EventStream response
             
         Yields:
             Dict[str, Any]: Individual stream events
@@ -465,9 +553,12 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
             # Process synchronous stream in a way that plays well with asyncio
             loop = asyncio.get_event_loop()
             
+            # Create an iterator from the EventStream object
+            stream_iterator = iter(stream)
+            
             def get_next_event():
                 try:
-                    return next(stream)
+                    return next(stream_iterator)
                 except StopIteration:
                     return None
                 except Exception as e:
