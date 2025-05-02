@@ -86,11 +86,8 @@ COMPONENT_ENABLED_DEFAULTS = {
     # All other components disabled
     "database": False,
     "llm_coordinator": False,
-    "memory_cache": False,
-    "consistency_analysis": False,
-    "scheduler": False,
-    "metadata_extraction": False,
 }
+
 
 # General application settings
 GENERAL_DEFAULTS = {
@@ -111,15 +108,6 @@ SCRIPT_DEFAULTS = {
     "allow_remote": False,
 }
 
-# Background task scheduler settings
-SCHEDULER_DEFAULTS = {
-    "enabled": True,
-    "delay_seconds": 10,
-    "max_delay_seconds": 120,
-    "worker_threads": 2,  # Will be capped at CPU count
-    "max_queue_size": 1000,
-    "batch_size": 20,
-}
 
 # File system monitoring settings
 MONITOR_DEFAULTS = {
@@ -149,14 +137,6 @@ DATABASE_DEFAULTS = {
     "echo_sql": False,
     "alembic_ini_path": "alembic.ini",
     "verbose_migrations": True,  # When True, enables detailed logging for database migrations
-}
-
-# Recommendation settings
-RECOMMENDATIONS_DEFAULTS = {
-    "auto_purge_enabled": True,
-    "purge_age_days": 7,
-    "purge_decisions_with_recommendations": True,
-    "auto_invalidate": True,
 }
 
 # Initialization settings
@@ -205,13 +185,6 @@ CLAUDE_DEFAULTS = {
     "retry_delay_seconds": 1,
 }
 
-# Recommendation Generator settings
-RECOMMENDATION_GENERATOR_DEFAULTS = {
-    "enabled_strategies": ["doc_link_fix", "doc_content_update", "code_comment_update"],
-    "llm_timeout_seconds": 30,
-    "auto_apply_recommendations": False,
-    "max_recommendations_per_batch": 50,
-}
 
 # MCP Server Integration settings
 MCP_SERVER_DEFAULTS = {
@@ -243,15 +216,6 @@ FILE_ACCESS_DEFAULTS = {
     "cache_size": 100,  # Maximum number of DBPFile instances to cache
 }
 
-# Memory Cache settings
-MEMORY_CACHE_DEFAULTS = {
-    "enabled": True,
-    "max_size_mb": 512,
-    "ttl_seconds": 3600,
-    "cleanup_interval_seconds": 300,
-    "persist_to_disk": True,
-    "eviction_policy": "lru",
-}
 
 # AWS settings
 AWS_DEFAULTS = {

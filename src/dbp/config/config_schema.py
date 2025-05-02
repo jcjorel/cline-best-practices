@@ -75,19 +75,15 @@ from .default_config import (
     CLI_OUTPUT_DEFAULTS,
     CLI_HISTORY_DEFAULTS,
     SCRIPT_DEFAULTS,
-    SCHEDULER_DEFAULTS,
     MONITOR_DEFAULTS,
     DATABASE_DEFAULTS,
-    RECOMMENDATIONS_DEFAULTS,
     INITIALIZATION_DEFAULTS,
     COORDINATOR_LLM_DEFAULTS,
     LLM_COORDINATOR_DEFAULTS,
     NOVA_LITE_DEFAULTS,
     CLAUDE_DEFAULTS,
-    RECOMMENDATION_GENERATOR_DEFAULTS,
     MCP_SERVER_DEFAULTS,
     CLI_DEFAULTS,
-    MEMORY_CACHE_DEFAULTS,
     AWS_DEFAULTS,
     BEDROCK_DEFAULTS,
     COMPONENT_ENABLED_DEFAULTS,
@@ -183,14 +179,6 @@ class ScriptConfig(BaseModel):
         raise ValueError("Script directories must be a list of paths or a single path string")
 
 
-class SchedulerConfig(BaseModel):
-    """Background task scheduler settings."""
-    enabled: bool = Field(default=SCHEDULER_DEFAULTS["enabled"], description="Enable the background scheduler")
-    delay_seconds: int = Field(default=SCHEDULER_DEFAULTS["delay_seconds"], ge=1, le=60, description="Debounce delay before processing changes")
-    max_delay_seconds: int = Field(default=SCHEDULER_DEFAULTS["max_delay_seconds"], ge=30, le=600, description="Maximum delay for any file")
-    worker_threads: int = Field(default=SCHEDULER_DEFAULTS["worker_threads"], ge=1, le=os.cpu_count() or 1, description="Number of worker threads (max CPU cores)")
-    max_queue_size: int = Field(default=SCHEDULER_DEFAULTS["max_queue_size"], ge=100, le=10000, description="Maximum size of change queue")
-    batch_size: int = Field(default=SCHEDULER_DEFAULTS["batch_size"], ge=1, le=100, description="Files processed in one batch")
 
 class PollingFallbackConfig(BaseModel):
     """Configuration for the polling fallback monitor."""
@@ -246,12 +234,6 @@ class DatabaseConfig(BaseModel):
             raise ValueError(f"Database type must be one of: {allowed}")
         return v
 
-class RecommendationConfig(BaseModel):
-    """Recommendation settings."""
-    auto_purge_enabled: bool = Field(default=RECOMMENDATIONS_DEFAULTS["auto_purge_enabled"], description="Enable automatic purging of old non-active recommendations")
-    purge_age_days: int = Field(default=RECOMMENDATIONS_DEFAULTS["purge_age_days"], ge=1, le=365, description="Age in days after which non-active recommendations are purged")
-    purge_decisions_with_recommendations: bool = Field(default=RECOMMENDATIONS_DEFAULTS["purge_decisions_with_recommendations"], description="Also purge related developer decisions when purging recommendations")
-    auto_invalidate: bool = Field(default=RECOMMENDATIONS_DEFAULTS["auto_invalidate"], description="Invalidate the active recommendation on any codebase change")
 
 class InitializationConfig(BaseModel):
     """Initialization settings."""
@@ -355,24 +337,13 @@ class AppConfig(BaseModel):
     output: OutputConfig = Field(default_factory=OutputConfig, description="Output formatting settings")
     history: HistoryConfig = Field(default_factory=HistoryConfig, description="Command history settings")
     script: ScriptConfig = Field(default_factory=ScriptConfig, description="Script settings")
-    scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig, description="Background task scheduler settings")
     fs_monitor: FSMonitorConfig = Field(default_factory=FSMonitorConfig, description="File system monitoring settings")
     database: DatabaseConfig = Field(default_factory=DatabaseConfig, description="Database settings")
-    recommendations: RecommendationConfig = Field(default_factory=RecommendationConfig, description="Recommendation settings")
     initialization: InitializationConfig = Field(default_factory=InitializationConfig, description="Initialization settings")
     llm_coordinator: LLMCoordinatorConfig = Field(default_factory=LLMCoordinatorConfig, description="LLM Coordinator settings")
     internal_tools: InternalToolsConfig = Field(default_factory=InternalToolsConfig, description="Internal LLM Tools settings")
 
 
-# --- Recommendation Generator Configuration ---
-
-class RecommendationGeneratorConfig(BaseModel):
-    """Configuration for the Recommendation Generator component."""
-    enabled_strategies: List[str] = Field(default=RECOMMENDATION_GENERATOR_DEFAULTS["enabled_strategies"], description="List of strategy names to enable for generating recommendations.")
-    llm_timeout_seconds: int = Field(default=RECOMMENDATION_GENERATOR_DEFAULTS["llm_timeout_seconds"], ge=5, le=300, description="Timeout in seconds for LLM calls made during recommendation generation.")
-    auto_apply_recommendations: bool = Field(default=RECOMMENDATION_GENERATOR_DEFAULTS["auto_apply_recommendations"], description="If true, automatically apply generated recommendations without user confirmation (Use with caution!).")
-    max_recommendations_per_batch: int = Field(default=RECOMMENDATION_GENERATOR_DEFAULTS["max_recommendations_per_batch"], ge=1, le=1000, description="Maximum number of recommendations to generate in a single batch.")
-    # Add strategy-specific configs if needed, e.g., nested models
 
 # --- AWS Configuration ---
 
@@ -390,22 +361,6 @@ class FileAccessConfig(BaseModel):
 
 # --- Memory Cache Configuration ---
 
-class MemoryCacheConfig(BaseModel):
-    """Configuration for the Memory Cache component."""
-    enabled: bool = Field(default=MEMORY_CACHE_DEFAULTS["enabled"], description="Enable in-memory caching")
-    max_size_mb: int = Field(default=MEMORY_CACHE_DEFAULTS["max_size_mb"], ge=10, le=4096, description="Maximum memory size in MB for cache")
-    ttl_seconds: int = Field(default=MEMORY_CACHE_DEFAULTS["ttl_seconds"], ge=60, le=86400, description="Time-to-live for cache entries in seconds")
-    cleanup_interval_seconds: int = Field(default=MEMORY_CACHE_DEFAULTS["cleanup_interval_seconds"], ge=30, le=3600, description="Interval for cleaning expired entries")
-    persist_to_disk: bool = Field(default=MEMORY_CACHE_DEFAULTS["persist_to_disk"], description="Persist cache to disk between runs")
-    eviction_policy: str = Field(default=MEMORY_CACHE_DEFAULTS["eviction_policy"], description="Cache eviction policy when max size is reached")
-    
-    @validator('eviction_policy')
-    def validate_eviction_policy(cls, v):
-        allowed = ["lru", "lfu", "fifo", "random"]
-        if v not in allowed:
-            # Remove fallback and raise exception instead
-            raise ValueError(f"Eviction policy must be one of: {allowed}")
-        return v
 
 # --- MCP Server Integration Configuration ---
 
@@ -475,8 +430,6 @@ class ComponentEnabledConfig(BaseModel):
     file_access: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["file_access"], description="Enable file access component")
     database: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["database"], description="Enable database component")
     fs_monitor: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["fs_monitor"], description="Enable file system monitor component")
-    memory_cache: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["memory_cache"], description="Enable memory cache component")
-    metadata_extraction: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["metadata_extraction"], description="Enable metadata extraction component")
     llm_coordinator: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["llm_coordinator"], description="Enable LLM coordinator component (required for MCP server LLM functions)")
     mcp_server: bool = Field(default=COMPONENT_ENABLED_DEFAULTS["mcp_server"], description="Enable MCP server component")
 
@@ -488,15 +441,12 @@ class AppConfig(BaseModel):
     output: OutputConfig = Field(default_factory=OutputConfig, description="Output formatting settings")
     history: HistoryConfig = Field(default_factory=HistoryConfig, description="Command history settings")
     script: ScriptConfig = Field(default_factory=ScriptConfig, description="Script settings")
-    scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig, description="Background task scheduler settings")
     fs_monitor: FSMonitorConfig = Field(default_factory=FSMonitorConfig, description="File system monitoring settings")
     database: DatabaseConfig = Field(default_factory=DatabaseConfig, description="Database settings")
-    recommendations: RecommendationConfig = Field(default_factory=RecommendationConfig, description="Recommendation settings") # Renamed from plan for consistency
     initialization: InitializationConfig = Field(default_factory=InitializationConfig, description="Initialization settings")
     llm_coordinator: LLMCoordinatorConfig = Field(default_factory=LLMCoordinatorConfig, description="LLM Coordinator settings")
     internal_tools: InternalToolsConfig = Field(default_factory=InternalToolsConfig, description="Internal LLM Tools settings")
     file_access: FileAccessConfig = Field(default_factory=FileAccessConfig, description="File Access settings")
-    memory_cache: MemoryCacheConfig = Field(default_factory=MemoryCacheConfig, description="Memory Cache settings")
     mcp_server: MCPServerConfig = Field(default_factory=MCPServerConfig, description="MCP Server Integration settings")
     cli: CLIConfig = Field(default_factory=CLIConfig, description="CLI-specific settings")
     aws: AWSConfig = Field(default_factory=AWSConfig, description="AWS service configuration settings")
