@@ -12,44 +12,34 @@
 # - Respect system prompt directives at all times
 ###############################################################################
 # [Source file intent]
-# Initializes the LLM Coordinator module and exports its key components.
-# This module serves as the central coordination point for LLM functionality,
-# providing a consistent interface for agent creation and execution.
+# This file exports tool implementations for the LLM coordinator module.
+# It provides a convenient import point for all available LLM tools.
 ###############################################################################
 # [Source file design principles]
-# - Clean module exports
-# - Clear component visibility
-# - Simplified import paths
+# - Export only essential components to keep the API surface clean
+# - Provide clear import paths for tool implementations
+# - Document all exports to make usage intuitive
 ###############################################################################
 # [Source file constraints]
 # - Must not contain implementation logic, only exports
-# - Must maintain backward compatibility
-# - Must provide a clean API surface
+# - Must maintain backward compatibility for any exports
 ###############################################################################
 # [Dependencies]
-# codebase:src/dbp/llm_coordinator/component.py
-# codebase:src/dbp/llm_coordinator/agent_manager.py
-# codebase:src/dbp/llm_coordinator/tools/__init__.py
+# None yet, will import tools as they are implemented
 ###############################################################################
 # [GenAI tool change history]
-# 2025-05-02T11:42:00Z : Initial creation for LangChain/LangGraph integration by CodeAssistant
-# * Created initial exports for LLM Coordinator module
-# * Added component and tools exports
+# 2025-05-02T10:47:00Z : Initial creation for LangChain/LangGraph integration by CodeAssistant
+# * Created empty module for tool exports
 ###############################################################################
 
 """
-LLM Coordinator module for centralized LLM management.
+Tool implementations for the LLM coordinator module.
 
-This module provides components for orchestrating interactions between LLMs
-and the rest of the application, including MCP tool integration.
+This package contains tools that can be used by LLMs through the coordinator.
 """
 
-from .component import LlmCoordinatorComponent
-from .agent_manager import AgentManager
-from .tools import GeneralQueryTool
+from .dbp_general_query import GeneralQueryTool
 
 __all__ = [
-    "LlmCoordinatorComponent",
-    "AgentManager",
     "GeneralQueryTool",
 ]

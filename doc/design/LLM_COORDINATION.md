@@ -203,3 +203,27 @@ The LLM coordination architecture implements several security measures:
 - **Design Decision (2025-04-14)**: Use cost budget constraints for each tool execution
   - **Rationale**: Prevents runaway costs while allowing for graceful degradation when budgets are reached
   - **Key Implications**: Tools must be designed to provide useful partial results when budget constraints are hit
+
+- **Design Decision (2025-05-02)**: Integrate LangChain and LangGraph frameworks for LLM orchestration
+  - **Rationale**: Provides well-established patterns for LLM orchestration, agent workflows, and tool integration
+  - **Key Implications**: Requires comprehensive implementation of streaming-first interfaces and adapters
+
+- **Design Decision (2025-05-02)**: Implement streaming-only API design using AsyncIO
+  - **Rationale**: Ensures consistent, high-performance LLM interactions with minimized latency and better user experience
+  - **Key Implications**: All LLM interactions will use AsyncIO and chunk-based streaming, with emulation for non-streaming providers
+
+- **Design Decision (2025-05-02)**: Focus exclusively on Amazon Bedrock support
+  - **Rationale**: Alignment with project requirements for AWS-native solutions and cost-effectiveness
+  - **Key Implications**: Implementation will focus on Claude (with reasoning support) and Nova models via Bedrock's Converse API
+
+- **Design Decision (2025-05-02)**: Create a hierarchical component architecture
+  - **Rationale**: Enables clean separation of concerns between LLM clients, adapters, and coordinator components
+  - **Key Implications**: Will follow a layered design with base interfaces, provider implementations, framework adapters, and coordinator services
+
+- **Design Decision (2025-05-02)**: Implement dynamic tool registration system
+  - **Rationale**: Allows flexible registration and discovery of tools throughout the codebase
+  - **Key Implications**: Creates a central registry for tools with associated metadata, validation and conversion utilities
+
+- **Design Decision (2025-05-02)**: Create named LLM configuration registry
+  - **Rationale**: Enables consistent configuration of LLMs across the codebase without duplicating provider-specific code
+  - **Key Implications**: Provides a central registry of pre-defined LLM configurations with recommended settings

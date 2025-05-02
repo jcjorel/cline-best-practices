@@ -12,44 +12,37 @@
 # - Respect system prompt directives at all times
 ###############################################################################
 # [Source file intent]
-# Initializes the LLM Coordinator module and exports its key components.
-# This module serves as the central coordination point for LLM functionality,
-# providing a consistent interface for agent creation and execution.
+# Package initialization file for the AWS Bedrock LLM provider implementation.
+# Exports the Bedrock-specific client classes and interfaces for use by
+# the rest of the application.
 ###############################################################################
 # [Source file design principles]
-# - Clean module exports
-# - Clear component visibility
-# - Simplified import paths
+# - Export all Bedrock-specific interfaces and client classes
+# - Provide clean imports for Bedrock components
+# - Keep initialization minimal to prevent circular dependencies
 ###############################################################################
 # [Source file constraints]
-# - Must not contain implementation logic, only exports
-# - Must maintain backward compatibility
-# - Must provide a clean API surface
+# - Should only export Bedrock-specific interfaces and classes
+# - Must not contain implementation logic
+# - Must maintain backward compatibility with existing code
 ###############################################################################
 # [Dependencies]
-# codebase:src/dbp/llm_coordinator/component.py
-# codebase:src/dbp/llm_coordinator/agent_manager.py
-# codebase:src/dbp/llm_coordinator/tools/__init__.py
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/LLM_COORDINATION.md
 ###############################################################################
 # [GenAI tool change history]
-# 2025-05-02T11:42:00Z : Initial creation for LangChain/LangGraph integration by CodeAssistant
-# * Created initial exports for LLM Coordinator module
-# * Added component and tools exports
+# 2025-05-02T07:20:00Z : Initial creation of AWS Bedrock package by Cline
+# * Created Bedrock LLM provider package initialization file
+# * Added exports for Bedrock interfaces and errors
 ###############################################################################
 
-"""
-LLM Coordinator module for centralized LLM management.
-
-This module provides components for orchestrating interactions between LLMs
-and the rest of the application, including MCP tool integration.
-"""
-
-from .component import LlmCoordinatorComponent
-from .agent_manager import AgentManager
-from .tools import GeneralQueryTool
+from .base import BedrockModelClientBase, BedrockClientError
+from .client_common import BedrockRequestFormatter, BedrockClientMixin, invoke_bedrock_model
 
 __all__ = [
-    "LlmCoordinatorComponent",
-    "AgentManager",
-    "GeneralQueryTool",
+    "BedrockModelClientBase",
+    "BedrockClientError",
+    "BedrockRequestFormatter",
+    "BedrockClientMixin",
+    "invoke_bedrock_model"
 ]

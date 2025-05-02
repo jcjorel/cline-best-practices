@@ -12,44 +12,37 @@
 # - Respect system prompt directives at all times
 ###############################################################################
 # [Source file intent]
-# Initializes the LLM Coordinator module and exports its key components.
-# This module serves as the central coordination point for LLM functionality,
-# providing a consistent interface for agent creation and execution.
+# Package initialization file for common LLM interfaces and utilities.
+# Exports the provider-agnostic base classes and shared utilities
+# used across all LLM providers.
 ###############################################################################
 # [Source file design principles]
-# - Clean module exports
-# - Clear component visibility
-# - Simplified import paths
+# - Export all common interfaces from this package
+# - Provide clean imports for shared LLM components
+# - Keep initialization minimal to prevent circular dependencies
 ###############################################################################
 # [Source file constraints]
-# - Must not contain implementation logic, only exports
-# - Must maintain backward compatibility
-# - Must provide a clean API surface
+# - Should only export common interfaces and utilities
+# - Must not import provider-specific implementations
+# - Must not contain implementation logic
 ###############################################################################
 # [Dependencies]
-# codebase:src/dbp/llm_coordinator/component.py
-# codebase:src/dbp/llm_coordinator/agent_manager.py
-# codebase:src/dbp/llm_coordinator/tools/__init__.py
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/LLM_COORDINATION.md
 ###############################################################################
 # [GenAI tool change history]
-# 2025-05-02T11:42:00Z : Initial creation for LangChain/LangGraph integration by CodeAssistant
-# * Created initial exports for LLM Coordinator module
-# * Added component and tools exports
+# 2025-05-02T07:10:00Z : Initial creation of common LLM package by Cline
+# * Created common LLM package for provider-agnostic interfaces
+# * Added exports for base interfaces and types
 ###############################################################################
 
-"""
-LLM Coordinator module for centralized LLM management.
-
-This module provides components for orchestrating interactions between LLMs
-and the rest of the application, including MCP tool integration.
-"""
-
-from .component import LlmCoordinatorComponent
-from .agent_manager import AgentManager
-from .tools import GeneralQueryTool
+from .base import ModelClientBase, ModelClientError, ModelMessage
+from .prompt_manager import LLMPromptManager, PromptLoadError
 
 __all__ = [
-    "LlmCoordinatorComponent",
-    "AgentManager",
-    "GeneralQueryTool",
+    "ModelClientBase",
+    "ModelClientError",
+    "ModelMessage",
+    "LLMPromptManager",
+    "PromptLoadError"
 ]

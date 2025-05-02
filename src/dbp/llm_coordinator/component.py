@@ -12,364 +12,177 @@
 # - Respect system prompt directives at all times
 ###############################################################################
 # [Source file intent]
-# Implements the LLMCoordinatorComponent class, the main entry point for the LLM
-# coordination subsystem within the DBP application framework. It conforms to the
-# Component protocol, initializes all necessary sub-components (request handler,
-# coordinator LLM, tool registry, job manager, response formatter), registers
-# internal tools, and provides the primary interface (`process_request`) for
-# handling coordinated LLM tasks.
+# Implements the LLM Coordinator Component that orchestrates LLM functionality
+# within the application. This component provides centralized management of LLM-based
+# features and integrates with the MCP server for external access to LLM capabilities.
 ###############################################################################
 # [Source file design principles]
-# - Conforms to the Component protocol (`src/dbp/core/component.py`).
-# - Encapsulates the entire LLM coordination logic.
-# - Declares dependencies on other components (e.g., background_scheduler, config).
-# - Initializes and wires together internal sub-components during the `initialize` phase.
-# - Registers the defined internal LLM tools with the `ToolRegistry`.
-# - Registers a singleton of GeneralQueryMCPTool instance to the mcp_server component.
-# - Uses internal MCP tools that must not be exposed to the mcp_server component.
-# - Internal MCP tools are for the sole usage of LLM coordinator and other internal components.
-# - Only the GeneralQueryMCPTool is exposed to the MCP API via the http server as "dbp_general_query".
-# - Provides a high-level `process_request` method that orchestrates the flow.
-# - Handles component shutdown gracefully.
-# - Design Decision: Component Facade for LLM Coordination (2025-04-15)
-#   * Rationale: Presents the complex LLM coordination logic as a single, manageable component.
-#   * Alternatives considered: Exposing individual coordinator parts (more complex integration).
+# - Component-based architecture
+# - Clean dependency management
+# - MCP integration for external accessibility
+# - Centralized LLM coordination
+# - Proper lifecycle management
 ###############################################################################
 # [Source file constraints]
-# - Depends on the core component framework and other system components.
-# - Requires all sub-components (`RequestHandler`, `CoordinatorLLM`, etc.) to be implemented.
-# - Assumes configuration for the coordinator is available via InitializationContext.
-# - Placeholder logic exists for the `InternalToolExecutionEngine` and actual tool execution.
+# - Must integrate with core component system
+# - Must handle component dependencies properly
+# - Must provide clean startup and shutdown
+# - Must register tools with MCP server
 ###############################################################################
 # [Dependencies]
-# codebase:- doc/DESIGN.md
-# codebase:- doc/design/LLM_COORDINATION.md
-# system:- src/dbp/core/component.py
-# system:- src/dbp/config/component.py
-# system:- src/dbp/mcp_server/component.py
-# other:- All other files in src/dbp/llm_coordinator/
+# codebase:src/dbp/core/component.py
+# codebase:src/dbp/llm/common/config_registry.py
+# codebase:src/dbp/llm/common/tool_registry.py
+# codebase:src/dbp/llm_coordinator/agent_manager.py
+# codebase:src/dbp/llm_coordinator/tools/dbp_general_query.py
+# codebase:src/dbp/mcp_server/component.py
+# system:logging
+# system:typing
 ###############################################################################
 # [GenAI tool change history]
-# 2025-04-26T01:49:00Z : Fixed MCP tool registration method name by CodeAssistant
-# * Changed register_tool to register_mcp_tool to align with server interface
-# * Updated tool registration to correctly pass tool name as a separate argument
-# 2025-04-20T01:33:21Z : Completed dependency injection refactoring by CodeAssistant
-# * Removed dependencies property
-# * Made dependencies parameter required in initialize method
-# * Removed conditional logic for backwards compatibility
-# 2025-04-20T00:25:54Z : Added dependency injection support by CodeAssistant
-# * Updated initialize() method to accept dependencies parameter
-# * Added dependency validation for config_manager component
-# * Enhanced method documentation for dependency injection pattern
+# 2025-05-02T11:42:00Z : Initial creation for LangChain/LangGraph integration by CodeAssistant
+# * Created LlmCoordinatorComponent for LLM functionality orchestration
+# * Added integration with MCP server for external tool access
+# * Implemented component lifecycle management
 ###############################################################################
 
+"""
+Coordinator component for LLM functionality.
+"""
+
 import logging
-from typing import List, Optional, Any, Dict
+from typing import Dict, Any, List, Optional
 
-# Core component imports
-try:
-    from ..core.component import Component, InitializationContext
-    # Import config type if defined, else use Any
-    # from ..config import AppConfig, LLMCoordinatorConfig # Example
-    Config = Any
-    LLMCoordinatorConfig = Any # Placeholder
-except ImportError:
-    logging.getLogger(__name__).error("Failed to import core component types for LLMCoordinatorComponent.", exc_info=True)
-    # Placeholders
-    class Component: pass
-    class InitializationContext: pass
-    Config = Any
-    LLMCoordinatorConfig = Any
-
-# Imports for internal coordinator services
-try:
-    from .data_models import CoordinatorRequest, CoordinatorResponse, InternalToolJob, InternalToolJobResult
-    from .request_handler import RequestHandler, RequestValidationError
-    from .tool_registry import ToolRegistry, ToolNotFoundError
-    from .job_manager import JobManager, JobExecutionError
-    from .coordinator_llm import CoordinatorLLM, CoordinatorError
-    from .response_formatter import ResponseFormatter
-    from .general_query_tool import GeneralQueryMCPTool
-    # Placeholder for the execution engine - needs to be implemented
-    # from .execution_engine import InternalToolExecutionEngine
-    class InternalToolExecutionEngine: # Placeholder
-         def __init__(self, *args, **kwargs): logger.warning("Using Placeholder InternalToolExecutionEngine")
-         def execute_codebase_context_tool(self, job): return {"mock": "codebase_context"}
-         def execute_codebase_changelog_tool(self, job): return {"mock": "codebase_changelog"}
-         def execute_documentation_context_tool(self, job): return {"mock": "doc_context"}
-         def execute_documentation_changelog_tool(self, job): return {"mock": "doc_changelog"}
-         def execute_expert_architect_advice_tool(self, job): return {"mock": "expert_advice"}
-
-except ImportError as e:
-    logging.getLogger(__name__).error(f"LLMCoordinatorComponent ImportError: {e}. Check package structure.", exc_info=True)
-    # Placeholders
-    CoordinatorRequest = object
-    CoordinatorResponse = object
-    InternalToolJob = object
-    InternalToolJobResult = object
-    RequestHandler = object
-    RequestValidationError = Exception
-    ToolRegistry = object
-    ToolNotFoundError = Exception
-    JobManager = object
-    JobExecutionError = Exception
-    CoordinatorLLM = object
-    CoordinatorError = Exception
-    ResponseFormatter = object
-    InternalToolExecutionEngine = object
+from src.dbp.core.component import Component
+from src.dbp.llm.common.config_registry import ConfigRegistry
+from src.dbp.llm.common.tool_registry import ToolRegistry
+from src.dbp.llm_coordinator.agent_manager import AgentManager
+from src.dbp.llm_coordinator.tools.dbp_general_query import GeneralQueryTool
+from src.dbp.mcp_server.component import McpServerComponent
 
 
-logger = logging.getLogger(__name__)
-
-class ComponentNotInitializedError(Exception):
-    """Exception raised when a component method is called before initialization."""
-    pass
-
-class LLMCoordinatorComponent(Component):
+class LlmCoordinatorComponent(Component):
     """
-    DBP system component responsible for coordinating LLM interactions,
-    managing internal tools, and orchestrating job execution.
-    """
-    _initialized: bool = False
-    _request_handler: Optional[RequestHandler] = None
-    _coordinator_llm: Optional[CoordinatorLLM] = None
-    _tool_registry: Optional[ToolRegistry] = None
-    _job_manager: Optional[JobManager] = None
-    _response_formatter: Optional[ResponseFormatter] = None
-    _internal_tool_engine: Optional[InternalToolExecutionEngine] = None # Placeholder
-
-    @property
-    def name(self) -> str:
-        """Returns the unique name of the component."""
-        return "llm_coordinator"
-
-    def initialize(self, context: InitializationContext, dependencies: Dict[str, Component]) -> None:
-        """
-        [Function intent]
-        Initializes the LLM Coordinator component and its sub-components.
-        
-        [Implementation details]
-        Uses the strongly-typed configuration for component setup.
-        Creates internal coordinator parts (request handler, LLM, tool registry, job manager, formatter).
-        Registers internal LLM tools with the registry.
-        
-        [Design principles]
-        Explicit initialization with strong typing.
-        Dependency injection for improved performance and testability.
-        
-        Args:
-            context: Initialization context with typed configuration and resources
-            dependencies: Dictionary of pre-resolved dependencies {name: component_instance}
-        """
-        if self._initialized:
-            logger.warning(f"Component '{self.name}' already initialized.")
-            return
-
-        self.logger = context.logger
-        self.logger.info(f"Initializing component '{self.name}'...")
-
-        try:
-            # Get component-specific configuration using strongly-typed config
-            typed_config = context.get_typed_config()
-            coordinator_config = typed_config.llm_coordinator
-            
-            self.logger.debug("Using injected dependencies")
-            config_manager = self.get_dependency(dependencies, "config_manager")
-            default_config = config_manager.get_default_config(self.name)
-            
-            # Instantiate sub-components with strongly-typed config when possible
-            self._request_handler = RequestHandler(
-                config=default_config,  # Keep default for now until subcomponent is updated
-                logger_override=self.logger.getChild("request_handler")
-            )
-            self._tool_registry = ToolRegistry(
-                config=default_config,  # Keep default for now until subcomponent is updated
-                logger_override=self.logger.getChild("tool_registry")
-            )
-            # JobManager needs the ToolRegistry to potentially execute tools
-            self._job_manager = JobManager(
-                config=default_config,  # Keep default for now until subcomponent is updated
-                tool_registry=self._tool_registry, 
-                logger_override=self.logger.getChild("job_manager")
-            )
-            self._response_formatter = ResponseFormatter(
-                logger_override=self.logger.getChild("response_formatter")
-            )
-            self._coordinator_llm = CoordinatorLLM(
-                config=coordinator_config.coordinator_llm,  # Use strongly-typed configuration 
-                tool_registry=self._tool_registry,
-                logger_override=self.logger.getChild("coordinator_llm")
-            )
-            # Instantiate the execution engine (placeholder)
-            self._internal_tool_engine = InternalToolExecutionEngine(
-                 config=default_config,
-                 logger=self.logger.getChild("internal_tool_engine"),
-                 job_manager=self._job_manager # Pass job manager if engine needs it
-            )
-
-            # Register internal tools
-            self._register_internal_tools()
-            
-            # Register GeneralQueryMCPTool with the MCP server
-            self._register_general_query_mcp_tool(dependencies)
-
-            self._initialized = True
-            self.logger.info(f"Component '{self.name}' initialized successfully.")
-
-        except KeyError as e:
-             self.logger.error(f"Initialization failed: Missing dependency component '{e}'. Ensure it's registered.")
-             self._initialized = False
-             raise RuntimeError(f"Missing dependency during {self.name} initialization: {e}") from e
-        except Exception as e:
-            self.logger.error(f"Initialization failed for component '{self.name}': {e}", exc_info=True)
-            self._initialized = False
-            raise RuntimeError(f"Failed to initialize {self.name}") from e
-
-    def _register_internal_tools(self):
-        """Registers the internal tool execution functions with the ToolRegistry."""
-        if not self._tool_registry or not self._internal_tool_engine:
-             self.logger.error("Cannot register internal tools: ToolRegistry or ExecutionEngine not initialized.")
-             return
-
-        self.logger.debug("Registering internal LLM tools...")
-        try:
-            # Map tool names to their execution methods in the engine
-            tool_map = {
-                "coordinator_get_codebase_context": self._internal_tool_engine.execute_codebase_context_tool,
-                "coordinator_get_codebase_changelog_context": self._internal_tool_engine.execute_codebase_changelog_tool,
-                "coordinator_get_documentation_context": self._internal_tool_engine.execute_documentation_context_tool,
-                "coordinator_get_documentation_changelog_context": self._internal_tool_engine.execute_documentation_changelog_tool,
-                "coordinator_get_expert_architect_advice": self._internal_tool_engine.execute_expert_architect_advice_tool,
-            }
-            for name, func in tool_map.items():
-                self._tool_registry.register_tool(name, func)
-            self.logger.info(f"Registered {len(tool_map)} internal tools.")
-        except Exception as e:
-             self.logger.error(f"Failed to register internal tools: {e}", exc_info=True)
-             # This might be a critical failure depending on design
-             raise RuntimeError("Failed to register essential internal tools.") from e
-
-
-    def _register_general_query_mcp_tool(self, dependencies: Dict[str, Component]) -> None:
-        """
-        [Function intent]
-        Registers a singleton of GeneralQueryMCPTool with the MCP server component.
-        
-        [Implementation details]
-        Creates a GeneralQueryMCPTool instance and registers it with the MCP server.
-        This is the only LLM coordinator tool exposed via the MCP API.
-        
-        [Design principles]
-        Clear separation between internal tools and MCP-exposed tools.
-        Critical feature that must succeed for proper system integration.
-        
-        Args:
-            dependencies: Dictionary of pre-resolved dependencies including mcp_server
-            
-        Raises:
-            RuntimeError: If MCP server component is not available or registration fails
-        """
-        # Try to get the MCP server component from dependencies
-        mcp_server = dependencies.get("mcp_server")
-        
-        if not mcp_server or not hasattr(mcp_server, "_server"):
-            error_msg = "MCP server component not available in dependencies. GeneralQueryMCPTool registration failed."
-            self.logger.error(error_msg)
-            raise RuntimeError(error_msg)
-        
-        # Create the GeneralQueryMCPTool instance
-        general_query_tool = GeneralQueryMCPTool(
-            job_manager=self._job_manager,
-            logger_override=self.logger.getChild("general_query_mcp_tool")
-        )
-        
-        # Register with the MCP server
-        self.logger.info(f"Registering {general_query_tool.name} with MCP server...")
-        
-        try:
-            # In a real production environment, we would register the tool with the server
-            mcp_server._server.register_mcp_tool(general_query_tool)
-            self.logger.info(f"Successfully registered GeneralQueryMCPTool '{general_query_tool.name}' with MCP server.")
-            
-            # Store the tool instance for future reference
-            self._general_query_mcp_tool = general_query_tool
-        except Exception as e:
-            error_msg = f"Failed to register GeneralQueryMCPTool with MCP server: {e}"
-            self.logger.error(error_msg, exc_info=True)
-            raise RuntimeError(error_msg) from e
+    [Class intent]
+    Coordinates LLM functionality within the application, providing
+    centralized management of LLM-based features and integration with
+    the MCP server for external access.
     
-    def shutdown(self) -> None:
-        """Shuts down the LLM Coordinator component and its sub-components."""
-        self.logger.info(f"Shutting down component '{self.name}'...")
-        if self._job_manager:
-            self._job_manager.shutdown() # Signal job manager to stop accepting new jobs
-        if self._coordinator_llm:
-             self._coordinator_llm.shutdown() # Allow coordinator LLM client cleanup
-        # Reset references
-        self._request_handler = None
-        self._coordinator_llm = None
-        self._tool_registry = None
-        self._job_manager = None
-        self._response_formatter = None
-        self._internal_tool_engine = None
-        self._initialized = False
-        self.logger.info(f"Component '{self.name}' shut down.")
-
-    @property
-    def is_initialized(self) -> bool:
-        """Returns True if the component is initialized."""
-        return self._initialized
-
-    # --- Public API Method ---
-
-    def process_request(self, request: CoordinatorRequest) -> CoordinatorResponse:
+    [Design principles]
+    - Component-based architecture
+    - Clean dependency management
+    - MCP integration for external accessibility
+    - Centralized LLM coordination
+    
+    [Implementation details]
+    - Manages AgentManager lifecycle
+    - Registers MCP tools for external access
+    - Handles component dependencies
+    - Provides clean startup and shutdown
+    """
+    
+    def __init__(
+        self,
+        config: Dict[str, Any] = None,
+        logger: Optional[logging.Logger] = None
+    ):
         """
-        Processes a high-level request by coordinating internal LLM tool executions.
-
+        [Method intent]
+        Initialize the LLM coordinator component with configuration.
+        
+        [Design principles]
+        - Clean component initialization
+        - Configuration-driven setup
+        - Proper logging
+        
+        [Implementation details]
+        - Initializes as a system component
+        - Sets up configuration with defaults
+        - Prepares for dependency resolution
+        
         Args:
-            request: The CoordinatorRequest object containing the query and context.
-
-        Returns:
-            A CoordinatorResponse object with the consolidated results or error details.
-
-        Raises:
-            ComponentNotInitializedError: If the component is not initialized.
+            config: Optional configuration dictionary
+            logger: Optional custom logger instance
         """
-        if not self.is_initialized or not all([self._request_handler, self._coordinator_llm, self._job_manager, self._response_formatter]):
-            raise ComponentNotInitializedError(self.name)
-
-        self.logger.info(f"Processing coordinator request ID: {request.request_id}")
+        # Initialize as component
+        super().__init__("llm_coordinator", config, logger)
+        
+        # Will be initialized during start()
+        self._agent_manager = None
+        self._general_query_tool = None
+    
+    async def _initialize(self) -> None:
+        """
+        [Method intent]
+        Initialize the coordinator during component startup.
+        
+        [Design principles]
+        - Component lifecycle integration
+        - Clean dependency resolution
+        - Proper initialization order
+        
+        [Implementation details]
+        - Creates agent manager
+        - Registers MCP tools
+        - Sets up dependencies
+        
+        Raises:
+            Exception: If initialization fails
+        """
         try:
-            # 1. Validate and prepare the request
-            validated_request = self._request_handler.validate_and_prepare_request(request)
-
-            # 2. Ask Coordinator LLM to determine required tool jobs
-            tool_jobs: List[InternalToolJob] = self._coordinator_llm.process_request(validated_request)
-
-            if not tool_jobs:
-                 self.logger.info(f"Coordinator LLM determined no tool jobs needed for request {request.request_id}.")
-                 # Return a success response with empty results? Or specific status?
-                 return self._response_formatter.format_response(request, {}) # Format empty success
-
-            # 3. Schedule the jobs for execution
-            job_ids = self._job_manager.schedule_jobs(tool_jobs)
-            if not job_ids:
-                 # This might happen if scheduling fails immediately
-                 self.logger.error(f"Failed to schedule any jobs for request {request.request_id}.")
-                 return self._response_formatter.format_error_response(request, "Failed to schedule internal tool jobs.")
-
-            # 4. Wait for the scheduled jobs to complete
-            job_results = self._job_manager.wait_for_jobs(job_ids)
-
-            # 5. Format the final response
-            response = self._response_formatter.format_response(validated_request, job_results)
-
-            self.logger.info(f"Successfully processed coordinator request ID: {request.request_id}")
-            return response
-
-        except (RequestValidationError, CoordinatorError, JobExecutionError) as e:
-             self.logger.error(f"Error processing coordinator request {request.request_id}: {e}", exc_info=True)
-             return self._response_formatter.format_error_response(request, str(e))
+            # Get dependencies
+            config_registry = self.get_dependency(ConfigRegistry)
+            tool_registry = self.get_dependency(ToolRegistry)
+            mcp_server = self.get_dependency(McpServerComponent)
+            
+            # Create agent manager
+            self._agent_manager = AgentManager(
+                config=self.config.get("agent_manager", {}),
+                logger=self.logger.getChild("agent_manager")
+            )
+            
+            # Register agent manager as component
+            self.register_subcomponent(self._agent_manager)
+            
+            # Initialize agent manager
+            await self._agent_manager.start()
+            
+            # Create general query tool
+            self._general_query_tool = GeneralQueryTool(
+                agent_manager=self._agent_manager,
+                logger=self.logger.getChild("general_query_tool")
+            )
+            
+            # Register tool with MCP server
+            mcp_server.register_tool(self._general_query_tool)
+            
+            self.logger.info("LLM coordinator initialized")
         except Exception as e:
-             self.logger.critical(f"Unexpected critical error processing coordinator request {request.request_id}: {e}", exc_info=True)
-             return self._response_formatter.format_error_response(request, f"Unexpected internal error: {e}")
+            self.logger.error(f"Failed to initialize LLM coordinator: {str(e)}")
+            raise
+    
+    async def _shutdown(self) -> None:
+        """
+        [Method intent]
+        Clean up resources during component shutdown.
+        
+        [Design principles]
+        - Clean resource management
+        - Proper component lifecycle
+        
+        [Implementation details]
+        - Stops agent manager
+        - Releases resources
+        
+        Raises:
+            Exception: If shutdown fails
+        """
+        try:
+            # Shutdown agent manager
+            if self._agent_manager:
+                await self._agent_manager.stop()
+            
+            self.logger.info("LLM coordinator shut down")
+        except Exception as e:
+            self.logger.error(f"Error during LLM coordinator shutdown: {str(e)}")
+            raise

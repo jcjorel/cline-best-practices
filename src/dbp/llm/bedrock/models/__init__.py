@@ -12,44 +12,34 @@
 # - Respect system prompt directives at all times
 ###############################################################################
 # [Source file intent]
-# Initializes the LLM Coordinator module and exports its key components.
-# This module serves as the central coordination point for LLM functionality,
-# providing a consistent interface for agent creation and execution.
+# Package initialization file for the AWS Bedrock model implementations.
+# Exports the specific model client classes for various foundation models
+# available through AWS Bedrock.
 ###############################################################################
 # [Source file design principles]
-# - Clean module exports
-# - Clear component visibility
-# - Simplified import paths
+# - Export all model-specific client implementations
+# - Provide clean imports for model client classes
+# - Keep initialization minimal to prevent circular dependencies
 ###############################################################################
 # [Source file constraints]
-# - Must not contain implementation logic, only exports
-# - Must maintain backward compatibility
-# - Must provide a clean API surface
+# - Should only export model-specific client implementations
+# - Must not contain implementation logic
+# - Must maintain backward compatibility with existing code
 ###############################################################################
 # [Dependencies]
-# codebase:src/dbp/llm_coordinator/component.py
-# codebase:src/dbp/llm_coordinator/agent_manager.py
-# codebase:src/dbp/llm_coordinator/tools/__init__.py
+# codebase:- doc/DESIGN.md
+# codebase:- doc/design/LLM_COORDINATION.md
 ###############################################################################
 # [GenAI tool change history]
-# 2025-05-02T11:42:00Z : Initial creation for LangChain/LangGraph integration by CodeAssistant
-# * Created initial exports for LLM Coordinator module
-# * Added component and tools exports
+# 2025-05-02T07:26:00Z : Initial creation of models package by Cline
+# * Created package initialization file for model implementations
+# * Added exports for model-specific client classes
 ###############################################################################
 
-"""
-LLM Coordinator module for centralized LLM management.
-
-This module provides components for orchestrating interactions between LLMs
-and the rest of the application, including MCP tool integration.
-"""
-
-from .component import LlmCoordinatorComponent
-from .agent_manager import AgentManager
-from .tools import GeneralQueryTool
+from .claude3_7 import Claude37SonnetClient
+from .nova_lite import NovaLiteClient
 
 __all__ = [
-    "LlmCoordinatorComponent",
-    "AgentManager",
-    "GeneralQueryTool",
+    "Claude37SonnetClient",
+    "NovaLiteClient"
 ]

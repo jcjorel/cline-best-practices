@@ -13,6 +13,22 @@ fastapi>=0.68.0
 uvicorn>=0.15.0
 fastmcp>=2.0.0  # MCP protocol implementation
 
+# LangChain and LangGraph Integration
+langchain>=0.1.4  # Core LangChain functionality
+langchain-core>=0.1.14  # LangChain core components
+langgraph>=0.0.20  # LangGraph for agent workflows
+langchain-community>=0.0.15  # Community integrations
+langchain-aws>=0.0.1  # AWS-specific LangChain components
+aioboto3>=11.3.0  # Async version of boto3 for streaming support
+
+# AWS Bedrock specifics
+botocore>=1.31.64  # Required by boto3 for Bedrock
+
+# AsyncIO utilities
+aiohttp>=3.8.4  # For async HTTP requests
+async_timeout>=4.0.2  # For timeout management in async operations
+aioitertools>=0.11.0  # AsyncIO itertools
+
 # Platform-specific file system monitoring
 # Linux
 inotify>=0.2.10; sys_platform == 'linux'
@@ -24,10 +40,12 @@ watchdog>=2.1.0; sys_platform == 'win32'
 # Schema validation and configuration
 jsonschema>=4.0.0
 pyyaml>=6.0
+jinja2>=3.1.2  # For template processing in prompt management
 
 # Testing and development
 pytest>=6.0.0
 pytest-cov>=2.12.0
+pytest-asyncio>=0.21.1  # For testing async functions
 black>=21.5b2
 isort>=5.9.1
 mypy>=0.812
