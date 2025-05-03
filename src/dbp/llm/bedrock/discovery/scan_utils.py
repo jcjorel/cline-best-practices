@@ -38,6 +38,11 @@
 # system:logging
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-04T01:34:00Z : Integrated undocumented model availability API by CodeAssistant
+# * Added integration with bedrock_availability module
+# * Implemented detailed model accessibility checking 
+# * Added enhanced error reporting for model access issues
+# * Preserved backward compatibility with GetFoundationModel
 # 2025-05-03T23:02:36Z : Simplified scan utilities by CodeAssistant
 # * Consolidated multiple scan functions into a single unified function
 # * Removed direct dependency on external components
@@ -58,6 +63,7 @@ import botocore.exceptions
 
 from ....api_providers.aws.client_factory import AWSClientFactory
 from ....api_providers.aws.exceptions import AWSClientError, AWSRegionError
+from ....api_providers.aws.bedrock_availability import check_model_availability
 
 
 def scan_region(
@@ -203,7 +209,8 @@ def _scan_for_models(
                 "provider": model_summary.get("providerName", ""),
                 "capabilities": [],
                 "status": model_status,
-                "requiresInferenceProfile": False  # Default assumption
+                "requiresInferenceProfile": False,  # Default assumption
+                "accessible": True  # Default to true, will verify below
             }
             
             # Extract capabilities if available
@@ -239,10 +246,106 @@ def _scan_for_models(
             if is_supported:
                 project_supported_models.append(model_info)
         
+        # Verify access to models by calling GetFoundationModel API and enrich with detailed model information
+        models_to_check = project_supported_models if project_supported_models else all_models
+        
+        for model_info in models_to_check:
+            model_id = model_info["modelId"]
+            try:
+                # Call GetFoundationModel to verify access and get detailed information
+                response = bedrock_client.get_foundation_model(modelIdentifier=model_id)
+                
+                # Enrich model_info with the detailed model information
+                if "modelDetails" in response:
+                    model_details = response["modelDetails"]
+                    
+                    # Store the complete modelDetails in model_info
+                    model_info["modelDetails"] = model_details
+                    
+                    # Update capabilities from the detailed info
+                    if "inputModalities" in model_details:
+                        model_info["inputModalities"] = model_details["inputModalities"]
+                        
+                    if "outputModalities" in model_details:
+                        model_info["outputModalities"] = model_details["outputModalities"]
+                    
+                    if "inferenceTypesSupported" in model_details:
+                        # Extract inference types supported
+                        inference_types = model_details["inferenceTypesSupported"]
+                        
+                        # Check if model requires an inference profile
+                        on_demand_supported = "ON_DEMAND" in inference_types
+                        provisioned_supported = "PROVISIONED" in inference_types
+                        
+                        # If a model supports provisioned but not on-demand, it requires an inference profile
+                        if provisioned_supported and not on_demand_supported:
+                            model_info["requiresInferenceProfile"] = True
+                            logger.debug(f"Model {model_id} requires an inference profile per detailed API")
+                    
+                    # Add streaming support information
+                    if "responseStreamingSupported" in model_details:
+                        model_info["responseStreamingSupported"] = model_details["responseStreamingSupported"]
+
+                # Check if the model is accessible using the undocumented API endpoint
+                try:
+                    # Use our specialized bedrock_availability module to check model access
+                    availability_result = check_model_availability(
+                        model_id=model_id,
+                        region=region,
+                        client_factory=client_factory,
+                        logger=logger
+                    )
+                    
+                    # Update accessibility flag based on the API response
+                    if "accessible" in availability_result:
+                        model_info["accessible"] = availability_result["accessible"]
+                        
+                        # If we're marked as not accessible, log the reason
+                        if not availability_result["accessible"]:
+                            reasons = []
+                            if availability_result.get("authorizationStatus") != "AUTHORIZED":
+                                reasons.append(f"Not authorized ({availability_result.get('authorizationStatus')})")
+                            if availability_result.get("entitlementAvailability") != "AVAILABLE":
+                                reasons.append(f"No entitlement ({availability_result.get('entitlementAvailability')})")
+                            if availability_result.get("regionAvailability") != "AVAILABLE":
+                                reasons.append(f"Not available in region ({availability_result.get('regionAvailability')})")
+                            if "agreementAvailability" in availability_result and availability_result["agreementAvailability"].get("status") != "AVAILABLE":
+                                reasons.append(f"Agreement not available ({availability_result['agreementAvailability'].get('status')})")
+                            
+                            reason_str = ", ".join(reasons) if reasons else "Unknown reason"
+                            logger.info(f"Model {model_id} is not accessible: {reason_str}")
+                    
+                    # Add detailed availability information to the model info
+                    model_info["availabilityDetails"] = availability_result
+                    
+                except Exception as e:
+                    # If the availability check fails, fallback to assuming accessible based on GetFoundationModel success
+                    logger.warning(f"Error checking model availability via API: {str(e)}")
+                    # The model_info["accessible"] flag remains True from GetFoundationModel success
+                
+            except botocore.exceptions.ClientError as e:
+                error_code = e.response['Error']['Code']
+                error_message = e.response['Error']['Message']
+                
+                if error_code == "AccessDeniedException":
+                    # No access to this model
+                    model_info["accessible"] = False
+                    logger.info(f"No access to model {model_id} in region {region}: {error_message}")
+                elif error_code == "ResourceNotFoundException":
+                    # Model not found - shouldn't happen since we got it from ListFoundationModels
+                    logger.warning(f"Model {model_id} not found in region {region} during detailed check")
+                else:
+                    # Other error, log but assume accessible
+                    logger.warning(f"Error checking access to model {model_id}: {error_code} - {error_message}")
+            except Exception as e:
+                # Log error but don't change accessible flag
+                logger.warning(f"Unexpected error checking model {model_id} details: {str(e)}")
+        
         # Log discovery results
         total_models = len(all_models)
         project_model_count = len(project_supported_models)
-        logger.info(f"Found {total_models} active models in region {region}, {project_model_count} supported by project")
+        accessible_count = len([m for m in models_to_check if m.get("accessible", True)])
+        logger.info(f"Found {total_models} active models in region {region}, {project_model_count} supported by project, {accessible_count} accessible")
         
         # If we found project models, return only those; otherwise return all models
         return project_supported_models if project_supported_models else all_models

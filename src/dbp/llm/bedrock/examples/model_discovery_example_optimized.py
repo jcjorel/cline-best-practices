@@ -181,20 +181,31 @@ async def client_with_discovery(shared_state: Dict[str, Any]):
             print(f"Getting complete model data for {model_id} from cache...")
             model_data = model_discovery.get_model(model_id)
             
-            # Extract profiles from model data
-            inference_profile_id = None
+            # Check if model requires an inference profile
+            requires_profile = model_data and model_data.get("requiresInferenceProfile", False)
+            
+            if requires_profile:
+                print(f"Skipping model {model_id} as it requires an inference profile")
+                # Skip models that require inference profiles for this example
+                continue
+                
+            # Extract profiles from model data (for informational purposes only)
+            inference_profile_arn = None
             if model_data and "referencedByInstanceProfiles" in model_data:
                 profiles = model_data["referencedByInstanceProfiles"]
+                profile_arns = []
                 if profiles:
-                    profile_ids = [p.get("inferenceProfileId") for p in profiles if "inferenceProfileId" in p]
-                    print(f"Found profiles: {', '.join(profile_ids)}")
-                    inference_profile_id = profile_ids[0] if profile_ids else None
+                    for p in profiles:
+                        if "inferenceProfileArn" in p:
+                            profile_arns.append(p["inferenceProfileArn"])
                     
-                    if inference_profile_id:
-                        print(f"Model requires an inference profile, using: {inference_profile_id}")
+                    if profile_arns:
+                        print(f"Found profile ARNs: {', '.join(profile_arns)}")
+                        inference_profile_arn = profile_arns[0]
+                        print(f"Model requires an inference profile, using ARN: {inference_profile_arn}")
             
             # Check if we already have a suitable client we can reuse
-            client_key = f"{model_id}:{inference_profile_id}"
+            client_key = f"{model_id}:{inference_profile_arn}"
             client = model_clients.get(client_key)
             
             if not client:
@@ -203,12 +214,12 @@ async def client_with_discovery(shared_state: Dict[str, Any]):
                 print(f"Model discovery is enabled with preferred regions: {', '.join(preferred_regions)}")
                 
                 client = BedrockBase(
-                    model_id=model_id,
-                    region_name=initial_region,
-                    logger=logger,
-                    use_model_discovery=True,
-                    preferred_regions=preferred_regions,
-                    inference_profile_id=inference_profile_id
+                model_id=model_id,
+                region_name=initial_region,
+                logger=logger,
+                use_model_discovery=True,
+                preferred_regions=preferred_regions,
+                inference_profile_arn=inference_profile_arn
                 )
                 
                 # Initialize client - this will trigger model discovery if needed
@@ -249,18 +260,24 @@ async def client_with_discovery(shared_state: Dict[str, Any]):
             response_text = ""
             chunk_count = 0
             
-            # Stream chat with conversation context
-            async for chunk in client.stream_chat(conversation):
-                if chunk["type"] == "content_block_delta" and "delta" in chunk:
-                    if "text" in chunk["delta"]:
-                        text = chunk["delta"]["text"]
-                        response_text += text
-                        # Print each chunk immediately to show streaming behavior
-                        print(text, end="", flush=True)
-                        chunk_count += 1
-            
-            print("\n-------------------------------------------")
-            print(f"Received {len(response_text)} characters in {chunk_count} chunks")
+            try:
+                # Stream chat with conversation context
+                async for chunk in client.stream_chat(conversation):
+                    if chunk["type"] == "content_block_delta" and "delta" in chunk:
+                        if "text" in chunk["delta"]:
+                            text = chunk["delta"]["text"]
+                            response_text += text
+                            # Print each chunk immediately to show streaming behavior
+                            print(text, end="", flush=True)
+                            chunk_count += 1
+                
+                print("\n-------------------------------------------")
+                print(f"Received {len(response_text)} characters in {chunk_count} chunks")
+            except Exception as e:
+                print("\n-------------------------------------------")
+                print(f"ERROR: {str(e)}")
+                print("Skipping this model due to access or configuration issues.")
+                break  # Skip remaining turns for this model
             
             # Add assistant response to conversation for next turn
             conversation.append({"role": "assistant", "content": response_text})

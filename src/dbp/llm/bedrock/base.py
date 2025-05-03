@@ -127,7 +127,7 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
         logger: Optional[logging.Logger] = None,
         use_model_discovery: bool = False,
         preferred_regions: Optional[List[str]] = None,
-        inference_profile_id: Optional[str] = None
+        inference_profile_arn: Optional[str] = None
     ):
         """
         [Method intent]
@@ -160,14 +160,30 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
         super().__init__(model_id, logger)
         
         # Store configuration
-        self.region_name = region_name or self.DEFAULT_REGION
+        # Extract region from inference profile ARN if provided, otherwise use the given region_name
+        self.inference_profile_arn = inference_profile_arn
+        
+        if inference_profile_arn:
+            # Extract region from ARN format: arn:aws:bedrock:REGION:account-id:...
+            arn_parts = inference_profile_arn.split(':')
+            if len(arn_parts) >= 4 and arn_parts[3]:
+                # Override region_name with the region from the ARN
+                self.region_name = arn_parts[3]
+                if region_name and region_name != self.region_name:
+                    # Log that we're overriding the provided region
+                    if logger:
+                        logger.info(f"Overriding provided region {region_name} with region {self.region_name} from inference profile ARN")
+            else:
+                self.region_name = region_name or self.DEFAULT_REGION
+        else:
+            self.region_name = region_name or self.DEFAULT_REGION
+        
         self.profile_name = profile_name
         self.credentials = credentials
         self.max_retries = max_retries
         self.timeout = timeout
         self.use_model_discovery = use_model_discovery
         self.preferred_regions = preferred_regions or []
-        self.inference_profile_id = inference_profile_id
         
         # Discovery components - will be initialized if enabled
         self._model_discovery = None
@@ -317,33 +333,69 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
                             break
                 
                 # Always check for inference profiles if none was explicitly provided
-                if not self.inference_profile_id and self._profile_discovery:
-                    # Try to get inference profiles for this model from the model data we already have
-                    inference_profiles = self._profile_discovery.get_inference_profile_ids(self.model_id)
+                if not self.inference_profile_arn and self._profile_discovery:
+                    # Get complete model data which contains profile ARNs
+                    model_data = self._model_discovery.get_model(self.model_id)
                     
-                    if inference_profiles:
-                        if len(inference_profiles) == 1:
+                    if model_data and "referencedByInstanceProfiles" in model_data:
+                        profiles = model_data.get("referencedByInstanceProfiles", [])
+                        
+                        if len(profiles) == 1:
                             # If exactly one profile is available, use it automatically
-                            self.inference_profile_id = inference_profiles[0]
-                            self.logger.info(f"Automatically using the only available inference profile: {self.inference_profile_id}")
-                        else:
+                            profile = profiles[0]
+                            if "inferenceProfileArn" in profile:
+                                self.inference_profile_arn = profile["inferenceProfileArn"]
+                                self.logger.info(f"Automatically using the only available inference profile ARN: {self.inference_profile_arn}")
+                        elif len(profiles) > 1:
                             # If multiple profiles are available, require explicit selection
-                            profile_list = ", ".join(inference_profiles[:5])
-                            if len(inference_profiles) > 5:
-                                profile_list += f" and {len(inference_profiles) - 5} more"
+                            profile_arns = []
+                            for p in profiles[:5]:
+                                if "inferenceProfileArn" in p:
+                                    profile_arns.append(p["inferenceProfileArn"])
+                            
+                            profile_list = ", ".join(profile_arns)
+                            if len(profiles) > 5:
+                                profile_list += f" and {len(profiles) - 5} more"
                             
                             raise ModelNotAvailableError(
                                 f"Model {self.model_id} has multiple inference profiles available. "
-                                f"Please specify one using the inference_profile_id parameter. "
+                                f"Please specify one using the inference_profile_arn parameter. "
                                 f"Available profiles: {profile_list}"
                             )
                 
+                # Check if model is accessible
+                if model_info and model_info.get("accessible", True) == False:
+                    raise ModelNotAvailableError(
+                        f"You do not have access to model {self.model_id} in region {self.region_name}. "
+                        f"Please request access to this model in the AWS console."
+                    )
+                
                 # If model explicitly requires a profile but we don't have one, raise error
-                if model_info and model_info.get("requiresInferenceProfile", False) and not self.inference_profile_id:
+                if model_info and model_info.get("requiresInferenceProfile", False) and not self.inference_profile_arn:
                     raise ModelNotAvailableError(
                         f"Model {self.model_id} requires an inference profile. "
                         f"This model only supports provisioned throughput and cannot be used with on-demand invocations."
                     )
+                
+                # If we have an inference profile, check if it's accessible
+                if self.inference_profile_arn and model_info:
+                    profiles_accessible = False
+                    if "referencedByInstanceProfiles" in model_info:
+                        for profile in model_info.get("referencedByInstanceProfiles", []):
+                            if profile.get("inferenceProfileArn") == self.inference_profile_arn:
+                                if profile.get("accessible", True) == False:
+                                    raise ModelNotAvailableError(
+                                        f"You do not have access to inference profile {self.inference_profile_arn} "
+                                        f"in region {self.region_name}."
+                                    )
+                                profiles_accessible = True
+                                break
+                        
+                        if not profiles_accessible:
+                            raise ModelNotAvailableError(
+                                f"Inference profile {self.inference_profile_arn} is not associated with model {self.model_id} "
+                                f"in region {self.region_name}."
+                            )
                 
                 if is_available:
                     self.logger.debug(f"Model {self.model_id} is available in region {self.region_name}")
@@ -490,12 +542,12 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
             # Prepare request with appropriate identifier
             request = {"messages": messages}
             
-            # If inference profile is available, use it as the identifier
-            if hasattr(self, 'inference_profile_id') and self.inference_profile_id:
-                request["modelId"] = self.inference_profile_id
-                self.logger.info(f"Using inference profile as model ID: {self.inference_profile_id}")
+            # If an inference profile ARN is available, use it as the modelId parameter
+            # Otherwise use the regular model ID
+            if hasattr(self, 'inference_profile_arn') and self.inference_profile_arn:
+                request["modelId"] = self.inference_profile_arn
+                self.logger.info(f"Using inference profile ARN: {self.inference_profile_arn}")
             else:
-                # Otherwise use the regular model ID
                 request["modelId"] = self.model_id
             
             # Add inference parameters if provided
@@ -534,6 +586,16 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
             if error_code == "AccessDeniedException":
                 raise ClientError(f"Access denied to Bedrock Converse Stream API: {error_message}", e)
             elif error_code == "ValidationException":
+                # Debug info - dump all request parameters
+                print("=" * 80)
+                print("DEBUG - ValidationException in ConverseStream API call")
+                print(f"Request parameters:")
+                for key, value in request.items():
+                    if key == "messages":
+                        print(f"  messages: {len(value)} messages")
+                    else:
+                        print(f"  {key}: {value}")
+                print("=" * 80)
                 raise InvocationError(f"Invalid request to Converse Stream API: {error_message}", e)
             elif error_code == "ThrottlingException":
                 raise InvocationError(f"Request throttled by Bedrock: {error_message}", e)
