@@ -45,6 +45,14 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-03T08:53:00Z : Refactored _converse_stream for DRY principles by CodeAssistant
+# * Eliminated code duplication between _converse_stream and _process_converse_stream
+# * Modified _converse_stream to leverage _process_converse_stream method
+# * Improved maintainability by centralizing stream event processing logic
+# 2025-05-03T08:50:00Z : Moved _process_converse_stream from EnhancedBedrockBase by CodeAssistant
+# * Moved method to base class to make it available to all Bedrock clients
+# * Maintained method signature and functionality
+# * Enhanced documentation to reflect method purpose
 # 2025-05-02T22:19:00Z : Fixed EventStream streaming issue by CodeAssistant
 # * Fixed EventStream iteration by creating explicit iterator from stream
 # * Updated documentation to reflect EventStream handling
@@ -54,10 +62,6 @@
 # * Implemented fully async interface for all operations
 # * Added streaming support with AsyncIO generators
 # * Enhanced error handling and classification
-# 2025-05-02T07:15:00Z : Refactored and moved to bedrock directory by Cline
-# * Relocated from src/dbp/llm/bedrock_base.py to current location
-# * Extended ModelClientBase to specialize for Bedrock
-# * Refactored to use streaming-only interface
 ###############################################################################
 
 import os
@@ -71,7 +75,8 @@ import boto3
 import botocore.exceptions
 from botocore.config import Config
 
-from .model_discovery import BedrockModelDiscovery
+from .discovery.models import BedrockModelDiscovery
+from .discovery.profiles import BedrockProfileDiscovery
 
 from ..common.base import ModelClientBase
 from ..common.exceptions import (
@@ -121,7 +126,8 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
         timeout: int = DEFAULT_TIMEOUT,
         logger: Optional[logging.Logger] = None,
         use_model_discovery: bool = False,
-        preferred_regions: Optional[List[str]] = None
+        preferred_regions: Optional[List[str]] = None,
+        inference_profile_id: Optional[str] = None
     ):
         """
         [Method intent]
@@ -146,6 +152,9 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
             max_retries: Maximum number of API retries (default: 3)
             timeout: API timeout in seconds (default: 30)
             logger: Optional custom logger instance
+            use_model_discovery: Whether to use model discovery for region selection
+            preferred_regions: List of preferred regions for model discovery
+            inference_profile_id: Optional inference profile ID to use
         """
         # Initialize base class
         super().__init__(model_id, logger)
@@ -158,13 +167,20 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
         self.timeout = timeout
         self.use_model_discovery = use_model_discovery
         self.preferred_regions = preferred_regions or []
+        self.inference_profile_id = inference_profile_id
         
-        # Model discovery - will be initialized if enabled
+        # Discovery components - will be initialized if enabled
         self._model_discovery = None
+        self._profile_discovery = None
+        
         if self.use_model_discovery:
-            self._model_discovery = BedrockModelDiscovery(
-                profile_name=self.profile_name,
-                credentials=self.credentials,
+            # Initialize discovery components
+            self._model_discovery = BedrockModelDiscovery.get_instance()
+            
+            # Use model_discovery as owner for profile_discovery
+            from .discovery.profiles import BedrockProfileDiscovery
+            self._profile_discovery = BedrockProfileDiscovery(
+                model_discovery=self._model_discovery,
                 logger=self.logger
             )
         
@@ -283,11 +299,51 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
         model_parts = self.model_id.split(":")
         base_model_id = model_parts[0]
         
-        # If model discovery is enabled, use it to find the best region
+        # If model discovery is enabled, use it to find the best region and check model requirements
         if self.use_model_discovery and self._model_discovery:
             try:
                 # Check if the model is available in current region
                 is_available = self._model_discovery.is_model_available_in_region(self.model_id, self.region_name)
+                
+                # Get model information to check if it requires an inference profile
+                region_models = self._model_discovery.scan_all_regions([self.region_name])
+                model_info = None
+                
+                # Find our model in the region data
+                if self.region_name in region_models:
+                    for model in region_models[self.region_name]:
+                        if model["modelId"] == self.model_id:
+                            model_info = model
+                            break
+                
+                # Always check for inference profiles if none was explicitly provided
+                if not self.inference_profile_id and self._profile_discovery:
+                    # Try to get inference profiles for this model from the model data we already have
+                    inference_profiles = self._profile_discovery.get_inference_profile_ids(self.model_id)
+                    
+                    if inference_profiles:
+                        if len(inference_profiles) == 1:
+                            # If exactly one profile is available, use it automatically
+                            self.inference_profile_id = inference_profiles[0]
+                            self.logger.info(f"Automatically using the only available inference profile: {self.inference_profile_id}")
+                        else:
+                            # If multiple profiles are available, require explicit selection
+                            profile_list = ", ".join(inference_profiles[:5])
+                            if len(inference_profiles) > 5:
+                                profile_list += f" and {len(inference_profiles) - 5} more"
+                            
+                            raise ModelNotAvailableError(
+                                f"Model {self.model_id} has multiple inference profiles available. "
+                                f"Please specify one using the inference_profile_id parameter. "
+                                f"Available profiles: {profile_list}"
+                            )
+                
+                # If model explicitly requires a profile but we don't have one, raise error
+                if model_info and model_info.get("requiresInferenceProfile", False) and not self.inference_profile_id:
+                    raise ModelNotAvailableError(
+                        f"Model {self.model_id} requires an inference profile. "
+                        f"This model only supports provisioned throughput and cannot be used with on-demand invocations."
+                    )
                 
                 if is_available:
                     self.logger.debug(f"Model {self.model_id} is available in region {self.region_name}")
@@ -431,11 +487,16 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
             raise ClientError("Bedrock client is not initialized")
         
         try:
-            # Prepare request
-            request = {
-                "modelId": self.model_id,
-                "messages": messages,
-            }
+            # Prepare request with appropriate identifier
+            request = {"messages": messages}
+            
+            # If inference profile is available, use it as the identifier
+            if hasattr(self, 'inference_profile_id') and self.inference_profile_id:
+                request["modelId"] = self.inference_profile_id
+                self.logger.info(f"Using inference profile as model ID: {self.inference_profile_id}")
+            else:
+                # Otherwise use the regular model ID
+                request["modelId"] = self.model_id
             
             # Add inference parameters if provided
             if model_kwargs:
@@ -447,58 +508,24 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
                 None, 
                 lambda: self._bedrock_runtime.converse_stream(**request)
             )
-            stream = response["stream"]
             
-            # Process and yield chunks
+            # Use the process method to handle stream events
             complete_message = {"role": "", "content": ""}
             
-            async for event in self._iterate_stream_events(stream):
-                if "messageStart" in event:
-                    message_start = event["messageStart"]
-                    complete_message["role"] = message_start["role"]
-                    # Yield the role information
-                    yield {
-                        "type": "message_start",
-                        "message": {"role": message_start["role"]}
-                    }
-                
-                elif "contentBlockStart" in event:
-                    # Content block start event
-                    content_start = event["contentBlockStart"]
-                    block_type = content_start["contentType"]
+            # Process each event
+            async for chunk in self._process_converse_stream(response):
+                # Track complete message for returning at the end
+                if chunk["type"] == "message_start" and "message" in chunk:
+                    complete_message["role"] = chunk["message"]["role"]
+                elif chunk["type"] == "content_block_delta" and "delta" in chunk and "text" in chunk["delta"]:
+                    complete_message["content"] += chunk["delta"]["text"]
+                elif chunk["type"] == "message_stop":
+                    # Add complete message to the stop event
+                    yield {**chunk, "message": complete_message}
+                    continue
                     
-                    # Only process text content for now
-                    if block_type == "text/plain":
-                        yield {
-                            "type": "content_block_start",
-                            "content_type": block_type
-                        }
-                
-                elif "contentBlockDelta" in event:
-                    # Content delta event
-                    delta = event["contentBlockDelta"]
-                    if delta.get("delta"):
-                        text_chunk = delta["delta"].get("text", "")
-                        complete_message["content"] += text_chunk
-                        yield {
-                            "type": "content_block_delta",
-                            "delta": {"text": text_chunk}
-                        }
-                
-                elif "contentBlockStop" in event:
-                    # Content block end event
-                    yield {
-                        "type": "content_block_stop"
-                    }
-                
-                elif "messageStop" in event:
-                    # Message end event
-                    stop_reason = event["messageStop"].get("stopReason")
-                    yield {
-                        "type": "message_stop",
-                        "stop_reason": stop_reason,
-                        "message": complete_message
-                    }
+                # Yield the event unchanged
+                yield chunk
             
         except botocore.exceptions.ClientError as e:
             error_code = e.response['Error']['Code']
@@ -574,6 +601,74 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
                 
         except Exception as e:
             raise StreamingError(f"Error processing Bedrock stream: {str(e)}", e)
+    
+    async def _process_converse_stream(self, stream) -> AsyncIterator[Dict[str, Any]]:
+        """
+        [Method intent]
+        Process a raw Bedrock converse stream into standardized format chunks.
+        
+        [Design principles]
+        - Common stream processing for all Bedrock models
+        - Standardized chunk format for consumers
+        - Clean event type handling
+        
+        [Implementation details]
+        - Uses _iterate_stream_events for raw event processing
+        - Converts events to standardized format
+        - Handles all relevant event types (messageStart, contentBlockDelta, messageStop)
+        
+        Args:
+            stream: Raw stream from Bedrock Converse API response
+            
+        Yields:
+            Dict[str, Any]: Standardized event chunks with type information
+        """
+        # Handle case where stream is in a dictionary (common with boto3 responses)
+        actual_stream = stream
+        
+        # If stream is a dict with a 'stream' key, extract the actual stream
+        if isinstance(stream, dict) and "stream" in stream:
+            actual_stream = stream["stream"]
+            
+        # Use the base class method to iterate over events with the actual stream
+        async for event in self._iterate_stream_events(actual_stream):
+            # Process events into the expected format
+            if "messageStart" in event:
+                message_start = event["messageStart"]
+                yield {
+                    "type": "message_start",
+                    "message": {"role": message_start["role"]}
+                }
+            
+            elif "contentBlockStart" in event:
+                content_start = event["contentBlockStart"]
+                block_type = content_start.get("contentType", "text/plain")
+                
+                yield {
+                    "type": "content_block_start",
+                    "content_type": block_type
+                }
+            
+            elif "contentBlockDelta" in event:
+                delta = event["contentBlockDelta"]
+                if "delta" in delta and "text" in delta["delta"]:
+                    text_chunk = delta["delta"]["text"]
+                    yield {
+                        "type": "content_block_delta",
+                        "delta": {"text": text_chunk}
+                    }
+            
+            elif "contentBlockStop" in event:
+                yield {
+                    "type": "content_block_stop"
+                }
+            
+            elif "messageStop" in event:
+                stop_reason = event["messageStop"].get("stopReason")
+                yield {
+                    "type": "message_stop",
+                    "stop_reason": stop_reason
+                }
     
     async def stream_generate(
         self, 

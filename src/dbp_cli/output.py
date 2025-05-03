@@ -308,6 +308,28 @@ class OutputFormatter:
             message: The informational message to display
         """
         print(f"{self.colors.get('blue','')}{message}{self.colors.get('reset','')}")
+    
+    def debug(self, message: str):
+        """
+        [Function intent]
+        Handle debug messages in a manner compatible with logging interfaces.
+        
+        [Implementation details]
+        Uses dim (gray) color for the message if color is enabled.
+        Only outputs when verbose logging is enabled (currently always falls back to logger).
+        Uses the system logger to record the message rather than printing directly.
+        
+        [Design principles]
+        Logger compatibility - provides a method compatible with the logging interface.
+        Visual distinction - uses dim color to indicate debug level messages.
+        Silent by default - doesn't clutter standard output with debug information.
+        
+        Args:
+            message: The debug message to log
+        """
+        # Forward to system logger at debug level rather than printing directly
+        # This provides compatibility with the logger interface
+        logger.debug(message)
 
     def format_output(self, data: Any):
         """

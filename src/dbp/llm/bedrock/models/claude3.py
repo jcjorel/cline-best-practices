@@ -120,7 +120,8 @@ class ClaudeClient(EnhancedBedrockBase):
         timeout: int = 30,     # Default to 30 seconds timeout
         logger: Optional[logging.Logger] = None,
         use_model_discovery: bool = False,
-        preferred_regions: Optional[List[str]] = None
+        preferred_regions: Optional[List[str]] = None,
+        inference_profile_id: Optional[str] = None
     ):
         """
         [Method intent]
@@ -135,7 +136,7 @@ class ClaudeClient(EnhancedBedrockBase):
         - Validates that model_id is a Claude model
         - Sets up Claude-specific logging
         - Initializes with Claude defaults
-        
+
         Args:
             model_id: Claude model ID (e.g., "anthropic.claude-3-haiku-20240307-v1:0")
             region_name: AWS region name
@@ -144,7 +145,10 @@ class ClaudeClient(EnhancedBedrockBase):
             max_retries: Maximum number of API retries
             timeout: API timeout in seconds
             logger: Optional custom logger instance
-            
+            use_model_discovery: Whether to discover model availability
+            preferred_regions: List of preferred regions for model discovery
+            inference_profile_id: Optional inference profile ID to use
+
         Raises:
             ValueError: If model_id is not a supported Claude model
         """
@@ -167,6 +171,9 @@ class ClaudeClient(EnhancedBedrockBase):
             use_model_discovery=use_model_discovery,
             preferred_regions=preferred_regions
         )
+        
+        # Store inference profile ID if provided (for future use)
+        self._inference_profile_id = inference_profile_id
         
         # Initialize fields for additional parameters
         self._system_content = None

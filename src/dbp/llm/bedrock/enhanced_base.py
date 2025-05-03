@@ -42,6 +42,10 @@
 # system:enum
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-03T08:50:00Z : Moved _process_converse_stream to BedrockBase by CodeAssistant
+# * Moved method to parent class to make it available to all Bedrock clients
+# * Maintained consistent stream processing functionality
+# * Ensures standardized handling of Bedrock streams across all implementations
 # 2025-05-02T13:02:00Z : Created enhanced base interface for Bedrock models by CodeAssistant
 # * Implemented unified API for different model capabilities
 # * Added capability discovery and registration system
@@ -330,7 +334,8 @@ class EnhancedBedrockBase(BedrockBase):
         timeout: int = BedrockBase.DEFAULT_TIMEOUT,
         logger: Optional[logging.Logger] = None,
         use_model_discovery: bool = False,
-        preferred_regions: Optional[List[str]] = None
+        preferred_regions: Optional[List[str]] = None,
+        inference_profile_id: Optional[str] = None
     ):
         """
         [Method intent]
@@ -353,6 +358,9 @@ class EnhancedBedrockBase(BedrockBase):
             max_retries: Maximum number of API retries
             timeout: API timeout in seconds
             logger: Optional custom logger instance
+            use_model_discovery: Whether to discover model availability
+            preferred_regions: List of preferred regions for model discovery
+            inference_profile_id: Optional inference profile ID to use
         """
         super().__init__(
             model_id=model_id,
@@ -363,7 +371,8 @@ class EnhancedBedrockBase(BedrockBase):
             timeout=timeout,
             logger=logger or logging.getLogger("EnhancedBedrockBase"),
             use_model_discovery=use_model_discovery,
-            preferred_regions=preferred_regions
+            preferred_regions=preferred_regions,
+            inference_profile_id=inference_profile_id
         )
         
         # Initialize capability registry
@@ -548,74 +557,6 @@ class EnhancedBedrockBase(BedrockBase):
         messages = [{"role": "user", "content": prompt}]
         async for chunk in self.stream_chat(messages, **kwargs):
             yield chunk
-    
-    async def _process_converse_stream(self, stream) -> AsyncIterator[Dict[str, Any]]:
-        """
-        [Method intent]
-        Process a raw Bedrock converse stream into standardized format chunks.
-        
-        [Design principles]
-        - Common stream processing for all Bedrock models
-        - Standardized chunk format for consumers
-        - Clean event type handling
-        
-        [Implementation details]
-        - Uses _iterate_stream_events for raw event processing
-        - Converts events to standardized format
-        - Handles all relevant event types (messageStart, contentBlockDelta, messageStop)
-        
-        Args:
-            stream: Raw stream from Bedrock Converse API response
-            
-        Yields:
-            Dict[str, Any]: Standardized event chunks with type information
-        """
-        # Handle case where stream is in a dictionary (common with boto3 responses)
-        actual_stream = stream
-        
-        # If stream is a dict with a 'stream' key, extract the actual stream
-        if isinstance(stream, dict) and "stream" in stream:
-            actual_stream = stream["stream"]
-            
-        # Use the base class method to iterate over events with the actual stream
-        async for event in self._iterate_stream_events(actual_stream):
-            # Process events into the expected format
-            if "messageStart" in event:
-                message_start = event["messageStart"]
-                yield {
-                    "type": "message_start",
-                    "message": {"role": message_start["role"]}
-                }
-            
-            elif "contentBlockStart" in event:
-                content_start = event["contentBlockStart"]
-                block_type = content_start.get("contentType", "text/plain")
-                
-                yield {
-                    "type": "content_block_start",
-                    "content_type": block_type
-                }
-            
-            elif "contentBlockDelta" in event:
-                delta = event["contentBlockDelta"]
-                if "delta" in delta and "text" in delta["delta"]:
-                    text_chunk = delta["delta"]["text"]
-                    yield {
-                        "type": "content_block_delta",
-                        "delta": {"text": text_chunk}
-                    }
-            
-            elif "contentBlockStop" in event:
-                yield {
-                    "type": "content_block_stop"
-                }
-            
-            elif "messageStop" in event:
-                stop_reason = event["messageStop"].get("stopReason")
-                yield {
-                    "type": "message_stop",
-                    "stop_reason": stop_reason
-                }
     
     async def process_content(
         self,

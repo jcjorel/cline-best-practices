@@ -132,7 +132,8 @@ class NovaClient(EnhancedBedrockBase):
         timeout: int = 30,     # Default to 30 seconds timeout
         logger: Optional[logging.Logger] = None,
         use_model_discovery: bool = False,
-        preferred_regions: Optional[List[str]] = None
+        preferred_regions: Optional[List[str]] = None,
+        inference_profile_id: Optional[str] = None
     ):
         """
         [Method intent]
@@ -147,7 +148,7 @@ class NovaClient(EnhancedBedrockBase):
         - Validates that model_id is a Nova model
         - Sets up Nova-specific logging
         - Initializes with Nova defaults
-        
+
         Args:
             model_id: Nova model ID (e.g., "amazon.titan-text-express-v1")
             region_name: AWS region name
@@ -156,7 +157,10 @@ class NovaClient(EnhancedBedrockBase):
             max_retries: Maximum number of API retries
             timeout: API timeout in seconds
             logger: Optional custom logger instance
-            
+            use_model_discovery: Whether to discover model availability
+            preferred_regions: List of preferred regions for model discovery
+            inference_profile_id: Optional inference profile ID to use
+
         Raises:
             ValueError: If model_id is not a supported Nova model
         """
@@ -180,6 +184,9 @@ class NovaClient(EnhancedBedrockBase):
             use_model_discovery=use_model_discovery,
             preferred_regions=preferred_regions
         )
+        
+        # Store inference profile ID if provided (for future use)
+        self._inference_profile_id = inference_profile_id
         
         # Register Nova capabilities
         self.register_capabilities([

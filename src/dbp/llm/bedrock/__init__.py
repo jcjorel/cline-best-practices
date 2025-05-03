@@ -42,7 +42,8 @@
 from .base import BedrockBase as BedrockModelClientBase
 from .client_common import BedrockClientError
 from .client_common import BedrockRequestFormatter, BedrockClientMixin, invoke_bedrock_model
-from .model_discovery import BedrockModelDiscovery
+from .discovery.models import BedrockModelDiscovery
+from .discovery.profiles import BedrockProfileDiscovery
 
 __all__ = [
     "BedrockModelClientBase",
@@ -50,5 +51,6 @@ __all__ = [
     "BedrockRequestFormatter",
     "BedrockClientMixin",
     "invoke_bedrock_model",
-    "BedrockModelDiscovery"
+    "BedrockModelDiscovery",
+    "BedrockProfileDiscovery"
 ]

@@ -36,6 +36,11 @@
 # codebase:src/dbp/config/config_manager.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-03T01:27:44Z : Added inference profile support by CodeAssistant
+# * Implemented handling of inference profiles for Bedrock models
+# * Display and autoselect profile when only one is available
+# * Allow user to choose from multiple profiles when present
+# * Pass selected profile to model initialization
 # 2025-05-02T14:09:47Z : Initial implementation of BedrockTestCommandHandler by CodeAssistant
 # * Created handler implementation with model discovery, chat interface, and parameter configuration
 ###############################################################################
@@ -179,6 +184,7 @@ class BedrockTestCommandHandler:
         [Implementation details]
         - Extracts model parameters from args
         - Handles model selection (interactive if not specified)
+        - Handles inference profile selection if available
         - Initializes model client
         - Runs interactive chat session
         
@@ -203,8 +209,17 @@ class BedrockTestCommandHandler:
                 if not model_id:  # User cancelled
                     return 1
             
+            # Check for inference profiles and select one if available
+            inference_profile_id = self._handle_inference_profiles(model_id)
+            if inference_profile_id is False:  # User cancelled profile selection
+                return 1
+
             # Initialize the model client
-            self._initialize_model(model_id)
+            self._initialize_model(model_id, inference_profile_id)
+            
+            # Log the inference profile usage
+            if inference_profile_id:
+                self.output.print("\nStarting chat with inference profile enabled...")
             
             # Start interactive chat session
             return self._run_interactive_chat()
@@ -403,7 +418,94 @@ class BedrockTestCommandHandler:
                 self.output.print("\nOperation cancelled")
                 return None
     
-    def _initialize_model(self, model_id):
+    def _handle_inference_profiles(self, model_id):
+        """
+        [Function intent]
+        Check if the selected model has inference profiles and handle profile selection.
+        
+        [Design principles]
+        - Automatic selection for single profile
+        - Interactive selection for multiple profiles
+        - Clear display of profile information
+        
+        [Implementation details]
+        - Gets inference profiles for the selected model
+        - Automatically selects the profile if only one is available
+        - Prompts for selection if multiple profiles are available
+        - Returns the selected profile ID or None if no profiles
+        
+        Args:
+            model_id: ID of the selected model
+            
+        Returns:
+            str: Selected inference profile ID, None if no profiles, False if cancelled
+        """
+        # Get AWS configuration from config manager
+        from dbp.config.config_manager import ConfigurationManager
+        
+        config_manager = ConfigurationManager()
+        config = config_manager.get_typed_config()
+        
+        # Create model discovery instance
+        from dbp.llm.bedrock.model_discovery import BedrockModelDiscovery
+        discovery = BedrockModelDiscovery(
+            profile_name=config.aws.credentials_profile,
+            logger=self.output
+        )
+        
+        # Get inference profile IDs for the model
+        profile_ids = discovery.get_inference_profile_ids(model_id, config.aws.region)
+        
+        if not profile_ids:
+            return None
+        
+        if len(profile_ids) == 1:
+            # Only one profile, display and select it automatically
+            profile_id = profile_ids[0]
+            profile = discovery.get_inference_profile(model_id, profile_id, config.aws.region)
+            description = profile.get("description", "No description available")
+            
+            self.output.print(f"\nModel has one inference profile:")
+            self.output.print(f"  ID: {profile_id}")
+            self.output.print(f"  Description: {description}")
+            self.output.print("\nAutomatically selecting this profile.")
+            return profile_id
+        else:
+            # Multiple profiles, ask user to choose
+            self.output.print(f"\nModel has {len(profile_ids)} inference profiles:")
+            profiles = []
+            
+            for i, profile_id in enumerate(profile_ids):
+                profile = discovery.get_inference_profile(model_id, profile_id, config.aws.region)
+                description = profile.get("description", "No description available")
+                
+                self.output.print(f"  [{i+1}] {profile_id}")
+                self.output.print(f"      Description: {description}")
+                profiles.append({"id": profile_id, "description": description})
+            
+            # Prompt for selection
+            while True:
+                try:
+                    choice = input("\nEnter profile number (or 'q' to quit): ")
+                    
+                    if choice.lower() in ('q', 'quit', 'exit'):
+                        self.output.print("Exiting...")
+                        return False
+                    
+                    choice_idx = int(choice) - 1
+                    if 0 <= choice_idx < len(profiles):
+                        selected_profile = profiles[choice_idx]
+                        self.output.print(f"Selected profile: {selected_profile['id']}")
+                        return selected_profile['id']
+                    else:
+                        self.output.print(f"Please enter a number between 1 and {len(profiles)}")
+                except ValueError:
+                    self.output.print("Please enter a valid number")
+                except KeyboardInterrupt:
+                    self.output.print("\nOperation cancelled")
+                    return False
+
+    def _initialize_model(self, model_id, inference_profile_id=None):
         """
         [Function intent]
         Initialize the Bedrock model client using the appropriate model class.
@@ -412,15 +514,18 @@ class BedrockTestCommandHandler:
         - Use correct model-specific implementation
         - Validate model availability before initializing
         - Proper configuration from system settings
+        - Support for inference profiles
         
         [Implementation details]
         - First checks if model exists in Bedrock
         - Uses the model class from discovery when available
         - Falls back to generic class if needed
         - Gets AWS credentials from config manager
+        - Configures inference profile if specified
         
         Args:
             model_id: ID of the model to initialize
+            inference_profile_id: Optional inference profile ID to use
             
         Raises:
             ValueError: If the model is not available or initialization fails
@@ -459,12 +564,19 @@ class BedrockTestCommandHandler:
         
         # Initialize the model client using the discovered class
         # Enable model discovery to automatically find the best region where the model is available
-        self.model_client = model_class(
-            model_id=model_id,
-            region_name=config.aws.region,
-            profile_name=config.aws.credentials_profile,
-            use_model_discovery=True  # Enable model discovery to handle region availability
-        )
+        client_params = {
+            "model_id": model_id,
+            "region_name": config.aws.region,
+            "profile_name": config.aws.credentials_profile,
+            "use_model_discovery": True  # Enable model discovery to handle region availability
+        }
+        
+        # Add inference profile if specified
+        if inference_profile_id:
+            client_params["inference_profile_id"] = inference_profile_id
+            self.output.print(f"Using inference profile: {inference_profile_id}")
+            
+        self.model_client = model_class(**client_params)
         
         # Test the client initialization
         if self.model_client is None:
