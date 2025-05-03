@@ -150,7 +150,7 @@ class BaseDiscovery:
         self, 
         regions: List[str],
         scan_function: Callable[[str], Any],
-        max_workers: int = 10
+        max_workers: int = 15
     ) -> Dict[str, Any]:
         """
         [Method intent]
