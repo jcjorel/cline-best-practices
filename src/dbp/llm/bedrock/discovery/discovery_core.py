@@ -32,13 +32,16 @@
 # [Dependencies]
 # codebase:src/dbp/api_providers/aws/client_factory.py
 # codebase:src/dbp/api_providers/aws/exceptions.py
-# codebase:src/dbp/llm/bedrock/discovery/cache.py
-# codebase:src/dbp/llm/bedrock/discovery/latency.py
 # system:concurrent.futures
 # system:threading
 # system:logging
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-03T23:01:16Z : Simplified BaseDiscovery class by CodeAssistant
+# * Removed external dependencies on DiscoveryCache and RegionLatencyTracker
+# * Simplified constructor with minimal requirements
+# * Streamlined parallel scanning implementation
+# * Simplified region discovery method
 # 2025-05-03T17:20:19Z : Initial implementation by CodeAssistant
 # * Created BaseDiscovery class
 # * Implemented parallel region scanning functionality
@@ -48,11 +51,7 @@
 import logging
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, List, Optional, Any, Set, Callable, Tuple
-
-# Local imports
-from .cache import DiscoveryCache
-from .latency import RegionLatencyTracker
+from typing import Dict, List, Optional, Any, Callable
 
 # External imports
 from ....api_providers.aws.client_factory import AWSClientFactory
@@ -69,14 +68,13 @@ class BaseDiscovery:
     [Design principles]
     - Thread-safe operations for concurrent access
     - Efficient parallel region scanning
-    - Consistent caching behavior
     - Standardized region management
+    - Minimal external dependencies
     
     [Implementation details]
     - Uses AWSClientFactory for client access
     - Implements parallel region scanning with ThreadPoolExecutor
     - Provides common region discovery functionality
-    - Handles region latency tracking
     """
     
     # Common constants
@@ -87,34 +85,29 @@ class BaseDiscovery:
     
     def __init__(
         self,
-        cache: Optional[DiscoveryCache] = None,
         client_factory: Optional[AWSClientFactory] = None,
-        latency_tracker: Optional[RegionLatencyTracker] = None,
         logger: Optional[logging.Logger] = None
     ):
         """
         [Method intent]
-        Initialize the base discovery service with shared components.
+        Initialize the base discovery service with minimal required dependencies.
         
         [Design principles]
-        - Component dependency management
-        - Consistent initialization across discovery types
+        - Minimal dependency requirements
+        - Simplified initialization
+        - Single lock for thread safety
         
         [Implementation details]
-        - Sets up cache, client factory, and latency tracker
-        - Creates components if not provided
-        - Initializes logger
+        - Sets up client factory and logger
+        - Creates a single lock for thread safety
         
         Args:
-            cache: Optional DiscoveryCache instance
             client_factory: Optional AWSClientFactory instance
-            latency_tracker: Optional RegionLatencyTracker instance
             logger: Optional logger instance
         """
-        self.cache = cache or DiscoveryCache()
         self.client_factory = client_factory or AWSClientFactory.get_instance()
-        self.latency_tracker = latency_tracker or RegionLatencyTracker(cache=self.cache)
         self.logger = logger or logging.getLogger(__name__)
+        self._lock = threading.Lock()  # Single lock for thread safety
     
     def get_all_regions(self) -> List[str]:
         """
@@ -208,27 +201,6 @@ class BaseDiscovery:
         
         self.logger.info(f"Completed scanning {len(regions)} regions, found data in {len(result)} regions")
         return result
-    
-    def get_sorted_regions(self, regions: List[str]) -> List[str]:
-        """
-        [Method intent]
-        Sort regions by measured latency to optimize region selection.
-        
-        [Design principles]
-        - Latency-aware region selection
-        - Consistent sorting behavior
-        
-        [Implementation details]
-        - Uses latency tracker to sort regions
-        - Returns regions sorted from lowest to highest latency
-        
-        Args:
-            regions: List of AWS regions to sort
-            
-        Returns:
-            List of region names sorted by latency (lowest first)
-        """
-        return self.latency_tracker.get_sorted_regions(regions)
     
     def is_valid_region(self, region: str) -> bool:
         """

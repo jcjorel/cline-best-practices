@@ -30,19 +30,15 @@ if __name__ == "__main__":
     # Import directly from the project structure
     from dbp.llm.bedrock.base import BedrockBase
     from dbp.llm.bedrock.discovery.models import BedrockModelDiscovery
-    from dbp.llm.bedrock.discovery.cache import DiscoveryCache
-    from dbp.llm.bedrock.discovery.latency import RegionLatencyTracker
 else:
     # Relative imports when used as part of the package
     from ..base import BedrockBase
     from ..discovery.models import BedrockModelDiscovery
-    from ..discovery.cache import DiscoveryCache
-    from ..discovery.latency import RegionLatencyTracker
 
 
 # Configure logging
 logging.basicConfig(
-    level=logging.DEBUG,  # Set to DEBUG for detailed output including cache and model discovery operations
+    level=logging.DEBUG,  # Set to DEBUG for detailed output including model discovery operations
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("bedrock-model-discovery-example")
@@ -53,8 +49,7 @@ logging.getLogger('botocore').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.WARNING)
 logging.getLogger('asyncio').setLevel(logging.WARNING)
 
-# Ensure cache and model discovery loggers are set to DEBUG level
-logging.getLogger('dbp.llm.bedrock.discovery.cache').setLevel(logging.DEBUG)
+# Ensure model discovery logger is set to DEBUG level
 logging.getLogger('dbp.llm.bedrock.discovery.models').setLevel(logging.DEBUG)
 
 
@@ -153,19 +148,19 @@ async def client_with_discovery():
             region_models = model_discovery.scan_all_regions()
             
             # Check each region for the model and its profiles
-            for bedrock_region, models in region_models.items():
+            for region, region_model_dict in region_models.get("models", {}).items():
                 # Find our model in the returned models
-                for model in models:
-                    if model.get("modelId") == model_id:
-                        # Check if this model has associated profiles
-                        profiles = model.get("referencedByInstanceProfiles", [])
-                        print(f"  Region {bedrock_region}: Found {len(profiles)} profiles for {model_id}")
-                        
-                        # Print profile details
-                        for p in profiles:
-                            print(f"    - {p.get('inferenceProfileId')}: {p.get('inferenceProfileName', 'No name')}")
+                if model_id in region_model_dict:
+                    model = region_model_dict[model_id]
+                    # Check if this model has associated profiles
+                    profiles = model.get("referencedByInstanceProfiles", [])
+                    print(f"  Region {region}: Found {len(profiles)} profiles for {model_id}")
+                    
+                    # Print profile details
+                    for p in profiles:
+                        print(f"    - {p.get('inferenceProfileId')}: {p.get('inferenceProfileName', 'No name')}")
             
-            # Now try to get specific model data with the new get_model method
+            # Now try to get specific model data with the get_model method
             print(f"Getting complete model data for {model_id}...")
             model_data = model_discovery.get_model(model_id)
             
@@ -265,10 +260,9 @@ async def check_inference_profiles():
     # Check each region for profiles using the model_discovery scan
     model_with_profiles_map = {}
     
-    for region, models in region_models.items():
+    for region, models in region_models.get("models", {}).items():
         # Check for models with profiles in this region
-        for model in models:
-            model_id = model.get("modelId")
+        for model_id, model in models.items():
             profiles = model.get("referencedByInstanceProfiles", [])
             
             if profiles:
@@ -333,7 +327,8 @@ async def display_project_supported_models():
     print("\nChecking availability across regions...")
     
     # Scan all regions once to populate cache
-    region_models = model_discovery.scan_all_regions()
+    region_data = model_discovery.scan_all_regions()
+    region_models = region_data.get("models", {})
 
     # Print model details for debugging
     print("\nModel Requirements Analysis:")
@@ -342,9 +337,8 @@ async def display_project_supported_models():
     print("-" * 100)
     
     # Check all models in all regions
-    for region, models in region_models.items():
-        for model in models:
-            model_id = model.get("modelId", "Unknown")
+    for region, models_dict in region_models.items():
+        for model_id, model in models_dict.items():
             # Check if this is a project-supported model
             for project_model_id in project_models:
                 if model_id == project_model_id or model_id.startswith(project_model_id.split(":")[0]):
@@ -391,15 +385,16 @@ async def display_region_model_availability():
     
     # Get all models across regions
     print("Retrieving model availability across all regions...")
-    region_models = model_discovery.scan_all_regions()
+    region_data = model_discovery.scan_all_regions()
+    region_models = region_data.get("models", {})
     
     # Display models by region
-    for region, models in sorted(region_models.items()):
-        print(f"\nRegion: {region} - {len(models)} models available:")
+    for region, models_dict in sorted(region_models.items()):
+        print(f"\nRegion: {region} - {len(models_dict)} models available:")
         
         # Group by provider for better organization
         providers = {}
-        for model in models:
+        for model_id, model in models_dict.items():
             provider = model.get("provider", "Unknown")
             if provider not in providers:
                 providers[provider] = []
@@ -423,9 +418,9 @@ async def main():
     
     # Force a rescan to ensure we get fresh data
     print("Forcing a complete model rescan to ensure fresh results...")
-    # Use force_rescan parameter to clear cache and perform a fresh scan
-    region_models = model_discovery.scan_all_regions(force_rescan=True)
-    print(f"Rescan complete. Found models in {len(region_models)} regions")
+    # Use force_refresh parameter to clear cache and perform a fresh scan
+    region_data = model_discovery.scan_all_regions(force_refresh=True)
+    print(f"Rescan complete. Found models in {len(region_data.get('models', {}))} regions")
     
     # Get project-supported models
     project_models = model_discovery.project_supported_models

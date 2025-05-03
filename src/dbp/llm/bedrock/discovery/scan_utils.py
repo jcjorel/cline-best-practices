@@ -32,14 +32,17 @@
 # [Dependencies]
 # codebase:src/dbp/api_providers/aws/client_factory.py
 # codebase:src/dbp/api_providers/aws/exceptions.py
-# codebase:src/dbp/llm/bedrock/discovery/cache.py
-# codebase:src/dbp/llm/bedrock/discovery/latency.py
 # system:boto3
 # system:botocore.exceptions
 # system:time
 # system:logging
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-03T23:02:36Z : Simplified scan utilities by CodeAssistant
+# * Consolidated multiple scan functions into a single unified function
+# * Removed direct dependency on external components
+# * Simplified parameter lists with sensible defaults
+# * Added optional latency tracking callback
 # 2025-05-03T17:21:51Z : Initial implementation by CodeAssistant
 # * Created scanning functions extracted from discovery classes
 # * Implemented combined model and profile scanning
@@ -48,69 +51,140 @@
 
 import logging
 import time
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any, Tuple, Callable
 
 import boto3
 import botocore.exceptions
 
 from ....api_providers.aws.client_factory import AWSClientFactory
 from ....api_providers.aws.exceptions import AWSClientError, AWSRegionError
-from .cache import DiscoveryCache
-from .latency import RegionLatencyTracker
 
 
-def scan_region_for_models(
+def scan_region(
     region: str,
     client_factory: AWSClientFactory,
-    latency_tracker: RegionLatencyTracker,
-    project_supported_models: List[str],
-    logger: logging.Logger
-) -> List[Dict[str, Any]]:
+    include_models: bool = True,
+    include_profiles: bool = True,
+    project_models: Optional[List[str]] = None,
+    latency_callback: Optional[Callable[[str, float], None]] = None,
+    logger: Optional[logging.Logger] = None
+) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
     [Function intent]
-    Scan a specific region for available Bedrock models, measuring API latency.
-    Prioritizes project-supported models for caching and metadata retention.
+    Scan a region for Bedrock models and/or inference profiles in a single operation,
+    optimizing API calls while ensuring complete discovery.
     
     [Design principles]
-    - Complete model discovery
-    - Latency measurement for region optimization
-    - Robust error handling
-    - Full metadata extraction
-    - Project-focused model prioritization
+    - Unified scanning interface 
+    - Configurable scope (models, profiles, or both)
+    - Simple parameter interface with sensible defaults
+    - Optional latency tracking
     
     [Implementation details]
-    - Creates regional Bedrock client using factory
-    - Measures API response time
-    - Records latency metrics
-    - Extracts complete model attributes
-    - Filters for active models only
-    - Prioritizes project-supported models for caching
+    - Creates a single Bedrock client for the region
+    - Optionally measures and reports API latency
+    - Scans for models and/or profiles based on parameters
+    - Prioritizes project-supported models when project_models is provided
+    - Returns models and profiles as separate lists
     
     Args:
         region: AWS region to scan
         client_factory: AWSClientFactory instance
-        latency_tracker: RegionLatencyTracker instance
-        project_supported_models: List of model IDs supported by project
+        include_models: Whether to scan for models
+        include_profiles: Whether to scan for profiles
+        project_models: Optional list of model IDs supported by the project
+        latency_callback: Optional callback function to track latency (takes region and latency in seconds)
+        logger: Optional logger instance (creates one if not provided)
+        
+    Returns:
+        Tuple of (models, profiles) lists - empty lists for disabled scan types
+    """
+    models = []
+    profiles = []
+    
+    # Use provided logger or create one
+    log = logger or logging.getLogger(__name__)
+    
+    try:
+        # Verify valid region format
+        if not _is_valid_region(region):
+            log.warning(f"Invalid region format: {region}")
+            return [], []
+            
+        # 1. Scan for models if requested
+        if include_models:
+            models = _scan_for_models(
+                region, 
+                client_factory, 
+                project_models or [],
+                latency_callback,
+                log
+            )
+            
+        # 2. Scan for profiles if requested
+        if include_profiles:
+            profiles = _scan_for_profiles(
+                region,
+                client_factory,
+                latency_callback,
+                log
+            )
+    
+        return models, profiles
+        
+    except Exception as e:
+        log.warning(f"Error scanning region {region}: {str(e)}")
+        return [], []
+
+
+def _scan_for_models(
+    region: str,
+    client_factory: AWSClientFactory,
+    project_models: List[str],
+    latency_callback: Optional[Callable[[str, float], None]],
+    logger: logging.Logger
+) -> List[Dict[str, Any]]:
+    """
+    [Function intent]
+    Internal function to scan a region for Bedrock models.
+    
+    [Design principles]
+    - Single responsibility
+    - Complete model discovery
+    - Proper error handling
+    - Project model prioritization
+    
+    [Implementation details]
+    - Creates regional Bedrock client
+    - Measures API latency
+    - Extracts complete model data
+    - Prioritizes project-supported models
+    
+    Args:
+        region: AWS region to scan
+        client_factory: AWSClientFactory instance
+        project_models: List of model IDs supported by project
+        latency_callback: Optional function to track latency
         logger: Logger instance
         
     Returns:
-        List of dicts with model information in the region
+        List of model information dictionaries
     """
-    models = []
     all_models = []
-    project_models = []
-    start_time = time.time()
+    project_supported_models = []
     
     try:
         # Get Bedrock client for this region
         bedrock_client = client_factory.get_client("bedrock", region_name=region)
         
-        # List available foundation models
+        # Measure latency
+        start_time = time.time()
         response = bedrock_client.list_foundation_models()
-        
-        # Calculate and record latency
         latency = time.time() - start_time
-        latency_tracker.update_latency(region, latency)
+        
+        # Report latency if callback provided
+        if latency_callback:
+            latency_callback(region, latency)
         
         # Extract model information
         for model_summary in response.get("modelSummaries", []):
@@ -157,25 +231,21 @@ def scan_region_for_models(
             all_models.append(model_info)
             
             # Check if this is a project-supported model
-            model_base_id = model_id.split(":")[0]
             is_supported = any(
                 model_id.startswith(supported_id.split(":")[0]) 
-                for supported_id in project_supported_models
+                for supported_id in project_models
             )
             
             if is_supported:
-                project_models.append(model_info)
+                project_supported_models.append(model_info)
         
+        # Log discovery results
         total_models = len(all_models)
-        project_model_count = len(project_models)
-        
+        project_model_count = len(project_supported_models)
         logger.info(f"Found {total_models} active models in region {region}, {project_model_count} supported by project")
         
-        # If we found project models, return only those for caching
-        # Otherwise return all models (for discovery purposes)
-        models = project_models if project_models else all_models
-        
-        return models
+        # If we found project models, return only those; otherwise return all models
+        return project_supported_models if project_supported_models else all_models
         
     except botocore.exceptions.ClientError as e:
         error_code = e.response['Error']['Code']
@@ -184,48 +254,44 @@ def scan_region_for_models(
         if error_code == "UnrecognizedClientException":
             logger.warning(f"Bedrock is not available in region {region}")
         else:
-            logger.warning(f"Error scanning region {region}: {error_code} - {error_message}")
+            logger.warning(f"Error scanning models in region {region}: {error_code} - {error_message}")
         
         return []
     except Exception as e:
-        logger.warning(f"Unexpected error scanning region {region}: {str(e)}")
+        logger.warning(f"Unexpected error scanning models in region {region}: {str(e)}")
         return []
 
 
-def scan_region_for_profiles(
+def _scan_for_profiles(
     region: str,
     client_factory: AWSClientFactory,
-    latency_tracker: RegionLatencyTracker,
+    latency_callback: Optional[Callable[[str, float], None]],
     logger: logging.Logger
 ) -> List[Dict[str, Any]]:
     """
     [Function intent]
-    Scan a region for all available Bedrock inference profiles, measuring API latency.
-    Collects comprehensive profile metadata for each profile found.
+    Internal function to scan a region for Bedrock inference profiles.
     
     [Design principles]
+    - Single responsibility
     - Complete profile discovery
-    - Latency measurement
-    - Robust error handling
-    - Complete metadata extraction
-    - Model-to-profile mapping
+    - Proper error handling
+    - Comprehensive metadata collection
     
     [Implementation details]
-    - Creates regional Bedrock client using factory
-    - Measures API response time
-    - Records latency metrics
-    - Extracts complete profile attributes
+    - Creates regional Bedrock client
+    - Measures API latency
+    - Extracts complete profile data
     - Maps model ARNs to profiles
-    - Returns fully populated profile information
     
     Args:
         region: AWS region to scan
         client_factory: AWSClientFactory instance
-        latency_tracker: RegionLatencyTracker instance
+        latency_callback: Optional function to track latency
         logger: Logger instance
         
     Returns:
-        List of dicts with profile information in the region
+        List of profile information dictionaries
     """
     try:
         bedrock_client = client_factory.get_client("bedrock", region_name=region)
@@ -234,7 +300,10 @@ def scan_region_for_profiles(
         start_time = time.time()
         response = bedrock_client.list_inference_profiles()
         latency = time.time() - start_time
-        latency_tracker.update_latency(region, latency)
+        
+        # Report latency if callback provided
+        if latency_callback:
+            latency_callback(region, latency)
         
         profiles = []
         model_arn_to_profiles = {}  # Map model ARNs to profiles
@@ -288,64 +357,45 @@ def scan_region_for_profiles(
         return []
 
 
-def scan_region_combined(
-    region: str,
-    client_factory: AWSClientFactory,
-    latency_tracker: RegionLatencyTracker,
-    project_supported_models: List[str],
-    cache: DiscoveryCache,
-    logger: logging.Logger
-) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+def _is_valid_region(region: str) -> bool:
     """
     [Function intent]
-    Scan a region for both Bedrock models and inference profiles in a single operation,
-    optimizing API calls and thread usage while ensuring complete discovery.
+    Check if a region name appears to be a valid AWS region format.
     
     [Design principles]
-    - Efficient combined scanning
-    - Conditional profile scanning
-    - Complete error handling
-    - Comprehensive caching
-    - Thread-efficient operation
+    - Simple validation without API calls
+    - Basic format checking
     
     [Implementation details]
-    - Creates a single Bedrock client for the region
-    - Measures and records API latency
-    - Scans for models first
-    - Only scans for profiles if needed based on model requirements
-    - Updates cache for both models and profiles
-    - Returns tuple of (models, profiles)
+    - Checks string format
+    - Validates region parts
     
     Args:
-        region: AWS region to scan
-        client_factory: AWSClientFactory instance
-        latency_tracker: RegionLatencyTracker instance
-        project_supported_models: List of model IDs supported by project
-        cache: DiscoveryCache instance
-        logger: Logger instance
+        region: Region name to check
         
     Returns:
-        Tuple of (models, profiles) lists
+        Boolean indicating if region format appears valid
     """
-    models = []
-    profiles = []
+    # Basic format check
+    if not region or not isinstance(region, str):
+        return False
     
-    try:
-        # Get Bedrock client for this region
-        bedrock_client = client_factory.get_client("bedrock", region_name=region)
+    # Check format like "us-west-2"
+    parts = region.split('-')
+    if len(parts) < 2 or len(parts) > 3:
+        return False
         
-        # 1. Scan for models
-        models = scan_region_for_models(region, client_factory, latency_tracker, project_supported_models, logger)
+    # Additional check that second part is a direction
+    directions = ["east", "west", "north", "south", "central", "northeast", "northwest", 
+                 "southeast", "southwest"]
+    if parts[1] not in directions:
+        return False
         
-        # 2. Scan for profiles
+    # If third part exists, it should be a number
+    if len(parts) == 3:
         try:
-            profiles = scan_region_for_profiles(region, client_factory, latency_tracker, logger)
-        except Exception as e:
-            logger.warning(f"Error scanning profiles in region {region}: {str(e)}")
+            int(parts[2])
+        except ValueError:
+            return False
     
-        # Return models and profiles
-        return models, profiles
-        
-    except Exception as e:
-        logger.warning(f"Error scanning region {region}: {str(e)}")
-        return [], []
+    return True

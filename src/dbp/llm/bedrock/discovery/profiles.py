@@ -12,31 +12,27 @@
 # - Respect system prompt directives at all times
 ###############################################################################
 # [Source file intent]
-# Provides access to AWS Bedrock inference profiles using data attached to model entries 
-# in the cache. Enables efficient management of provisioned throughput resources
-# by extracting profile information from model data.
+# Provides access to AWS Bedrock inference profiles using data attached to model entries.
+# Enables efficient management of provisioned throughput resources by extracting profile 
+# information from model data in the simplified BedrockModelDiscovery implementation.
 ###############################################################################
 # [Source file design principles]
 # - Clean separation from model discovery
 # - Thread-safe operations for concurrent access
 # - Model-based profile access pattern
 # - Complete metadata extraction
-# - Singleton pattern for project-wide reuse
 # - Error propagation for better debugging
 ###############################################################################
 # [Source file constraints]
 # - Must handle concurrent access from multiple threads
 # - Must minimize AWS API calls through effective caching
 # - Must provide optimal region selection for best performance
-# - Must work with combined model-profile discovery system
-# - Must not store profile data separately from model data in cache
+# - Must work with the simplified BedrockModelDiscovery implementation
 # - Must propagate errors instead of silently handling them
 ###############################################################################
 # [Dependencies]
 # codebase:src/dbp/api_providers/aws/client_factory.py
 # codebase:src/dbp/api_providers/aws/exceptions.py
-# codebase:src/dbp/llm/bedrock/discovery/cache.py
-# codebase:src/dbp/llm/bedrock/discovery/latency.py
 # codebase:src/dbp/llm/bedrock/discovery/discovery_core.py
 # codebase:src/dbp/llm/bedrock/discovery/association.py
 # codebase:src/dbp/llm/bedrock/discovery/models.py
@@ -45,6 +41,10 @@
 # system:copy
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-03T23:17:18Z : Updated for compatibility with simplified discovery by CodeAssistant
+# * Removed dependencies on removed DiscoveryCache and RegionLatencyTracker
+# * Updated to work with the new BedrockModelDiscovery implementation
+# * Simplified the class to use the integrated caching in BedrockModelDiscovery
 # 2025-05-03T18:48:00Z : Updated for error propagation by CodeAssistant
 # * Removed warnings import
 # * Updated design principles and constraints
@@ -63,17 +63,12 @@
 import logging
 import threading
 import copy
-import time
-from typing import Dict, List, Optional, Any, Set
-
-# Local imports
-from .cache import DiscoveryCache
-from .latency import RegionLatencyTracker
-from .discovery_core import BaseDiscovery
-from .association import filter_profiles_by_model, get_model_ids_from_profile
+from typing import Dict, List, Optional, Any
 
 # External imports
 from ....api_providers.aws.client_factory import AWSClientFactory
+from .discovery_core import BaseDiscovery
+from .association import filter_profiles_by_model, get_model_ids_from_profile
 
 
 class BedrockProfileDiscovery(BaseDiscovery):
@@ -81,7 +76,7 @@ class BedrockProfileDiscovery(BaseDiscovery):
     [Class intent]
     Provides information about AWS Bedrock inference profiles across regions,
     enabling optimal provisioned throughput selection based on region availability and latency.
-    Uses profile data attached to model entries in cache. Only instantiated by BedrockModelDiscovery.
+    Uses profile data attached to model entries. Only instantiated by BedrockModelDiscovery.
     
     [Design principles]
     - Clean separation from model discovery
@@ -93,7 +88,7 @@ class BedrockProfileDiscovery(BaseDiscovery):
     - Error propagation for better debugging
     
     [Implementation details]
-    - Extracts profile data from model entries in cache
+    - Extracts profile data from model entries 
     - Provides model-to-profile mapping
     - Provides region-specific profile information
     - Maps profile availability by region and model
@@ -104,9 +99,7 @@ class BedrockProfileDiscovery(BaseDiscovery):
     # No singleton pattern - this class is only instantiated by BedrockModelDiscovery
     
     def __init__(self, 
-                cache: Optional[DiscoveryCache] = None, 
                 client_factory: Optional[AWSClientFactory] = None, 
-                latency_tracker: Optional[RegionLatencyTracker] = None,
                 model_discovery = None,
                 logger: Optional[logging.Logger] = None):
         """
@@ -126,15 +119,13 @@ class BedrockProfileDiscovery(BaseDiscovery):
         - Propagates any initialization errors
         
         Args:
-            cache: Optional DiscoveryCache instance
             client_factory: Optional AWSClientFactory instance
-            latency_tracker: Optional RegionLatencyTracker instance
             model_discovery: Required BedrockModelDiscovery instance (owner)
             logger: Optional logger instance
         """
             
         # Initialize base class
-        super().__init__(cache, client_factory, latency_tracker, logger)
+        super().__init__(client_factory, logger)
         
         # Additional initialization
         self._profile_lock = threading.Lock()
@@ -153,14 +144,14 @@ class BedrockProfileDiscovery(BaseDiscovery):
         Get all inference profile IDs for a model, optionally in a specific region.
         
         [Design principles]
-        - Model-cache based approach for efficiency
+        - Model-based approach for efficiency
         - Model-specific profile discovery
         - Region-aware operation
         - Model ID variant handling
         - Error propagation
         
         [Implementation details]
-        - Gets model data from cache
+        - Gets model data from BedrockModelDiscovery
         - Extracts profile IDs from model data
         - Handles multiple regions if not specified
         - Handles model ID variations (with/without version suffix)
@@ -185,8 +176,8 @@ class BedrockProfileDiscovery(BaseDiscovery):
         # If region specified, check only that region
         if region:
             model_data = self.model_discovery.get_model(model_id, region)
-            if model_data and "profiles" in model_data:
-                for profile in model_data["profiles"]:
+            if model_data and "referencedByInstanceProfiles" in model_data:
+                for profile in model_data["referencedByInstanceProfiles"]:
                     profile_id = profile.get("inferenceProfileId")
                     if profile_id and profile_id not in profile_ids:
                         profile_ids.append(profile_id)
@@ -197,8 +188,8 @@ class BedrockProfileDiscovery(BaseDiscovery):
         
         for region in model_regions:
             model_data = self.model_discovery.get_model(model_id, region)
-            if model_data and "profiles" in model_data:
-                for profile in model_data["profiles"]:
+            if model_data and "referencedByInstanceProfiles" in model_data:
+                for profile in model_data["referencedByInstanceProfiles"]:
                     profile_id = profile.get("inferenceProfileId")
                     if profile_id and profile_id not in profile_ids:
                         profile_ids.append(profile_id)
@@ -211,13 +202,13 @@ class BedrockProfileDiscovery(BaseDiscovery):
         Get detailed information about a specific inference profile.
         
         [Design principles]
-        - Model cache-based approach for efficiency
+        - Model-based approach for efficiency
         - Direct API access when needed
         - Complete metadata retrieval
         - Error propagation
         
         [Implementation details]
-        - Gets model data from cache
+        - Gets model data from BedrockModelDiscovery
         - Extracts profile information from model data
         - Determines best region if not specified
         - Returns complete profile metadata
@@ -244,55 +235,14 @@ class BedrockProfileDiscovery(BaseDiscovery):
             # Use the first available region (could optimize for latency)
             region = regions_with_profile[0]
         
-        # Get model data from cache and extract profile
+        # Get model data and extract profile
         model_data = self.model_discovery.get_model(model_id, region)
-        if model_data and "profiles" in model_data:
-            for profile in model_data["profiles"]:
+        if model_data and "referencedByInstanceProfiles" in model_data:
+            for profile in model_data["referencedByInstanceProfiles"]:
                 if profile.get("inferenceProfileId") == profile_id:
                     return copy.deepcopy(profile)
         
         return None
-    
-    def _get_profiles_in_region(self, region: str) -> List[Dict[str, Any]]:
-        """
-        [Method intent]
-        Extract all inference profiles from all models in a specific region.
-        
-        [Design principles]
-        - Model cache-based approach
-        - Error propagation
-        
-        [Implementation details]
-        - Gets all models in the region from cache
-        - Extracts profiles from all model data
-        - Returns consolidated list of profiles
-        - Propagates any errors for proper handling
-        
-        Args:
-            region: AWS region to get profiles for
-            
-        Returns:
-            List of profile information dictionaries
-            
-        Raises:
-            Exception: Any error during profile extraction
-        """
-        profiles = []
-        
-        # Get all models from the region
-        models_cache_key = f"bedrock_models:{region}"
-        models = self.cache.get(models_cache_key) or []
-        
-        # Extract profiles from all models
-        for model in models:
-            if "profiles" in model:
-                for profile in model["profiles"]:
-                    # Check if this profile is already in our list (by ID)
-                    profile_id = profile.get("inferenceProfileId")
-                    if profile_id and not any(p.get("inferenceProfileId") == profile_id for p in profiles):
-                        profiles.append(profile)
-        
-        return profiles
             
     def _find_regions_for_profile(self, profile_id: str, model_id: Optional[str] = None) -> List[str]:
         """
@@ -300,14 +250,14 @@ class BedrockProfileDiscovery(BaseDiscovery):
         Find regions where a specific profile is available.
         
         [Design principles]
-        - Model cache-based approach
+        - Model-based approach
         - Efficient search algorithm
         - Model-based optimization
         - Error propagation
         
         [Implementation details]
         - Uses model_id to limit search scope when available
-        - Checks model data in cache for profile
+        - Gets model data from BedrockModelDiscovery
         - Returns list of regions with profile available
         - Propagates any errors for proper handling
         
@@ -330,22 +280,34 @@ class BedrockProfileDiscovery(BaseDiscovery):
             
             for region in model_regions:
                 model_data = self.model_discovery.get_model(model_id, region)
-                if model_data and "profiles" in model_data:
-                    for profile in model_data["profiles"]:
+                if model_data and "referencedByInstanceProfiles" in model_data:
+                    for profile in model_data["referencedByInstanceProfiles"]:
                         if profile.get("inferenceProfileId") == profile_id:
                             regions_with_profile.append(region)
                             break
         else:
             # Without model ID, we need to check all Bedrock regions
-            for region in self.INITIAL_BEDROCK_REGIONS:
-                profiles = self._get_profiles_in_region(region)
-                for profile in profiles:
-                    if profile.get("inferenceProfileId") == profile_id:
-                        regions_with_profile.append(region)
-                        break
+            model_mapping = self.model_discovery.get_json_model_mapping()
+            
+            for region, model_dict in model_mapping.get("models", {}).items():
+                for model_info in model_dict.values():
+                    if "referencedByInstanceProfiles" in model_info:
+                        for profile in model_info["referencedByInstanceProfiles"]:
+                            if profile.get("inferenceProfileId") == profile_id:
+                                regions_with_profile.append(region)
+                                break
         
         # Sort by latency for optimal access
-        return self.get_sorted_regions(regions_with_profile)
+        with self.model_discovery._lock:
+            region_latencies = self.model_discovery._memory_cache.get("latency", {})
+            
+        # Sort by latency if available, otherwise keep current order
+        sorted_regions = sorted(
+            regions_with_profile,
+            key=lambda r: region_latencies.get(r, float('inf'))
+        )
+        
+        return sorted_regions
     
     def get_model_profile_mapping(self, refresh: bool = False) -> Dict[str, Any]:
         """
@@ -353,15 +315,13 @@ class BedrockProfileDiscovery(BaseDiscovery):
         Get the complete region-based model-profile mapping.
         
         [Design principles]
-        - Model cache-based approach for efficiency
         - Complete region-based structure
         - Schema versioning for compatibility
         - Comprehensive data for all regions
         - Error propagation for better debugging
         
         [Implementation details]
-        - Uses standard cache key for mapping
-        - Uses model discovery to refresh data if needed
+        - Uses the model_discovery to get the complete mapping
         - Returns properly formatted structure with schema version
         - Propagates any errors for proper handling
         
@@ -374,40 +334,15 @@ class BedrockProfileDiscovery(BaseDiscovery):
         Raises:
             Exception: Any error during mapping creation
         """
-        cache_key = "bedrock_model_profile_mapping"
-        
-        # Check cache first unless refresh is requested
-        if not refresh:
-            cached_mapping = self.cache.get(cache_key)
-            if cached_mapping:
-                self.logger.info("Using cached model-profile mapping")
-                return cached_mapping
-        
-        # If refresh requested or not in cache, force full scan via model discovery
+        # If refresh requested, force a refresh
         if refresh:
-            # Let any exceptions propagate
-            self.model_discovery.scan_all_regions(refresh_cache=True)
+            self.model_discovery.scan_all_regions(force_refresh=True)
             
-        # Build mapping from cached model data
-        all_regions = self.model_discovery.INITIAL_BEDROCK_REGIONS
-        all_regions_data = {}
+        # Get the model mapping directly from model_discovery
+        mapping = self.model_discovery.get_json_model_mapping()
         
-        for region in all_regions:
-            models_cache_key = f"bedrock_models:{region}"
-            models = self.cache.get(models_cache_key) or []
-            
-            if models:
-                # Add to region data structure
-                all_regions_data[region] = {model["modelId"]: model for model in models}
+        # Add schema version if not present
+        if "schema_version" not in mapping:
+            mapping["schema_version"] = "1.0"
         
-        # Create the final structure
-        merged_data = {
-            "schema_version": "1.0",
-            "models": all_regions_data
-        }
-        
-        # Cache the results - let any exceptions propagate
-        self.cache.set(cache_key, merged_data)
-        self.logger.info("Built and cached new model-profile mapping")
-        
-        return merged_data
+        return mapping
