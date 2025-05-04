@@ -45,6 +45,11 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-05T00:30:00Z : Refactored BedrockBase to an abstract class by CodeAssistant
+# * Added abstract methods for model-specific customizations
+# * Implemented Template Method pattern for request preparation
+# * Added _extract_model_params and _prepare_request methods
+# * Enforced implementation of model-specific methods in derived classes
 # 2025-05-04T10:40:00Z : Added prompt caching support by CodeAssistant
 # * Updated _format_model_kwargs to support prompt caching
 # * Added caching configuration to API request parameters
@@ -57,10 +62,6 @@
 # * Moved method to base class to make it available to all Bedrock clients
 # * Maintained method signature and functionality
 # * Enhanced documentation to reflect method purpose
-# 2025-05-02T22:19:00Z : Fixed EventStream streaming issue by CodeAssistant
-# * Fixed EventStream iteration by creating explicit iterator from stream
-# * Updated documentation to reflect EventStream handling
-# * Enhanced error handling specificity for streaming operations
 ###############################################################################
 
 import os
@@ -68,6 +69,7 @@ import logging
 import json
 import time
 import asyncio
+from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional, AsyncIterator, Union, Tuple, cast
 
 import boto3
@@ -86,7 +88,7 @@ from ..common.streaming import (
 )
 
 
-class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
+class BedrockBase(ModelClientBase, AsyncTextStreamProvider, ABC):
     """
     [Class intent]
     Provides foundational Amazon Bedrock integration focusing exclusively on 
@@ -516,11 +518,13 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
         - Streaming as primary interaction method
         - Asynchronous yielding of chunks
         - Consistent error classification
+        - Exponential backoff for throttling errors
         
         [Implementation details]
         - Validates client initialization
         - Handles API call with streaming
         - Processes and yields chunks
+        - Implements retry with exponential backoff for throttling
         - Classifies and raises appropriate exceptions
         
         Args:
@@ -537,79 +541,121 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
         if not self.is_initialized():
             raise ClientError("Bedrock client is not initialized")
         
-        try:
-            # Prepare request with appropriate identifier
-            request = {"messages": messages}
-            
-            # If an inference profile ARN is available, use it as the modelId parameter
-            # Otherwise use the regular model ID
-            if hasattr(self, 'inference_profile_arn') and self.inference_profile_arn:
-                request["modelId"] = self.inference_profile_arn
-                self.logger.info(f"Using inference profile ARN: {self.inference_profile_arn}")
-            else:
-                request["modelId"] = self.model_id
-            
-            # Add inference parameters if provided
-            if model_kwargs:
-                request["inferenceConfig"] = model_kwargs
-            
-            # Make streaming API call - run in executor to avoid blocking
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
-                None, 
-                lambda: self._bedrock_runtime.converse_stream(**request)
-            )
-            
-            # Use the process method to handle stream events
-            complete_message = {"role": "", "content": ""}
-            
-            # Process each event
-            async for chunk in self._process_converse_stream(response):
-                # Track complete message for returning at the end
-                if chunk["type"] == "message_start" and "message" in chunk:
-                    complete_message["role"] = chunk["message"]["role"]
-                elif chunk["type"] == "content_block_delta" and "delta" in chunk and "text" in chunk["delta"]:
-                    complete_message["content"] += chunk["delta"]["text"]
-                elif chunk["type"] == "message_stop":
-                    # Add complete message to the stop event
-                    yield {**chunk, "message": complete_message}
-                    continue
+        # Retry configuration for throttling
+        max_retries = 5  # Maximum number of retry attempts for throttling
+        base_delay = 5.0  # Base delay in seconds
+        max_delay = 60.0  # Maximum delay in seconds
+        
+        # Prepare request with appropriate identifier
+        request = {"messages": messages}
+        
+        # If an inference profile ARN is available, use it as the modelId parameter
+        # Otherwise use the regular model ID
+        if hasattr(self, 'inference_profile_arn') and self.inference_profile_arn:
+            request["modelId"] = self.inference_profile_arn
+            self.logger.info(f"Using inference profile ARN: {self.inference_profile_arn}")
+        else:
+            request["modelId"] = self.model_id
+        
+        # Add inference parameters if provided
+        if model_kwargs:
+            request["inferenceConfig"] = model_kwargs
+        
+        # Initialize retry counter
+        retry_count = 0
+        
+        while True:
+            try:
+                # Make streaming API call - run in executor to avoid blocking
+                loop = asyncio.get_event_loop()
+                response = await loop.run_in_executor(
+                    None, 
+                    lambda: self._bedrock_runtime.converse_stream(**request)
+                )
+                
+                # Use the process method to handle stream events
+                complete_message = {"role": "", "content": ""}
+                
+                # Process each event
+                async for chunk in self._process_converse_stream(response):
+                    # Track complete message for returning at the end
+                    if chunk["type"] == "message_start" and "message" in chunk:
+                        complete_message["role"] = chunk["message"]["role"]
+                    elif chunk["type"] == "content_block_delta" and "delta" in chunk and "text" in chunk["delta"]:
+                        complete_message["content"] += chunk["delta"]["text"]
+                    elif chunk["type"] == "message_stop":
+                        # Add complete message to the stop event
+                        yield {**chunk, "message": complete_message}
+                        continue
+                        
+                    # Yield the event unchanged
+                    yield chunk
+                
+                # If we get here, streaming completed successfully
+                break
+                
+            except botocore.exceptions.ClientError as e:
+                error_code = e.response['Error']['Code']
+                error_message = e.response['Error']['Message']
+                
+                if error_code == "ThrottlingException" and "Too many requests" in error_message:
+                    # Implement exponential backoff for throttling
+                    retry_count += 1
                     
-                # Yield the event unchanged
-                yield chunk
-            
-        except botocore.exceptions.ClientError as e:
-            error_code = e.response['Error']['Code']
-            error_message = e.response['Error']['Message']
-            
-            if error_code == "AccessDeniedException":
-                raise ClientError(f"Access denied to Bedrock Converse Stream API: {error_message}", e)
-            elif error_code == "ValidationException":
-                # Debug info - dump all request parameters
-                print("=" * 80)
-                print("DEBUG - ValidationException in ConverseStream API call")
-                print(f"Request parameters:")
-                for key, value in request.items():
-                    if key == "messages":
-                        print(f"  messages: {len(value)} messages")
+                    if retry_count <= max_retries:
+                        # Calculate backoff delay with jitter (randomness)
+                        import random
+                        delay = min(max_delay, base_delay * (2 ** (retry_count - 1)))
+                        # Add jitter: between 80% and 100% of calculated delay
+                        jitter = random.uniform(0.8, 1.0)
+                        delay_with_jitter = delay * jitter
+                        
+                        # Log the throttling and retry attempt
+                        self.logger.warning(
+                            f"Request throttled by Bedrock: {error_message}. "
+                            f"Retrying in {delay_with_jitter:.2f} seconds (attempt {retry_count}/{max_retries})"
+                        )
+                        
+                        # Wait before retrying
+                        await asyncio.sleep(delay_with_jitter)
+                        continue
                     else:
-                        print(f"  {key}: {value}")
-                print("=" * 80)
-                raise InvocationError(f"Invalid request to Converse Stream API: {error_message}", e)
-            elif error_code == "ThrottlingException":
-                raise InvocationError(f"Request throttled by Bedrock: {error_message}", e)
-            elif error_code == "ServiceQuotaExceededException":
-                raise InvocationError(f"Service quota exceeded: {error_message}", e)
-            elif error_code == "ModelTimeoutException":
-                raise InvocationError(f"Model inference timeout: {error_message}", e)
-            elif error_code == "ModelErrorException":
-                raise InvocationError(f"Model error during inference: {error_message}", e)
-            elif error_code == "ModelNotReadyException":
-                raise ModelNotAvailableError(f"Model not ready: {error_message}", e)
-            else:
-                raise StreamingError(f"Bedrock API error: {error_code} - {error_message}", e)
-        except Exception as e:
-            raise StreamingError(f"Bedrock streaming error: {str(e)}", e)
+                        # Max retries exceeded, raise the error
+                        self.logger.error(f"Max retries ({max_retries}) exceeded for throttling exception")
+                        raise InvocationError(
+                            f"Request throttled by Bedrock (max retries exceeded): {error_message}", 
+                            e
+                        )
+                # Handle other Bedrock API errors
+                elif error_code == "AccessDeniedException":
+                    raise ClientError(f"Access denied to Bedrock Converse Stream API: {error_message}", e)
+                elif error_code == "ValidationException":
+                    # Debug info - dump all request parameters
+                    print("=" * 80)
+                    print("DEBUG - ValidationException in ConverseStream API call")
+                    print(f"Request parameters:")
+                    for key, value in request.items():
+                        if key == "messages":
+                            print(f"  messages: {len(value)} messages")
+                        else:
+                            print(f"  {key}: {value}")
+                    print("=" * 80)
+                    raise InvocationError(f"Invalid request to Converse Stream API: {error_message}", e)
+                elif error_code == "ThrottlingException":
+                    # Other throttling exceptions (not "Too many requests") are raised directly
+                    raise InvocationError(f"Request throttled by Bedrock: {error_message}", e)
+                elif error_code == "ServiceQuotaExceededException":
+                    raise InvocationError(f"Service quota exceeded: {error_message}", e)
+                elif error_code == "ModelTimeoutException":
+                    raise InvocationError(f"Model inference timeout: {error_message}", e)
+                elif error_code == "ModelErrorException":
+                    raise InvocationError(f"Model error during inference: {error_message}", e)
+                elif error_code == "ModelNotReadyException":
+                    raise ModelNotAvailableError(f"Model not ready: {error_message}", e)
+                else:
+                    raise StreamingError(f"Bedrock API error: {error_code} - {error_message}", e)
+            except Exception as e:
+                raise StreamingError(f"Bedrock streaming error: {str(e)}", e)
     
     async def _iterate_stream_events(self, stream) -> AsyncIterator[Dict[str, Any]]:
         """
@@ -816,6 +862,7 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
                 raise e
             raise LLMError(f"Failed to stream chat response: {str(e)}", e)
     
+    @abstractmethod
     def _format_messages(
         self, 
         messages: List[Dict[str, Any]]
@@ -823,11 +870,13 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
         """
         [Method intent]
         Format messages for the Bedrock Converse API.
+        Must be implemented by concrete model classes.
         
         [Design principles]
+        - Model-specific message formatting
+        - Each model type must implement this method
         - Consistent message format conversion
         - Support for different content types
-        - Clean separation from API logic
         
         [Implementation details]
         - Converts message content to Bedrock format
@@ -840,19 +889,9 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
         Returns:
             List[Dict[str, Any]]: Messages formatted for Bedrock API
         """
-        # Basic implementation - override in model-specific clients
-        return [
-            {
-                "role": msg["role"],
-                "content": [
-                    {
-                        "text": msg["content"]
-                    }
-                ] if isinstance(msg["content"], str) else msg["content"]
-            }
-            for msg in messages
-        ]
+        raise NotImplementedError("Model-specific message formatting must be implemented")
     
+    @abstractmethod
     def _format_model_kwargs(
         self, 
         kwargs: Dict[str, Any]
@@ -860,8 +899,10 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
         """
         [Method intent]
         Format model-specific parameters for the Bedrock Converse API.
+        Must be implemented by concrete model classes.
         
         [Design principles]
+        - Model-specific parameter formatting
         - Clean separation of parameter formatting
         - Support for model-specific overrides
         - Parameter validation
@@ -879,23 +920,146 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
         Returns:
             Dict[str, Any]: Parameters formatted for Bedrock API
         """
-        # Basic implementation - override in model-specific clients
-        result = {
-            "temperature": kwargs.get("temperature", 0.7),
-            "maxTokens": kwargs.get("max_tokens", 1024),
-            "topP": kwargs.get("top_p", 0.9),
-            "stopSequences": kwargs.get("stop_sequences", [])
+        raise NotImplementedError("Model-specific parameter formatting must be implemented")
+    
+    @abstractmethod
+    def _get_system_content(self) -> Optional[Dict[str, Any]]:
+        """
+        [Method intent]
+        Get system content for the request if available.
+        Must be implemented by concrete model classes.
+        
+        [Design principles]
+        - Model-specific system prompt handling
+        - Optional functionality based on model support
+        - Clear integration with model capabilities
+        
+        [Implementation details]
+        - Returns system content structured per model requirements or None
+        - Handles model-specific formatting needs
+        
+        Returns:
+            Optional[Dict[str, Any]]: System content structured per model requirements or None
+        """
+        raise NotImplementedError("Model-specific system content handling must be implemented")
+    
+    @abstractmethod
+    def _get_model_specific_params(self) -> Dict[str, Any]:
+        """
+        [Method intent]
+        Get model-specific parameters for the request.
+        Must be implemented by concrete model classes.
+        
+        [Design principles]
+        - Model-specific parameter collection
+        - Optional functionality based on model needs
+        - Separation of common and specialized parameters
+        
+        [Implementation details]
+        - Collects model-specific parameters not handled by standard inferenceConfig
+        - Returns empty dict if no model-specific parameters are needed
+        
+        Returns:
+            Dict[str, Any]: Model-specific parameters or empty dict
+        """
+        raise NotImplementedError("Model-specific parameter handling must be implemented")
+    
+    def _extract_model_params(self, kwargs: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        """
+        [Method intent]
+        Extract and separate standard parameters from model-specific parameters.
+        
+        [Design principles]
+        - Clean separation of common and model-specific parameters
+        - No formatting, just extraction
+        - No side effects
+        
+        [Implementation details]
+        - Identifies common parameters for inferenceConfig
+        - Separates model-specific parameters
+        - Handles system prompt extraction
+        
+        Args:
+            kwargs: Combined parameters
+            
+        Returns:
+            Tuple[Dict[str, Any], Dict[str, Any]]: 
+                (common_parameters, model_specific_parameters)
+        """
+        common_params = {}
+        model_params = {}
+        
+        # Standard parameters for inferenceConfig
+        common_param_keys = {
+            "temperature", "max_tokens", "top_p", "top_k", "stop_sequences", 
+            "enable_caching", "max_response_length"
         }
         
-        # Add caching configuration if enabled
-        caching_enabled = kwargs.get("enable_caching") or getattr(self, '_prompt_caching_enabled', False)
+        # Extract common parameters
+        for key, value in kwargs.items():
+            if key in common_param_keys:
+                common_params[key] = value
+            else:
+                model_params[key] = value
         
-        if caching_enabled:
-            result["caching"] = {
-                "cachingState": "ENABLED"
-            }
+        return common_params, model_params
+    
+    def _prepare_request(self, messages: List[Dict[str, Any]], kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        [Method intent]
+        Prepare a complete request payload for the Bedrock Converse API.
+        Template method that uses abstract methods for customization.
         
-        return result
+        [Design principles]
+        - Comprehensive request preparation
+        - Uniform structure across model clients
+        - Leverages abstract methods for model-specific details
+        
+        [Implementation details]
+        - Extracts and formats common parameters
+        - Formats messages
+        - Adds system content if available
+        - Adds model-specific parameters if available
+        
+        Args:
+            messages: List of message objects
+            kwargs: Combined parameters
+            
+        Returns:
+            Dict[str, Any]: Complete request payload for Converse API
+        """
+        # Extract standard and model-specific parameters
+        common_params, model_params = self._extract_model_params(kwargs)
+        
+        # Format messages and parameters
+        formatted_messages = self._format_messages(messages)
+        inference_config = self._format_model_kwargs(common_params)
+        
+        # Prepare base request
+        request = {
+            "messages": formatted_messages,
+            "inferenceConfig": inference_config
+        }
+        
+        # If an inference profile ARN is available, use it as the modelId parameter
+        # Otherwise use the regular model ID
+        if hasattr(self, 'inference_profile_arn') and self.inference_profile_arn:
+            request["modelId"] = self.inference_profile_arn
+            self.logger.debug(f"Using inference profile ARN: {self.inference_profile_arn}")
+        else:
+            request["modelId"] = self.model_id
+        
+        # Add system content if available
+        system_content = self._get_system_content()
+        if system_content:
+            request["system"] = system_content
+        
+        # Add model-specific parameters if any
+        model_specific_params = self._get_model_specific_params()
+        if model_specific_params:
+            request["additionalModelRequestFields"] = model_specific_params
+        
+        return request
     
     async def stream(self) -> AsyncIterator[str]:
         """

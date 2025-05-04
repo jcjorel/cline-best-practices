@@ -38,10 +38,12 @@ if __name__ == "__main__":
     from dbp.llm.bedrock.base import BedrockBase
     from dbp.llm.bedrock.enhanced_base import EnhancedBedrockBase
     from dbp.llm.bedrock.discovery.models import BedrockModelDiscovery
+    from dbp.llm.bedrock.client_factory import BedrockClientFactory
 else:
     # Relative imports when used as part of the package
     from ..base import BedrockBase
     from ..discovery.models import BedrockModelDiscovery
+    from ..client_factory import BedrockClientFactory
 
 
 # Configure logging
@@ -152,97 +154,92 @@ async def client_with_discovery(shared_state: Dict[str, Any]):
         print(f"TESTING MODEL: {model_id}")
         print(f"{'='*80}")
         
-        try:
-            # Get models and profiles from cache (no API calls)
-            print(f"Getting models and profiles for {model_id} from cache...")
-            
-            # Get cached data from shared state
-            region_models = shared_state.get("region_data", {})
-            
-            # Check each region for the model and its profiles
-            profiles_found = False
-            for region, region_model_dict in region_models.get("models", {}).items():
-                # Find our model in the returned models
-                if model_id in region_model_dict:
-                    model = region_model_dict[model_id]
-                    # Check if this model has associated profiles
-                    profiles = model.get("referencedByInstanceProfiles", [])
-                    if profiles:
-                        profiles_found = True
-                        print(f"  Region {region}: Found {len(profiles)} profiles for {model_id}")
-                        
-                        # Print profile details
-                        for p in profiles:
-                            print(f"    - {p.get('inferenceProfileId')}: {p.get('inferenceProfileName', 'No name')}")
-            
-            if not profiles_found:
-                print(f"  No profiles found for {model_id} in any region")
-            
-            # Now try to get specific model data (uses cache, no API calls)
-            print(f"Getting complete model data for {model_id} from cache...")
-            model_data = model_discovery.get_model(model_id)
-            
-            # Check if model requires an inference profile
-            requires_profile = model_data and model_data.get("requiresInferenceProfile", False)
-            
-            if requires_profile:
-                print(f"Skipping model {model_id} as it requires an inference profile")
-                # Skip models that require inference profiles for this example
-                continue
-                
-            # Extract profiles from model data (for informational purposes only)
-            inference_profile_arn = None
-            if model_data and "referencedByInstanceProfiles" in model_data:
-                profiles = model_data["referencedByInstanceProfiles"]
-                profile_arns = []
+        # Get models and profiles from cache (no API calls)
+        print(f"Getting models and profiles for {model_id} from cache...")
+        
+        # Get cached data from shared state
+        region_models = shared_state.get("region_data", {})
+        
+        # Check each region for the model and its profiles
+        profiles_found = False
+        for region, region_model_dict in region_models.get("models", {}).items():
+            # Find our model in the returned models
+            if model_id in region_model_dict:
+                model = region_model_dict[model_id]
+                # Check if this model has associated profiles
+                profiles = model.get("referencedByInstanceProfiles", [])
                 if profiles:
-                    for p in profiles:
-                        if "inferenceProfileArn" in p:
-                            profile_arns.append(p["inferenceProfileArn"])
+                    profiles_found = True
+                    print(f"  Region {region}: Found {len(profiles)} profiles for {model_id}")
                     
-                    if profile_arns:
-                        print(f"Found profile ARNs: {', '.join(profile_arns)}")
-                        inference_profile_arn = profile_arns[0]
-                        print(f"Model requires an inference profile, using ARN: {inference_profile_arn}")
-            
-            # Check if we already have a suitable client we can reuse
-            client_key = f"{model_id}:{inference_profile_arn}"
-            client = model_clients.get(client_key)
-            
-            if not client:
-                # Create client with model discovery enabled
-                print(f"Creating new client in initial region {initial_region}")
-                print(f"Model discovery is enabled with preferred regions: {', '.join(preferred_regions)}")
-                
-                client = EnhancedBedrockBase(
-                model_id=model_id,
-                region_name=initial_region,
-                logger=logger,
-                use_model_discovery=True,
-                preferred_regions=preferred_regions,
-                inference_profile_arn=inference_profile_arn
-                )
-                
-                # Initialize client - this will trigger model discovery if needed
-                print("Initializing client (will use model discovery with cached data)...")
-                await client.initialize()
-                
-                # Store client for potential reuse
-                model_clients[client_key] = client
-                
-                print(f"Client initialized successfully in region: {client.region_name}")
-                
-                # Get best regions information (from cache)
-                best_regions = client.get_best_regions_for_model()
-                print(f"Best regions for {model_id}: {', '.join(best_regions)}")
-            else:
-                print(f"Reusing existing client for {model_id}")
-                # Ensure model id is set correctly
-                client.model_id = model_id
-        except Exception as e:
-            print(f"Error initializing client for model {model_id}: {str(e)}")
-            print(f"Skipping model {model_id}")
+                    # Print profile details
+                    for p in profiles:
+                        print(f"    - {p.get('inferenceProfileId')}: {p.get('inferenceProfileName', 'No name')}")
+        
+        if not profiles_found:
+            print(f"  No profiles found for {model_id} in any region")
+        
+        # Now try to get specific model data (uses cache, no API calls)
+        print(f"Getting complete model data for {model_id} from cache...")
+        model_data = model_discovery.get_model(model_id)
+        
+        # Check if model requires an inference profile
+        requires_profile = model_data and model_data.get("requiresInferenceProfile", False)
+        
+        if requires_profile:
+            print(f"Skipping model {model_id} as it requires an inference profile")
+            # Skip models that require inference profiles for this example
             continue
+            
+        # Extract profiles from model data (for informational purposes only)
+        inference_profile_arn = None
+        if model_data and "referencedByInstanceProfiles" in model_data:
+            profiles = model_data["referencedByInstanceProfiles"]
+            profile_arns = []
+            if profiles:
+                for p in profiles:
+                    if "inferenceProfileArn" in p:
+                        profile_arns.append(p["inferenceProfileArn"])
+                
+                if profile_arns:
+                    print(f"Found profile ARNs: {', '.join(profile_arns)}")
+                    inference_profile_arn = profile_arns[0]
+                    print(f"Model requires an inference profile, using ARN: {inference_profile_arn}")
+        
+        # Check if we already have a suitable client we can reuse
+        client_key = f"{model_id}:{inference_profile_arn}"
+        client = model_clients.get(client_key)
+        
+        if not client:
+            # Create client with model discovery enabled
+            print(f"Creating new client in initial region {initial_region}")
+            print(f"Model discovery is enabled with preferred regions: {', '.join(preferred_regions)}")
+            
+            client = BedrockClientFactory.create_client(
+            model_id=model_id,
+            region_name=initial_region,
+            logger=logger,
+            use_model_discovery=True,
+            preferred_regions=preferred_regions,
+            inference_profile_arn=inference_profile_arn
+            )
+            
+            # Initialize client - this will trigger model discovery if needed
+            print("Initializing client (will use model discovery with cached data)...")
+            await client.initialize()
+            
+            # Store client for potential reuse
+            model_clients[client_key] = client
+            
+            print(f"Client initialized successfully in region: {client.region_name}")
+            
+            # Get best regions information (from cache)
+            best_regions = client.get_best_regions_for_model()
+            print(f"Best regions for {model_id}: {', '.join(best_regions)}")
+        else:
+            print(f"Reusing existing client for {model_id}")
+            # Ensure model id is set correctly
+            client.model_id = model_id
         
         # Initialize conversation context - will be built up across turns
         conversation = []
@@ -261,24 +258,18 @@ async def client_with_discovery(shared_state: Dict[str, Any]):
             response_text = ""
             chunk_count = 0
             
-            try:
-                # Stream chat with conversation context
-                async for chunk in client.stream_chat(conversation):
-                    if chunk["type"] == "content_block_delta" and "delta" in chunk:
-                        if "text" in chunk["delta"]:
-                            text = chunk["delta"]["text"]
-                            response_text += text
-                            # Print each chunk immediately to show streaming behavior
-                            print(text, end="", flush=True)
-                            chunk_count += 1
-                
-                print("\n-------------------------------------------")
-                print(f"Received {len(response_text)} characters in {chunk_count} chunks")
-            except Exception as e:
-                print("\n-------------------------------------------")
-                print(f"ERROR: {str(e)}")
-                print("Skipping this model due to access or configuration issues.")
-                break  # Skip remaining turns for this model
+            # Stream chat with conversation context
+            async for chunk in client.stream_chat(conversation):
+                if chunk["type"] == "content_block_delta" and "delta" in chunk:
+                    if "text" in chunk["delta"]:
+                        text = chunk["delta"]["text"]
+                        response_text += text
+                        # Print each chunk immediately to show streaming behavior
+                        print(text, end="", flush=True)
+                        chunk_count += 1
+            
+            print("\n-------------------------------------------")
+            print(f"Received {len(response_text)} characters in {chunk_count} chunks")
             
             # Add assistant response to conversation for next turn
             conversation.append({"role": "assistant", "content": response_text})

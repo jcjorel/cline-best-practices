@@ -42,6 +42,15 @@
 # system:json
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-05T01:05:00Z : Fixed region handling with inference profiles by CodeAssistant
+# * Fixed bug in EnhancedBedrockBase.__init__ to use self.region_name rather than original region_name
+# * Ensures region from inference profile ARN is used consistently when fetching model details
+# * Prevents unnecessary region scanning in wrong region when using inference profiles
+# 2025-05-05T00:33:00Z : Refactored EnhancedBedrockBase to improve DRY principles by CodeAssistant
+# * Removed duplicated internal formatting methods and template methods
+# * Simplified stream_chat to delegate to parent implementation
+# * Made EnhancedBedrockBase abstract class to enforce contract
+# * Maintained specialized capabilities like prompt caching
 # 2025-05-04T23:45:00Z : Implemented Template Method pattern for request preparation by CodeAssistant
 # * Added internal formatting methods for model-specific customization
 # * Added _prepare_request template method for unified request creation
@@ -57,15 +66,12 @@
 # * Added is_prompt_caching_enabled method to check caching status
 # * Added mark_cache_point method to mark caching points in conversations
 # * Enhanced stream_chat method to use caching configuration
-# 2025-05-04T10:34:00Z : Added prompt caching capability by CodeAssistant
-# * Added PROMPT_CACHING to ModelCapability enum
-# * Enables capability-based detection and registration for prompt caching
-# * Part of implementation for Bedrock prompt caching support
 ###############################################################################
 
 import logging
 import json
 import asyncio
+from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional, AsyncIterator, Union, Callable, Tuple
 
 from .base import BedrockBase
@@ -73,7 +79,7 @@ from ..common.streaming import StreamingResponse, TextStreamingResponse, IStream
 from ..common.exceptions import LLMError, InvocationError, UnsupportedFeatureError
 
 
-class EnhancedBedrockBase(BedrockBase):
+class EnhancedBedrockBase(BedrockBase, ABC):
     """
     [Class intent]
     Provides an enhanced base interface for all Bedrock models with unified
@@ -181,7 +187,7 @@ class EnhancedBedrockBase(BedrockBase):
         # Fetch model details - let errors propagate to caller
         self._model_details = self._model_discovery.get_model(
             model_id=model_id,
-            region=region_name
+            region=self.region_name
         )
         self.logger.info(f"Loaded model details for {model_id}")
     
@@ -405,189 +411,12 @@ class EnhancedBedrockBase(BedrockBase):
         return result
     
     
-    def _format_messages_internal(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """
-        [Method intent]
-        Format messages for the Bedrock Converse API with model-specific requirements.
-        This should be implemented by each model client class.
-        
-        [Design principles]
-        - Consistent return type (always a List)
-        - No side effects, pure formatting operation
-        - Focus on message format only
-        
-        [Implementation details]
-        - Default implementation from BedrockBase
-        - Can be overridden by model clients
-        
-        Args:
-            messages: List of message objects in standard format
-            
-        Returns:
-            List[Dict[str, Any]]: Messages formatted for Bedrock API
-        """
-        # Default implementation from BedrockBase
-        return super()._format_messages(messages)
-    
-    def _format_model_kwargs_internal(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        [Method intent]
-        Format model parameters for the Bedrock Converse API's inferenceConfig.
-        This should be implemented by each model client class.
-        
-        [Design principles]
-        - Consistent return type (always a Dict for inferenceConfig)
-        - No side effects, pure formatting operation
-        - Focus on model parameters only
-        
-        [Implementation details]
-        - Default implementation from BedrockBase
-        - Can be overridden by model clients
-        
-        Args:
-            kwargs: Model-specific parameters
-            
-        Returns:
-            Dict[str, Any]: Parameters formatted for inferenceConfig
-        """
-        # Default implementation from BedrockBase
-        return super()._format_model_kwargs(kwargs)
-
-    def _extract_model_params(self, kwargs: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-        """
-        [Method intent]
-        Extract and separate standard parameters from model-specific parameters.
-        
-        [Design principles]
-        - Clean separation of common and model-specific parameters
-        - No formatting, just extraction
-        - No side effects
-        
-        [Implementation details]
-        - Identifies common parameters for inferenceConfig
-        - Separates model-specific parameters
-        - Handles system prompt extraction
-        
-        Args:
-            kwargs: Combined parameters
-            
-        Returns:
-            Tuple[Dict[str, Any], Dict[str, Any]]: 
-                (common_parameters, model_specific_parameters)
-        """
-        common_params = {}
-        model_params = {}
-        
-        # Standard parameters for inferenceConfig
-        common_param_keys = {
-            "temperature", "max_tokens", "top_p", "top_k", "stop_sequences", 
-            "enable_caching", "max_response_length"
-        }
-        
-        # Extract common parameters
-        for key, value in kwargs.items():
-            if key in common_param_keys:
-                common_params[key] = value
-            else:
-                model_params[key] = value
-        
-        return common_params, model_params
-
-    def _get_system_content(self) -> Optional[Dict[str, Any]]:
-        """
-        [Method intent]
-        Get system content for the request if available.
-        This should be implemented by each model client class that supports system prompts.
-        
-        [Design principles]
-        - Clear extraction of system content
-        - Model-specific implementation
-        - Optional functionality
-        
-        [Implementation details]
-        - Default returns None
-        - Model clients should override if needed
-        
-        Returns:
-            Optional[Dict[str, Any]]: System content structured per model requirements or None
-        """
-        return None
-
-    def _get_model_specific_params(self) -> Dict[str, Any]:
-        """
-        [Method intent]
-        Get model-specific parameters for the request.
-        This should be implemented by each model client class that has special parameters.
-        
-        [Design principles]
-        - Clear extraction of model-specific parameters
-        - Model-specific implementation
-        - Optional functionality
-        
-        [Implementation details]
-        - Default returns empty dict
-        - Model clients should override if needed
-        
-        Returns:
-            Dict[str, Any]: Model-specific parameters or empty dict
-        """
-        return {}
-
-    def _prepare_request(self, messages: List[Dict[str, Any]], kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        [Method intent]
-        Prepare a complete request payload for the Bedrock Converse API.
-        
-        [Design principles]
-        - Comprehensive request preparation
-        - Uniform structure across model clients
-        - Leverages internal formatting methods
-        
-        [Implementation details]
-        - Extracts and formats common parameters
-        - Formats messages
-        - Adds system content if available
-        - Adds model-specific parameters if available
-        
-        Args:
-            messages: List of message objects
-            kwargs: Combined parameters
-            
-        Returns:
-            Dict[str, Any]: Complete request payload for Converse API
-        """
-        # Extract standard and model-specific parameters
-        common_params, model_params = self._extract_model_params(kwargs)
-        
-        # Format messages and parameters
-        formatted_messages = self._format_messages_internal(messages)
-        inference_config = self._format_model_kwargs_internal(common_params)
-        
-        # Prepare base request
-        request = {
-            "messages": formatted_messages,
-            "inferenceConfig": inference_config
-        }
-        
-        # If an inference profile ARN is available, use it as the modelId parameter
-        # Otherwise use the regular model ID
-        if hasattr(self, 'inference_profile_arn') and self.inference_profile_arn:
-            request["modelId"] = self.inference_profile_arn
-            self.logger.debug(f"Using inference profile ARN: {self.inference_profile_arn}")
-        else:
-            request["modelId"] = self.model_id
-        
-        # Add system content if available
-        system_content = self._get_system_content()
-        if system_content:
-            request["system"] = system_content
-        
-        # Add model-specific parameters if any
-        model_specific_params = self._get_model_specific_params()
-        if model_specific_params:
-            request["additionalModelRequestFields"] = model_specific_params
-        
-        return request
+    # The abstract methods from BedrockBase must be implemented by concrete model classes
+    # We don't need to redefine them here as they are already defined in the parent class:
+    # - _format_messages
+    # - _format_model_kwargs
+    # - _get_system_content
+    # - _get_model_specific_params
 
     async def get_model_capabilities(self) -> Dict[str, bool]:
         """
@@ -626,17 +455,17 @@ class EnhancedBedrockBase(BedrockBase):
         """
         [Method intent]
         Generate a response from the model for a chat conversation using streaming.
-        Uses the template method pattern for model-specific payload construction.
+        Enhanced version that supports prompt caching capability.
         
         [Design principles]
         - Streaming as the standard interaction pattern
         - Support for model-specific parameters and caching
-        - Clean separation of API invocation and payload preparation
+        - Clean delegation to parent implementation
         
         [Implementation details]
-        - Checks for prompt caching using direct method
-        - Uses _prepare_request template method for payload
-        - Handles streaming response
+        - Enables prompt caching if configured
+        - Delegates to parent's stream_chat implementation
+        - Maintains streaming semantics
         
         Args:
             messages: List of message objects with role and content
@@ -648,34 +477,10 @@ class EnhancedBedrockBase(BedrockBase):
         Raises:
             LLMError: If chat generation fails
         """
-        # Validate initialization
-        if not self.is_initialized():
-            await self.initialize()
-        
         # Check if caching should be enabled for this request
         if self.is_prompt_caching_enabled() and self.supports_prompt_caching():
             kwargs["enable_caching"] = True
         
-        # Prepare complete request using the template method
-        request_payload = self._prepare_request(messages, kwargs)
-        
-        # Stream response
-        try:
-            # Make streaming API call - run in executor to avoid blocking
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
-                None, 
-                lambda: self.bedrock_runtime.converse_stream(**request_payload)
-            )
-            
-            # Process the stream - this might be in the response or directly
-            stream = response.get("stream", response)
-            
-            # Process stream events
-            async for chunk in self._process_converse_stream(stream):
-                yield chunk
-                
-        except Exception as e:
-            if isinstance(e, LLMError):
-                raise e
-            raise LLMError(f"Failed to stream chat response: {str(e)}", e)
+        # Delegate to parent's stream_chat implementation
+        async for chunk in super().stream_chat(messages, **kwargs):
+            yield chunk

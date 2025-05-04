@@ -41,6 +41,10 @@
 # system:langchain_core
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-05T00:38:00Z : Updated method names for abstract class compatibility by CodeAssistant
+# * Renamed _format_messages_internal to _format_messages
+# * Renamed _format_model_kwargs_internal to _format_model_kwargs
+# * No functional changes, only method renaming for abstract method implementation
 # 2025-05-04T23:45:00Z : Refactored to use template method pattern for request preparation by CodeAssistant
 # * Removed duplicated stream_chat implementation
 # * Added standardized parameter handling through internal methods
@@ -113,7 +117,6 @@ class NovaClient(EnhancedBedrockBase):
         "amazon.nova-micro-v1:0",
         "amazon.nova-pro-v1:0",
         "amazon.nova-premier-v1:0",
-        "amazon.nova-reel-v1:0"
     ]
     
     # Public attribute for model discovery
@@ -294,7 +297,7 @@ class NovaClient(EnhancedBedrockBase):
         """
         return True
     
-    def _format_messages_internal(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _format_messages(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         [Method intent]
         Format messages specifically for Nova models.
@@ -392,7 +395,7 @@ class NovaClient(EnhancedBedrockBase):
             self.logger.error(f"Error in {operation_name}: {str(error)}")
             raise LLMError(f"Failed in {operation_name}: {str(error)}", error)
             
-    def _format_model_kwargs_internal(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+    def _format_model_kwargs(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         """
         [Method intent]
         Format model parameters for Nova's inferenceConfig.

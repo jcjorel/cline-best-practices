@@ -42,6 +42,10 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-05T00:39:00Z : Updated method names for abstract class compatibility by CodeAssistant
+# * Renamed _format_messages_internal to _format_messages
+# * Renamed _format_model_kwargs_internal to _format_model_kwargs
+# * No functional changes, only method renaming for abstract method implementation
 # 2025-05-04T23:45:00Z : Refactored to use template method pattern for request preparation by CodeAssistant
 # * Removed duplicated stream_chat implementation
 # * Added standardized parameter handling through internal methods
@@ -246,7 +250,7 @@ class ClaudeClient(EnhancedBedrockBase):
         # All Claude models support system prompts
         return True
     
-    def _format_messages_internal(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _format_messages(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         [Method intent]
         Format messages specifically for Claude models.
@@ -314,7 +318,7 @@ class ClaudeClient(EnhancedBedrockBase):
         
         return formatted_messages
 
-    def _format_model_kwargs_internal(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+    def _format_model_kwargs(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         """
         [Method intent]
         Format model parameters for Claude.
