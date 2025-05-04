@@ -23,7 +23,7 @@
 # - Consistent streaming pattern across all methods
 # - Support for multimodal and reasoning capabilities
 # - Clean extension of BedrockBase
-# - Backward compatibility with existing clients
+# - Direct access to model details for capability checking
 ###############################################################################
 # [Source file constraints]
 # - Must maintain compatibility with all Bedrock model families
@@ -36,12 +36,22 @@
 # codebase:src/dbp/llm/bedrock/base.py
 # codebase:src/dbp/llm/common/streaming.py
 # codebase:src/dbp/llm/common/exceptions.py
+# codebase:src/dbp/llm/bedrock/discovery/models.py
 # system:typing
 # system:asyncio
 # system:json
-# system:enum
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-04T23:45:00Z : Implemented Template Method pattern for request preparation by CodeAssistant
+# * Added internal formatting methods for model-specific customization
+# * Added _prepare_request template method for unified request creation
+# * Refactored stream_chat to use template methods for consistency
+# * Eliminated duplication of stream_chat in model-specific clients
+# 2025-05-04T23:05:00Z : Refactored capability management to use raw model details by CodeAssistant
+# * Removed ModelCapability enum and CapabilityRegistry class
+# * Added direct model details access methods
+# * Added capability check methods that use model details directly
+# * Simplified handler management with string-based registration
 # 2025-05-04T11:22:00Z : Implemented prompt caching API methods by CodeAssistant
 # * Added enable_prompt_caching method to toggle caching
 # * Added is_prompt_caching_enabled method to check caching status
@@ -51,244 +61,16 @@
 # * Added PROMPT_CACHING to ModelCapability enum
 # * Enables capability-based detection and registration for prompt caching
 # * Part of implementation for Bedrock prompt caching support
-# 2025-05-03T08:50:00Z : Moved _process_converse_stream to BedrockBase by CodeAssistant
-# * Moved method to parent class to make it available to all Bedrock clients
-# * Maintained consistent stream processing functionality
-# * Ensures standardized handling of Bedrock streams across all implementations
-# 2025-05-02T13:02:00Z : Created enhanced base interface for Bedrock models by CodeAssistant
-# * Implemented unified API for different model capabilities
-# * Added capability discovery and registration system
-# * Created common interfaces for specialized features
-# * Added backward compatibility adapters
 ###############################################################################
 
 import logging
 import json
 import asyncio
-import enum
-from typing import Dict, Any, List, Optional, AsyncIterator, Union, Set, Callable, Type, TypeVar
+from typing import Dict, Any, List, Optional, AsyncIterator, Union, Callable, Tuple
 
 from .base import BedrockBase
 from ..common.streaming import StreamingResponse, TextStreamingResponse, IStreamable
 from ..common.exceptions import LLMError, InvocationError, UnsupportedFeatureError
-
-
-class ModelCapability(str, enum.Enum):
-    """
-    [Class intent]
-    Defines standard capability identifiers for model features to enable
-    consistent capability checking across different model implementations.
-    
-    [Design principles]
-    - Standardized capability naming
-    - Enum-based for type safety
-    - Comprehensive coverage of model features
-    
-    [Implementation details]
-    - String enum for easy serialization
-    - Structured by capability category
-    """
-    
-    # Core capabilities
-    STREAMING = "streaming"
-    FUNCTION_CALLING = "function_calling"
-    SYSTEM_PROMPT = "system_prompt"
-    
-    # Content handling capabilities
-    TEXT_INPUT = "text_input"
-    TEXT_OUTPUT = "text_output"
-    IMAGE_INPUT = "image_input"
-    IMAGE_OUTPUT = "image_output"
-    VIDEO_INPUT = "video_input"
-    VIDEO_OUTPUT = "video_output"
-    
-    # Processing capabilities
-    REASONING = "reasoning"
-    STRUCTURED_OUTPUT = "structured_output"
-    KEYWORD_EXTRACTION = "keyword_extraction"
-    SUMMARIZATION = "summarization"
-    
-    # Advanced features
-    MULTIMODAL = "multimodal"
-    VISION = "vision"
-    RAG = "retrieval_augmented_generation"
-    PROMPT_CACHING = "prompt_caching"  # New capability for prompt caching
-
-
-# Type variable for callback function parameter types
-T = TypeVar('T')
-
-
-class CapabilityRegistry:
-    """
-    [Class intent]
-    Manages model capabilities and handles capability-based method dispatch,
-    allowing models to register their supported features and providing a way 
-    to access capability-specific methods.
-    
-    [Design principles]
-    - Centralized capability management
-    - Dynamic method registration and dispatch
-    - Type-safe interface
-    
-    [Implementation details]
-    - Maintains sets of capabilities per model
-    - Maps capabilities to handler methods
-    - Provides helper methods for capability checking
-    """
-    
-    def __init__(self):
-        """
-        [Method intent]
-        Initialize the capability registry with empty collections.
-        
-        [Design principles]
-        - Clean initialization
-        - Prepare data structures for capability registration
-        
-        [Implementation details]
-        - Sets up capability set
-        - Creates empty handler maps
-        """
-        self._capabilities: Set[ModelCapability] = set()
-        self._handlers: Dict[ModelCapability, Callable] = {}
-    
-    def register_capability(self, capability: ModelCapability) -> None:
-        """
-        [Method intent]
-        Register a capability as supported by the model.
-        
-        [Design principles]
-        - Simple capability declaration
-        - Idempotent registration
-        
-        [Implementation details]
-        - Adds capability to the supported set
-        - No effect if already registered
-        
-        Args:
-            capability: The capability to register
-        """
-        self._capabilities.add(capability)
-    
-    def register_capabilities(self, capabilities: List[ModelCapability]) -> None:
-        """
-        [Method intent]
-        Register multiple capabilities at once.
-        
-        [Design principles]
-        - Batch capability registration
-        - Convenience method
-        
-        [Implementation details]
-        - Adds all capabilities to the supported set
-        
-        Args:
-            capabilities: List of capabilities to register
-        """
-        for capability in capabilities:
-            self.register_capability(capability)
-    
-    def register_handler(
-        self, 
-        capability: ModelCapability, 
-        handler: Callable
-    ) -> None:
-        """
-        [Method intent]
-        Register a handler method for a specific capability.
-        
-        [Design principles]
-        - Connect capabilities to implementation methods
-        - Support polymorphic behavior
-        
-        [Implementation details]
-        - Maps capability to handler function
-        - Overwrites previous handler if exists
-        
-        Args:
-            capability: The capability the handler implements
-            handler: The method that implements the capability
-        """
-        self._handlers[capability] = handler
-    
-    def has_capability(self, capability: ModelCapability) -> bool:
-        """
-        [Method intent]
-        Check if a capability is supported.
-        
-        [Design principles]
-        - Simple capability checking
-        - Clean boolean interface
-        
-        [Implementation details]
-        - Checks presence in capability set
-        
-        Args:
-            capability: The capability to check
-            
-        Returns:
-            bool: True if the capability is supported
-        """
-        return capability in self._capabilities
-    
-    def require_capability(self, capability: ModelCapability) -> None:
-        """
-        [Method intent]
-        Verify a capability is supported or raise an exception.
-        
-        [Design principles]
-        - Fail-fast validation
-        - Clear error messages
-        
-        [Implementation details]
-        - Checks capability presence and raises if missing
-        
-        Args:
-            capability: The capability that must be supported
-            
-        Raises:
-            UnsupportedFeatureError: If the capability is not supported
-        """
-        if not self.has_capability(capability):
-            raise UnsupportedFeatureError(f"Capability {capability.value} is not supported by this model")
-    
-    def get_handler(self, capability: ModelCapability) -> Optional[Callable]:
-        """
-        [Method intent]
-        Get the handler method for a capability if registered.
-        
-        [Design principles]
-        - Dynamic method lookup
-        - Optional return for flexibility
-        
-        [Implementation details]
-        - Returns registered handler or None
-        
-        Args:
-            capability: The capability to get a handler for
-            
-        Returns:
-            Optional[Callable]: The handler method if registered, None otherwise
-        """
-        return self._handlers.get(capability)
-    
-    def get_capabilities(self) -> Dict[str, bool]:
-        """
-        [Method intent]
-        Get a dictionary of all supported capabilities.
-        
-        [Design principles]
-        - Provide capability information in a serializable format
-        - Convert internal representation to user-friendly format
-        
-        [Implementation details]
-        - Converts set to dictionary mapping capability names to True
-        
-        Returns:
-            Dict[str, bool]: Dictionary of capability names to support status
-        """
-        return {cap.value: True for cap in self._capabilities}
 
 
 class EnhancedBedrockBase(BedrockBase):
@@ -300,15 +82,15 @@ class EnhancedBedrockBase(BedrockBase):
     
     [Design principles]
     - Unified core API with model-agnostic interfaces
-    - Feature capability discovery and adaptation
+    - Direct model details access for capability checking
     - Consistent streaming pattern across all methods
     - Support for multimodal and reasoning across compatible models
     
     [Implementation details]
-    - Extends BedrockBase with capability management
-    - Implements common interface methods for all models
-    - Provides capability-based dispatch system
-    - Handles capability differences gracefully
+    - Extends BedrockBase with model details access
+    - Uses direct model details for capability checking
+    - Provides string-based handler registration system
+    - Handles capability differences gracefully with clear error messages
     """
     
     # Class variable for model discovery
@@ -349,16 +131,18 @@ class EnhancedBedrockBase(BedrockBase):
     ):
         """
         [Method intent]
-        Initialize the enhanced Bedrock base with capability registry.
+        Initialize the enhanced Bedrock base with model details from discovery.
         
         [Design principles]
         - Clean delegation to parent class
-        - Capability system initialization
+        - Model details retrieval and storage
         - Consistent parameter handling
+        - Errors are propagated, not caught
         
         [Implementation details]
-        - Sets up capability registry
-        - Passes all parameters to parent
+        - Gets model details from discovery service
+        - Stores model details for capability checks
+        - Passes all parameters to parent class
         
         Args:
             model_id: The Bedrock model ID
@@ -371,6 +155,11 @@ class EnhancedBedrockBase(BedrockBase):
             use_model_discovery: Whether to discover model availability
             preferred_regions: List of preferred regions for model discovery
             inference_profile_arn: Optional inference profile ARN to use
+            
+        Raises:
+            ModelNotAvailableError: If the model is not available or accessible
+            AWSClientError: If there are AWS client issues
+            LLMError: If there are other errors fetching model details
         """
         super().__init__(
             model_id=model_id,
@@ -385,129 +174,118 @@ class EnhancedBedrockBase(BedrockBase):
             inference_profile_arn=inference_profile_arn
         )
         
-        # Initialize capability registry
-        self._capability_registry = CapabilityRegistry()
+        # Get model discovery
+        from .discovery.models import BedrockModelDiscovery
+        self._model_discovery = BedrockModelDiscovery.get_instance()
         
-        # Register core capabilities all models should have
-        self._capability_registry.register_capabilities([
-            ModelCapability.STREAMING,
-            ModelCapability.TEXT_INPUT,
-            ModelCapability.TEXT_OUTPUT
-        ])
+        # Fetch model details - let errors propagate to caller
+        self._model_details = self._model_discovery.get_model(
+            model_id=model_id,
+            region=region_name
+        )
+        self.logger.info(f"Loaded model details for {model_id}")
     
-    def register_capability(self, capability: ModelCapability) -> None:
+    def model(self) -> Dict[str, Any]:
         """
         [Method intent]
-        Register a capability as supported by this model.
+        Get the detailed model information for this client.
         
         [Design principles]
-        - Simple capability declaration
-        - Public interface for capability registration
+        - Direct model details access
+        - Complete information retrieval
+        - No data transformation
         
         [Implementation details]
-        - Delegates to capability registry
+        - Returns stored model details from discovery
         
-        Args:
-            capability: The capability to register
+        Returns:
+            Dict[str, Any]: Complete model information from discovery
         """
-        self._capability_registry.register_capability(capability)
-    
-    def register_capabilities(self, capabilities: List[ModelCapability]) -> None:
-        """
-        [Method intent]
-        Register multiple capabilities at once.
-        
-        [Design principles]
-        - Batch capability registration
-        - Convenience method
-        
-        [Implementation details]
-        - Delegates to capability registry
-        
-        Args:
-            capabilities: List of capabilities to register
-        """
-        self._capability_registry.register_capabilities(capabilities)
-    
-    def register_handler(
-        self, 
-        capability: ModelCapability, 
-        handler: Callable
-    ) -> None:
+        return self._model_details
+
+    def has_input_modality(self, modality: str) -> bool:
         """
         [Method intent]
-        Register a handler method for a specific capability.
-        
-        [Design principles]
-        - Connect capabilities to implementation methods
-        - Allow specialized implementations
-        
-        [Implementation details]
-        - Delegates to capability registry
-        
-        Args:
-            capability: The capability the handler implements
-            handler: The method that implements the capability
-        """
-        self._capability_registry.register_handler(capability, handler)
-    
-    def has_capability(self, capability: ModelCapability) -> bool:
-        """
-        [Method intent]
-        Check if a capability is supported by the model.
+        Check if the model supports a specific input modality.
         
         [Design principles]
         - Simple capability checking
-        - Public interface for capability queries
+        - Direct model details access
+        - Clean boolean interface
         
         [Implementation details]
-        - Delegates to capability registry
+        - Checks inputModalities field in model details
         
         Args:
-            capability: The capability to check
+            modality: The modality to check (e.g., "TEXT", "IMAGE")
             
         Returns:
-            bool: True if the capability is supported
+            bool: True if the model supports the input modality
         """
-        return self._capability_registry.has_capability(capability)
-    
-    def require_capability(self, capability: ModelCapability) -> None:
+        modalities = self._model_details.get("inputModalities", [])
+        return modality in modalities
+
+    def has_output_modality(self, modality: str) -> bool:
         """
         [Method intent]
-        Verify a capability is supported or raise an exception.
+        Check if the model supports a specific output modality.
         
         [Design principles]
-        - Fail-fast validation
-        - Input validation helper
+        - Simple capability checking
+        - Direct model details access
+        - Clean boolean interface
         
         [Implementation details]
-        - Delegates to capability registry
+        - Checks outputModalities field in model details
         
         Args:
-            capability: The capability that must be supported
+            modality: The modality to check (e.g., "TEXT", "IMAGE")
             
-        Raises:
-            UnsupportedFeatureError: If the capability is not supported
+        Returns:
+            bool: True if the model supports the output modality
         """
-        self._capability_registry.require_capability(capability)
-    
-    async def get_model_capabilities(self) -> Dict[str, bool]:
+        modalities = self._model_details.get("outputModalities", [])
+        return modality in modalities
+
+    def supports_streaming(self) -> bool:
         """
         [Method intent]
-        Get a dictionary of all capabilities supported by this model.
+        Check if the model supports streaming responses.
         
         [Design principles]
-        - Dynamic capability reporting
-        - Serializable capability format
+        - Simple capability checking
+        - Direct model details access
+        - Clean boolean interface
         
         [Implementation details]
-        - Returns map of capability names to boolean support flags
+        - Checks responseStreamingSupported field in model details
         
         Returns:
-            Dict[str, bool]: Dictionary of capability names to support status
+            bool: True if the model supports streaming
         """
-        return self._capability_registry.get_capabilities()
+        return self._model_details.get("responseStreamingSupported", True)
+
+    def supports_prompt_caching(self) -> bool:
+        """
+        [Method intent]
+        Check if the model supports prompt caching.
         
+        [Design principles]
+        - Simple capability checking
+        - Delegation to model discovery
+        - Clean boolean interface
+        
+        [Implementation details]
+        - Uses model discovery's check which is based on model ID
+        
+        Returns:
+            bool: True if prompt caching is supported
+        """
+        # Use model discovery's check which is based on model ID
+        return self._model_discovery.supports_prompt_caching(
+            self._model_details.get("modelId", "")
+        )
+    
     def enable_prompt_caching(self, enabled: bool = True) -> bool:
         """
         [Method intent]
@@ -515,34 +293,30 @@ class EnhancedBedrockBase(BedrockBase):
         
         [Design principles]
         - Simple interface to toggle caching
-        - No errors for unsupported models
-        - Consistent with capability system
+        - Clear error if not supported
         - Clear return value indicating actual state
         
         [Implementation details]
         - Stores desired state in instance variable
-        - Checks model support via capability system
-        - Returns actual state (may be false if not supported)
+        - Checks model support via discovery
+        - Throws error if enabling but not supported
         
         Args:
             enabled: Whether to enable prompt caching (default: True)
             
         Returns:
-            bool: True if prompt caching is now enabled, False otherwise
-        """
-        # Store desired state
-        self._prompt_caching_enabled = enabled
-        
-        # Check if model supports caching
-        supports_caching = self.has_capability(ModelCapability.PROMPT_CACHING)
-        
-        # If enabling but model doesn't support it, log warning
-        if enabled and not supports_caching:
-            self.logger.warning(f"Model {self.model_id} does not support prompt caching")
-            return False
+            bool: True if prompt caching is now enabled
             
-        # Return actual state (enabled only if supported)
-        return enabled and supports_caching
+        Raises:
+            UnsupportedFeatureError: If enabling caching for a model that doesn't support it
+        """
+        # Check if model supports caching when enabling
+        if enabled and not self.supports_prompt_caching():
+            raise UnsupportedFeatureError(f"Model {self.model_id} does not support prompt caching")
+        
+        # Store state and return
+        self._prompt_caching_enabled = enabled
+        return enabled
 
     def is_prompt_caching_enabled(self) -> bool:
         """
@@ -554,17 +328,13 @@ class EnhancedBedrockBase(BedrockBase):
         - Clear boolean interface
         
         [Implementation details]
-        - Checks stored state and capability support
+        - Checks stored state 
         - Returns boolean indicating if caching is active
         
         Returns:
-            bool: True if prompt caching is enabled and supported
+            bool: True if prompt caching is enabled
         """
-        has_setting = hasattr(self, '_prompt_caching_enabled')
-        is_enabled = getattr(self, '_prompt_caching_enabled', False)
-        supports_caching = self.has_capability(ModelCapability.PROMPT_CACHING)
-        
-        return has_setting and is_enabled and supports_caching
+        return getattr(self, '_prompt_caching_enabled', False)
         
     def mark_cache_point(
         self, 
@@ -598,7 +368,7 @@ class EnhancedBedrockBase(BedrockBase):
         import uuid
         
         # Check if caching is enabled and supported
-        caching_active = self.is_prompt_caching_enabled()
+        caching_active = self.is_prompt_caching_enabled() and self.supports_prompt_caching()
         
         # Generate or use provided cache ID
         cache_id = cache_id or f"cache-{uuid.uuid4()}"
@@ -634,6 +404,220 @@ class EnhancedBedrockBase(BedrockBase):
         result["messages"] = messages_copy
         return result
     
+    
+    def _format_messages_internal(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        [Method intent]
+        Format messages for the Bedrock Converse API with model-specific requirements.
+        This should be implemented by each model client class.
+        
+        [Design principles]
+        - Consistent return type (always a List)
+        - No side effects, pure formatting operation
+        - Focus on message format only
+        
+        [Implementation details]
+        - Default implementation from BedrockBase
+        - Can be overridden by model clients
+        
+        Args:
+            messages: List of message objects in standard format
+            
+        Returns:
+            List[Dict[str, Any]]: Messages formatted for Bedrock API
+        """
+        # Default implementation from BedrockBase
+        return super()._format_messages(messages)
+    
+    def _format_model_kwargs_internal(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        [Method intent]
+        Format model parameters for the Bedrock Converse API's inferenceConfig.
+        This should be implemented by each model client class.
+        
+        [Design principles]
+        - Consistent return type (always a Dict for inferenceConfig)
+        - No side effects, pure formatting operation
+        - Focus on model parameters only
+        
+        [Implementation details]
+        - Default implementation from BedrockBase
+        - Can be overridden by model clients
+        
+        Args:
+            kwargs: Model-specific parameters
+            
+        Returns:
+            Dict[str, Any]: Parameters formatted for inferenceConfig
+        """
+        # Default implementation from BedrockBase
+        return super()._format_model_kwargs(kwargs)
+
+    def _extract_model_params(self, kwargs: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        """
+        [Method intent]
+        Extract and separate standard parameters from model-specific parameters.
+        
+        [Design principles]
+        - Clean separation of common and model-specific parameters
+        - No formatting, just extraction
+        - No side effects
+        
+        [Implementation details]
+        - Identifies common parameters for inferenceConfig
+        - Separates model-specific parameters
+        - Handles system prompt extraction
+        
+        Args:
+            kwargs: Combined parameters
+            
+        Returns:
+            Tuple[Dict[str, Any], Dict[str, Any]]: 
+                (common_parameters, model_specific_parameters)
+        """
+        common_params = {}
+        model_params = {}
+        
+        # Standard parameters for inferenceConfig
+        common_param_keys = {
+            "temperature", "max_tokens", "top_p", "top_k", "stop_sequences", 
+            "enable_caching", "max_response_length"
+        }
+        
+        # Extract common parameters
+        for key, value in kwargs.items():
+            if key in common_param_keys:
+                common_params[key] = value
+            else:
+                model_params[key] = value
+        
+        return common_params, model_params
+
+    def _get_system_content(self) -> Optional[Dict[str, Any]]:
+        """
+        [Method intent]
+        Get system content for the request if available.
+        This should be implemented by each model client class that supports system prompts.
+        
+        [Design principles]
+        - Clear extraction of system content
+        - Model-specific implementation
+        - Optional functionality
+        
+        [Implementation details]
+        - Default returns None
+        - Model clients should override if needed
+        
+        Returns:
+            Optional[Dict[str, Any]]: System content structured per model requirements or None
+        """
+        return None
+
+    def _get_model_specific_params(self) -> Dict[str, Any]:
+        """
+        [Method intent]
+        Get model-specific parameters for the request.
+        This should be implemented by each model client class that has special parameters.
+        
+        [Design principles]
+        - Clear extraction of model-specific parameters
+        - Model-specific implementation
+        - Optional functionality
+        
+        [Implementation details]
+        - Default returns empty dict
+        - Model clients should override if needed
+        
+        Returns:
+            Dict[str, Any]: Model-specific parameters or empty dict
+        """
+        return {}
+
+    def _prepare_request(self, messages: List[Dict[str, Any]], kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        [Method intent]
+        Prepare a complete request payload for the Bedrock Converse API.
+        
+        [Design principles]
+        - Comprehensive request preparation
+        - Uniform structure across model clients
+        - Leverages internal formatting methods
+        
+        [Implementation details]
+        - Extracts and formats common parameters
+        - Formats messages
+        - Adds system content if available
+        - Adds model-specific parameters if available
+        
+        Args:
+            messages: List of message objects
+            kwargs: Combined parameters
+            
+        Returns:
+            Dict[str, Any]: Complete request payload for Converse API
+        """
+        # Extract standard and model-specific parameters
+        common_params, model_params = self._extract_model_params(kwargs)
+        
+        # Format messages and parameters
+        formatted_messages = self._format_messages_internal(messages)
+        inference_config = self._format_model_kwargs_internal(common_params)
+        
+        # Prepare base request
+        request = {
+            "messages": formatted_messages,
+            "inferenceConfig": inference_config
+        }
+        
+        # If an inference profile ARN is available, use it as the modelId parameter
+        # Otherwise use the regular model ID
+        if hasattr(self, 'inference_profile_arn') and self.inference_profile_arn:
+            request["modelId"] = self.inference_profile_arn
+            self.logger.debug(f"Using inference profile ARN: {self.inference_profile_arn}")
+        else:
+            request["modelId"] = self.model_id
+        
+        # Add system content if available
+        system_content = self._get_system_content()
+        if system_content:
+            request["system"] = system_content
+        
+        # Add model-specific parameters if any
+        model_specific_params = self._get_model_specific_params()
+        if model_specific_params:
+            request["additionalModelRequestFields"] = model_specific_params
+        
+        return request
+
+    async def get_model_capabilities(self) -> Dict[str, bool]:
+        """
+        [Method intent]
+        Get a dictionary of model capabilities based on model details.
+        
+        [Design principles]
+        - Dynamic capability reporting
+        - Serializable capability format
+        - Based directly on model details
+        
+        [Implementation details]
+        - Extracts capabilities from model details
+        
+        Returns:
+            Dict[str, bool]: Dictionary of capability names to support status
+        """
+        capabilities = {
+            "streaming": self.supports_streaming(),
+            "text_input": self.has_input_modality("TEXT"),
+            "text_output": self.has_output_modality("TEXT"),
+            "image_input": self.has_input_modality("IMAGE"),
+            "image_output": self.has_output_modality("IMAGE"),
+            "video_input": self.has_input_modality("VIDEO"),
+            "video_output": self.has_output_modality("VIDEO"),
+            "prompt_caching": self.supports_prompt_caching()
+        }
+            
+        return capabilities
+        
     async def stream_chat(
         self, 
         messages: List[Dict[str, Any]], 
@@ -642,15 +626,16 @@ class EnhancedBedrockBase(BedrockBase):
         """
         [Method intent]
         Generate a response from the model for a chat conversation using streaming.
+        Uses the template method pattern for model-specific payload construction.
         
         [Design principles]
         - Streaming as the standard interaction pattern
         - Support for model-specific parameters and caching
-        - Clean parameter passing
+        - Clean separation of API invocation and payload preparation
         
         [Implementation details]
-        - Checks for cache point metadata
-        - Forwards caching settings to parent method
+        - Checks for prompt caching using direct method
+        - Uses _prepare_request template method for payload
         - Handles streaming response
         
         Args:
@@ -663,180 +648,34 @@ class EnhancedBedrockBase(BedrockBase):
         Raises:
             LLMError: If chat generation fails
         """
+        # Validate initialization
+        if not self.is_initialized():
+            await self.initialize()
+        
         # Check if caching should be enabled for this request
-        if self.is_prompt_caching_enabled():
+        if self.is_prompt_caching_enabled() and self.supports_prompt_caching():
             kwargs["enable_caching"] = True
         
-        # Delegate to parent implementation
-        async for chunk in super().stream_chat(messages, **kwargs):
-            yield chunk
-            
-    async def stream_enhanced_generation(
-        self,
-        prompt: str,
-        enhancement_type: Optional[str] = None,
-        enhancement_options: Optional[Dict[str, Any]] = None,
-        **kwargs
-    ) -> AsyncIterator[Dict[str, Any]]:
-        """
-        [Method intent]
-        Generate a response with model-specific enhancements.
-        This provides a unified interface to access model-specific features.
+        # Prepare complete request using the template method
+        request_payload = self._prepare_request(messages, kwargs)
         
-        [Design principles]
-        - Unified interface for enhanced generation
-        - Support for model-specific features
-        - Consistent streaming pattern
-        
-        [Implementation details]
-        - Maps enhancement_type to capabilities
-        - Uses capability-specific handlers when available
-        - Falls back to standard streaming for unknown enhancements
-        
-        Args:
-            prompt: The text prompt
-            enhancement_type: Type of enhancement ("reasoning", "multimodal", etc.)
-            enhancement_options: Enhancement-specific options
-            **kwargs: Standard model parameters
-            
-        Yields:
-            Dict[str, Any]: Response chunks from the model
-            
-        Raises:
-            UnsupportedFeatureError: If the enhancement is not supported
-            LLMError: If generation fails
-        """
-        # Convert enhancement type to capability if specified
-        if enhancement_type:
-            try:
-                capability = ModelCapability(enhancement_type)
-                self.require_capability(capability)
-                
-                # Get the specialized handler if registered
-                handler = self._capability_registry.get_handler(capability)
-                if handler:
-                    # Use the specialized handler
-                    options = enhancement_options or {}
-                    async for chunk in handler(prompt, **options, **kwargs):
-                        yield chunk
-                    return
-            except (ValueError, UnsupportedFeatureError) as e:
-                # Either invalid enhancement type or unsupported capability
-                raise UnsupportedFeatureError(
-                    f"Enhancement '{enhancement_type}' is not supported by this model"
-                ) from e
-        
-        # Default implementation uses standard stream_chat
-        messages = [{"role": "user", "content": prompt}]
-        async for chunk in self.stream_chat(messages, **kwargs):
-            yield chunk
-    
-    async def process_content(
-        self,
-        content: Union[str, Dict[str, Any], List[Dict[str, Any]]],
-        content_type: str = "text",
-        processing_type: Optional[str] = None,
-        options: Optional[Dict[str, Any]] = None,
-        **kwargs
-    ) -> Union[str, Dict[str, Any], AsyncIterator[Dict[str, Any]]]:
-        """
-        [Method intent]
-        Process content using the model's capabilities with a unified interface.
-        This method handles different content types and processing operations.
-        
-        [Design principles]
-        - Unified interface for content processing
-        - Support for different content types
-        - Dynamic dispatch based on content and processing type
-        
-        [Implementation details]
-        - Maps content_type and processing_type to capabilities
-        - Validates capability support
-        - Uses specialized handlers when available
-        - Handles multimodal content
-        
-        Args:
-            content: Input content (text, image bytes, etc.)
-            content_type: Type of input content ("text", "image", "video", "mixed")
-            processing_type: Type of processing ("summarize", "extract_keywords",
-                            "reasoning", "structured_output")
-            options: Processing-specific options
-            **kwargs: Standard model parameters
-            
-        Returns:
-            Union[str, Dict[str, Any], AsyncIterator[Dict[str, Any]]]: 
-                Processing result based on the operation
-                
-        Raises:
-            UnsupportedFeatureError: If the content type or processing is not supported
-            LLMError: If processing fails
-        """
-        # Validate content type capability
-        content_capability_map = {
-            "text": ModelCapability.TEXT_INPUT,
-            "image": ModelCapability.IMAGE_INPUT,
-            "video": ModelCapability.VIDEO_INPUT,
-            "mixed": ModelCapability.MULTIMODAL
-        }
-        
-        if content_type in content_capability_map:
-            capability = content_capability_map[content_type]
-            if not self.has_capability(capability):
-                raise UnsupportedFeatureError(
-                    f"Content type '{content_type}' is not supported by this model"
-                )
-        else:
-            raise ValueError(f"Unknown content type: {content_type}")
-        
-        # Handle processing type if specified
-        if processing_type:
-            processing_capability_map = {
-                "summarize": ModelCapability.SUMMARIZATION,
-                "extract_keywords": ModelCapability.KEYWORD_EXTRACTION,
-                "reasoning": ModelCapability.REASONING,
-                "structured_output": ModelCapability.STRUCTURED_OUTPUT
-            }
-            
-            if processing_type in processing_capability_map:
-                capability = processing_capability_map[processing_type]
-                if not self.has_capability(capability):
-                    raise UnsupportedFeatureError(
-                        f"Processing type '{processing_type}' is not supported by this model"
-                    )
-                
-                # Get the specialized handler if registered
-                handler = self._capability_registry.get_handler(capability)
-                if handler:
-                    # Use the specialized handler
-                    opts = options or {}
-                    return await handler(content, **opts, **kwargs)
-            else:
-                # Unknown processing type
-                raise ValueError(f"Unknown processing type: {processing_type}")
-        
-        # Default implementation processes as text prompt
-        if content_type == "text" and isinstance(content, str):
-            # Simple text processing
-            messages = [{"role": "user", "content": content}]
-            result = ""
-            async for chunk in self.stream_chat(messages, **kwargs):
-                if "delta" in chunk and "text" in chunk["delta"]:
-                    result += chunk["delta"]["text"]
-            return result
-        elif content_type == "mixed":
-            # For multimodal content, look for a multimodal handler
-            if self.has_capability(ModelCapability.MULTIMODAL):
-                handler = self._capability_registry.get_handler(ModelCapability.MULTIMODAL)
-                if handler:
-                    opts = options or {}
-                    return await handler(content, **opts, **kwargs)
-            
-            # No handler or capability for multimodal
-            raise UnsupportedFeatureError(
-                "This model does not support processing mixed content types"
+        # Stream response
+        try:
+            # Make streaming API call - run in executor to avoid blocking
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None, 
+                lambda: self.bedrock_runtime.converse_stream(**request_payload)
             )
-        else:
-            # Other content types need specialized handling
-            raise UnsupportedFeatureError(
-                f"Default processing for content type '{content_type}' is not implemented"
-            )
+            
+            # Process the stream - this might be in the response or directly
+            stream = response.get("stream", response)
+            
+            # Process stream events
+            async for chunk in self._process_converse_stream(stream):
+                yield chunk
+                
+        except Exception as e:
+            if isinstance(e, LLMError):
+                raise e
+            raise LLMError(f"Failed to stream chat response: {str(e)}", e)

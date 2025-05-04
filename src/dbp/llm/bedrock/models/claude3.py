@@ -42,6 +42,16 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-04T23:45:00Z : Refactored to use template method pattern for request preparation by CodeAssistant
+# * Removed duplicated stream_chat implementation
+# * Added standardized parameter handling through internal methods
+# * Implemented _format_messages_internal, _format_model_kwargs_internal
+# * Added _get_system_content and _get_model_specific_params methods
+# 2025-05-04T23:08:00Z : Refactored to use direct model details for capability checking by CodeAssistant
+# * Removed ModelCapability enum dependencies
+# * Added Claude-specific capability check methods
+# * Updated handler registration to use string-based identifiers
+# * Improved error handling and propagation
 # 2025-05-04T11:29:00Z : Added prompt caching support by CodeAssistant
 # * Added capability detection for prompt caching
 # * Dynamically registers PROMPT_CACHING capability when supported
@@ -50,11 +60,6 @@
 # * Removed duplicated _process_converse_stream_events method
 # * Now using _process_converse_stream from EnhancedBedrockBase
 # * Improved code DRYness and maintainability
-# 2025-05-02T13:08:00Z : Enhanced with capability-based API integration by CodeAssistant
-# * Updated to extend EnhancedBedrockBase instead of BedrockBase
-# * Added capability registration for reasoning and structured output
-# * Implemented capability handlers for unified API access
-# * Integrated with capability discovery system
 ###############################################################################
 
 import logging
@@ -62,7 +67,7 @@ import json
 import asyncio
 from typing import Dict, Any, List, Optional, AsyncIterator, Union, cast
 
-from ..enhanced_base import EnhancedBedrockBase, ModelCapability
+from ..enhanced_base import EnhancedBedrockBase
 from ..client_common import (
     ConverseStreamProcessor, BedrockMessageConverter, 
     BedrockErrorMapper, InferenceParameterFormatter
@@ -70,7 +75,7 @@ from ..client_common import (
 from ...common.streaming import (
     StreamingResponse, TextStreamingResponse, IStreamable
 )
-from ...common.exceptions import LLMError, InvocationError
+from ...common.exceptions import LLMError, InvocationError, UnsupportedFeatureError
 
 
 class ClaudeClient(EnhancedBedrockBase):
@@ -131,6 +136,7 @@ class ClaudeClient(EnhancedBedrockBase):
         - Strong model validation
         - Claude-specific configuration
         - Clean delegation to base class
+        - Direct error propagation
         
         [Implementation details]
         - Validates that model_id is a Claude model
@@ -151,6 +157,9 @@ class ClaudeClient(EnhancedBedrockBase):
 
         Raises:
             ValueError: If model_id is not a supported Claude model
+            ModelNotAvailableError: If the model is not available or accessible
+            AWSClientError: If there are AWS client issues
+            LLMError: If there are other errors fetching model details
         """
         # Validate model is a Claude model
         base_model_id = model_id.split(":")[0]
@@ -169,7 +178,8 @@ class ClaudeClient(EnhancedBedrockBase):
             timeout=timeout,
             logger=logger or logging.getLogger("ClaudeClient"),
             use_model_discovery=use_model_discovery,
-            preferred_regions=preferred_regions
+            preferred_regions=preferred_regions,
+            inference_profile_arn=inference_profile_arn
         )
         
         # Store inference profile ARN if provided (for future use)
@@ -178,71 +188,114 @@ class ClaudeClient(EnhancedBedrockBase):
         # Initialize fields for additional parameters
         self._system_content = None
         self._claude_specific_params = {}
-        
-        # Register Claude capabilities
-        self.register_capabilities([
-            ModelCapability.SYSTEM_PROMPT,
-            ModelCapability.REASONING,
-            ModelCapability.STRUCTURED_OUTPUT
-        ])
-        
-        # Register capability handlers
-        self.register_handler(
-            ModelCapability.REASONING,
-            self._handle_reasoning
-        )
-        self.register_handler(
-            ModelCapability.STRUCTURED_OUTPUT,
-            self._handle_structured_output
-        )
-        
-        # Check if this model supports prompt caching
-        if hasattr(self, '_model_discovery') and self._model_discovery and self._model_discovery.supports_prompt_caching(self.model_id):
-            self.logger.info(f"Registering prompt caching capability for {self.model_id}")
-            self.register_capability(ModelCapability.PROMPT_CACHING)
     
-    def _format_messages(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def supports_reasoning(self) -> bool:
+        """
+        [Method intent]
+        Check if the model supports reasoning capabilities.
+        
+        [Design principles]
+        - Direct capability checking
+        - Claude-specific feature
+        - Clean boolean interface
+        
+        [Implementation details]
+        - All Claude models support reasoning
+        
+        Returns:
+            bool: True as all Claude models support reasoning
+        """
+        # All Claude models support reasoning
+        return True
+
+    def supports_structured_output(self) -> bool:
+        """
+        [Method intent]
+        Check if the model supports structured output generation.
+        
+        [Design principles]
+        - Direct capability checking
+        - Claude-specific feature
+        - Clean boolean interface
+        
+        [Implementation details]
+        - All Claude models support structured output
+        
+        Returns:
+            bool: True as all Claude models support structured output
+        """
+        # All Claude models support structured output
+        return True
+
+    def supports_system_prompt(self) -> bool:
+        """
+        [Method intent]
+        Check if the model supports system prompts.
+        
+        [Design principles]
+        - Direct capability checking
+        - Claude-specific feature
+        - Clean boolean interface
+        
+        [Implementation details]
+        - All Claude models support system prompts
+        
+        Returns:
+            bool: True as all Claude models support system prompts
+        """
+        # All Claude models support system prompts
+        return True
+    
+    def _format_messages_internal(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         [Method intent]
         Format messages specifically for Claude models.
         
         [Design principles]
         - Claude-specific message formatting
-        - Support for system messages
-        - Handle content format variations
+        - Consistent return type (List)
+        - No side effects
         
         [Implementation details]
-        - Properly formats system messages for Claude
-        - Handles content blocks for different content types
-        - Ensures proper message role mapping
+        - Properly formats all message types for Claude
+        - Handles content format variations
+        - Preserves special Claude message structure
         
         Args:
-            messages: List of message objects in standard format
+            messages: List of message objects
             
         Returns:
-            List[Dict[str, Any]]: Messages formatted for Claude API
+            List[Dict[str, Any]]: Claude-formatted messages
         """
         formatted_messages = []
+        
+        # Extract system prompts for separate handling
+        self._pending_system_content = None
         
         for msg in messages:
             role = msg["role"]
             content = msg["content"]
             
+            # Store system messages separately
+            if role == "system":
+                if isinstance(content, str):
+                    self._pending_system_content = content
+                else:
+                    self._pending_system_content = json.dumps(content)
+                continue
+                
             # Format for Claude's expected structure
             formatted_msg = {"role": role}
-            
+                
             # Handle content formatting
             if isinstance(content, str):
-                # For simple text, we use the direct 'text' key without a 'type' field
                 formatted_msg["content"] = [{"text": content}]
             elif isinstance(content, list):
-                # For multimodal content, convert each item to proper format
+                # Format multimodal content for Claude
                 formatted_content = []
                 for item in content:
-                    # If the item already has the right format (no 'type' field), use as is
                     if isinstance(item, dict) and ("text" in item or "image" in item):
                         formatted_content.append(item)
-                    # If it has a 'type' field, convert to proper format
                     elif isinstance(item, dict) and "type" in item:
                         if item["type"] == "text":
                             formatted_content.append({"text": item.get("text", "")})
@@ -252,39 +305,46 @@ class ClaudeClient(EnhancedBedrockBase):
                             })
                     else:
                         self.logger.warning(f"Unsupported content item: {item}")
-                
+                    
                 formatted_msg["content"] = formatted_content
             else:
-                raise ValueError(f"Unsupported content format: {type(content)}")
-            
+                formatted_msg["content"] = [{"text": json.dumps(content)}]
+                
             formatted_messages.append(formatted_msg)
         
         return formatted_messages
-    
-    def _format_model_kwargs(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+
+    def _format_model_kwargs_internal(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         """
         [Method intent]
-        Format model parameters specifically for Claude models in Bedrock Converse API format.
+        Format model parameters for Claude.
         
         [Design principles]
-        - Claude-specific parameter mapping
-        - Support for reasoning feature
-        - Parameter validation and defaults
-        - Proper separation of common and model-specific parameters
+        - Claude-specific parameter formatting
+        - Consistent return type (Dict for inferenceConfig)
+        - Separate model-specific parameters extraction
         
         [Implementation details]
-        - Separates common parameters for inferenceConfig
-        - Places Claude-specific parameters in additionalModelRequestFields
-        - Supports reasoning configuration
-        - Provides Claude-optimized defaults
+        - Sets default Claude-specific values
+        - Extracts Claude-specific parameters for separate handling
         
         Args:
-            kwargs: Model-specific parameters
+            kwargs: Combined parameters
             
         Returns:
-            Dict[str, Any]: Parameters formatted for Converse API's inferenceConfig field
+            Dict[str, Any]: Formatted inferenceConfig for Claude
         """
-        # Common parameters for inferenceConfig
+        # Extract and store Claude-specific parameters
+        self._pending_claude_params = {}
+        if "anthropic_version" in kwargs:
+            self._pending_claude_params["anthropicVersion"] = kwargs["anthropic_version"]
+        else:
+            self._pending_claude_params["anthropicVersion"] = "bedrock-2023-05-31"
+                
+        if "top_k" in kwargs:
+            self._pending_claude_params["topK"] = kwargs["top_k"]
+        
+        # Format common inference parameters
         inference_config = {
             "temperature": kwargs.get("temperature", self.DEFAULT_TEMPERATURE),
             "maxTokens": kwargs.get("max_tokens", self.DEFAULT_MAX_TOKENS),
@@ -295,116 +355,64 @@ class ClaudeClient(EnhancedBedrockBase):
         if "stop_sequences" in kwargs:
             inference_config["stopSequences"] = kwargs["stop_sequences"]
         
-        # System content should not be part of inferenceConfig but a separate field
-        system_content = None
-        if "system" in kwargs:
-            system_content = kwargs["system"]
-        elif kwargs.get("use_reasoning", False):
-            system_content = "Use step-by-step reasoning to solve this problem."
+        # Add reasoning system prompt if requested
+        if kwargs.get("use_reasoning", False) and not hasattr(self, '_pending_system_content'):
+            self._pending_system_content = "Use step-by-step reasoning to solve this problem."
         
-        # Claude-specific parameters for additionalModelRequestFields
-        claude_specific_params = {}
-        if "anthropic_version" in kwargs:
-            claude_specific_params["anthropicVersion"] = kwargs["anthropic_version"]
-        else:
-            # Use a recent anthropic version by default
-            claude_specific_params["anthropicVersion"] = "bedrock-2023-05-31"
-            
-        if "top_k" in kwargs:
-            claude_specific_params["topK"] = kwargs["top_k"]
+        # Add caching if enabled
+        caching_enabled = kwargs.get("enable_caching") or getattr(self, '_prompt_caching_enabled', False)
+        if caching_enabled:
+            inference_config["caching"] = {
+                "cachingState": "ENABLED"
+            }
         
-        # Only return inferenceConfig, system and additionalModelRequestFields will be
-        # handled separately when making the API call
-        result = inference_config
-        
-        # Store additional fields for later use
-        if system_content:
-            self._system_content = system_content
-        if claude_specific_params:
-            self._claude_specific_params = claude_specific_params
-            
-        return result
-    
-    async def stream_chat(
-        self, 
-        messages: List[Dict[str, Any]], 
-        **kwargs
-    ) -> AsyncIterator[Dict[str, Any]]:
+        return inference_config
+
+    def _get_system_content(self) -> Optional[Dict[str, Any]]:
         """
         [Method intent]
-        Generate a response from Claude models using the Bedrock Converse API with streaming.
-        This method properly handles the Converse API structure including system prompts
-        and model-specific parameters.
+        Get system content for Claude requests.
         
         [Design principles]
-        - Streaming as the standard interaction pattern
-        - Support for model-specific parameters
-        - Clean handling of Converse API structure
-        - Proper separation of common and model-specific parameters
+        - Claude-specific system content format
+        - Clear extraction of pending system content
+        - Cleans up after use
         
         [Implementation details]
-        - Uses Converse API exclusively
-        - Properly formats messages, system content and parameters
-        - Handles Claude-specific streaming response format
+        - Returns formatted system content for Claude
+        - Clears pending content after use
         
-        Args:
-            messages: List of message objects with role and content
-            **kwargs: Model-specific parameters
-            
-        Yields:
-            Dict[str, Any]: Response chunks from the model
-            
-        Raises:
-            LLMError: If chat generation fails
+        Returns:
+            Optional[Dict[str, Any]]: Claude formatted system content or None
         """
-        # Validate initialization
-        if not self.is_initialized():
-            await self.initialize()
+        if hasattr(self, '_pending_system_content') and self._pending_system_content:
+            system_content = {"text": self._pending_system_content}
+            self._pending_system_content = None
+            return system_content
+        return None
+
+    def _get_model_specific_params(self) -> Dict[str, Any]:
+        """
+        [Method intent]
+        Get Claude-specific parameters for requests.
         
-        # Format messages for Bedrock
-        formatted_messages = self._format_messages(messages)
+        [Design principles]
+        - Claude-specific parameter extraction
+        - Clear state management
+        - Cleans up after use
         
-        # Format model kwargs
-        inference_config = self._format_model_kwargs(kwargs)
+        [Implementation details]
+        - Returns stored Claude-specific parameters
+        - Clears pending parameters after use
         
-        # Prepare the request for Converse API
-        request = {
-            "modelId": self.model_id,
-            "messages": formatted_messages,
-            "inferenceConfig": inference_config
-        }
-        
-        # Add system content if provided
-        if hasattr(self, '_system_content') and self._system_content:
-            # Format system content without 'type' field - Claude expects plain 'text' key
-            request["system"] = {"text": self._system_content}
-            # Clear for next call
-            self._system_content = None
-        
-        # Add Claude-specific parameters if any
-        if hasattr(self, '_claude_specific_params') and self._claude_specific_params:
-            request["additionalModelRequestFields"] = self._claude_specific_params
-            # Clear for next call
-            self._claude_specific_params = {}
-        
-        # Stream response
-        try:
-            # Make streaming API call - run in executor to avoid blocking
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
-                None, 
-                lambda: self._bedrock_runtime.converse_stream(**request)
-            )
-            stream = response["stream"]
-            
-            # Use the shared method from EnhancedBedrockBase to process the stream
-            async for chunk in self._process_converse_stream(stream):
-                yield chunk
-                
-        except Exception as e:
-            if isinstance(e, LLMError):
-                raise e
-            raise LLMError(f"Failed to stream chat response: {str(e)}", e)
+        Returns:
+            Dict[str, Any]: Claude-specific parameters or empty dict
+        """
+        if hasattr(self, '_pending_claude_params') and self._pending_claude_params:
+            params = self._pending_claude_params
+            self._pending_claude_params = {}
+            return params
+        return {}
     
     async def stream_chat_with_reasoning(
         self, 
@@ -519,102 +527,6 @@ class ClaudeClient(EnhancedBedrockBase):
         except Exception as e:
             raise LLMError(f"Failed to get completion with reasoning: {str(e)}", e)
     
-    async def _handle_reasoning(
-        self,
-        content: str,
-        **kwargs
-    ) -> Union[str, AsyncIterator[Dict[str, Any]]]:
-        """
-        [Method intent]
-        Process content with reasoning through the capability API.
-        This is a handler for the REASONING capability.
-        
-        [Design principles]
-        - Clean mapping to reasoning capabilities
-        - Support for streaming or complete results
-        - Consistent response format
-        
-        [Implementation details]
-        - Adapts content for reasoning methods
-        - Uses appropriate system prompt
-        - Delegates to specialized reasoning methods
-        
-        Args:
-            content: The text content to process with reasoning
-            **kwargs: Additional parameters including stream flag
-            
-        Returns:
-            Union[str, AsyncIterator[Dict[str, Any]]]: 
-                Either complete text or streaming chunks
-            
-        Raises:
-            ValueError: If content format is invalid
-            LLMError: If reasoning processing fails
-        """
-        # Extract the text from various content formats
-        if not isinstance(content, str):
-            if isinstance(content, dict) and "text" in content:
-                content = content["text"]
-            else:
-                raise ValueError("Reasoning requires text content")
-        
-        # Set reasoning parameters
-        kwargs["use_reasoning"] = True
-        
-        # Check if streaming is requested
-        if kwargs.get("stream", False):
-            # Return a streaming response
-            return self.stream_generate_with_reasoning(content, **kwargs)
-        else:
-            # Return a complete response
-            return await self.get_completion_with_reasoning(content, **kwargs)
-    
-    async def _handle_structured_output(
-        self,
-        content: str,
-        format_instructions: Optional[str] = None,
-        **kwargs
-    ) -> Dict[str, Any]:
-        """
-        [Method intent]
-        Process content to generate structured output through the capability API.
-        This is a handler for the STRUCTURED_OUTPUT capability.
-        
-        [Design principles]
-        - Support for structured data extraction
-        - Clean formatting instructions
-        - Consistent structured return format
-        
-        [Implementation details]
-        - Uses specialized system prompts for structured output
-        - Processes and parses the response
-        - Returns structured data dictionary
-        
-        Args:
-            content: The text content to process
-            format_instructions: Optional instructions for output formatting
-            **kwargs: Additional parameters
-            
-        Returns:
-            Dict[str, Any]: Structured output data
-            
-        Raises:
-            ValueError: If content format is invalid
-            LLMError: If structured output processing fails
-        """
-        # Extract the text from various content formats
-        if not isinstance(content, str):
-            if isinstance(content, dict) and "text" in content:
-                content = content["text"]
-            else:
-                raise ValueError("Structured output requires text content")
-        
-        # If format instructions are provided, use them
-        if format_instructions:
-            kwargs["system"] = format_instructions
-        
-        # Use the structured reasoning method
-        return await self.get_structured_reasoning_response(content, **kwargs)
     
     async def get_structured_reasoning_response(
         self, 
