@@ -436,6 +436,57 @@ class PromptRenderingError(PromptError):
         self.missing_variables = missing_variables
 
 
+class UnsupportedModelError(ModelError):
+    """
+    [Class intent]
+    Exception raised when a requested model is not supported by the project.
+    
+    [Design principles]
+    Clearly indicates when a specific model is not among the project-supported models.
+    
+    [Implementation details]
+    Extends ModelError with information about the unsupported model and available options.
+    """
+    
+    def __init__(
+        self,
+        model_id: str,
+        supported_prefixes: Optional[List[str]] = None,
+        message: Optional[str] = None,
+        context: Optional[Dict[str, Any]] = None
+    ):
+        """
+        [Class method intent]
+        Initialize an unsupported model error with model information.
+        
+        [Design principles]
+        Provides clear message about which model is not supported and what options are available.
+        
+        [Implementation details]
+        Constructs a descriptive message with supported model information if not provided.
+        
+        Args:
+            model_id: ID of the unsupported model
+            supported_prefixes: List of supported model prefixes
+            message: Optional custom error message
+            context: Additional context information
+        """
+        if message is None:
+            if supported_prefixes:
+                supported_str = ", ".join(sorted(supported_prefixes))
+                message = f"Model '{model_id}' is not supported by this project. Supported model prefixes: {supported_str}"
+            else:
+                message = f"Model '{model_id}' is not supported by this project"
+        
+        context = context or {}
+        if supported_prefixes:
+            context["supported_prefixes"] = supported_prefixes
+        
+        super().__init__(message, model_id, context)
+        self.model_id = model_id
+        self.supported_prefixes = supported_prefixes
+
+
 class ModelNotAvailableError(ModelError):
     """
     [Class intent]

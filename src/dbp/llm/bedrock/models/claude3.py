@@ -42,6 +42,10 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-04T11:29:00Z : Added prompt caching support by CodeAssistant
+# * Added capability detection for prompt caching
+# * Dynamically registers PROMPT_CACHING capability when supported
+# * Added support for Bedrock prompt caching with Claude models
 # 2025-05-02T23:11:00Z : Refactored to use shared stream processing method by CodeAssistant
 # * Removed duplicated _process_converse_stream_events method
 # * Now using _process_converse_stream from EnhancedBedrockBase
@@ -51,10 +55,6 @@
 # * Added capability registration for reasoning and structured output
 # * Implemented capability handlers for unified API access
 # * Integrated with capability discovery system
-# 2025-05-02T12:55:00Z : Updated to support only Claude 3.5+ models by Cline
-# * Removed older Claude 3 models from supported models list
-# * Updated documentation to reflect focus on Claude 3.5+ models only
-# * Changed model validation to only accept Claude 3.5 and newer
 ###############################################################################
 
 import logging
@@ -121,7 +121,7 @@ class ClaudeClient(EnhancedBedrockBase):
         logger: Optional[logging.Logger] = None,
         use_model_discovery: bool = False,
         preferred_regions: Optional[List[str]] = None,
-        inference_profile_id: Optional[str] = None
+        inference_profile_arn: Optional[str] = None
     ):
         """
         [Method intent]
@@ -147,7 +147,7 @@ class ClaudeClient(EnhancedBedrockBase):
             logger: Optional custom logger instance
             use_model_discovery: Whether to discover model availability
             preferred_regions: List of preferred regions for model discovery
-            inference_profile_id: Optional inference profile ID to use
+            inference_profile_arn: Optional inference profile ARN to use
 
         Raises:
             ValueError: If model_id is not a supported Claude model
@@ -172,8 +172,8 @@ class ClaudeClient(EnhancedBedrockBase):
             preferred_regions=preferred_regions
         )
         
-        # Store inference profile ID if provided (for future use)
-        self._inference_profile_id = inference_profile_id
+        # Store inference profile ARN if provided (for future use)
+        self._inference_profile_arn = inference_profile_arn
         
         # Initialize fields for additional parameters
         self._system_content = None
@@ -195,6 +195,11 @@ class ClaudeClient(EnhancedBedrockBase):
             ModelCapability.STRUCTURED_OUTPUT,
             self._handle_structured_output
         )
+        
+        # Check if this model supports prompt caching
+        if hasattr(self, '_model_discovery') and self._model_discovery and self._model_discovery.supports_prompt_caching(self.model_id):
+            self.logger.info(f"Registering prompt caching capability for {self.model_id}")
+            self.register_capability(ModelCapability.PROMPT_CACHING)
     
     def _format_messages(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """

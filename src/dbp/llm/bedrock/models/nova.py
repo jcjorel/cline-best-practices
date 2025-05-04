@@ -41,6 +41,10 @@
 # system:langchain_core
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-04T11:30:00Z : Added prompt caching support by CodeAssistant
+# * Added capability detection for prompt caching
+# * Dynamically registers PROMPT_CACHING capability when supported
+# * Added support for Bedrock prompt caching with Nova models
 # 2025-05-02T13:06:00Z : Enhanced with capability-based API integration by CodeAssistant
 # * Updated to extend EnhancedBedrockBase instead of BedrockBase
 # * Added capability registration for model features
@@ -133,7 +137,7 @@ class NovaClient(EnhancedBedrockBase):
         logger: Optional[logging.Logger] = None,
         use_model_discovery: bool = False,
         preferred_regions: Optional[List[str]] = None,
-        inference_profile_id: Optional[str] = None
+        inference_profile_arn: Optional[str] = None
     ):
         """
         [Method intent]
@@ -159,7 +163,7 @@ class NovaClient(EnhancedBedrockBase):
             logger: Optional custom logger instance
             use_model_discovery: Whether to discover model availability
             preferred_regions: List of preferred regions for model discovery
-            inference_profile_id: Optional inference profile ID to use
+            inference_profile_arn: Optional inference profile ARN to use
 
         Raises:
             ValueError: If model_id is not a supported Nova model
@@ -182,11 +186,12 @@ class NovaClient(EnhancedBedrockBase):
             timeout=timeout,
             logger=logger or logging.getLogger("NovaClient"),
             use_model_discovery=use_model_discovery,
-            preferred_regions=preferred_regions
+            preferred_regions=preferred_regions,
+            inference_profile_arn=inference_profile_arn
         )
         
-        # Store inference profile ID if provided (for future use)
-        self._inference_profile_id = inference_profile_id
+        # Store inference profile ARN if provided (for future use)
+        self._inference_profile_arn = inference_profile_arn
         
         # Register Nova capabilities
         self.register_capabilities([
@@ -222,6 +227,11 @@ class NovaClient(EnhancedBedrockBase):
         # Nova Reel supports video input
         if "nova-reel" in base_model:
             self.register_capability(ModelCapability.VIDEO_INPUT)
+            
+        # Check if this model supports prompt caching
+        if hasattr(self, '_model_discovery') and self._model_discovery and self._model_discovery.supports_prompt_caching(self.model_id):
+            self.logger.info(f"Registering prompt caching capability for {self.model_id}")
+            self.register_capability(ModelCapability.PROMPT_CACHING)
     
     def _format_messages(self, messages: List[Dict[str, Any]]) -> Dict[str, Any]:
         """

@@ -36,6 +36,7 @@ if __name__ == "__main__":
     
     # Import directly from the project structure
     from dbp.llm.bedrock.base import BedrockBase
+    from dbp.llm.bedrock.enhanced_base import EnhancedBedrockBase
     from dbp.llm.bedrock.discovery.models import BedrockModelDiscovery
 else:
     # Relative imports when used as part of the package
@@ -213,7 +214,7 @@ async def client_with_discovery(shared_state: Dict[str, Any]):
                 print(f"Creating new client in initial region {initial_region}")
                 print(f"Model discovery is enabled with preferred regions: {', '.join(preferred_regions)}")
                 
-                client = BedrockBase(
+                client = EnhancedBedrockBase(
                 model_id=model_id,
                 region_name=initial_region,
                 logger=logger,

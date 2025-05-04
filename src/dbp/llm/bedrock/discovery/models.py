@@ -50,6 +50,15 @@
 # system:json
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-04T19:35:00Z : Updated get_best_regions_for_model to filter by accessibility by CodeAssistant
+# * Added check_accessibility parameter to get_model_regions
+# * Modified get_best_regions_for_model to only return accessible regions
+# * Enhanced method documentation to reflect accessibility filtering
+# 2025-05-04T10:37:00Z : Added prompt caching support detection by CodeAssistant
+# * Added model capability checking for prompt caching
+# * Implemented supports_prompt_caching method
+# * Added get_prompt_caching_models method
+# * Added get_prompt_caching_support_status method
 # 2025-05-03T23:04:42Z : Simplified BedrockModelDiscovery implementation by CodeAssistant
 # * Integrated caching directly into the class
 # * Simplified singleton implementation and constructor
@@ -62,16 +71,6 @@
 # * Updated model discovery to work with the new structure
 # * Implemented ARN-based profile mapping for inference profiles
 # * Improved region handling and model lookup
-# 2025-05-03T17:24:26Z : Refactored to use shared discovery code by CodeAssistant
-# * Updated to inherit from BaseDiscovery
-# * Replaced scanning code with scan_utils
-# * Added combined model and profile discovery
-# * Added get_model method with profile association
-# 2025-05-03T11:38:23Z : Initial implementation by CodeAssistant
-# * Created BedrockModelDiscovery singleton class
-# * Implemented parallel region scanning with ThreadPoolExecutor
-# * Added integration with cache and latency tracking components
-# * Implemented latency-based region sorting and selection
 ###############################################################################
 
 import logging
@@ -88,6 +87,7 @@ import botocore.exceptions
 
 from ....api_providers.aws.client_factory import AWSClientFactory
 from ....api_providers.aws.exceptions import AWSClientError, AWSRegionError
+from ....llm.common.exceptions import ModelNotAvailableError
 
 from .discovery_core import BaseDiscovery
 from .scan_utils import scan_region
@@ -99,6 +99,7 @@ class BedrockModelDiscovery(BaseDiscovery):
     [Class intent]
     Discovers and provides information about available AWS Bedrock models across regions,
     with optimized region selection based on latency measurements and user preferences.
+    Also detects model capabilities including prompt caching support.
     
     [Design principles]
     - Efficient parallel scanning using ThreadPoolExecutor
@@ -107,6 +108,7 @@ class BedrockModelDiscovery(BaseDiscovery):
     - Comprehensive model metadata extraction
     - Singleton pattern for project-wide reuse
     - Integrated caching for performance
+    - Capability-based model feature detection
     
     [Implementation details]
     - Uses AWSClientFactory for client access
@@ -115,7 +117,17 @@ class BedrockModelDiscovery(BaseDiscovery):
     - Provides latency-based sorting of regions
     - Maps model availability by region
     - Simplifies API with sensible defaults
+    - Detects model-specific capabilities like prompt caching
     """
+    
+    # Define models that support prompt caching
+    _PROMPT_CACHING_SUPPORTED_MODELS = [
+        "anthropic.claude-3-5-haiku-",  # Claude 3.5 Haiku
+        "anthropic.claude-3-7-sonnet-", # Claude 3.7 Sonnet
+        "amazon.nova-micro-",           # Nova Micro
+        "amazon.nova-lite-",            # Nova Lite
+        "amazon.nova-pro-"              # Nova Pro
+    ]
     
     # Class variables for singleton pattern
     _instance = None
@@ -300,25 +312,28 @@ class BedrockModelDiscovery(BaseDiscovery):
         
         return result
     
-    def get_model_regions(self, model_id: str) -> List[str]:
+    def get_model_regions(self, model_id: str, check_accessibility: bool = True) -> List[str]:
         """
         [Method intent]
-        Get all regions where a specific model is available.
+        Get all regions where a specific model is available and optionally accessible.
         
         [Design principles]
         - Cache-first approach for efficiency
+        - Accessibility filtering when required
         - Clear error reporting
         
         [Implementation details]
         - Checks cache for regions with model available
+        - When check_accessibility=True, filters to only include regions where the model is accessible
         - Returns list of regions with model
         - Handles model variants appropriately
         
         Args:
             model_id: The Bedrock model ID
-            
+            check_accessibility: If True, only returns regions where the model is accessible
+                
         Returns:
-            List of region names where the model is available
+            List of region names where the model is available and accessible (if check_accessibility=True)
         """
         available_regions = []
         
@@ -329,7 +344,13 @@ class BedrockModelDiscovery(BaseDiscovery):
             # Check each region for the model
             for region, models in cached_models.items():
                 if model_id in models:
-                    available_regions.append(region)
+                    # If check_accessibility is True, only include regions
+                    # where the model is marked as accessible
+                    if check_accessibility:
+                        if models[model_id].get("accessible", True):
+                            available_regions.append(region)
+                    else:
+                        available_regions.append(region)
         
         return available_regions
     
@@ -347,9 +368,10 @@ class BedrockModelDiscovery(BaseDiscovery):
         - User preference priority
         - Latency-based ordering for optimal performance
         - Complete model availability information
+        - Restricts to accessible regions only
         
         [Implementation details]
-        - Gets all available regions for the model
+        - Gets all available regions where the model is accessible
         - Prioritizes user's preferred regions when specified
         - Sorts remaining regions by measured latency
         - Returns ordered list from fastest to slowest
@@ -361,8 +383,8 @@ class BedrockModelDiscovery(BaseDiscovery):
         Returns:
             List of region names ordered by preference and latency
         """
-        # Get all regions where the model is available
-        available_regions = self.get_model_regions(model_id)
+        # Get all regions where the model is available and accessible
+        available_regions = self.get_model_regions(model_id, check_accessibility=True)
         
         if not available_regions:
             return []
@@ -499,13 +521,69 @@ class BedrockModelDiscovery(BaseDiscovery):
             region: Optional specific region to get the model from
             
         Returns:
-            Dict with complete model information or None if not found
+            Dict with complete model information or None if not found. The return structure includes:
+            
+            - Basic Model Information (populated from AWS ListFoundationModels API):
+              - modelId (str): ID of the Bedrock model
+              - modelName (str): Human-readable name of the model
+              - provider (str): Provider name (e.g., "Anthropic", "Amazon")
+              - status (str): Model status (typically "ACTIVE")
+              - requiresInferenceProfile (bool): Whether model requires inference profile
+              - accessible (bool): Whether model is accessible with current credentials
+            
+            - Capability Information (populated from AWS ListFoundationModels API):
+              - capabilities (List[str]): Model capabilities (e.g., ["TEXT"])
+              - inputModalities (List[str]): Input modalities supported
+              - outputModalities (List[str]): Output modalities supported
+              - responseStreamingSupported (bool): Whether streaming is supported
+            
+            - Detailed Model Information (populated from AWS GetFoundationModel API):
+              - modelDetails (Dict): Complete model details including:
+                - modelArn (str): ARN of the model
+                - modelId (str): ID of the model
+                - modelName (str): Human-readable name of the model
+                - providerName (str): Model provider
+                - inputModalities (List[str]): Input modalities
+                - outputModalities (List[str]): Output modalities
+                - responseStreamingSupported (bool): Streaming support
+                - customizationsSupported (List[str]): Supported customizations
+                - inferenceTypesSupported (List[str]): Supported inference types
+                - modelLifecycle (Dict): Model lifecycle info
+            
+            - Availability Information (populated from AWS BedrockAgent::GetModelCustomizationJobOrFoundationModelAvailability API):
+              - availabilityDetails (Dict): Model availability details:
+                - agreementAvailability (Dict): Agreement availability status
+                - authorizationStatus (str): Authorization status
+                - entitlementAvailability (str): Entitlement availability
+                - regionAvailability (str): Region availability status
+                - accessible (bool): Whether model is accessible
+                - modelId (str): Model ID
+            
+            - Associated Inference Profiles (populated from AWS ListInferenceProfiles API):
+              - referencedByInstanceProfiles (List[Dict]): Associated profiles:
+                - inferenceProfileId (str): Profile ID
+                - inferenceProfileName (str): Profile name
+                - inferenceProfileArn (str): Profile ARN
+                - description (str): Profile description
+                - status (str): Profile status
+                - type (str): Profile type
+                - region (str): Region where profile is available
+                - models (List[Dict]): Models associated with this profile
+                - modelArns (List[str]): Model ARNs associated with profile
         """
         # If region not specified, find the best region for this model
         if not region:
             regions = self.get_best_regions_for_model(model_id)
             if not regions:
-                return None
+                # Raise error if no regions available for this model
+                raise ModelNotAvailableError(
+                    model_name=model_id,
+                    message=f"Model '{model_id}' is not available in any region",
+                    context={
+                        "model_id": model_id,
+                        "attempted_regions": self.get_all_regions()
+                    }
+                )
             region = regions[0]
         
         # Get models for the specified region
@@ -515,17 +593,33 @@ class BedrockModelDiscovery(BaseDiscovery):
         # Check if the model exists in this region
         if cached_region_models and model_id in cached_region_models:
             # Return a deep copy to prevent modifying the cache
-            return copy.deepcopy(cached_region_models[model_id])
+            model_data = copy.deepcopy(cached_region_models[model_id])
+            # Add region information to the returned data
+            model_data["region"] = region
+            return model_data
         
         # If not in cache, try a fresh scan of this region
         try:
             region_data = self.scan_all_regions(regions=[region], force_refresh=True)
             if region in region_data.get("models", {}) and model_id in region_data["models"].get(region, {}):
-                return copy.deepcopy(region_data["models"][region][model_id])
+                model_data = copy.deepcopy(region_data["models"][region][model_id])
+                # Add region information to the returned data
+                model_data["region"] = region
+                return model_data
         except Exception as e:
             self.logger.warning(f"Error retrieving model {model_id} from region {region}: {str(e)}")
-            
-        return None
+        
+        # Raise exception if model not found
+        region_display = region if region else "any region"
+        raise ModelNotAvailableError(
+            model_name=model_id,
+            message=f"Model '{model_id}' is not available in {region_display}",
+            context={
+                "model_id": model_id,
+                "region": region,
+                "attempted_regions": [region] if region else self.get_best_regions_for_model(model_id)
+            }
+        )
     
     def get_json_model_mapping(self) -> Dict[str, Dict[str, Dict[str, Any]]]:
         """
@@ -697,6 +791,81 @@ class BedrockModelDiscovery(BaseDiscovery):
         except Exception as e:
             self.logger.warning(f"Error saving cache to {path}: {str(e)}")
             return False
+    
+    def supports_prompt_caching(self, model_id: str) -> bool:
+        """
+        [Method intent]
+        Check if a specific model supports prompt caching.
+        
+        [Design principles]
+        - Simple capability checking
+        - Model ID prefix matching
+        - Clear boolean interface
+        
+        [Implementation details]
+        - Checks if model ID starts with any of the supported model prefixes
+        - Returns boolean indicating support
+        
+        Args:
+            model_id: The Bedrock model ID to check
+            
+        Returns:
+            bool: True if the model supports prompt caching, False otherwise
+        """
+        # Check if the model ID starts with any of the supported prefixes
+        for prefix in self._PROMPT_CACHING_SUPPORTED_MODELS:
+            if model_id.startswith(prefix):
+                return True
+                
+        return False
+    
+    def get_prompt_caching_models(self) -> List[Dict[str, Any]]:
+        """
+        [Method intent]
+        Get all models that support prompt caching.
+        
+        [Design principles]
+        - Filtering based on model capability
+        - Reuse existing model data
+        - Provide complete model information
+        
+        [Implementation details]
+        - Gets all available models
+        - Filters models that support prompt caching
+        - Returns filtered list with full model information
+        
+        Returns:
+            List[Dict[str, Any]]: List of models that support prompt caching
+        """
+        all_models = self.get_all_models()
+        return [
+            model for model in all_models 
+            if self.supports_prompt_caching(model["modelId"])
+        ]
+    
+    def get_prompt_caching_support_status(self) -> Dict[str, bool]:
+        """
+        [Method intent]
+        Get prompt caching support status for all available models.
+        
+        [Design principles]
+        - Comprehensive support status
+        - Simple mapping format
+        - Useful for debugging and testing
+        
+        [Implementation details]
+        - Gets all available models
+        - Creates a mapping of model IDs to support status
+        - Returns dictionary for easy lookup
+        
+        Returns:
+            Dict[str, bool]: Dictionary mapping model IDs to prompt caching support status
+        """
+        all_models = self.get_all_models()
+        return {
+            model["modelId"]: self.supports_prompt_caching(model["modelId"])
+            for model in all_models
+        }
     
     def _get_project_supported_models(self) -> List[str]:
         """

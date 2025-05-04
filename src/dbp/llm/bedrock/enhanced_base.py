@@ -42,6 +42,15 @@
 # system:enum
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-04T11:22:00Z : Implemented prompt caching API methods by CodeAssistant
+# * Added enable_prompt_caching method to toggle caching
+# * Added is_prompt_caching_enabled method to check caching status
+# * Added mark_cache_point method to mark caching points in conversations
+# * Enhanced stream_chat method to use caching configuration
+# 2025-05-04T10:34:00Z : Added prompt caching capability by CodeAssistant
+# * Added PROMPT_CACHING to ModelCapability enum
+# * Enables capability-based detection and registration for prompt caching
+# * Part of implementation for Bedrock prompt caching support
 # 2025-05-03T08:50:00Z : Moved _process_converse_stream to BedrockBase by CodeAssistant
 # * Moved method to parent class to make it available to all Bedrock clients
 # * Maintained consistent stream processing functionality
@@ -103,6 +112,7 @@ class ModelCapability(str, enum.Enum):
     MULTIMODAL = "multimodal"
     VISION = "vision"
     RAG = "retrieval_augmented_generation"
+    PROMPT_CACHING = "prompt_caching"  # New capability for prompt caching
 
 
 # Type variable for callback function parameter types
@@ -335,7 +345,7 @@ class EnhancedBedrockBase(BedrockBase):
         logger: Optional[logging.Logger] = None,
         use_model_discovery: bool = False,
         preferred_regions: Optional[List[str]] = None,
-        inference_profile_id: Optional[str] = None
+        inference_profile_arn: Optional[str] = None
     ):
         """
         [Method intent]
@@ -360,7 +370,7 @@ class EnhancedBedrockBase(BedrockBase):
             logger: Optional custom logger instance
             use_model_discovery: Whether to discover model availability
             preferred_regions: List of preferred regions for model discovery
-            inference_profile_id: Optional inference profile ID to use
+            inference_profile_arn: Optional inference profile ARN to use
         """
         super().__init__(
             model_id=model_id,
@@ -372,7 +382,7 @@ class EnhancedBedrockBase(BedrockBase):
             logger=logger or logging.getLogger("EnhancedBedrockBase"),
             use_model_discovery=use_model_discovery,
             preferred_regions=preferred_regions,
-            inference_profile_id=inference_profile_id
+            inference_profile_arn=inference_profile_arn
         )
         
         # Initialize capability registry
@@ -497,7 +507,170 @@ class EnhancedBedrockBase(BedrockBase):
             Dict[str, bool]: Dictionary of capability names to support status
         """
         return self._capability_registry.get_capabilities()
+        
+    def enable_prompt_caching(self, enabled: bool = True) -> bool:
+        """
+        [Method intent]
+        Enable or disable prompt caching for this model client if supported.
+        
+        [Design principles]
+        - Simple interface to toggle caching
+        - No errors for unsupported models
+        - Consistent with capability system
+        - Clear return value indicating actual state
+        
+        [Implementation details]
+        - Stores desired state in instance variable
+        - Checks model support via capability system
+        - Returns actual state (may be false if not supported)
+        
+        Args:
+            enabled: Whether to enable prompt caching (default: True)
+            
+        Returns:
+            bool: True if prompt caching is now enabled, False otherwise
+        """
+        # Store desired state
+        self._prompt_caching_enabled = enabled
+        
+        # Check if model supports caching
+        supports_caching = self.has_capability(ModelCapability.PROMPT_CACHING)
+        
+        # If enabling but model doesn't support it, log warning
+        if enabled and not supports_caching:
+            self.logger.warning(f"Model {self.model_id} does not support prompt caching")
+            return False
+            
+        # Return actual state (enabled only if supported)
+        return enabled and supports_caching
+
+    def is_prompt_caching_enabled(self) -> bool:
+        """
+        [Method intent]
+        Check if prompt caching is currently enabled for this model client.
+        
+        [Design principles]
+        - Simple status check
+        - Clear boolean interface
+        
+        [Implementation details]
+        - Checks stored state and capability support
+        - Returns boolean indicating if caching is active
+        
+        Returns:
+            bool: True if prompt caching is enabled and supported
+        """
+        has_setting = hasattr(self, '_prompt_caching_enabled')
+        is_enabled = getattr(self, '_prompt_caching_enabled', False)
+        supports_caching = self.has_capability(ModelCapability.PROMPT_CACHING)
+        
+        return has_setting and is_enabled and supports_caching
+        
+    def mark_cache_point(
+        self, 
+        messages: List[Dict[str, Any]], 
+        cache_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        [Method intent]
+        Mark a cache point in a conversation for prompt caching.
+        
+        [Design principles]
+        - Non-destructive operation (creates copies)
+        - No errors for unsupported models
+        - Support for custom cache IDs
+        
+        [Implementation details]
+        - Creates a copy of messages to avoid modifying originals
+        - Adds cache point metadata to the last message
+        - Generates a cache ID if not provided
+        - Returns information about the cache point
+        
+        Args:
+            messages: List of message objects to mark with cache point
+            cache_id: Optional custom cache ID (generated if not provided)
+            
+        Returns:
+            Dict[str, Any]: Cache point information including modified messages
+        """
+        import time
+        import copy
+        import uuid
+        
+        # Check if caching is enabled and supported
+        caching_active = self.is_prompt_caching_enabled()
+        
+        # Generate or use provided cache ID
+        cache_id = cache_id or f"cache-{uuid.uuid4()}"
+        
+        result = {
+            "cache_id": cache_id,
+            "cache_active": caching_active,
+            "timestamp": time.time()
+        }
+        
+        # If caching not active, return early with original messages
+        if not caching_active:
+            result["status"] = "ignored"
+            result["messages"] = messages
+            return result
+        
+        # Create a copy of messages to avoid modifying originals
+        messages_copy = copy.deepcopy(messages)
+        
+        # Mark cache point in the last message
+        if messages_copy:
+            # If last message doesn't have metadata, add it
+            if "metadata" not in messages_copy[-1]:
+                messages_copy[-1]["metadata"] = {}
+                
+            # Add cache marker
+            messages_copy[-1]["metadata"]["cache_point"] = {
+                "id": result["cache_id"],
+                "timestamp": result["timestamp"]
+            }
+        
+        result["status"] = "marked"
+        result["messages"] = messages_copy
+        return result
     
+    async def stream_chat(
+        self, 
+        messages: List[Dict[str, Any]], 
+        **kwargs
+    ) -> AsyncIterator[Dict[str, Any]]:
+        """
+        [Method intent]
+        Generate a response from the model for a chat conversation using streaming.
+        
+        [Design principles]
+        - Streaming as the standard interaction pattern
+        - Support for model-specific parameters and caching
+        - Clean parameter passing
+        
+        [Implementation details]
+        - Checks for cache point metadata
+        - Forwards caching settings to parent method
+        - Handles streaming response
+        
+        Args:
+            messages: List of message objects with role and content
+            **kwargs: Model-specific parameters
+            
+        Yields:
+            Dict[str, Any]: Response chunks from the model
+            
+        Raises:
+            LLMError: If chat generation fails
+        """
+        # Check if caching should be enabled for this request
+        if self.is_prompt_caching_enabled():
+            kwargs["enable_caching"] = True
+        
+        # Delegate to parent implementation
+        async for chunk in super().stream_chat(messages, **kwargs):
+            yield chunk
+            
     async def stream_enhanced_generation(
         self,
         prompt: str,

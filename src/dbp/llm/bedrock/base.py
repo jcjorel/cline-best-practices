@@ -45,6 +45,10 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-04T10:40:00Z : Added prompt caching support by CodeAssistant
+# * Updated _format_model_kwargs to support prompt caching
+# * Added caching configuration to API request parameters
+# * Maintains backward compatibility with models without caching
 # 2025-05-03T08:53:00Z : Refactored _converse_stream for DRY principles by CodeAssistant
 # * Eliminated code duplication between _converse_stream and _process_converse_stream
 # * Modified _converse_stream to leverage _process_converse_stream method
@@ -57,11 +61,6 @@
 # * Fixed EventStream iteration by creating explicit iterator from stream
 # * Updated documentation to reflect EventStream handling
 # * Enhanced error handling specificity for streaming operations
-# 2025-05-02T11:13:00Z : Enhanced for LangChain/LangGraph integration by CodeAssistant
-# * Updated to use Converse API exclusively
-# * Implemented fully async interface for all operations
-# * Added streaming support with AsyncIO generators
-# * Enhanced error handling and classification
 ###############################################################################
 
 import os
@@ -866,11 +865,13 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
         - Clean separation of parameter formatting
         - Support for model-specific overrides
         - Parameter validation
+        - Support for prompt caching configuration
         
         [Implementation details]
         - Formats parameters for Bedrock API
         - Handles parameter naming conventions
         - Provides defaults for required parameters
+        - Adds caching configuration when enabled
         
         Args:
             kwargs: Model-specific parameters
@@ -879,12 +880,22 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider):
             Dict[str, Any]: Parameters formatted for Bedrock API
         """
         # Basic implementation - override in model-specific clients
-        return {
+        result = {
             "temperature": kwargs.get("temperature", 0.7),
             "maxTokens": kwargs.get("max_tokens", 1024),
             "topP": kwargs.get("top_p", 0.9),
             "stopSequences": kwargs.get("stop_sequences", [])
         }
+        
+        # Add caching configuration if enabled
+        caching_enabled = kwargs.get("enable_caching") or getattr(self, '_prompt_caching_enabled', False)
+        
+        if caching_enabled:
+            result["caching"] = {
+                "cachingState": "ENABLED"
+            }
+        
+        return result
     
     async def stream(self) -> AsyncIterator[str]:
         """
