@@ -23,6 +23,7 @@
 # - Transparent operation to LangChain users
 # - Minimal method overrides for future compatibility
 # - Clean text extraction for all model responses
+# - KISS principle: Keep implementation simple and maintainable
 ###############################################################################
 # [Source file constraints]
 # - Must maintain full compatibility with LangChain's ChatBedrockConverse
@@ -33,8 +34,6 @@
 # [Dependencies]
 # codebase:src/dbp/llm/common/exceptions.py
 # system:asyncio
-# system:functools
-# system:inspect
 # system:logging
 # system:random
 # system:time
@@ -42,6 +41,10 @@
 # system:langchain_aws.chat_models.bedrock_converse
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-05T16:59:08Z : Simplified implementation with KISS principle by CodeAssistant
+# * Applied direct retry logic in stream/astream methods for better readability
+# * Removed complex wrappers and middleware functions
+# * Improved extract_text_from_chunk to handle LangChain objects
 # 2025-05-05T15:25:36Z : Added text extraction and streaming methods by CodeAssistant
 # * Added extract_text_from_chunk method for clean text extraction from any model responses
 # * Implemented stream_text and astream_text methods for text-only streaming
@@ -53,25 +56,18 @@
 ###############################################################################
 
 import asyncio
-import functools
-import inspect
 import logging
 import random
-import sys
 import time
-from typing import Any, Callable, ClassVar, Dict, List, Optional, TypeVar, Union, cast, AsyncIterator, Iterator
+from typing import Any, Dict, List, Iterator, AsyncIterator, ClassVar
 
 import botocore.exceptions
 import orjson
 from langchain_aws.chat_models.bedrock_converse import ChatBedrockConverse
-from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseMessage
+from langchain_core.messages import AIMessageChunk
 
 from ..common.exceptions import ClientError, InvocationError, LLMError, ModelNotAvailableError, StreamingError
-
-
-# Type variables for generic functions
-F = TypeVar('F', bound=Callable)
 
 
 class EnhancedChatBedrockConverse(ChatBedrockConverse):
@@ -81,13 +77,13 @@ class EnhancedChatBedrockConverse(ChatBedrockConverse):
     and clean text extraction for AWS Bedrock models across all provider types.
     
     [Design principles]
-    - Minimal method overrides with decorator-based enhancement
+    - KISS: Keep It Simple & Stupid - simple, maintainable implementation
+    - Direct method overrides with clear retry logic
     - Unified error classification for consistency
-    - Automatic retry with configurable parameters
     - Model-agnostic text extraction
     
     [Implementation details]
-    - Uses metaclass to apply enhancements to key methods
+    - Directly overrides key methods with retry logic
     - Maintains full compatibility with LangChain API
     - Handles both sync and async methods consistently
     - Provides specialized text-only streaming methods
@@ -120,31 +116,25 @@ class EnhancedChatBedrockConverse(ChatBedrockConverse):
         """
         # Extract our custom parameters from kwargs
         # This prevents them from being passed to parent class which would cause validation errors
-        custom_params = {}
-        for param in ['max_retries', 'base_delay', 'max_delay', 'logger']:
-            if param in kwargs:
-                custom_params[param] = kwargs.pop(param)
+        max_retries = kwargs.pop('max_retries', self.DEFAULT_MAX_RETRIES)
+        base_delay = kwargs.pop('base_delay', self.DEFAULT_BASE_DELAY)
+        max_delay = kwargs.pop('max_delay', self.DEFAULT_MAX_DELAY)
+        logger = kwargs.pop('logger', logging.getLogger(__name__))
                 
         # Initialize the parent class with cleaned kwargs
         super().__init__(**kwargs)
         
-        # Get or create a logger
-        logger = custom_params.get("logger", logging.getLogger(__name__))
-        
-        # Ensure the logger level is at least WARNING (higher number = less verbose)
-        # If the level is NOTSET (0) or less than WARNING (30), set it to WARNING
+        # Ensure the logger level is at least WARNING
         if logger.level < logging.WARNING or logger.level == 0:
             logger.setLevel(logging.WARNING)
-            
-        # Store our custom parameters in a separate dict to avoid Pydantic validation issues
-        # Use Python's object.__setattr__ to bypass Pydantic validation
-        object.__setattr__(self, "_retry_config", {
-            "max_retries": custom_params.get("max_retries", self.DEFAULT_MAX_RETRIES),
-            "base_delay": custom_params.get("base_delay", self.DEFAULT_BASE_DELAY),
-            "max_delay": custom_params.get("max_delay", self.DEFAULT_MAX_DELAY),
-            "logger": logger
-        })
-
+        
+        # Set retry configuration directly as instance attributes using model_extra to avoid Pydantic validation
+        # These attributes are not part of the model schema
+        object.__setattr__(self, "max_retries", max_retries)
+        object.__setattr__(self, "base_delay", base_delay)
+        object.__setattr__(self, "max_delay", max_delay)
+        object.__setattr__(self, "logger", logger)
+                    
     def _classify_bedrock_error(self, error: botocore.exceptions.ClientError) -> Exception:
         """
         [Method intent]
@@ -187,146 +177,166 @@ class EnhancedChatBedrockConverse(ChatBedrockConverse):
         else:
             # Default case for unknown errors
             return LLMError(f"Bedrock API error: {error_code} - {error_message}", error)
-
-    def _with_bedrock_retry(self, func: F) -> F:
+   
+    def stream(self, messages, **kwargs):
         """
         [Method intent]
-        Wrap a function with Bedrock throttling retry logic.
+        Override LangChain's stream method with built-in throttling retry logic.
         
         [Design principles]
-        - Handle both sync and async functions
-        - Consistent retry behavior
-        - Clear error propagation
+        - Direct implementation of retry logic
+        - Simple exponential backoff with jitter
+        - Clear error handling and classification
         
         [Implementation details]
-        - Detects function type at runtime
-        - Applies appropriate retry logic
-        - Handles throttling errors with exponential backoff
+        - Sets boto3 retry count to 3
+        - Implements retry logic for throttling exceptions
+        - Handles all Bedrock errors with appropriate classification
+        - Properly delegates to parent implementation
         
         Args:
-            func: Function to wrap with retry logic
+            messages: List of chat messages
+            **kwargs: Keyword arguments for the model
             
         Returns:
-            Wrapped function with retry capability
+            Iterator yielding model responses
+            
+        Raises:
+            Various exception types based on the specific error encountered
         """
-        @functools.wraps(func)
-        def sync_wrapper(*args, **kwargs):
-            retry_count = 0
-            
-            while True:
-                try:
-                    return func(*args, **kwargs)
-                except botocore.exceptions.ClientError as e:
-                    error_code = e.response['Error']['Code']
-                    error_message = e.response['Error']['Message']
-                    
-                    if error_code == "ThrottlingException" and "Too many requests" in error_message:
-                        retry_count += 1
-                        
-                        max_retries = self._retry_config["max_retries"]
-                        if retry_count <= max_retries:
-                            # Calculate backoff with jitter
-                            base_delay = self._retry_config["base_delay"]
-                            max_delay = self._retry_config["max_delay"]
-                            delay = min(max_delay, base_delay * (2 ** (retry_count - 1)))
-                            jitter = random.uniform(0.8, 1.0)
-                            delay_with_jitter = delay * jitter
-                            
-                            # Log retry attempt
-                            logger = self._retry_config["logger"]
-                            warning_msg = f"Request throttled: {error_message}. Retry {retry_count}/{max_retries} in {delay_with_jitter:.2f}s"
-                            # Double log: once through the logger
-                            logger.warning(warning_msg)
-                            
-                            # Wait before retry
-                            time.sleep(delay_with_jitter)
-                            continue
-                    
-                    # For non-throttling or max-retries-exceeded cases, classify and raise
-                    if error_code == "ThrottlingException" and retry_count > self._retry_config["max_retries"]:
-                        raise InvocationError(
-                            f"Request throttled (max retries exceeded): {error_message}", 
-                            e
-                        )
-                    
-                    # For other AWS errors, classify and raise
-                    raise self._classify_bedrock_error(e)
-                except Exception as e:
-                    # Pass through our custom exceptions
-                    if isinstance(e, (ClientError, InvocationError, ModelNotAvailableError, LLMError)):
-                        raise e
-                    
-                    # Wrap other exceptions
-                    raise LLMError(f"Bedrock error: {str(e)}", e)
         
-        @functools.wraps(func)
-        async def async_wrapper(*args, **kwargs):
-            retry_count = 0
-            
-            while True:
-                try:
-                    return await func(*args, **kwargs)
-                except botocore.exceptions.ClientError as e:
-                    error_code = e.response['Error']['Code']
-                    error_message = e.response['Error']['Message']
-                    
-                    if error_code == "ThrottlingException" and "Too many requests" in error_message:
-                        retry_count += 1
-                        
-                        max_retries = self._retry_config["max_retries"]
-                        if retry_count <= max_retries:
-                            # Calculate backoff with jitter
-                            base_delay = self._retry_config["base_delay"]
-                            max_delay = self._retry_config["max_delay"]
-                            delay = min(max_delay, base_delay * (2 ** (retry_count - 1)))
-                            jitter = random.uniform(0.8, 1.0)
-                            delay_with_jitter = delay * jitter
-                            
-                            # Log retry attempt
-                            logger = self._retry_config["logger"]
-                            warning_msg = f"Request throttled: {error_message}. Retry {retry_count}/{max_retries} in {delay_with_jitter:.2f}s" 
-                            # Double log: once through the logger
-                            logger.warning(warning_msg)
-                            
-                            # Async wait before retry
-                            await asyncio.sleep(delay_with_jitter)
-                            continue
-                    
-                    # For non-throttling or max-retries-exceeded cases, classify and raise
-                    if error_code == "ThrottlingException" and retry_count > self._retry_config["max_retries"]:
-                        raise InvocationError(
-                            f"Request throttled (max retries exceeded): {error_message}", 
-                            e
-                        )
-                    
-                    # For other AWS errors, classify and raise
-                    raise self._classify_bedrock_error(e)
-                except Exception as e:
-                    # Pass through our custom exceptions
-                    if isinstance(e, (ClientError, InvocationError, ModelNotAvailableError, StreamingError)):
-                        raise e
-                    
-                    # Wrap other exceptions - use StreamingError for async methods
-                    raise StreamingError(f"Bedrock streaming error: {str(e)}", e)
+        retry_count = 0
         
-        # Check if the function is a coroutine function
-        if inspect.iscoroutinefunction(func):
-            return cast(F, async_wrapper)
-        else:
-            return cast(F, sync_wrapper)
+        while True:
+            try:
+                # Call parent implementation
+                return super().stream(messages, **kwargs)
+                
+            except botocore.exceptions.ClientError as e:
+                error_code = e.response['Error']['Code']
+                error_message = e.response['Error']['Message']
+                
+                if error_code == "ThrottlingException" and "Too many requests" in error_message:
+                    retry_count += 1
+                    
+                    if retry_count <= self.max_retries:
+                        # Calculate backoff with jitter
+                        delay = min(self.max_delay, self.base_delay * (2 ** (retry_count - 1)))
+                        jitter = random.uniform(0.8, 1.0)
+                        delay_with_jitter = delay * jitter
+                        
+                        # Log retry attempt
+                        warning_msg = f"Request throttled: {error_message}. Retry {retry_count}/{self.max_retries} in {delay_with_jitter:.2f}s"
+                        self.logger.warning(warning_msg)
+                        
+                        # Wait before retry
+                        time.sleep(delay_with_jitter)
+                        continue
+                
+                # For non-throttling or max-retries-exceeded cases, classify and raise
+                if error_code == "ThrottlingException" and retry_count > self.max_retries:
+                    raise InvocationError(
+                        f"Request throttled (max retries exceeded): {error_message}", 
+                        e
+                    )
+                
+                # For other AWS errors, classify and raise
+                raise self._classify_bedrock_error(e)
+                
+            except Exception as e:
+                # Pass through our custom exceptions
+                if isinstance(e, (ClientError, InvocationError, ModelNotAvailableError, LLMError)):
+                    raise e
+                
+                # Wrap other exceptions
+                raise LLMError(f"Bedrock error: {str(e)}", e)
 
-    # Override key methods with retry-enhanced versions
-    def _generate(self, *args, **kwargs):
-        return self._with_bedrock_retry(super()._generate)(*args, **kwargs)
-    
-    def _agenerate(self, *args, **kwargs):
-        return self._with_bedrock_retry(super()._agenerate)(*args, **kwargs)
-    
-    def _stream(self, *args, **kwargs):
-        return self._with_bedrock_retry(super()._stream)(*args, **kwargs)
-    
-    def _astream(self, *args, **kwargs):
-        return self._with_bedrock_retry(super()._astream)(*args, **kwargs)
+    async def astream(self, messages, **kwargs):
+        """
+        [Method intent]
+        Override LangChain's astream method with built-in throttling retry logic.
+        
+        [Design principles]
+        - Direct implementation of retry logic for async operations
+        - Simple exponential backoff with jitter
+        - Clear error handling and classification
+        
+        [Implementation details]
+        - Sets boto3 retry count to 3
+        - Implements retry logic for throttling exceptions
+        - Uses async sleep for waiting between retries
+        - Properly delegates to parent implementation as an async generator
+        
+        Args:
+            messages: List of chat messages
+            **kwargs: Keyword arguments for the model
+            
+        Returns:
+            AsyncIterator yielding model responses
+            
+        Raises:
+            Various exception types based on the specific error encountered
+        """
+        
+        retry_count = 0
+        
+        while True:
+            try:
+                # Get parent's async generator - don't await it directly
+                parent_generator = super()._astream(
+                    messages=messages,
+                    stop=kwargs.get("stop"),
+                    run_manager=kwargs.get("run_manager"),
+                    **kwargs
+                )
+                
+                # Process each chunk as they come through the generator
+                async for chunk in parent_generator:
+                    # Extract text and wrap in AIMessageChunk
+                    text_content = self.extract_text_from_chunk(chunk)
+                    yield AIMessageChunk(content=text_content)
+                
+                # Exit the retry loop once complete
+                return
+                
+            except botocore.exceptions.ClientError as e:
+                error_code = e.response['Error']['Code']
+                error_message = e.response['Error']['Message']
+                
+                if error_code == "ThrottlingException" and "Too many requests" in error_message:
+                    retry_count += 1
+                    
+                    if retry_count <= self.max_retries:
+                        # Calculate backoff with jitter
+                        delay = min(self.max_delay, self.base_delay * (2 ** (retry_count - 1)))
+                        jitter = random.uniform(0.8, 1.0)
+                        delay_with_jitter = delay * jitter
+                        
+                        # Log retry attempt
+                        warning_msg = f"Request throttled: {error_message}. Retry {retry_count}/{self.max_retries} in {delay_with_jitter:.2f}s"
+                        self.logger.warning(warning_msg)
+                        
+                        # Wait before retry (async)
+                        await asyncio.sleep(delay_with_jitter)
+                        continue
+                
+                # For non-throttling or max-retries-exceeded cases, classify and raise
+                if error_code == "ThrottlingException" and retry_count > self.max_retries:
+                    raise InvocationError(
+                        f"Request throttled (max retries exceeded): {error_message}", 
+                        e
+                    )
+                
+                # For other AWS errors, classify and raise
+                raise self._classify_bedrock_error(e)
+                
+            except Exception as e:
+                # Pass through our custom exceptions
+                if isinstance(e, (ClientError, InvocationError, ModelNotAvailableError, StreamingError)):
+                    raise e
+                
+                # Wrap other exceptions with StreamingError for async methods
+                raise StreamingError(f"Bedrock streaming error: {str(e)}", e)
         
     @staticmethod
     def extract_text_from_chunk(content):
@@ -343,11 +353,12 @@ class EnhancedChatBedrockConverse(ChatBedrockConverse):
         [Implementation details]
         - Handles dictionary, string, and list formats directly
         - Detects and processes JSON string representations
-        - Skips metadata-only chunks (e.g., {'index': 0})
+        - Handles LangChain objects (ChatGenerationChunk, AIMessageChunk, etc.)
+        - Skips metadata-only chunks
         - Provides robust extraction with minimal error risk
         
         Args:
-            content: Content from model in any format (dict, string, list)
+            content: Content from model in any format (dict, string, list, or LangChain object)
             
         Returns:
             str: Clean text content without JSON structure or empty string if no text content
@@ -356,6 +367,14 @@ class EnhancedChatBedrockConverse(ChatBedrockConverse):
         if not content:
             return ""
         
+        # Handle LangChain ChatGenerationChunk objects
+        if hasattr(content, "message") and hasattr(content.message, "content"):
+            return content.message.content if content.message.content else ""
+            
+        # Handle LangChain AIMessageChunk objects
+        if hasattr(content, "content") and isinstance(content.content, str):
+            return content.content
+
         # Handle list content by processing each item
         if isinstance(content, list):
             result = ""
@@ -381,6 +400,10 @@ class EnhancedChatBedrockConverse(ChatBedrockConverse):
                     return content["delta"]["text"]
                 elif "content" in content["delta"]:
                     return content["delta"]["content"]
+            # For LangChain message format
+            elif "message" in content and isinstance(content["message"], dict):
+                if "content" in content["message"]:
+                    return content["message"]["content"]
             return ""
         
         # Handle string content
@@ -413,7 +436,7 @@ class EnhancedChatBedrockConverse(ChatBedrockConverse):
         - Maintain compatibility with LangChain's stream method
         
         [Implementation details]
-        - Wraps the standard stream method
+        - Uses the enhanced stream method with retry logic
         - Uses extract_text_from_chunk to get clean text
         - Returns a generator yielding only text strings
         
@@ -444,7 +467,7 @@ class EnhancedChatBedrockConverse(ChatBedrockConverse):
         - Maintain compatibility with LangChain's astream method
         
         [Implementation details]
-        - Wraps the standard astream method
+        - Uses the enhanced astream method with retry logic
         - Uses extract_text_from_chunk to get clean text
         - Returns an async generator yielding only text strings
         

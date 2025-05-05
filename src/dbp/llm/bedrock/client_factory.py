@@ -239,7 +239,7 @@ class BedrockClientFactory:
         region_name: Optional[str] = None,
         profile_name: Optional[str] = None,
         credentials: Optional[Dict[str, str]] = None,
-        max_retries: int = 10,
+        max_retries: int = 3,
         timeout: int = 30,
         logger: Optional[logging.Logger] = None,
         use_model_discovery: bool = True,
@@ -442,8 +442,6 @@ class BedrockClientFactory:
                 # Use our wrapper to get automatic retry and error handling
                 chat_bedrock = EnhancedChatBedrockConverse(
                     **chat_model_params,
-                    # Add retry configuration to match our standards
-                    max_retries=max_retries,
                     logger=logger
                 )
                 

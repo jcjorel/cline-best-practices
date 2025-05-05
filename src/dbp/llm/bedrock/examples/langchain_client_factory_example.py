@@ -109,93 +109,87 @@ async def test_conversation_chain():
     
     print("\n=== Testing LangChain Conversation Chain ===")
     
-    try:
-        # Import LangChain components
-        from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-        from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-        from langchain_core.runnables import RunnablePassthrough
-        from langchain_core.runnables.history import RunnableWithMessageHistory
+    # Import LangChain components - no try/except to ensure errors propagate
+    from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+    from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+    from langchain_core.runnables import RunnablePassthrough
+    
+    # Select a suitable model ID
+    model_id = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+    
+    # Create LangChain chat model using our factory
+    # No try/except - errors will propagate up to caller
+    chat_model = BedrockClientFactory.create_langchain_chatbedrock(
+        model_id=model_id,
+        use_model_discovery=True,
+        logger=logger,
+    )
+    
+    # Note: streaming will be handled at invocation time
+    
+    # Create a conversation prompt template using LangChain pattern
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are a helpful AI assistant that provides concise responses about AWS services."),
+        MessagesPlaceholder(variable_name="history"),
+        ("human", "{input}")
+    ])
+    
+    # Create simple chain that combines prompt + chat model 
+    chain = prompt | chat_model
+    
+    # Create the chain without using deprecated RunnableWithMessageHistory 
+    # Instead, we'll manually manage the history for more control and streaming capabilities
+    
+    # Define a series of questions to simulate a conversation
+    questions = [
+        "What is Amazon S3?",
+        "What storage classes does it offer?",
+        "Which one is best for infrequently accessed data?",
+        "How does that compare to Glacier?"
+    ]
+    
+    # Set up a message store to hold conversation history
+    message_history = []
+    session_id = "aws-services-conversation"
+    
+    # Run the conversation, displaying each exchange
+    for i, question in enumerate(questions):
+        print(f"\nQuestion {i+1}: {question}")
+        print("Response:")
+        print("-" * 50)
         
-        # Select a suitable model ID
-        model_id = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+        # Initialize streaming message
+        sys.stdout.write("\033[1mStreaming response:\033[0m\n")
+        sys.stdout.flush()
         
-        # Create LangChain chat model using our factory
-        # No try/except - errors will propagate up to caller
-        chat_model = BedrockClientFactory.create_langchain_chatbedrock(
-            model_id=model_id,
-            use_model_discovery=True,
-            logger=logger,
-        )
+        # Process the question using the chain with history
+        # Instead of using conversation_with_history directly, we'll use the chat model
+        # with manual history management to enable streaming
         
-        # Note: streaming will be handled at invocation time
-        
-        # Create a conversation prompt template using LangChain pattern
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are a helpful AI assistant that provides concise responses about AWS services."),
-            MessagesPlaceholder(variable_name="history"),
-            ("human", "{input}")
-        ])
-        
-        # Create simple chain that combines prompt + chat model 
-        chain = prompt | chat_model
-        
-        # Create the chain without using deprecated RunnableWithMessageHistory 
-        # Instead, we'll manually manage the history for more control and streaming capabilities
-        
-        # Define a series of questions to simulate a conversation
-        questions = [
-            "What is Amazon S3?",
-            "What storage classes does it offer?",
-            "Which one is best for infrequently accessed data?",
-            "How does that compare to Glacier?"
+        # Get the current conversation history
+        current_messages = [
+            SystemMessage(content="You are a helpful AI assistant that provides concise responses about AWS services.")
         ]
         
-        # Set up a message store to hold conversation history
-        message_history = []
-        session_id = "aws-services-conversation"
+        # Add existing history
+        current_messages.extend(message_history)
         
-        # Run the conversation, displaying each exchange
-        for i, question in enumerate(questions):
-            print(f"\nQuestion {i+1}: {question}")
-            print("Response:")
-            print("-" * 50)
-            
-            # Initialize streaming message
-            sys.stdout.write("\033[1mStreaming response:\033[0m\n")
+        # Add current question
+        current_messages.append(HumanMessage(content=question))
+        
+        # Stream the response using text-only streaming method
+        full_response = ""
+        async for clean_text in chat_model.astream_text(current_messages):
+            # Add to full response and display
+            full_response += clean_text
+            sys.stdout.write(clean_text)
             sys.stdout.flush()
-            
-            # Process the question using the chain with history
-            # Instead of using conversation_with_history directly, we'll use the chat model
-            # with manual history management to enable streaming
-            
-            # Get the current conversation history
-            current_messages = [
-                SystemMessage(content="You are a helpful AI assistant that provides concise responses about AWS services.")
-            ]
-            
-            # Add existing history
-            current_messages.extend(message_history)
-            
-            # Add current question
-            current_messages.append(HumanMessage(content=question))
-            
-            # Stream the response using text-only streaming method
-            full_response = ""
-            async for clean_text in chat_model.astream_text(current_messages):
-                # Add to full response and display
-                full_response += clean_text
-                sys.stdout.write(clean_text)
-                sys.stdout.flush()
-            
-            # After streaming is complete, update the message history
-            message_history.append(HumanMessage(content=question))
-            message_history.append(AIMessage(content=full_response))
-            
-            print("\n" + "-" * 50)
-    
-    except ImportError as e:
-        print(f"Could not import required LangChain packages: {str(e)}")
-        print("This example requires langchain and langchain-core packages to be installed.")
+        
+        # After streaming is complete, update the message history
+        message_history.append(HumanMessage(content=question))
+        message_history.append(AIMessage(content=full_response))
+        
+        print("\n" + "-" * 50)
 
 
 async def test_optimized_discovery(model_id: str):
@@ -334,34 +328,27 @@ async def main():
     """Run all examples."""
     print("===== LangChain Bedrock Model Discovery Examples =====")
     
-    # No try/except at this level - errors will propagate to the runtime
-    # This ensures no errors are silently swallowed
-
+    # No try/except - all errors will directly propagate to ensure nothing is silently caught
     # Select a suitable model ID
     model_id = "anthropic.claude-3-5-sonnet-20240620-v1:0"
     
-    try:
-        # Run the basic integration test
-        await test_basic_langchain_integration()
-        print("\nBasic integration test completed successfully!")
-        
-        # Run conversation chain example
-        await test_conversation_chain()
-        print("\nConversation chain test completed successfully!")
-        
-        # Run optimized discovery test and get model for multi-turn
-        chat_model = await test_optimized_discovery(model_id)
-        print("\nOptimized model discovery test completed successfully!")
-        
-        # Run multi-turn conversation test
-        await test_multi_turn_conversation(chat_model)
-        print("\nMulti-turn conversation test completed successfully!")
-        
-        print("\nAll tests completed successfully!")
-    except Exception as e:
-        print(f"Error occurred: {str(e)}")
-        # Re-raise to show full traceback and ensure non-zero exit code
-        raise
+    # Run the basic integration test
+    await test_basic_langchain_integration()
+    print("\nBasic integration test completed successfully!")
+    
+    # Run conversation chain test
+    await test_conversation_chain()
+    print("\nConversation chain test completed successfully!")
+    
+    # Run optimized discovery test and get model for multi-turn
+    chat_model = await test_optimized_discovery(model_id)
+    print("\nOptimized model discovery test completed successfully!")
+    
+    # Run multi-turn conversation test
+    await test_multi_turn_conversation(chat_model)
+    print("\nMulti-turn conversation test completed successfully!")
+    
+    print("\nAll tests completed successfully!")
 
 # Standard Python entry point
 if __name__ == "__main__":
