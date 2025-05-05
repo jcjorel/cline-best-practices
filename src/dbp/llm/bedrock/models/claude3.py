@@ -91,44 +91,108 @@ class ClaudeEnhancedChatBedrockConverse(EnhancedChatBedrockConverse):
     # Set the class-level SUPPORTED_MODELS for model discovery
     SUPPORTED_MODELS: ClassVar[list] = _CLAUDE_MODELS
     
-    @classmethod
-    def _extract_text_from_chunk(cls, content: Any) -> str:
+    def _extract_text_from_chunk(self, content: Any) -> str:
         """
         [Method intent]
         Extract text specifically from Claude model response chunks.
         
         [Design principles]
-        - Claude-specific text extraction
-        - Focus on Claude response format
-        - Clean, maintainable implementation
+        - Claude-specific text extraction focusing on core object types
+        - Handles list and dict formats directly without string parsing
+        - Clear separation between different response formats
         
         [Implementation details]
-        - Handles Claude's specific response structure
-        - Extracts text content from delta and content fields
-        - Falls back to generic extraction if format is unexpected
+        - Primarily handles list and dict objects as received from Claude
+        - Focuses on the content/text format used by Claude
+        - Extracts text content from all chunks for complete response
         
         Args:
-            content: Claude response chunk in any format
+            content: Claude response chunk (None, list, or dict)
             
         Returns:
             str: Extracted text content
         """
-        # Handle empty content
-        if not content:
+        # Handle None/empty content
+        if content is None:
             return ""
         
-        # Check for Claude-specific formats first
-        if isinstance(content, dict):
-            # For Anthropic Claude delta structure
+        # Handle list formats (multiple content parts)
+        if isinstance(content, list):
+            text_parts = []
+            for item in content:
+                if isinstance(item, dict):
+                    # Claude might use {'text': 'content'} format in lists
+                    if "text" in item:
+                        text_parts.append(item["text"])
+                    # Or sometimes {'type': 'text', 'text': 'content'} like Nova
+                    elif item.get("type") == "text" and "text" in item:
+                        text_parts.append(item["text"])
+                    
+            # Join all found text parts
+            return ''.join(text_parts)
+        
+        # Handle dictionary format
+        elif isinstance(content, dict):
+            # Most common Claude pattern with content list
+            if "content" in content and isinstance(content["content"], list):
+                text_parts = []
+                for item in content["content"]:
+                    if isinstance(item, dict) and "text" in item:
+                        text_parts.append(item["text"])
+                if text_parts:
+                    return ''.join(text_parts)
+                        
+            # Direct content as string
+            if "content" in content and isinstance(content["content"], str):
+                return content["content"]
+            
+            # For Claude delta streaming format
             if "delta" in content and isinstance(content["delta"], dict):
                 if "text" in content["delta"]:
                     return content["delta"]["text"]
                 elif "content" in content["delta"]:
                     return content["delta"]["content"]
             
-            # For direct Claude output (non-delta)
+            # For direct Claude completion output
             if "completion" in content:
                 return content["completion"]
-        
-        # Use parent implementation for non-Claude-specific formats
-        return super()._extract_text_from_chunk(content)
+                
+            # Simple text field
+            if "text" in content:
+                return content["text"]
+                
+        # Handle LangChain wrapper objects
+        if hasattr(content, "content"):
+            # If content is a list (typical Claude format)
+            if isinstance(content.content, list):
+                text_parts = []
+                for item in content.content:
+                    # Standard Claude format in LangChain
+                    if hasattr(item, "text"):
+                        text_parts.append(item.text)
+                    # Dict format in list
+                    elif isinstance(item, dict) and "text" in item:
+                        text_parts.append(item["text"])
+                if text_parts:
+                    return ''.join(text_parts)
+                    
+            # If it's already a string
+            if isinstance(content.content, str):
+                return content.content
+                
+            # If it has a dict or list structure, recursively extract text
+            return self._extract_text_from_chunk(content.content)
+            
+        if hasattr(content, "message") and hasattr(content.message, "content"):
+            # Extract from message content
+            return self._extract_text_from_chunk(content.message.content)
+            
+        # For string content
+        if isinstance(content, str):
+            return content
+            
+        # For any other case, safely convert to string
+        if content is not None:
+            return str(content)
+            
+        return ""

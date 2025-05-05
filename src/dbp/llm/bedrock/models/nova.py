@@ -89,48 +89,87 @@ class NovaEnhancedChatBedrockConverse(EnhancedChatBedrockConverse):
     # Set the class-level SUPPORTED_MODELS for model discovery
     SUPPORTED_MODELS: ClassVar[list] = _NOVA_MODELS
     
-    @classmethod
-    def _extract_text_from_chunk(cls, content: Any) -> str:
+    def _extract_text_from_chunk(self, content: Any) -> str:
         """
         [Method intent]
         Extract text specifically from Nova model response chunks.
         
         [Design principles]
-        - Nova-specific text extraction
-        - Focus on Nova response format
-        - Clean, maintainable implementation
+        - Nova-specific text extraction focusing on core object types
+        - Handles list and dict formats directly without string parsing
+        - Clear separation between different response formats
         
         [Implementation details]
-        - Handles Nova's specific response structure
-        - Extracts text content from Nova-specific fields
-        - Falls back to generic extraction if format is unexpected
+        - Primarily handles list and dict objects as received from Nova
+        - Focuses on the {'type': 'text', 'text': content} format
+        - Extracts text content from all chunks for complete response
         
         Args:
-            content: Nova response chunk in any format
+            content: Nova response chunk (None, list, or dict)
             
         Returns:
             str: Extracted text content
         """
-        # Handle empty content
-        if not content:
+        # Handle None/empty content
+        if content is None:
             return ""
+            
+        # Handle list of dictionaries (Nova's standard streaming format)
+        if isinstance(content, list):
+            text_parts = []
+            for item in content:
+                if isinstance(item, dict):
+                    # Nova uses {'type': 'text', 'text': 'content', 'index': 0} format
+                    if item.get("type") == "text" and "text" in item:
+                        text_parts.append(item["text"])
+            
+            # Join all found text parts
+            return ''.join(text_parts)
         
-        # Check for Nova-specific formats first
-        if isinstance(content, dict):
-            # For Nova output format
+        # Handle dictionary format
+        elif isinstance(content, dict):
+            # Nova type/text format: {'type': 'text', 'text': 'content', 'index': 0}
+            if content.get("type") == "text" and "text" in content:
+                return content["text"]
+                
+            # Standard Nova output format: {'output': {'text': 'content'}}
             if "output" in content and isinstance(content["output"], dict) and "text" in content["output"]:
                 return content["output"]["text"]
                
-            # For Nova chunk format
+            # For streaming chunks: {'chunk': {'bytes': '...'}}
             if "chunk" in content and "bytes" in content["chunk"]:
                 try:
-                    # Nova sometimes sends JSON-encoded chunk data
+                    # Try to parse as JSON
                     chunk_data = json.loads(content["chunk"]["bytes"])
                     if isinstance(chunk_data, dict) and "text" in chunk_data:
                         return chunk_data["text"]
                 except (json.JSONDecodeError, TypeError):
-                    # If not JSON, might be plain text
-                    return content["chunk"]["bytes"]
-        
-        # Use parent implementation for non-Nova-specific formats
-        return super()._extract_text_from_chunk(content)
+                    # Return bytes as string if not JSON
+                    return str(content["chunk"]["bytes"])
+            
+            # Direct text field
+            if "text" in content:
+                return content["text"]
+                
+            # Completion field for older formats
+            if "completion" in content:
+                return content["completion"]
+                
+        # Handle LangChain wrapper objects
+        if hasattr(content, "content"):
+            # If it's already a string, return directly
+            if isinstance(content.content, str):
+                return content.content
+                
+            # If it has a dict or list structure, recursively extract text
+            return self._extract_text_from_chunk(content.content)
+            
+        if hasattr(content, "message") and hasattr(content.message, "content"):
+            # Extract from message content
+            return self._extract_text_from_chunk(content.message.content)
+            
+        # For any other case, safely convert to string
+        if content is not None:
+            return str(content)
+            
+        return ""
