@@ -13,17 +13,18 @@
 ###############################################################################
 # [Source file intent]
 # Implements a specialized client for Anthropic's Claude 3.5+ models on Amazon Bedrock.
-# This client adds Claude-specific features like reasoning support and parameter
-# handling while maintaining the streaming-first and async approach required by
-# the LangChain/LangGraph integration. Supports Claude 3.5 and Claude 3.7 model variants.
+# This client adds Claude-specific features for parameter handling while maintaining 
+# the streaming-first and async approach required by the LangChain/LangGraph integration. 
+# Supports Claude 3.5 and Claude 3.7 model variants with focused implementation on 
+# core functionality.
 ###############################################################################
 # [Source file design principles]
 # - Claude-specific parameter optimization
-# - Reasoning support for enhanced outputs
 # - Specialized message formatting for Claude
 # - Clean extension of BedrockBase
 # - Asynchronous streaming interface
 # - Support for Claude 3.5+ model variants
+# - KISS approach focusing on core functionality
 ###############################################################################
 # [Source file constraints]
 # - Must be compatible with Claude 3.5 and newer models only
@@ -42,6 +43,11 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-05T11:08:00Z : Removed all reasoning functionality by CodeAssistant
+# * Removed all reasoning-related methods
+# * Cleaned up implementation for better maintainability
+# * Simplified parameter handling and processing
+# * Applied KISS approach to reduce code complexity
 # 2025-05-05T01:30:13Z : Updated _get_system_content method signature by CodeAssistant
 # * Modified method to accept system_prompt parameter
 # * Added handling for directly provided system prompts
@@ -56,11 +62,6 @@
 # * Added standardized parameter handling through internal methods
 # * Implemented _format_messages_internal, _format_model_kwargs_internal
 # * Added _get_system_content and _get_model_specific_params methods
-# 2025-05-04T23:08:00Z : Refactored to use direct model details for capability checking by CodeAssistant
-# * Removed ModelCapability enum dependencies
-# * Added Claude-specific capability check methods
-# * Updated handler registration to use string-based identifiers
-# * Improved error handling and propagation
 ###############################################################################
 
 import logging
@@ -83,19 +84,18 @@ class ClaudeClient(EnhancedBedrockBase):
     """
     [Class intent]
     Implements a specialized client for Amazon Bedrock's Claude 3.5+ models.
-    This client adds Claude-specific features like reasoning support and
-    parameter handling while maintaining the streaming-focused approach.
+    This client adds Claude-specific features for parameter handling while
+    maintaining the streaming-focused approach.
     
     [Design principles]
     - Claude-specific parameter optimization
-    - Reasoning support for enhanced outputs
     - Specialized message formatting for Claude
     - Clean extension of BedrockBase
+    - Simple and maintainable implementation
     
     [Implementation details]
     - Supports Claude 3.5+ model variants
     - Implements Claude-specific parameter mapping
-    - Adds specialized reasoning support
     - Optimizes default parameters for Claude
     """
     
@@ -255,16 +255,18 @@ class ClaudeClient(EnhancedBedrockBase):
     def _format_model_kwargs(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         """
         [Method intent]
-        Format model parameters for Claude.
+        Format model parameters for Claude API.
         
         [Design principles]
         - Claude-specific parameter formatting
-        - Consistent return type (Dict for inferenceConfig)
-        - Separate model-specific parameters extraction
+        - Consistent return type
+        - Clean parameter handling
+        - Simple and maintainable implementation
         
         [Implementation details]
-        - Sets default Claude-specific values
-        - Extracts Claude-specific parameters for separate handling
+        - Maps standard parameters to Claude API format
+        - Handles Claude-specific parameters separately
+        - Supports prompt caching
         
         Args:
             kwargs: Combined parameters
@@ -281,18 +283,14 @@ class ClaudeClient(EnhancedBedrockBase):
         
         # Format common inference parameters
         inference_config = {
-            "temperature": kwargs.get("temperature", self.DEFAULT_TEMPERATURE),
             "maxTokens": kwargs.get("max_tokens", self.DEFAULT_MAX_TOKENS),
+            "temperature": kwargs.get("temperature", self.DEFAULT_TEMPERATURE),
             "topP": kwargs.get("top_p", self.DEFAULT_TOP_P)
         }
         
         # Add stop sequences if provided
         if "stop_sequences" in kwargs:
             inference_config["stopSequences"] = kwargs["stop_sequences"]
-        
-        # Add reasoning system prompt if requested
-        if kwargs.get("use_reasoning", False) and not hasattr(self, '_pending_system_content'):
-            self._pending_system_content = "Use step-by-step reasoning to solve this problem."
         
         # Add caching if enabled
         caching_enabled = kwargs.get("enable_caching") or getattr(self, '_prompt_caching_enabled', False)
@@ -387,196 +385,61 @@ class ClaudeClient(EnhancedBedrockBase):
             return params
         return {}
     
-    async def stream_chat_with_reasoning(
+    async def stream_chat(
         self, 
         messages: List[Dict[str, Any]], 
         **kwargs
     ) -> AsyncIterator[Dict[str, Any]]:
         """
         [Method intent]
-        Stream a chat with reasoning enabled, which instructs Claude to show its work.
+        Generate a response from the model for a chat conversation using streaming.
         
         [Design principles]
-        - Simple interface for reasoning-enabled chats
-        - Maintain streaming semantics
-        - Parameter consistency with base methods
+        - Simple, straightforward implementation
+        - Consistent with base implementation
+        - Clean delegation pattern
         
         [Implementation details]
-        - Sets reasoning flag in parameters
-        - Delegates to stream_chat with updated parameters
-        - Preserves streaming behavior
+        - Directly delegates to parent implementation
+        - Maintains Claude-specific parameter handling
         
         Args:
             messages: List of message objects with role and content
-            **kwargs: Additional parameters
-            
+            **kwargs: Model-specific parameters
+                
         Yields:
-            Dict[str, Any]: Response chunks from Claude
+            Dict[str, Any]: Response chunks from the model
             
         Raises:
             LLMError: If chat generation fails
         """
-        # Enable reasoning
-        kwargs["use_reasoning"] = True
-        
-        # Delegate to stream_chat with reasoning enabled
-        async for chunk in self.stream_chat(messages, **kwargs):
+        # Delegate to parent implementation
+        async for chunk in super().stream_chat(messages, **kwargs):
             yield chunk
     
-    async def stream_generate_with_reasoning(
+    async def _process_stream_chunk(
         self, 
-        prompt: str, 
-        **kwargs
-    ) -> AsyncIterator[Dict[str, Any]]:
-        """
-        [Method intent]
-        Generate a response with reasoning enabled, using a single prompt.
-        
-        [Design principles]
-        - Simple interface for single-prompt reasoning
-        - Maintain streaming semantics
-        - Clean delegation to chat interface
-        
-        [Implementation details]
-        - Converts prompt to messages format
-        - Delegates to stream_chat_with_reasoning
-        - Preserves streaming behavior
-        
-        Args:
-            prompt: The text prompt to send to the model
-            **kwargs: Additional parameters
-            
-        Yields:
-            Dict[str, Any]: Response chunks from Claude
-            
-        Raises:
-            LLMError: If generation fails
-        """
-        # Convert to messages format
-        messages = [{"role": "user", "content": prompt}]
-        
-        # Delegate to chat with reasoning
-        async for chunk in self.stream_chat_with_reasoning(messages, **kwargs):
-            yield chunk
-    
-    async def get_completion_with_reasoning(
-        self, 
-        prompt: str, 
-        **kwargs
-    ) -> str:
-        """
-        [Method intent]
-        Get a complete response with reasoning for a single prompt.
-        
-        [Design principles]
-        - Simplify getting complete responses with reasoning
-        - Still use streaming internally to avoid blocking
-        - Return full text for ease of use
-        
-        [Implementation details]
-        - Uses streaming internally to avoid blocking
-        - Accumulates chunks into complete response
-        - Returns final complete text
-        
-        Args:
-            prompt: The text prompt to send to Claude
-            **kwargs: Additional parameters
-            
-        Returns:
-            str: Complete response text from Claude
-            
-        Raises:
-            LLMError: If generation fails
-        """
-        result = ""
-        
-        # Use streaming internally, but collect into a single result
-        try:
-            async for chunk in self.stream_generate_with_reasoning(prompt, **kwargs):
-                if "delta" in chunk and "text" in chunk["delta"]:
-                    result += chunk["delta"]["text"]
-                    
-            return result
-        except Exception as e:
-            raise LLMError(f"Failed to get completion with reasoning: {str(e)}", e)
-    
-    
-    async def get_structured_reasoning_response(
-        self, 
-        prompt: str, 
-        **kwargs
+        chunk: Dict[str, Any],
+        has_special_content_types: bool = False
     ) -> Dict[str, Any]:
         """
         [Method intent]
-        Get a structured response with reasoning steps clearly separated.
+        Process a streaming chunk.
         
         [Design principles]
-        - Support use cases requiring structured reasoning output
-        - Clean separation of reasoning steps and final answer
-        - Prescriptive prompt engineering for consistent structure
+        - Simple pass-through implementation
+        - Minimal processing overhead
         
         [Implementation details]
-        - Uses a specially crafted system prompt for structured output
-        - Adds specific instructions for format
-        - Parses the response into a structured format
+        - Basic pass-through of chunks
+        - Parameter preserved for API compatibility
         
         Args:
-            prompt: The text prompt to send to Claude
-            **kwargs: Additional parameters
+            chunk: The raw chunk from the response stream
+            has_special_content_types: Whether to expect special content types
             
         Returns:
-            Dict[str, Any]: Structured response with reasoning and answer
-            
-        Raises:
-            LLMError: If generation or parsing fails
+            Dict[str, Any]: Processed chunk, unmodified
         """
-        # Add system prompt for structured reasoning
-        system_prompt = """
-        When responding, use the following structure:
-        1. First, provide your step-by-step reasoning process under a "Reasoning" heading
-        2. Then, provide your final answer under a "Answer" heading
-        
-        Example format:
-        
-        Reasoning:
-        [Your step-by-step thought process here]
-        
-        Answer:
-        [Your concise final answer here]
-        """
-        
-        kwargs["system"] = system_prompt
-        
-        # Get the complete response
-        response_text = await self.get_completion_with_reasoning(prompt, **kwargs)
-        
-        # Parse the response into a structured format
-        try:
-            # Split on headings
-            parts = response_text.split("Reasoning:")
-            if len(parts) < 2:
-                # Fallback if format wasn't followed
-                return {
-                    "reasoning": "",
-                    "answer": response_text.strip()
-                }
-            
-            reasoning_and_answer = parts[1].strip()
-            answer_parts = reasoning_and_answer.split("Answer:")
-            
-            if len(answer_parts) < 2:
-                # No Answer heading found
-                return {
-                    "reasoning": reasoning_and_answer.strip(),
-                    "answer": ""
-                }
-            
-            reasoning = answer_parts[0].strip()
-            answer = answer_parts[1].strip()
-            
-            return {
-                "reasoning": reasoning,
-                "answer": answer
-            }
-        except Exception as e:
-            raise LLMError(f"Failed to parse structured reasoning response: {str(e)}", e)
+        # Simple pass-through implementation - no special processing needed
+        return chunk

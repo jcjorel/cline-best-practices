@@ -21,7 +21,7 @@
 # - Unified core API with model-agnostic interfaces
 # - Feature capability discovery and adaptation
 # - Consistent streaming pattern across all methods
-# - Support for multimodal and reasoning capabilities
+# - Support for multimodal capabilities
 # - Clean extension of BedrockBase
 # - Direct access to model details for capability checking
 ###############################################################################
@@ -90,7 +90,7 @@ class EnhancedBedrockBase(BedrockBase, ABC):
     - Unified core API with model-agnostic interfaces
     - Direct model details access for capability checking
     - Consistent streaming pattern across all methods
-    - Support for multimodal and reasoning across compatible models
+    - Support for multimodal capabilities
     
     [Implementation details]
     - Extends BedrockBase with model details access
@@ -447,6 +447,35 @@ class EnhancedBedrockBase(BedrockBase, ABC):
             
         return capabilities
         
+    async def _process_stream_chunk(
+        self, 
+        chunk: Dict[str, Any],
+        has_special_content_types: bool = False
+    ) -> Dict[str, Any]:
+        """
+        [Method intent]
+        Process a streaming chunk before yielding it to client code.
+        
+        [Design principles]
+        - Template method for subclass customization
+        - Default pass-through behavior
+        - Support for custom content processing
+        
+        [Implementation details]
+        - Default implementation returns unchanged chunk
+        - Subclasses can override to add processing
+        - Designed for use by stream_chat
+        
+        Args:
+            chunk: The raw chunk from the response stream
+            has_special_content_types: Whether to expect special content types
+            
+        Returns:
+            Dict[str, Any]: Processed chunk ready for client code
+        """
+        # Default implementation just passes through the chunk
+        return chunk
+        
     async def stream_chat(
         self, 
         messages: List[Dict[str, Any]], 
@@ -455,24 +484,24 @@ class EnhancedBedrockBase(BedrockBase, ABC):
         """
         [Method intent]
         Generate a response from the model for a chat conversation using streaming.
-        Enhanced version that supports prompt caching capability.
+        Enhanced version that supports prompt caching and special content types.
         
         [Design principles]
         - Streaming as the standard interaction pattern
-        - Support for model-specific parameters and caching
-        - Clean delegation to parent implementation
+        - Support for model-specific parameters and content processing
+        - Template method pattern for specialized processing
         
         [Implementation details]
         - Enables prompt caching if configured
-        - Delegates to parent's stream_chat implementation
-        - Maintains streaming semantics
+        - Processes chunks through template method hook
+        - Handles special content types like reasoning
         
         Args:
             messages: List of message objects with role and content
             **kwargs: Model-specific parameters
             
         Yields:
-            Dict[str, Any]: Response chunks from the model
+            Dict[str, Any]: Processed response chunks from the model
             
         Raises:
             LLMError: If chat generation fails
@@ -480,7 +509,15 @@ class EnhancedBedrockBase(BedrockBase, ABC):
         # Check if caching should be enabled for this request
         if self.is_prompt_caching_enabled() and self.supports_prompt_caching():
             kwargs["enable_caching"] = True
-        
-        # Delegate to parent's stream_chat implementation
-        async for chunk in super().stream_chat(messages, **kwargs):
-            yield chunk
+            
+        try:
+            # Delegate to parent's stream_chat implementation
+            async for chunk in super().stream_chat(messages, **kwargs):
+                # Process the chunk through the hook
+                processed_chunk = await self._process_stream_chunk(chunk, False)
+                yield processed_chunk
+                
+        except Exception as e:
+            # Add context about processing
+            self.logger.error(f"Error processing stream: {str(e)}")
+            raise LLMError(f"Error in stream processing: {str(e)}", e)
