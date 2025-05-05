@@ -276,111 +276,6 @@ async def langchain_with_discovery(shared_state: Dict[str, Any]):
     print("\nNo cleanup needed - LangChain clients are managed automatically")
 
 
-async def check_inference_profiles(shared_state: Dict[str, Any]):
-    """Demonstrate discovery and retrieval of inference profiles."""
-    print("\n=== Inference Profile Discovery with LangChain ===")
-    
-    # Get model discovery instance from shared state
-    model_discovery = shared_state.get("model_discovery")
-    
-    # Get models and profiles from cache
-    print("Getting models and profiles from cache...")
-    region_models = shared_state.get("region_data", {})
-    
-    # Find a model with inference profiles
-    model_with_profiles = None
-    profile_count = 0
-    profile_region = None
-    
-    # Check each region for profiles using cached data
-    model_with_profiles_map = {}
-    
-    for region, models in region_models.get("models", {}).items():
-        # Check for models with profiles in this region
-        for model_id, model in models.items():
-            profiles = model.get("referencedByInstanceProfiles", [])
-            
-            if profiles:
-                # Count profiles per model
-                if model_id not in model_with_profiles_map:
-                    model_with_profiles_map[model_id] = {}
-                
-                model_with_profiles_map[model_id][region] = profiles
-                
-                # Update if this is the model with the most profiles
-                if len(profiles) > profile_count:
-                    model_with_profiles = model_id
-                    profile_count = len(profiles)
-                    profile_region = region
-    
-    if model_with_profiles:
-        print(f"\nFound model {model_with_profiles} with {profile_count} inference profiles in {profile_region}")
-        
-        # Get the full model data (from cache, no API calls)
-        model_data = model_discovery.get_model(model_with_profiles, region=profile_region)
-        
-        if model_data and "referencedByInstanceProfiles" in model_data:
-            profiles = model_data["referencedByInstanceProfiles"]
-            profile_ids = [p.get("inferenceProfileId") for p in profiles if "inferenceProfileId" in p]
-            print(f"Profile IDs in {profile_region}: {', '.join(profile_ids)}")
-            
-            # Get details for first profile
-            if profiles:
-                first_profile = profiles[0]
-                
-                # Display profile information
-                print(f"\nProfile information for {first_profile.get('inferenceProfileId')}:")
-                print(json.dumps({
-                    "inferenceProfileId": first_profile.get("inferenceProfileId"),
-                    "inferenceProfileName": first_profile.get("inferenceProfileName", "N/A"),
-                    "status": first_profile.get("status", "N/A"),
-                    "provisionedThroughput": first_profile.get("provisionedThroughput", {})
-                }, indent=2, cls=DateTimeJSONEncoder))
-                
-                # Create a LangChain client using this profile
-                print("\nCreating LangChain client with inference profile...")
-                
-                inference_profile_arn = first_profile.get("inferenceProfileArn")
-                if inference_profile_arn:
-                    try:
-                        chat_model = BedrockClientFactory.create_langchain_chatbedrock(
-                            model_id=model_with_profiles,
-                            region_name=profile_region,
-                            inference_profile_arn=inference_profile_arn,
-                            logger=logger
-                        )
-                        
-                        print(f"Successfully created LangChain client with inference profile in {profile_region}")
-                        
-                        # Test with a simple message
-                        messages = [
-                            SystemMessage(content="You are a helpful assistant."),
-                            HumanMessage(content="What is AWS Bedrock?")
-                        ]
-                        
-                        print("\nTesting LangChain client with inference profile...")
-                        print("Response:")
-                        print("-" * 50)
-                        
-                        # Stream the response
-                        response_text = ""
-                        async for chunk in chat_model.astream_text(messages):
-                            response_text += chunk
-                            print(chunk, end="", flush=True)
-                        
-                        print("\n" + "-" * 50)
-                        print(f"Response length: {len(response_text)} characters")
-                        
-                    except Exception as e:
-                        print(f"Error creating or using LangChain client with inference profile: {str(e)}")
-                else:
-                    print("No inference profile ARN found")
-        else:
-            print(f"Could not retrieve profile information for model {model_with_profiles}")
-    else:
-        print("No models with inference profiles found in any region")
-
-
 async def display_project_supported_models(shared_state: Dict[str, Any]):
     """Display the availability of all project-supported models across regions."""
     print("\n=== Project-Supported Models Availability (LangChain Compatible) ===")
@@ -608,9 +503,6 @@ async def main():
     # Use the first project model for detailed availability example
     example_model_id = sorted(project_models)[0]
     await print_model_availability(example_model_id, shared_state)
-    
-    # Check inference profiles
-    await check_inference_profiles(shared_state)
     
     print("\nAll LangChain examples completed successfully.")
 
