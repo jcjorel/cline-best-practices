@@ -45,6 +45,16 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-05T08:29:00Z : Fixed system prompt being ignored in streaming conversations by CodeAssistant
+# * Modified _converse_stream to use _prepare_request instead of manual request construction
+# * Ensures system prompts are properly included in streaming API calls
+# 2025-05-05T01:28:01Z : Updated system prompt handling mechanism by CodeAssistant
+# * Modified _get_system_content() abstract method to accept system_prompt parameter
+# * Updated _prepare_request() to pass system prompt to _get_system_content()
+# * Enhanced documentation to clarify the parameter passing flow
+# 2025-05-05T01:25:12Z : Added system prompt management capabilities by CodeAssistant
+# * Added set_system_prompt() and get_system_prompt() methods
+# * Added instance variable to store system prompt data
 # 2025-05-05T00:30:00Z : Refactored BedrockBase to an abstract class by CodeAssistant
 # * Added abstract methods for model-specific customizations
 # * Implemented Template Method pattern for request preparation
@@ -58,10 +68,6 @@
 # * Eliminated code duplication between _converse_stream and _process_converse_stream
 # * Modified _converse_stream to leverage _process_converse_stream method
 # * Improved maintainability by centralizing stream event processing logic
-# 2025-05-03T08:50:00Z : Moved _process_converse_stream from EnhancedBedrockBase by CodeAssistant
-# * Moved method to base class to make it available to all Bedrock clients
-# * Maintained method signature and functionality
-# * Enhanced documentation to reflect method purpose
 ###############################################################################
 
 import os
@@ -159,6 +165,9 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider, ABC):
         """
         # Initialize base class
         super().__init__(model_id, logger)
+        
+        # Initialize system prompt to None
+        self._system_prompt = None
         
         # Store configuration
         # Extract region from inference profile ARN if provided, otherwise use the given region_name
@@ -542,24 +551,12 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider, ABC):
             raise ClientError("Bedrock client is not initialized")
         
         # Retry configuration for throttling
-        max_retries = 5  # Maximum number of retry attempts for throttling
-        base_delay = 5.0  # Base delay in seconds
+        max_retries = 7  # Maximum number of retry attempts for throttling
+        base_delay = 7.0  # Base delay in seconds
         max_delay = 60.0  # Maximum delay in seconds
         
-        # Prepare request with appropriate identifier
-        request = {"messages": messages}
-        
-        # If an inference profile ARN is available, use it as the modelId parameter
-        # Otherwise use the regular model ID
-        if hasattr(self, 'inference_profile_arn') and self.inference_profile_arn:
-            request["modelId"] = self.inference_profile_arn
-            self.logger.info(f"Using inference profile ARN: {self.inference_profile_arn}")
-        else:
-            request["modelId"] = self.model_id
-        
-        # Add inference parameters if provided
-        if model_kwargs:
-            request["inferenceConfig"] = model_kwargs
+        # Use _prepare_request to build the complete request with system prompt
+        request = self._prepare_request(messages, model_kwargs)
         
         # Initialize retry counter
         retry_count = 0
@@ -922,8 +919,48 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider, ABC):
         """
         raise NotImplementedError("Model-specific parameter formatting must be implemented")
     
+    def set_system_prompt(self, system_prompt: Any) -> None:
+        """
+        [Method intent]
+        Set the system prompt that will be used for future model invocations.
+        
+        [Design principles]
+        - Flexible input handling accepting any type of data
+        - Simple storage mechanism for raw system prompt data
+        - No premature formatting or validation
+        
+        [Implementation details]
+        - Stores the provided system prompt as-is
+        - Does not perform any validation or formatting
+        - The concrete model classes are responsible for formatting via _get_system_content()
+        
+        Args:
+            system_prompt: Any data structure to use as system prompt
+                          Will be passed as-is to _get_system_content()
+        """
+        self._system_prompt = system_prompt
+        self.logger.debug(f"Set system prompt for model {self.model_id}")
+    
+    def get_system_prompt(self) -> Any:
+        """
+        [Method intent]
+        Retrieve the currently set system prompt data.
+        
+        [Design principles]
+        - Simple accessor for stored system prompt data
+        - Returns exact data provided to set_system_prompt
+        
+        [Implementation details]
+        - Returns the raw system prompt data as it was provided
+        - May return None if no system prompt has been set
+        
+        Returns:
+            Any: The current system prompt data or None if not set
+        """
+        return self._system_prompt
+    
     @abstractmethod
-    def _get_system_content(self) -> Optional[Dict[str, Any]]:
+    def _get_system_content(self, system_prompt: Any = None) -> Optional[Dict[str, Any]]:
         """
         [Method intent]
         Get system content for the request if available.
@@ -933,11 +970,18 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider, ABC):
         - Model-specific system prompt handling
         - Optional functionality based on model support
         - Clear integration with model capabilities
+        - Receives raw system prompt for flexible processing
         
         [Implementation details]
+        - Accepts the raw system prompt data as an argument
         - Returns system content structured per model requirements or None
         - Handles model-specific formatting needs
+        - Concrete model classes are responsible for correct format conversion
         
+        Args:
+            system_prompt: Raw system prompt data as provided to set_system_prompt()
+                          May be None if no system prompt has been set
+            
         Returns:
             Optional[Dict[str, Any]]: System content structured per model requirements or None
         """
@@ -1050,9 +1094,12 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider, ABC):
             request["modelId"] = self.model_id
         
         # Add system content if available
-        system_content = self._get_system_content()
-        if system_content:
-            request["system"] = system_content
+        system_content_dict = self._get_system_content(self._system_prompt)
+        if system_content_dict:
+            # The model-specific class returns the complete dict with the correct key structure
+            # Merge it directly into the request
+            request.update(system_content_dict)
+            self.logger.debug(f"Added system content to request: {json.dumps(system_content_dict)}")
         
         # Add model-specific parameters if any
         model_specific_params = self._get_model_specific_params()
@@ -1083,7 +1130,7 @@ class BedrockBase(ModelClientBase, AsyncTextStreamProvider, ABC):
             StreamingError: If streaming fails
         """
         if not hasattr(self, '_stream_prompt') or not self._stream_prompt:
-            self._stream_prompt = "Hello, how can I assist you today?"
+            self._stream_prompt = "FIXME!! Hello, how can I assist you today?"
         
         try:
             async for chunk in self.stream_generate(self._stream_prompt):

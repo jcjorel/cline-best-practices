@@ -42,6 +42,7 @@ if __name__ == "__main__":
 else:
     # Relative imports when used as part of the package
     from ..base import BedrockBase
+    from ..enhanced_base import EnhancedBedrockBase
     from ..discovery.models import BedrockModelDiscovery
     from ..client_factory import BedrockClientFactory
 
@@ -120,7 +121,7 @@ async def print_model_availability(model_id: str, shared_state: Dict[str, Any]):
 
 async def client_with_discovery(shared_state: Dict[str, Any]):
     """Demonstrate using BedrockBase with model discovery for all project supported models."""
-    print("\n=== Testing All Project Supported Models with 3-Shot Conversation ===")
+    print("\n=== Testing All Project Supported Models with 3-Shot Conversation and System Prompts ===")
     
     # Get model discovery instance from shared state
     model_discovery = shared_state.get("model_discovery")
@@ -139,6 +140,14 @@ async def client_with_discovery(shared_state: Dict[str, Any]):
         "What are its key features?",
         "How does it compare to other AWS AI services?"
     ]
+    
+    # Define a system prompt that will make it VERY obvious in the response if it's working
+    system_prompt = """You are an AWS spokesperson who MUST ALWAYS follow these rules without exception:
+1. You MUST begin EVERY response with the phrase "🚀 AWS SPECIALIST HERE! I'm delighted to inform you that"
+2. You MUST keep your responses concise (under 4 sentences)
+3. You MUST mention at least one AWS benefit in EVERY response
+4. You MUST use an enthusiastic, marketing-oriented tone
+5. You MUST add "AWS - Cloud Innovation at Your Fingertips™" at the end of EVERY response"""
     
     # Non-preferred region where models might not be available
     initial_region = "ap-south-1"  # Mumbai
@@ -216,12 +225,12 @@ async def client_with_discovery(shared_state: Dict[str, Any]):
             print(f"Model discovery is enabled with preferred regions: {', '.join(preferred_regions)}")
             
             client = BedrockClientFactory.create_client(
-            model_id=model_id,
-            region_name=initial_region,
-            logger=logger,
-            use_model_discovery=True,
-            preferred_regions=preferred_regions,
-            inference_profile_arn=inference_profile_arn
+                model_id=model_id,
+                region_name=initial_region,
+                logger=logger,
+                use_model_discovery=True,
+                preferred_regions=preferred_regions,
+                inference_profile_arn=inference_profile_arn
             )
             
             # Initialize client - this will trigger model discovery if needed
@@ -232,6 +241,20 @@ async def client_with_discovery(shared_state: Dict[str, Any]):
             model_clients[client_key] = client
             
             print(f"Client initialized successfully in region: {client.region_name}")
+            
+            # Set the system prompt to demonstrate it's working
+            print("\n=== Setting System Prompt for Conversation ===")
+            print(f"System prompt: {system_prompt[:100]}...")
+            client.set_system_prompt(system_prompt)
+            
+            # Verify the system prompt is stored correctly
+            retrieved_prompt = client.get_system_prompt()
+            if retrieved_prompt == system_prompt:
+                print("✓ System prompt successfully stored and retrieved")
+            else:
+                print("⚠ System prompt retrieval doesn't match what was set")
+                print(f"Original: {system_prompt[:50]}...")
+                print(f"Retrieved: {retrieved_prompt[:50]}...")
             
             # Get best regions information (from cache)
             best_regions = client.get_best_regions_for_model()
@@ -427,6 +450,95 @@ async def display_region_model_availability(shared_state: Dict[str, Any]):
                 print(f"    - {model_name}")
 
 
+async def test_system_prompt_variants(shared_state: Dict[str, Any]):
+    """Test different formats of system prompts to demonstrate flexibility."""
+    print("\n=== Testing Different System Prompt Formats ===")
+    
+    # Get model discovery instance from shared state
+    model_discovery = shared_state.get("model_discovery")
+    
+    # Get project-supported models from shared state
+    project_models = shared_state.get("project_models")
+    if not project_models:
+        print("No project-supported models found!")
+        return
+    
+    # Use the first available model for testing
+    test_model_id = sorted(project_models)[0]
+    print(f"Using model {test_model_id} for system prompt format tests")
+    
+    # Define different system prompt formats to test
+    prompt_variants = [
+        # String format (most common)
+        "You are a helpful assistant that speaks like a pirate.",
+        
+        # Dictionary format
+        {"text": "You are a helpful assistant that speaks like a robot."},
+        
+        # List format (for models like Nova)
+        [{"text": "You are a helpful assistant that speaks like a detective."}]
+    ]
+    
+    # Define a simple prompt to test with each system prompt variant
+    test_prompt = "Tell me about Amazon S3 in one sentence."
+    
+    # Reuse a single client for all tests to optimize performance
+    client = None
+    
+    # Test each system prompt variant
+    for i, variant in enumerate(prompt_variants):
+        variant_type = type(variant).__name__
+        print(f"\n--- Testing System Prompt Format #{i+1} ({variant_type}) ---")
+        
+        try:
+            # Create client once and reuse for all tests
+            if client is None:
+                # Use the factory instead of direct BedrockBase instantiation
+                client = BedrockClientFactory.create_client(
+                    model_id=test_model_id,
+                    logger=logger,
+                    use_model_discovery=True
+                )
+                # Initialize client once
+                await client.initialize()
+                print(f"Client initialized in region: {client.region_name}")
+            
+            # Set the system prompt variant
+            print(f"Setting system prompt ({variant_type}): {str(variant)[:80]}...")
+            client.set_system_prompt(variant)
+            
+            # Verify that get_system_prompt returns the exact same object
+            retrieved = client.get_system_prompt()
+            print(f"Retrieved system prompt type: {type(retrieved).__name__}")
+            print(f"Retrieved matches original: {retrieved == variant}")
+            
+            # Send prompt to get response with this system prompt
+            print(f"\nSending test prompt: {test_prompt}")
+            print("Response:")
+            print("-------------------------------------------")
+            
+            response_text = ""
+            
+            # Stream chat
+            async for chunk in client.stream_chat([{"role": "user", "content": test_prompt}]):
+                if chunk["type"] == "content_block_delta" and "delta" in chunk:
+                    if "text" in chunk["delta"]:
+                        text = chunk["delta"]["text"]
+                        response_text += text
+                        # Print each chunk immediately
+                        print(text, end="", flush=True)
+            
+            print("\n-------------------------------------------")
+            
+        except Exception as e:
+            print(f"Error testing system prompt variant: {str(e)}")
+    
+    # Shutdown client after all tests
+    if client:
+        await client.shutdown()
+    
+    print("\nSystem prompt variant testing complete")
+
 async def main():
     """Run all examples with optimized performance."""
     print("===== Bedrock Model Discovery Examples (OPTIMIZED) =====")
@@ -457,6 +569,9 @@ async def main():
         "region_data": region_data,
         "project_models": project_models
     }
+    
+    # Test system prompt variants first (most important for this demo)
+    await test_system_prompt_variants(shared_state)
     
     # Run all examples with shared state to avoid redundant API calls
     await display_project_supported_models(shared_state)

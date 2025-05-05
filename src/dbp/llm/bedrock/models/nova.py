@@ -41,6 +41,11 @@
 # system:langchain_core
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-05T01:30:50Z : Updated _get_system_content method signature by CodeAssistant
+# * Modified method to accept system_prompt parameter
+# * Added handling for directly provided system prompts
+# * Enhanced implementation to support various system prompt types
+# * Updated method documentation to reflect the changes
 # 2025-05-05T00:38:00Z : Updated method names for abstract class compatibility by CodeAssistant
 # * Renamed _format_messages_internal to _format_messages
 # * Renamed _format_model_kwargs_internal to _format_model_kwargs
@@ -51,20 +56,6 @@
 # * Implemented _format_messages_internal, _format_model_kwargs_internal
 # * Added _get_system_content and _get_model_specific_params methods
 # * Updated process_multimodal_message to use _prepare_request
-# 2025-05-04T23:12:00Z : Refactored to use direct model details for capability checking by CodeAssistant
-# * Removed ModelCapability enum dependencies
-# * Added Nova-specific capability check methods
-# * Updated handler registration to use string-based identifiers
-# * Improved error handling and propagation
-# 2025-05-04T11:30:00Z : Added prompt caching support by CodeAssistant
-# * Added capability detection for prompt caching
-# * Dynamically registers PROMPT_CACHING capability when supported
-# * Added support for Bedrock prompt caching with Nova models
-# 2025-05-02T13:06:00Z : Enhanced with capability-based API integration by CodeAssistant
-# * Updated to extend EnhancedBedrockBase instead of BedrockBase
-# * Added capability registration for model features
-# * Implemented capability handlers for features like multimodal, summarization
-# * Added support for unified capability-based API access
 ###############################################################################
 
 """
@@ -205,98 +196,7 @@ class NovaClient(EnhancedBedrockBase):
         
         # Store inference profile ARN if provided (for future use)
         self._inference_profile_arn = inference_profile_arn
-    
-    def supports_multimodal(self) -> bool:
-        """
-        [Method intent]
-        Check if this Nova model supports multimodal inputs.
         
-        [Design principles]
-        - Direct capability checking
-        - Nova variant-specific feature
-        - Clean boolean interface
-        
-        [Implementation details]
-        - Checks model ID for Pro, Premier, or Lite variants
-        
-        Returns:
-            bool: True if the model supports multimodal inputs (images)
-        """
-        model_id_lower = self.model_id.lower()
-        return any(variant in model_id_lower for variant in ["nova-pro", "nova-premier", "nova-lite"])
-
-    def supports_video_input(self) -> bool:
-        """
-        [Method intent]
-        Check if this Nova model supports video input.
-        
-        [Design principles]
-        - Direct capability checking
-        - Nova variant-specific feature
-        - Clean boolean interface
-        
-        [Implementation details]
-        - Checks if model is Nova Reel variant
-        
-        Returns:
-            bool: True if the model supports video input
-        """
-        return "nova-reel" in self.model_id.lower()
-
-    def supports_keyword_extraction(self) -> bool:
-        """
-        [Method intent]
-        Check if this Nova model supports keyword extraction.
-        
-        [Design principles]
-        - Direct capability checking
-        - Nova-specific feature
-        - Clean boolean interface
-        
-        [Implementation details]
-        - All Nova models support keyword extraction
-        
-        Returns:
-            bool: True as all Nova models support keyword extraction
-        """
-        return True
-
-    def supports_summarization(self) -> bool:
-        """
-        [Method intent]
-        Check if this Nova model supports text summarization.
-        
-        [Design principles]
-        - Direct capability checking
-        - Nova-specific feature
-        - Clean boolean interface
-        
-        [Implementation details]
-        - All Nova models support summarization
-        
-        Returns:
-            bool: True as all Nova models support summarization
-        """
-        return True
-
-    def supports_system_prompt(self) -> bool:
-        """
-        [Method intent]
-        Check if this Nova model supports system prompts.
-        
-        [Design principles]
-        - Direct capability checking
-        - Nova-specific feature
-        - Clean boolean interface
-        
-        [Implementation details]
-        - All Nova models support system prompts
-        
-        Returns:
-            bool: True as all Nova models support system prompts
-        """
-        return True
-    
     def _format_messages(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         [Method intent]
@@ -305,12 +205,12 @@ class NovaClient(EnhancedBedrockBase):
         [Design principles]
         - Nova-specific message formatting
         - Consistent return type (List)
-        - Proper extraction of system prompts
+        - Simple handling of different message types
         
         [Implementation details]
         - Maps role names properly
         - Handles content format variations
-        - Extracts system prompts for separate handling
+        - Skips system messages (handled separately via system_prompt)
         
         Args:
             messages: List of message objects
@@ -319,17 +219,14 @@ class NovaClient(EnhancedBedrockBase):
             List[Dict[str, Any]]: Formatted messages for Nova
         """
         formatted_messages = []
-        self._pending_system_prompts = []
         
         # Process all messages
         for msg in messages:
             role = msg["role"]
             content = msg["content"]
             
-            # Handle system messages separately for Nova
+            # Skip system messages - they're now handled through system_prompt
             if role == "system":
-                system_text = content if isinstance(content, str) else json.dumps(content)
-                self._pending_system_prompts.append({"text": system_text})
                 continue
                 
             # Map role names to Nova expected roles
@@ -436,28 +333,57 @@ class NovaClient(EnhancedBedrockBase):
         
         return inference_config
         
-    def _get_system_content(self) -> Optional[List[Dict[str, Any]]]:
+    def _get_system_content(self, system_prompt: Any = None) -> Optional[Dict[str, Any]]:
         """
         [Method intent]
-        Get system content for Nova requests.
+        Get system content for Nova requests formatted for the Bedrock API.
         
         [Design principles]
-        - Nova-specific system content format
-        - Clear extraction of pending system prompts
-        - Cleans up after use
+        - Nova-specific system content format with correct API key
+        - Clean conversion of different input types
+        - Returns complete dict ready for API request
         
         [Implementation details]
-        - Returns system prompts in Nova's expected format
-        - Clears pending prompts after use
+        - Processes system_prompt into Nova's expected format
+        - Returns properly formatted dictionary with "system" key
+        - Handles various input types (string, dict, list, other)
+        - Returns None if no system prompt is set
         
+        Args:
+            system_prompt: Raw system prompt data from set_system_prompt()
+            
         Returns:
-            Optional[List[Dict[str, Any]]]: Nova formatted system content or None
+            Optional[Dict[str, Any]]: Complete system content dict or None
+                                     (will be merged into the API request)
         """
-        if hasattr(self, '_pending_system_prompts') and self._pending_system_prompts:
-            system_prompts = self._pending_system_prompts
-            self._pending_system_prompts = []
-            return system_prompts
-        return None
+        # Return None if no system prompt
+        if system_prompt is None:
+            return None
+            
+        # Format based on the type into an array of SystemContentBlock objects
+        system_blocks = []
+        
+        if isinstance(system_prompt, str):
+            # Simple string becomes a text block
+            system_blocks = [{"text": system_prompt}]
+        elif isinstance(system_prompt, dict) and "text" in system_prompt:
+            # Dictionary with text field is extracted properly
+            system_blocks = [{"text": system_prompt["text"]}]
+        elif isinstance(system_prompt, list):
+            # Handle list format properly
+            system_blocks = []
+            for item in system_prompt:
+                if isinstance(item, dict) and "text" in item:
+                    system_blocks.append({"text": item["text"]})
+                else:
+                    system_blocks.append({"text": str(item)})
+        else:
+            # Convert other types to string
+            system_blocks = [{"text": str(system_prompt)}]
+        
+        # Return the properly formatted dictionary according to AWS documentation
+        # system parameter must be an array of SystemContentBlock objects
+        return {"system": system_blocks}
 
     def _get_model_specific_params(self) -> Dict[str, Any]:
         """
@@ -646,111 +572,3 @@ class NovaClient(EnhancedBedrockBase):
         except Exception as e:
             self._handle_bedrock_error(e, "multimodal processing")
     
-    async def extract_keywords(
-        self, 
-        text: str, 
-        max_results: int = 10
-    ) -> List[str]:
-        """
-        [Method intent]
-        Extract keywords from a text using Nova's capabilities.
-        
-        [Design principles]
-        - Specialized utility for common Nova use case
-        - Simple interface for keyword extraction
-        - Structured return format
-        
-        [Implementation details]
-        - Uses a specialized prompt and system message
-        - Processes the response to extract keywords
-        - Returns a clean list of keywords
-        
-        Args:
-            text: Text to extract keywords from
-            max_results: Maximum number of keywords to return
-            
-        Returns:
-            List[str]: Extracted keywords
-            
-        Raises:
-            LLMError: If extraction fails
-        """
-        # Set up a system message for keyword extraction
-        system_message = f"""
-        Extract up to {max_results} important keywords from the provided text.
-        Return only the keywords, one per line, with no numbering or extra formatting.
-        Focus on the most relevant and important concepts in the text.
-        """
-        
-        # Set up the conversation
-        messages = [
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": text}
-        ]
-        
-        # Generate with low temperature for more consistent results
-        result = ""
-        async for chunk in self.stream_chat(messages, temperature=0.1, max_tokens=256):
-            if "delta" in chunk and "text" in chunk["delta"]:
-                result += chunk["delta"]["text"]
-        
-        # Process the response into a list of keywords
-        try:
-            keywords = [keyword.strip() for keyword in result.split("\n") if keyword.strip()]
-            # Limit to max_results
-            return keywords[:max_results]
-        except Exception as e:
-            raise LLMError(f"Failed to process keyword extraction response: {str(e)}", e)
-    
-    
-    async def summarize_text(
-        self, 
-        text: str, 
-        max_length: int = 200, 
-        focus_on: Optional[str] = None
-    ) -> str:
-        """
-        [Method intent]
-        Generate a concise summary of a text using Nova's capabilities.
-        
-        [Design principles]
-        - Specialized utility for common Nova use case
-        - Configurable summary length and focus
-        - Simple interface for text summarization
-        
-        [Implementation details]
-        - Uses a specialized prompt and system message
-        - Configures the model for summarization task
-        - Processes and returns the complete summary
-        
-        Args:
-            text: Text to summarize
-            max_length: Maximum length of the summary in words
-            focus_on: Optional aspect to focus on in the summary
-            
-        Returns:
-            str: Generated summary
-            
-        Raises:
-            LLMError: If summarization fails
-        """
-        # Set up a system message for summarization
-        system_message = f"""
-        Summarize the provided text in {max_length} words or less.
-        {"Focus on aspects related to: " + focus_on if focus_on else ""}
-        The summary should be concise but capture the main points of the text.
-        """
-        
-        # Set up the conversation
-        messages = [
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": text}
-        ]
-        
-        # Generate with moderate temperature for good summaries
-        result = ""
-        async for chunk in self.stream_chat(messages, temperature=0.3, max_tokens=max_length*2):
-            if "delta" in chunk and "text" in chunk["delta"]:
-                result += chunk["delta"]["text"]
-        
-        return result.strip()

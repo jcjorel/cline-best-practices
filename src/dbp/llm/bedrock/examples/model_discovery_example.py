@@ -110,7 +110,7 @@ async def print_model_availability(model_id: str):
 
 async def client_with_discovery():
     """Demonstrate using BedrockBase with model discovery for all project supported models."""
-    print("\n=== Testing All Project Supported Models with 3-Shot Conversation ===")
+    print("\n=== Testing All Project Supported Models with 3-Shot Conversation and System Prompts ===")
     
     # Get model discovery instance
     model_discovery = BedrockModelDiscovery.get_instance()
@@ -129,6 +129,14 @@ async def client_with_discovery():
         "What are its key features?",
         "How does it compare to other AWS AI services?"
     ]
+    
+    # Define a system prompt that will make it VERY obvious in the response if it's working
+    system_prompt = """You are an AWS spokesperson who MUST ALWAYS follow these rules without exception:
+1. You MUST begin EVERY response with the phrase "🚀 AWS SPECIALIST HERE! I'm delighted to inform you that"
+2. You MUST keep your responses concise (under 4 sentences)
+3. You MUST mention at least one AWS benefit in EVERY response
+4. You MUST use an enthusiastic, marketing-oriented tone
+5. You MUST add "AWS - Cloud Innovation at Your Fingertips™" at the end of EVERY response"""
     
     # Non-preferred region where models might not be available
     initial_region = "ap-south-1"  # Mumbai
@@ -194,6 +202,20 @@ async def client_with_discovery():
             await client.initialize()
             
             print(f"Client initialized successfully in region: {client.region_name}")
+            
+            # Set the system prompt to demonstrate it's working
+            print("\n=== Setting System Prompt for Conversation ===")
+            print(f"System prompt: {system_prompt[:100]}...")
+            client.set_system_prompt(system_prompt)
+            
+            # Verify the system prompt is stored correctly
+            retrieved_prompt = client.get_system_prompt()
+            if retrieved_prompt == system_prompt:
+                print("✓ System prompt successfully stored and retrieved")
+            else:
+                print("⚠ System prompt retrieval doesn't match what was set")
+                print(f"Original: {system_prompt[:50]}...")
+                print(f"Retrieved: {retrieved_prompt[:50]}...")
             
             # Get best regions information
             best_regions = client.get_best_regions_for_model()
@@ -409,6 +431,89 @@ async def display_region_model_availability():
                 print(f"    - {model_name}")
 
 
+async def test_system_prompt_variants():
+    """Test different formats of system prompts to demonstrate flexibility."""
+    print("\n=== Testing Different System Prompt Formats ===")
+    
+    # Get model discovery instance
+    model_discovery = BedrockModelDiscovery.get_instance()
+    
+    # Get project-supported models
+    project_models = model_discovery.project_supported_models
+    if not project_models:
+        print("No project-supported models found!")
+        return
+    
+    # Use the first available model for testing
+    test_model_id = sorted(project_models)[0]
+    print(f"Using model {test_model_id} for system prompt format tests")
+    
+    # Define different system prompt formats to test
+    prompt_variants = [
+        # String format (most common)
+        "You are a helpful assistant that speaks like a pirate.",
+        
+        # Dictionary format
+        {"text": "You are a helpful assistant that speaks like a robot."},
+        
+        # List format (for models like Nova)
+        [{"text": "You are a helpful assistant that speaks like a detective."}]
+    ]
+    
+    # Define a simple prompt to test with each system prompt variant
+    test_prompt = "Tell me about Amazon S3 in one sentence."
+    
+    # Test each system prompt variant
+    for i, variant in enumerate(prompt_variants):
+        variant_type = type(variant).__name__
+        print(f"\n--- Testing System Prompt Format #{i+1} ({variant_type}) ---")
+        
+        try:
+            # Create client with model discovery enabled
+            client = BedrockBase(
+                model_id=test_model_id,
+                logger=logger,
+                use_model_discovery=True
+            )
+            
+            # Initialize client
+            await client.initialize()
+            
+            # Set the system prompt variant
+            print(f"Setting system prompt ({variant_type}): {str(variant)[:80]}...")
+            client.set_system_prompt(variant)
+            
+            # Verify that get_system_prompt returns the exact same object
+            retrieved = client.get_system_prompt()
+            print(f"Retrieved system prompt type: {type(retrieved).__name__}")
+            print(f"Retrieved matches original: {retrieved == variant}")
+            
+            # Send prompt to get response with this system prompt
+            print(f"\nSending test prompt: {test_prompt}")
+            print("Response:")
+            print("-------------------------------------------")
+            
+            response_text = ""
+            
+            # Stream chat
+            async for chunk in client.stream_chat([{"role": "user", "content": test_prompt}]):
+                if chunk["type"] == "content_block_delta" and "delta" in chunk:
+                    if "text" in chunk["delta"]:
+                        text = chunk["delta"]["text"]
+                        response_text += text
+                        # Print each chunk immediately
+                        print(text, end="", flush=True)
+            
+            print("\n-------------------------------------------")
+            
+            # Shutdown client
+            await client.shutdown()
+            
+        except Exception as e:
+            print(f"Error testing system prompt variant: {str(e)}")
+    
+    print("\nSystem prompt variant testing complete")
+
 async def main():
     """Run all examples."""
     print("===== Bedrock Model Discovery Examples =====")
@@ -427,11 +532,14 @@ async def main():
     if not project_models:
         print("No project-supported models found!")
         return
+    
+    # Test system prompt variants first (most important for this demo)
+    await test_system_prompt_variants()
         
-    # Display project-supported models availability first
+    # Display project-supported models availability
     await display_project_supported_models()
     
-    # Test all project-supported models with 3-shot conversation
+    # Test all project-supported models with 3-shot conversation and system prompt
     await client_with_discovery()
     
     # Additional examples

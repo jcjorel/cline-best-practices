@@ -42,6 +42,11 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-05T01:30:13Z : Updated _get_system_content method signature by CodeAssistant
+# * Modified method to accept system_prompt parameter
+# * Added handling for directly provided system prompts
+# * Enhanced implementation to handle different system prompt types
+# * Updated method documentation to reflect the changes
 # 2025-05-05T00:39:00Z : Updated method names for abstract class compatibility by CodeAssistant
 # * Renamed _format_messages_internal to _format_messages
 # * Renamed _format_model_kwargs_internal to _format_model_kwargs
@@ -56,14 +61,6 @@
 # * Added Claude-specific capability check methods
 # * Updated handler registration to use string-based identifiers
 # * Improved error handling and propagation
-# 2025-05-04T11:29:00Z : Added prompt caching support by CodeAssistant
-# * Added capability detection for prompt caching
-# * Dynamically registers PROMPT_CACHING capability when supported
-# * Added support for Bedrock prompt caching with Claude models
-# 2025-05-02T23:11:00Z : Refactored to use shared stream processing method by CodeAssistant
-# * Removed duplicated _process_converse_stream_events method
-# * Now using _process_converse_stream from EnhancedBedrockBase
-# * Improved code DRYness and maintainability
 ###############################################################################
 
 import logging
@@ -192,64 +189,7 @@ class ClaudeClient(EnhancedBedrockBase):
         # Initialize fields for additional parameters
         self._system_content = None
         self._claude_specific_params = {}
-    
-    def supports_reasoning(self) -> bool:
-        """
-        [Method intent]
-        Check if the model supports reasoning capabilities.
         
-        [Design principles]
-        - Direct capability checking
-        - Claude-specific feature
-        - Clean boolean interface
-        
-        [Implementation details]
-        - All Claude models support reasoning
-        
-        Returns:
-            bool: True as all Claude models support reasoning
-        """
-        # All Claude models support reasoning
-        return True
-
-    def supports_structured_output(self) -> bool:
-        """
-        [Method intent]
-        Check if the model supports structured output generation.
-        
-        [Design principles]
-        - Direct capability checking
-        - Claude-specific feature
-        - Clean boolean interface
-        
-        [Implementation details]
-        - All Claude models support structured output
-        
-        Returns:
-            bool: True as all Claude models support structured output
-        """
-        # All Claude models support structured output
-        return True
-
-    def supports_system_prompt(self) -> bool:
-        """
-        [Method intent]
-        Check if the model supports system prompts.
-        
-        [Design principles]
-        - Direct capability checking
-        - Claude-specific feature
-        - Clean boolean interface
-        
-        [Implementation details]
-        - All Claude models support system prompts
-        
-        Returns:
-            bool: True as all Claude models support system prompts
-        """
-        # All Claude models support system prompts
-        return True
-    
     def _format_messages(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         [Method intent]
@@ -264,6 +204,7 @@ class ClaudeClient(EnhancedBedrockBase):
         - Properly formats all message types for Claude
         - Handles content format variations
         - Preserves special Claude message structure
+        - Skips system messages (handled separately via set_system_prompt)
         
         Args:
             messages: List of message objects
@@ -273,19 +214,12 @@ class ClaudeClient(EnhancedBedrockBase):
         """
         formatted_messages = []
         
-        # Extract system prompts for separate handling
-        self._pending_system_content = None
-        
         for msg in messages:
             role = msg["role"]
             content = msg["content"]
             
-            # Store system messages separately
+            # Skip system messages - they're handled separately via set_system_prompt
             if role == "system":
-                if isinstance(content, str):
-                    self._pending_system_content = content
-                else:
-                    self._pending_system_content = json.dumps(content)
                 continue
                 
             # Format for Claude's expected structure
@@ -340,11 +274,8 @@ class ClaudeClient(EnhancedBedrockBase):
         """
         # Extract and store Claude-specific parameters
         self._pending_claude_params = {}
-        if "anthropic_version" in kwargs:
-            self._pending_claude_params["anthropicVersion"] = kwargs["anthropic_version"]
-        else:
-            self._pending_claude_params["anthropicVersion"] = "bedrock-2023-05-31"
                 
+        # Only extract top_k parameter if provided
         if "top_k" in kwargs:
             self._pending_claude_params["topK"] = kwargs["top_k"]
         
@@ -372,28 +303,66 @@ class ClaudeClient(EnhancedBedrockBase):
         
         return inference_config
 
-    def _get_system_content(self) -> Optional[Dict[str, Any]]:
+    def _get_system_content(self, system_prompt: Any = None) -> Optional[Dict[str, Any]]:
         """
         [Method intent]
-        Get system content for Claude requests.
+        Get system content for Claude requests formatted for the Bedrock API.
         
         [Design principles]
-        - Claude-specific system content format
+        - Claude-specific system content format with correct API key
         - Clear extraction of pending system content
+        - Handles direct system prompt parameter
         - Cleans up after use
+        - Returns complete dict ready for API request
         
         [Implementation details]
-        - Returns formatted system content for Claude
+        - Processes directly provided system_prompt if available
+        - Falls back to pending system prompts if system_prompt is None
+        - Returns properly formatted system content following AWS documentation
         - Clears pending content after use
         
+        Args:
+            system_prompt: Raw system prompt data from set_system_prompt()
+            
         Returns:
-            Optional[Dict[str, Any]]: Claude formatted system content or None
+            Optional[Dict[str, Any]]: Complete system content dict or None
+                                     (will be merged into the API request)
         """
-        if hasattr(self, '_pending_system_content') and self._pending_system_content:
-            system_content = {"text": self._pending_system_content}
+        # Get system content from provided system_prompt or _pending_system_content
+        
+        # If system_prompt is provided directly, use it
+        if system_prompt is not None:
+            # Handle different formats of system prompts
+            if isinstance(system_prompt, str):
+                # Simple string becomes a text block
+                system_blocks = [{"text": system_prompt}]
+            elif isinstance(system_prompt, dict) and "text" in system_prompt:
+                # Dictionary with text field is already in proper format
+                system_blocks = [{"text": system_prompt["text"]}]
+            elif isinstance(system_prompt, list):
+                # Handle list format properly
+                system_blocks = []
+                for item in system_prompt:
+                    if isinstance(item, dict) and "text" in item:
+                        system_blocks.append({"text": item["text"]})
+                    else:
+                        system_blocks.append({"text": str(item)})
+            else:
+                # Convert other types to string
+                system_blocks = [{"text": str(system_prompt)}]
+        
+        # Fall back to pending system content
+        elif hasattr(self, '_pending_system_content') and self._pending_system_content:
+            content_text = self._pending_system_content
             self._pending_system_content = None
-            return system_content
-        return None
+            system_blocks = [{"text": content_text}]
+        else:
+            # Return None if no system content
+            return None
+        
+        # Return the properly formatted dictionary according to AWS documentation
+        # system parameter must be an array of SystemContentBlock objects
+        return {"system": system_blocks}
 
     def _get_model_specific_params(self) -> Dict[str, Any]:
         """
