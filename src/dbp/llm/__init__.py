@@ -44,15 +44,15 @@ try:
     from .common.prompt_manager import LLMPromptManager
     from .common.exceptions import LLMError, ModelError, ClientError, PromptError, InvocationError
     
-    # Import from bedrock module
-    from .bedrock.base import BedrockBase
+    # Import from bedrock module - backwards compatibility
     from .bedrock import BedrockModelClientBase  # Import the alias
-    from .bedrock.enhanced_base import EnhancedBedrockBase
     from .bedrock.client_common import BedrockClientError
     
-    # Import from bedrock models module
-    from .bedrock.models.nova import NovaClient
-    from .bedrock.models.claude3 import ClaudeClient
+    # Import new LangChain-based implementations
+    from .bedrock.langchain_wrapper import EnhancedChatBedrockConverse
+    from .bedrock.models.claude3 import ClaudeEnhancedChatBedrockConverse
+    from .bedrock.models.nova import NovaEnhancedChatBedrockConverse
+    from .bedrock.client_factory import BedrockClientFactory
     
     # Export public interfaces
     __all__ = [
@@ -64,14 +64,15 @@ try:
         "PromptError",
         "InvocationError",
         
-        # Bedrock base
+        # Bedrock base - backwards compatibility
         "BedrockModelClientBase",
         "BedrockClientError",
-        "EnhancedBedrockBase",
         
-        # Model implementations
-        "NovaClient",
-        "ClaudeClient"
+        # New LangChain-based implementations
+        "EnhancedChatBedrockConverse",
+        "ClaudeEnhancedChatBedrockConverse",
+        "NovaEnhancedChatBedrockConverse",
+        "BedrockClientFactory"
     ]
 except ImportError as e:
     import logging

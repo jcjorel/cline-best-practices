@@ -890,16 +890,16 @@ class BedrockModelDiscovery(BaseDiscovery):
         
         try:
             # Import model classes dynamically to avoid circular imports
-            from ..models.claude3 import ClaudeClient
-            supported_models.extend(ClaudeClient.SUPPORTED_MODELS)
-            self.logger.debug(f"Found {len(ClaudeClient.SUPPORTED_MODELS)} Claude models")
+            from ..models.claude3 import ClaudeEnhancedChatBedrockConverse
+            supported_models.extend(ClaudeEnhancedChatBedrockConverse.SUPPORTED_MODELS)
+            self.logger.debug(f"Found {len(ClaudeEnhancedChatBedrockConverse.SUPPORTED_MODELS)} Claude models")
         except (ImportError, AttributeError) as e:
             self.logger.warning(f"Could not load Claude models: {str(e)}")
         
         try:
-            from ..models.nova import NovaClient
-            supported_models.extend(NovaClient.SUPPORTED_MODELS)
-            self.logger.debug(f"Found {len(NovaClient.SUPPORTED_MODELS)} Nova models")
+            from ..models.nova import NovaEnhancedChatBedrockConverse
+            supported_models.extend(NovaEnhancedChatBedrockConverse.SUPPORTED_MODELS)
+            self.logger.debug(f"Found {len(NovaEnhancedChatBedrockConverse.SUPPORTED_MODELS)} Nova models")
         except (ImportError, AttributeError) as e:
             self.logger.warning(f"Could not load Nova models: {str(e)}")
             

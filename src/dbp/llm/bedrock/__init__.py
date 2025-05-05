@@ -39,18 +39,38 @@
 # * Added exports for Bedrock interfaces and errors
 ###############################################################################
 
+# Legacy imports with compatibility wrappers
 from .base import BedrockBase as BedrockModelClientBase
+
+# Client common utilities
 from .client_common import BedrockClientError
 from .client_common import BedrockRequestFormatter, BedrockClientMixin, invoke_bedrock_model
+
+# Discovery components
 from .discovery.models import BedrockModelDiscovery
 from .discovery.profiles import BedrockProfileDiscovery
 
+# New LangChain-based implementations
+from .langchain_wrapper import EnhancedChatBedrockConverse
+from .models.claude3 import ClaudeEnhancedChatBedrockConverse
+from .models.nova import NovaEnhancedChatBedrockConverse
+from .client_factory import BedrockClientFactory
+
 __all__ = [
+    # Legacy components (compatibility)
     "BedrockModelClientBase",
     "BedrockClientError",
     "BedrockRequestFormatter",
     "BedrockClientMixin",
     "invoke_bedrock_model",
+    
+    # Discovery components
     "BedrockModelDiscovery",
-    "BedrockProfileDiscovery"
+    "BedrockProfileDiscovery",
+    
+    # New LangChain-based implementations
+    "EnhancedChatBedrockConverse",
+    "ClaudeEnhancedChatBedrockConverse",
+    "NovaEnhancedChatBedrockConverse",
+    "BedrockClientFactory"
 ]

@@ -39,6 +39,18 @@ else:
 # Import LangChain components
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
+# Handle imports for both direct execution and package import
+if __name__ == "__main__":
+    # When running as a script, use absolute imports
+    from dbp.llm.bedrock.langchain_wrapper import EnhancedChatBedrockConverse
+    from dbp.llm.bedrock.models.claude3 import ClaudeEnhancedChatBedrockConverse
+    from dbp.llm.bedrock.models.nova import NovaEnhancedChatBedrockConverse
+else:
+    # When imported as a module, use relative imports
+    from ..langchain_wrapper import EnhancedChatBedrockConverse
+    from ..models.claude3 import ClaudeEnhancedChatBedrockConverse
+    from ..models.nova import NovaEnhancedChatBedrockConverse
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,

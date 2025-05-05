@@ -40,10 +40,10 @@
 # * Added exports for model-specific client classes
 ###############################################################################
 
-from .claude3 import ClaudeClient
-from .nova import NovaClient
+from .claude3 import ClaudeEnhancedChatBedrockConverse
+from .nova import NovaEnhancedChatBedrockConverse
 
 __all__ = [
-    "ClaudeClient",
-    "NovaClient"
+    "ClaudeEnhancedChatBedrockConverse",
+    "NovaEnhancedChatBedrockConverse"
 ]

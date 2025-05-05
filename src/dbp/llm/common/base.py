@@ -110,6 +110,72 @@ class Message:
         )
 
 
+class AsyncTextStreamProvider(abc.ABC):
+    """
+    [Class intent]
+    Abstract base class for providing asynchronous text streaming capabilities.
+    This interface is used by model clients that support streaming text output.
+    
+    [Design principles]
+    - Define a standard interface for text streaming
+    - Support both sync and async streaming patterns
+    - Keep the interface minimal but sufficient
+    
+    [Implementation details]
+    - Abstract methods for both sync and async streaming
+    - Implementations must provide both methods
+    - Intended to be used by model clients that need to stream text
+    """
+    
+    @abc.abstractmethod
+    def stream_text(self, *args, **kwargs) -> AsyncIterator[str]:
+        """
+        [Method intent]
+        Stream text from the model in a synchronous iterator.
+        
+        [Design principles]
+        - Simplified text-only interface
+        - Consistent with async counterpart
+        - Provider-agnostic design
+        
+        [Implementation details]
+        - Must be implemented by derived classes
+        - Should yield text chunks only, not raw response objects
+        
+        Args:
+            *args: Positional arguments specific to the implementation
+            **kwargs: Keyword arguments specific to the implementation
+            
+        Yields:
+            String chunks of text
+        """
+        pass
+    
+    @abc.abstractmethod
+    async def astream_text(self, *args, **kwargs) -> AsyncIterator[str]:
+        """
+        [Method intent]
+        Stream text from the model in an asynchronous iterator.
+        
+        [Design principles]
+        - Simplified text-only interface
+        - Consistent with sync counterpart
+        - Provider-agnostic design
+        
+        [Implementation details]
+        - Must be implemented by derived classes
+        - Should yield text chunks only, not raw response objects
+        
+        Args:
+            *args: Positional arguments specific to the implementation
+            **kwargs: Keyword arguments specific to the implementation
+            
+        Yields:
+            String chunks of text
+        """
+        pass
+
+
 class ModelClientBase(abc.ABC):
     """
     [Class intent]

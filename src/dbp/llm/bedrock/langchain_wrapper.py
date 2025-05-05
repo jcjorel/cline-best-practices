@@ -41,6 +41,11 @@
 # system:langchain_aws.chat_models.bedrock_converse
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-05T22:14:12Z : Added model-specific text extraction hook by CodeAssistant
+# * Added _extract_text_from_chunk class method as a customization point for model-specific implementations
+# * Updated astream, stream_text, and astream_text to use the new hook method
+# * Preserved original extract_text_from_chunk static method for backwards compatibility
+# * Improved separation of concerns for model-specific text extraction
 # 2025-05-05T16:59:08Z : Simplified implementation with KISS principle by CodeAssistant
 # * Applied direct retry logic in stream/astream methods for better readability
 # * Removed complex wrappers and middleware functions
@@ -49,10 +54,6 @@
 # * Added extract_text_from_chunk method for clean text extraction from any model responses
 # * Implemented stream_text and astream_text methods for text-only streaming
 # * Made text extraction model-agnostic (works with any model, not just Claude)
-# 2025-05-05T13:20:00Z : Created EnhancedChatBedrockConverse wrapper by CodeAssistant
-# * Implemented subclass of LangChain's ChatBedrockConverse with maximum DRY principles
-# * Created unified error handling and retry mechanism for all methods
-# * Used single-source error classifier for consistency
 ###############################################################################
 
 import asyncio
@@ -292,8 +293,8 @@ class EnhancedChatBedrockConverse(ChatBedrockConverse):
                 
                 # Process each chunk as they come through the generator
                 async for chunk in parent_generator:
-                    # Extract text and wrap in AIMessageChunk
-                    text_content = self.extract_text_from_chunk(chunk)
+                    # Extract text using model-specific implementation
+                    text_content = self._extract_text_from_chunk(chunk)
                     yield AIMessageChunk(content=text_content)
                 
                 # Exit the retry loop once complete
@@ -343,12 +344,14 @@ class EnhancedChatBedrockConverse(ChatBedrockConverse):
         """
         [Method intent]
         Extract clean text content from any model's streaming response chunks in any format.
+        This will be kept for backwards compatibility and as a fallback.
         
         [Design principles]
         - Handle any response format from any model (dict, string, list)
         - Skip metadata-only chunks that don't contain actual text content
         - Use orjson for high-performance JSON parsing when needed
         - Pure functional approach with no side effects
+        - Serves as a fallback implementation
         
         [Implementation details]
         - Handles dictionary, string, and list formats directly
@@ -425,6 +428,32 @@ class EnhancedChatBedrockConverse(ChatBedrockConverse):
         # For any other type, convert to string and return
         return str(content) if content is not None else ""
         
+    @classmethod
+    def _extract_text_from_chunk(cls, content):
+        """
+        [Method intent]
+        Model-specific text extraction hook. This method is meant to be overridden
+        by model-specific subclasses to provide specialized text extraction.
+        
+        [Design principles]
+        - Model-specific implementation hook
+        - Clean separation of concerns
+        - Clear contract for subclasses
+        
+        [Implementation details]
+        - Default implementation uses the generic extract_text_from_chunk
+        - Model-specific subclasses should override this method
+        - Provides backward compatibility
+        
+        Args:
+            content: Content from model in any format
+            
+        Returns:
+            str: Clean text content without structure
+        """
+        # By default, use the generic implementation
+        return cls.extract_text_from_chunk(content)
+        
     def stream_text(self, messages: List[BaseMessage], **kwargs) -> Iterator[str]:
         """
         [Method intent]
@@ -452,7 +481,7 @@ class EnhancedChatBedrockConverse(ChatBedrockConverse):
         """
         for chunk in self.stream(messages, **kwargs):
             content = chunk.content
-            clean_text = self.extract_text_from_chunk(content)
+            clean_text = self._extract_text_from_chunk(content)
             if clean_text:
                 yield clean_text
     
@@ -483,6 +512,6 @@ class EnhancedChatBedrockConverse(ChatBedrockConverse):
         """
         async for chunk in self.astream(messages, **kwargs):
             content = chunk.content
-            clean_text = self.extract_text_from_chunk(content)
+            clean_text = self._extract_text_from_chunk(content)
             if clean_text:
                 yield clean_text

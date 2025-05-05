@@ -29,11 +29,15 @@ if __name__ == "__main__":
     from dbp.llm.bedrock.discovery.models import BedrockModelDiscovery
     from dbp.llm.bedrock.client_factory import BedrockClientFactory
     from dbp.llm.bedrock.langchain_wrapper import EnhancedChatBedrockConverse
+    from dbp.llm.bedrock.models.claude3 import ClaudeEnhancedChatBedrockConverse
+    from dbp.llm.bedrock.models.nova import NovaEnhancedChatBedrockConverse
 else:
     # Relative imports when used as part of the package
     from ..discovery.models import BedrockModelDiscovery
     from ..client_factory import BedrockClientFactory
     from ..langchain_wrapper import EnhancedChatBedrockConverse
+    from ..models.claude3 import ClaudeEnhancedChatBedrockConverse
+    from ..models.nova import NovaEnhancedChatBedrockConverse
 
 # Configure logging
 logging.basicConfig(

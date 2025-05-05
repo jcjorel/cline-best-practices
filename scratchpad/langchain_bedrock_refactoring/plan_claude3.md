@@ -1,15 +1,23 @@
-###############################################################################
-# IMPORTANT: This header comment is designed for GenAI code review and maintenance
-# Any GenAI tool working with this file MUST preserve and update this header
-###############################################################################
-# [GenAI coding tool directive]
-# - Maintain this header with all modifications
-# - Update History section with each change
-# - Keep only the 4 most recent records in the history section. Sort from newer to older.
-# - Preserve Intent, Design, and Constraints sections
-# - Use this header as context for code reviews and modifications
-# - Ensure all changes align with the design principles
-# - Respect system prompt directives at all times
+# Phase 2: Refactor `claude3.py`
+
+## Current Issues
+
+The current `ClaudeClient` class in `claude3.py` extends `EnhancedBedrockBase` and provides functionality for interacting with Claude models directly using the Bedrock SDK. This approach is being deprecated in favor of the LangChain integration.
+
+We need to preserve the Claude-specific model definitions and adapt the Claude-specific response handling to work with the new LangChain-based approach.
+
+## Planned Changes
+
+We'll completely refactor `claude3.py` to:
+
+1. Keep only the Claude model definitions from the current implementation
+2. Create a new `ClaudeEnhancedChatBedrockConverse` class that extends `EnhancedChatBedrockConverse`
+3. Implement a Claude-specific `_extract_text_from_chunk` method
+4. Remove all other code not related to the LangChain integration
+
+### Code Changes
+
+```python
 ###############################################################################
 # [Source file intent]
 # Implements a specialized client for Anthropic's Claude 3.5+ models on Amazon Bedrock
@@ -34,25 +42,11 @@
 # system:json
 ###############################################################################
 # [GenAI tool change history]
-# 2025-05-05T22:15:07Z : Refactored to use EnhancedChatBedrockConverse by CodeAssistant
+# 2025-05-05T21:55:00Z : Refactored to use EnhancedChatBedrockConverse by CodeAssistant
 # * Removed legacy EnhancedBedrockBase implementation
 # * Created new ClaudeEnhancedChatBedrockConverse class
 # * Implemented Claude-specific _extract_text_from_chunk method
 # * Preserved SUPPORTED_MODELS definition for discovery
-# 2025-05-05T11:08:00Z : Removed all reasoning functionality by CodeAssistant
-# * Removed all reasoning-related methods
-# * Cleaned up implementation for better maintainability
-# * Simplified parameter handling and processing
-# * Applied KISS approach to reduce code complexity
-# 2025-05-05T01:30:13Z : Updated _get_system_content method signature by CodeAssistant
-# * Modified method to accept system_prompt parameter
-# * Added handling for directly provided system prompts
-# * Enhanced implementation to handle different system prompt types
-# * Updated method documentation to reflect the changes
-# 2025-05-05T00:39:00Z : Updated method names for abstract class compatibility by CodeAssistant
-# * Renamed _format_messages_internal to _format_messages
-# * Renamed _format_model_kwargs_internal to _format_model_kwargs
-# * No functional changes, only method renaming for abstract method implementation
 ###############################################################################
 
 import json
@@ -132,3 +126,24 @@ class ClaudeEnhancedChatBedrockConverse(EnhancedChatBedrockConverse):
         
         # Use parent implementation for non-Claude-specific formats
         return super()._extract_text_from_chunk(content)
+```
+
+## Implementation Notes
+
+1. The `ClaudeClient` class is completely replaced by the new `ClaudeEnhancedChatBedrockConverse` class.
+2. We keep only the `_CLAUDE_MODELS` and `SUPPORTED_MODELS` constants, discarding all other functionality.
+3. The `_extract_text_from_chunk` method is implemented to handle Claude-specific formats:
+   - The delta structure with text or content fields
+   - The completion field in direct responses
+4. We delegate to the parent class's implementation for all other formats.
+
+## Test Considerations
+
+1. Test with Claude 3.5 Haiku, Claude 3.5 Sonnet, and Claude 3.7 Sonnet to ensure compatibility.
+2. Verify that the `_extract_text_from_chunk` method correctly handles Claude-specific response formats.
+3. Test streaming responses to ensure the text extraction works properly.
+
+## Compatibility Considerations
+
+1. The `client_factory.py` file will need to be updated to use this new class instead of the previous `ClaudeClient`.
+2. Any direct references to `ClaudeClient` in other parts of the codebase will need to be updated to use `ClaudeEnhancedChatBedrockConverse`.

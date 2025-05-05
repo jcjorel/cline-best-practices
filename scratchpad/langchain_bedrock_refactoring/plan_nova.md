@@ -1,15 +1,23 @@
-###############################################################################
-# IMPORTANT: This header comment is designed for GenAI code review and maintenance
-# Any GenAI tool working with this file MUST preserve and update this header
-###############################################################################
-# [GenAI coding tool directive]
-# - Maintain this header with all modifications
-# - Update History section with each change
-# - Keep only the 4 most recent records in the history section. Sort from newer to older.
-# - Preserve Intent, Design, and Constraints sections
-# - Use this header as context for code reviews and modifications
-# - Ensure all changes align with the design principles
-# - Respect system prompt directives at all times
+# Phase 3: Refactor `nova.py`
+
+## Current Issues
+
+Similar to the Claude case, the current `NovaClient` class in `nova.py` extends `EnhancedBedrockBase` and provides functionality for interacting with Nova models directly using the Bedrock SDK. This approach is being deprecated in favor of the LangChain integration.
+
+We need to preserve the Nova-specific model definitions and adapt the Nova-specific response handling to work with the new LangChain-based approach.
+
+## Planned Changes
+
+We'll completely refactor `nova.py` to:
+
+1. Keep only the Nova model definitions from the current implementation
+2. Create a new `NovaEnhancedChatBedrockConverse` class that extends `EnhancedChatBedrockConverse`
+3. Implement a Nova-specific `_extract_text_from_chunk` method
+4. Remove all other code not related to the LangChain integration
+
+### Code Changes
+
+```python
 ###############################################################################
 # [Source file intent]
 # Implements Amazon Bedrock Nova model support through the LangChain integration.
@@ -33,26 +41,11 @@
 # system:json
 ###############################################################################
 # [GenAI tool change history]
-# 2025-05-05T22:16:36Z : Refactored to use EnhancedChatBedrockConverse by CodeAssistant
+# 2025-05-05T21:55:00Z : Refactored to use EnhancedChatBedrockConverse by CodeAssistant
 # * Removed legacy EnhancedBedrockBase implementation
 # * Created new NovaEnhancedChatBedrockConverse class
 # * Implemented Nova-specific _extract_text_from_chunk method
 # * Preserved SUPPORTED_MODELS definition for discovery
-# 2025-05-05T01:30:50Z : Updated _get_system_content method signature by CodeAssistant
-# * Modified method to accept system_prompt parameter
-# * Added handling for directly provided system prompts
-# * Enhanced implementation to support various system prompt types
-# * Updated method documentation to reflect the changes
-# 2025-05-05T00:38:00Z : Updated method names for abstract class compatibility by CodeAssistant
-# * Renamed _format_messages_internal to _format_messages
-# * Renamed _format_model_kwargs_internal to _format_model_kwargs
-# * No functional changes, only method renaming for abstract method implementation
-# 2025-05-04T23:45:00Z : Refactored to use template method pattern for request preparation by CodeAssistant
-# * Removed duplicated stream_chat implementation
-# * Added standardized parameter handling through internal methods
-# * Implemented _format_messages_internal, _format_model_kwargs_internal
-# * Added _get_system_content and _get_model_specific_params methods
-# * Updated process_multimodal_message to use _prepare_request
 ###############################################################################
 
 import json
@@ -134,3 +127,25 @@ class NovaEnhancedChatBedrockConverse(EnhancedChatBedrockConverse):
         
         # Use parent implementation for non-Nova-specific formats
         return super()._extract_text_from_chunk(content)
+```
+
+## Implementation Notes
+
+1. The `NovaClient` class is completely replaced by the new `NovaEnhancedChatBedrockConverse` class.
+2. We keep only the `_NOVA_MODELS` and `SUPPORTED_MODELS` constants, discarding all other functionality.
+3. The `_extract_text_from_chunk` method is implemented to handle Nova-specific formats:
+   - The output structure with a text field
+   - The chunk format with bytes field that might contain JSON
+4. We delegate to the parent class's implementation for all other formats.
+
+## Test Considerations
+
+1. Test with all Nova models (Micro, Lite, Pro, Premier) to ensure compatibility.
+2. Verify that the `_extract_text_from_chunk` method correctly handles Nova-specific response formats.
+3. Test streaming responses to ensure the text extraction works properly.
+4. Test handling of JSON-encoded chunks to ensure proper parsing.
+
+## Compatibility Considerations
+
+1. The `client_factory.py` file will need to be updated to use this new class instead of the previous `NovaClient`.
+2. Any direct references to `NovaClient` in other parts of the codebase will need to be updated to use `NovaEnhancedChatBedrockConverse`.
