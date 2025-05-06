@@ -37,6 +37,21 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-06T12:01:25Z : Applied command parsing DRY principle by CodeAssistant
+# * Added _parse_config_command method to centralize command parsing logic
+# * Created structured command representation with command types
+# * Separated command parsing from execution logic for cleaner code
+# * Improved extensibility for adding new command types
+# 2025-05-06T11:57:10Z : Applied command handling DRY principle by CodeAssistant
+# * Added centralized _process_special_command method for all command routing
+# * Implemented flexible command result code system for flow control
+# * Simplified main chat loop with clear command handling
+# * Improved extensibility for adding new commands
+# 2025-05-06T11:55:45Z : Applied validation-focused DRY principle by CodeAssistant
+# * Added _validate_constraints helper for centralized constraint validation
+# * Created unified error message formatting for constraint violations
+# * Standardized validation logic for min/max values with inclusivity handling
+# * Improved code readability by removing nested validation branches
 # 2025-05-06T11:51:45Z : Applied extensive DRY principle to field type handling by CodeAssistant
 # * Added _get_field_type helper to centralize field type extraction logic
 # * Implemented version-agnostic type access across Pydantic versions
@@ -52,21 +67,6 @@
 # * Created version-agnostic field metadata accessor with Pydantic v1/v2 compatibility
 # * Standardized field description retrieval across multiple methods
 # * Improved error handling with graceful fallbacks for field information access
-# 2025-05-06T11:42:00Z : Applied deeper DRY principle to model handling by CodeAssistant
-# * Created unified _get_model_family method by merging _determine_model_family and _get_model_family_name
-# * Added comprehensive _get_model_constraints method as single source of truth for model capabilities
-# * Enhanced model family detection with more specific version identification
-# * Standardized family name format for better consistency
-# 2025-05-06T11:33:50Z : Applied DRY principle to model constraints by CodeAssistant
-# * Refactored hard-coded model constraints into helper methods
-# * Added _get_model_max_tokens_limit method for centralized limit management
-# * Added _get_model_family_name method for consistent model family naming
-# * Improved readability and maintainability of parameter validation
-# 2025-05-06T11:17:00Z : Improved error handling for invalid models by CodeAssistant
-# * Added user-friendly error handling for unsupported models
-# * Removed stack trace display for better user experience
-# * Added display of available models when an invalid model is specified
-# * Organized available models by family for easier selection
 ###############################################################################
 
 """
@@ -522,24 +522,26 @@ class BedrockTestCommandHandler:
                 # Get user input
                 user_input = session.prompt("User > ", style=style)
                 
-                # Process special commands that start with "/"
-                if user_input.lower() in ["/exit", "/quit"]:
-                    self.output.print("\nExiting interactive chat mode.")
-                    break
-                elif user_input.lower() == "/help":
-                    self._print_help()
+                # Skip empty inputs
+                if not user_input.strip():
                     continue
-                elif user_input.lower() == "/clear":
-                    self.chat_history = []
-                    self.output.print("Chat history cleared.")
-                    continue
-                elif user_input.lower().startswith("/config"):
-                    # Remove the leading slash when handling the config command
-                    self._handle_config_command(user_input[1:])
-                    continue
-                elif not user_input.strip():
-                    # Skip empty inputs
-                    continue
+
+                # Check if this is a special command
+                if user_input.startswith("/"):
+                    # Process special commands and get action result
+                    command_result = self._process_special_command(user_input)
+                    
+                    # Handle command result
+                    if command_result == "exit":
+                        break  # Exit loop and end chat
+                    elif command_result == "continue":
+                        continue  # Skip to next iteration
+                    # command_result == "normal" means process as normal message
+                    elif command_result == "normal":
+                        pass
+                    else:
+                        # Unknown result, treat as normal message
+                        pass
                 
                 # Add to history
                 self.chat_history.append({"role": "user", "content": user_input})
@@ -651,6 +653,83 @@ class BedrockTestCommandHandler:
             
         return desc
     
+    def _display_parameter_info(self, field_name=None, show_description=True):
+        """
+        [Function intent]
+        Display information about model parameters in a consistent format.
+        
+        [Design principles]
+        - Reusable parameter display logic
+        - Consistent formatting across commands
+        - Flexible display options
+        
+        [Implementation details]
+        - Can display all parameters or just a specific one
+        - Handles field description extraction
+        - Shows applicability information
+        - Can be used by both help and config commands
+        
+        Args:
+            field_name: Optional specific parameter to display, or None for all
+            show_description: Whether to include field descriptions
+        """
+        if field_name is not None:
+            # Display a specific parameter
+            if field_name not in self.model_param_model.__fields__:
+                self.output.error(f"Unknown parameter: {field_name}")
+                return
+                
+            field = self.model_param_model.__fields__[field_name]
+            value = getattr(self.model_param_model, field_name)
+            
+            # Get description if requested
+            desc = ""
+            if show_description:
+                desc = self._get_field_description(field)
+                
+            # Show applicability info
+            applicable = self.model_param_model.is_applicable(field_name)
+            applicable_str = " (applicable)" if applicable else " (not applicable in current profile)"
+            
+            desc_str = f" ({desc})" if desc and show_description else ""
+            self.output.print(f"{field_name} = {value}{desc_str}{applicable_str}")
+        else:
+            # Display all applicable parameters
+            for field_name, field in self.model_param_model.__fields__.items():
+                # Only show applicable parameters in current profile
+                if self.model_param_model.is_applicable(field_name):
+                    value = getattr(self.model_param_model, field_name)
+                    
+                    # Get field description if requested
+                    desc = ""
+                    if show_description:
+                        desc = self._get_field_description(field)
+                        
+                    desc_str = f" ({desc})" if desc and show_description else ""
+                    self.output.print(f"  {field_name} = {value}{desc_str}")
+                    
+    def _display_profile_info(self):
+        """
+        [Function intent]
+        Display information about available parameter profiles.
+        
+        [Design principles]
+        - Reusable profile display logic
+        - Consistent formatting
+        - Clear indication of active profile
+        
+        [Implementation details]
+        - Shows all available profiles
+        - Marks the active profile with an asterisk
+        - Can be used by both help and config commands
+        """
+        self.output.print("\nAvailable parameter profiles:")
+        for profile_name in self.model_param_model._profiles.keys():
+            if profile_name == self.model_param_model._current_profile:
+                self.output.print(f"  * {profile_name} (active)")
+            else:
+                self.output.print(f"  - {profile_name}")
+                
     def _print_help(self):
         """
         [Function intent]
@@ -673,28 +752,73 @@ class BedrockTestCommandHandler:
         self.output.print("  /config profile <name> - Apply a parameter profile")
         self.output.print("  /config [param] [value] - Change a model parameter")
         
-        # Show available profiles
-        self.output.print("\nAvailable parameter profiles:")
-        for profile_name in self.model_param_model._profiles.keys():
-            if profile_name == self.model_param_model._current_profile:
-                self.output.print(f"  * {profile_name} (active)")
-            else:
-                self.output.print(f"  - {profile_name}")
+        # Show available profiles using the dedicated helper
+        self._display_profile_info()
         
-        # Show available parameters
+        # Show available parameters using the dedicated helper
         self.output.print("\nAvailable parameters:")
-        for field_name, field in self.model_param_model.__fields__.items():
-            # Only show applicable parameters in current profile
-            if self.model_param_model.is_applicable(field_name):
-                value = getattr(self.model_param_model, field_name)
-                
-                # Get field description using the centralized helper method
-                desc = self._get_field_description(field)
-                    
-                self.output.print(f"  {field_name} = {value} ({desc})")
+        self._display_parameter_info()
         
         self.output.print()
 
+    def _parse_config_command(self, command_input):
+        """
+        [Function intent]
+        Parse config command input into structured command data.
+        
+        [Design principles]
+        - Clear separation of parsing and execution logic
+        - Structured command representation
+        - Standardized format
+        
+        [Implementation details]
+        - Parses command string into meaningful parts
+        - Identifies command type
+        - Extracts relevant parameters
+        - Returns command data dictionary
+        
+        Args:
+            command_input: Raw config command string from user
+            
+        Returns:
+            dict: Command data with type and parameters
+        """
+        parts = command_input.split(None, 3)
+        command = {"type": "unknown"}
+        
+        # Just "config" - show all parameters
+        if len(parts) == 1:
+            command["type"] = "show_all"
+            return command
+            
+        # Handle "config profile <name>" - Apply a profile
+        if len(parts) >= 3 and parts[1].lower() == "profile":
+            command["type"] = "apply_profile"
+            command["profile_name"] = parts[2]
+            return command
+            
+        # "config param value" - set parameter
+        if len(parts) >= 3:
+            command["type"] = "set_parameter"
+            command["param"] = parts[1]
+            command["value"] = parts[2]
+            return command
+            
+        # "config param" - show specific parameter
+        if len(parts) == 2:
+            param = parts[1]
+            
+            # Special handling for "profile"
+            if param.lower() == "profile":
+                command["type"] = "show_profile"
+                return command
+                
+            command["type"] = "show_parameter"
+            command["param"] = param
+            return command
+            
+        return command
+    
     def _handle_config_command(self, command_input):
         """
         [Function intent]
@@ -707,7 +831,7 @@ class BedrockTestCommandHandler:
         - Profile support
         
         [Implementation details]
-        - Parses config command format
+        - Uses command parser to get structured command data
         - Validates parameter names and values
         - Updates parameters and provides feedback
         - Handles profile selection
@@ -715,25 +839,25 @@ class BedrockTestCommandHandler:
         Args:
             command_input: Config command input from user
         """
-        parts = command_input.split(None, 3)
+        # Parse the command input
+        command = self._parse_config_command(command_input)
         
-        # Just "config" - show current config
-        if len(parts) == 1:
-            # Use _print_help to show parameters
+        # Handle different command types
+        if command["type"] == "show_all":
+            # Show all configuration
             self._print_help()
             return
             
-        # Handle "config profile <name>" - Apply a profile
-        if len(parts) >= 3 and parts[1].lower() == "profile":
-            profile_name = parts[2]
+        elif command["type"] == "apply_profile":
+            profile_name = command["profile_name"]
             
+            # Validate profile name
             if profile_name not in self.model_param_model._profiles:
                 self.output.error(f"Unknown profile: {profile_name}")
                 self.output.print("Available profiles: " + ", ".join(self.model_param_model._profiles.keys()))
                 return
             
-            # Create a fresh parameter model with this profile
-            # This ensures command line arguments are discarded
+            # Apply the profile if we have a model ID
             if self.current_model_id:
                 # Create a fresh model with just the profile settings
                 self.model_param_model = ModelParameters.for_model(self.current_model_id)
@@ -742,19 +866,32 @@ class BedrockTestCommandHandler:
                 
                 # Show updated parameters
                 self.output.print("\nCurrent parameters:")
-                for field_name, field in self.model_param_model.__fields__.items():
-                    if self.model_param_model.is_applicable(field_name):
-                        value = getattr(self.model_param_model, field_name)
-                        self.output.print(f"  {field_name} = {value}")
+                self._display_parameter_info(show_description=False)
                 return
             else:
                 self.output.error("Cannot apply profile: Model ID not available")
                 return
+                
+        elif command["type"] == "show_profile":
+            # Show current profile
+            self.output.print(f"Current profile: {self.model_param_model._current_profile}")
+            return
             
-        # "config param value" - set parameter
-        if len(parts) >= 3:
-            param = parts[1]
-            value_str = parts[2]
+        elif command["type"] == "show_parameter":
+            param = command["param"]
+            
+            # Check if parameter exists
+            if param not in self.model_param_model.__fields__:
+                self.output.error(f"Unknown parameter: {param}")
+                return
+                
+            # Display parameter info
+            self._display_parameter_info(param, show_description=True)
+            return
+            
+        elif command["type"] == "set_parameter":
+            param = command["param"]
+            value_str = command["value"]
             
             # Debugging to help understand parameter limits
             self.output.print(f"Checking parameter '{param}' with value '{value_str}'...")
@@ -779,38 +916,17 @@ class BedrockTestCommandHandler:
                 
                 # Validate constraints using proper validation (handles both Pydantic v1 and v2)
                 try:
-                    # Try to validate using the model's built-in validator
-                    # Create a temporary dict with just the parameter we're setting
-                    validate_data = {param: value}
-                    
                     # Extract field constraints using our helper method
                     constraints = self._extract_field_constraints(field)
                     
                     # Debug constraint output
                     self.output.print(f"Found constraints: {constraints}")
                     
-                    # Manual validation using extracted constraints
-                    if 'min' in constraints:
-                        min_val = constraints['min']
-                        if constraints['min_inclusive']:
-                            if value < min_val:
-                                self.output.error(f"Value {value} for {param} must be at least {min_val}")
-                                return
-                        else:
-                            if value <= min_val:
-                                self.output.error(f"Value {value} for {param} must be greater than {min_val}")
-                                return
-                                
-                    if 'max' in constraints:
-                        max_val = constraints['max']
-                        if constraints['max_inclusive']:
-                            if value > max_val:
-                                self.output.error(f"Value {value} for {param} must be at most {max_val}")
-                                return
-                        else:
-                            if value >= max_val:
-                                self.output.error(f"Value {value} for {param} must be less than {max_val}")
-                                return
+                    # Validate the value using extracted constraints
+                    error_msg = self._validate_constraints(param, value, constraints)
+                    if error_msg:
+                        self.output.error(error_msg)
+                        return
                     
                     # If we have a model ID and this is a max_tokens parameter, double-check against
                     # model-specific constraints
@@ -834,34 +950,8 @@ class BedrockTestCommandHandler:
                 self.output.error(f"Invalid value for {param}: {value_str}")
             
             return
-            
-        # "config param" - show specific parameter
-        if len(parts) == 2:
-            param = parts[1]
-            
-            # Handle special case for "profile" to show current profile
-            if param.lower() == "profile":
-                self.output.print(f"Current profile: {self.model_param_model._current_profile}")
-                return
-                
-            if param not in self.model_param_model.__fields__:
-                self.output.error(f"Unknown parameter: {param}")
-                return
-                
-            # Get value and description - with safe access to description
-            value = getattr(self.model_param_model, param)
-            field = self.model_param_model.__fields__[param]
-            
-            # Get description using our centralized helper method
-            desc = self._get_field_description(field)
-            
-            # Show applicability info
-            applicable = self.model_param_model.is_applicable(param)
-            applicable_str = " (applicable)" if applicable else " (not applicable in current profile)"
-            
-            self.output.print(f"{param} = {value} ({desc}){applicable_str}")
-            return
-            
+        
+        # Unknown command type
         self.output.print("Usage: config [param] [value] or config profile <name>")
 
     def _get_field_type(self, field, current_value=None):
@@ -1044,6 +1134,111 @@ class BedrockTestCommandHandler:
         
         return constraints
         
+    def _validate_constraints(self, param_name, value, constraints):
+        """
+        [Function intent]
+        Validate a parameter value against extracted constraints.
+        
+        [Design principles]
+        - Centralized constraint validation logic
+        - Clear error messaging
+        - Support for inclusive and exclusive ranges
+        - Returns error messages instead of raising exceptions
+        
+        [Implementation details]
+        - Handles both min and max constraints
+        - Considers inclusivity settings for proper validation
+        - Returns formatted error messages with constraint details
+        - Returns None if validation passes
+        
+        Args:
+            param_name: Name of the parameter being validated
+            value: Parameter value to validate
+            constraints: Dictionary of constraints from _extract_field_constraints
+            
+        Returns:
+            str: Error message if validation fails, None if validation passes
+        """
+        if not constraints:
+            return None
+            
+        # Validate minimum constraints
+        if 'min' in constraints:
+            min_val = constraints['min']
+            inclusive = constraints.get('min_inclusive', True)
+            
+            if inclusive:  # ge: value >= min
+                if value < min_val:
+                    return f"Value {value} for {param_name} must be at least {min_val}"
+            else:  # gt: value > min
+                if value <= min_val:
+                    return f"Value {value} for {param_name} must be greater than {min_val}"
+                    
+        # Validate maximum constraints
+        if 'max' in constraints:
+            max_val = constraints['max']
+            inclusive = constraints.get('max_inclusive', True)
+            
+            if inclusive:  # le: value <= max
+                if value > max_val:
+                    return f"Value {value} for {param_name} must be at most {max_val}"
+            else:  # lt: value < max
+                if value >= max_val:
+                    return f"Value {value} for {param_name} must be less than {max_val}"
+        
+        # No constraint violations
+        return None
+    
+    def _process_special_command(self, command):
+        """
+        [Function intent]
+        Process special commands and determine action to take.
+        
+        [Design principles]
+        - Centralized command handling
+        - Clear command flow control
+        - Consistent user feedback
+        - Easily extensible for new commands
+        
+        [Implementation details]
+        - Handles all slash commands in one place
+        - Returns action codes for flow control
+        - Provides consistent command responses
+        - Commands can be added/modified easily
+        
+        Args:
+            command: The full command string entered by the user
+            
+        Returns:
+            str: Action code - "exit", "continue", "normal"
+        """
+        command_lower = command.lower()
+        
+        # Exit commands
+        if command_lower in ["/exit", "/quit"]:
+            self.output.print("\nExiting interactive chat mode.")
+            return "exit"
+            
+        # Help command
+        if command_lower == "/help":
+            self._print_help()
+            return "continue"
+            
+        # Clear history command
+        if command_lower == "/clear":
+            self.chat_history = []
+            self.output.print("Chat history cleared.")
+            return "continue"
+            
+        # Config commands
+        if command_lower.startswith("/config"):
+            # Remove the leading slash when handling the config command
+            self._handle_config_command(command[1:])
+            return "continue"
+            
+        # Unknown command - should be treated as normal message
+        return "normal"
+    
     def _get_multiline_input(self, session):
         """
         [Function intent]
