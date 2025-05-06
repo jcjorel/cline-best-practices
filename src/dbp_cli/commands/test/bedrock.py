@@ -40,6 +40,11 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-07T00:30:00Z : Fixed region selection to prioritize recommended region by CodeAssistant
+# * Added logic to prioritize recommended regions from model capabilities
+# * Improved region selection with clear priority order: recommended → config → default
+# * Enhanced user feedback to show which region is being used and why
+# * Fixed discrepancy between displayed recommended region and actual region used
 # 2025-05-07T00:15:00Z : Added model availability display in interactive chat by CodeAssistant
 # * Integrated BedrockModelCapabilities to show availability details
 # * Added format_availability_table call for the selected model
@@ -436,34 +441,60 @@ class BedrockTestCommandHandler:
         config_manager = ConfigurationManager()
         config = config_manager.get_typed_config()
         
-        # Import the BedrockClientFactory
+        # Import needed components
         from dbp.llm.bedrock.client_factory import BedrockClientFactory
+        from dbp.llm.bedrock.discovery.models_capabilities import BedrockModelCapabilities
         
-        # Get region and profile name if available
-        region_name = None
+        # Get model capabilities instance for recommended region info
+        model_capabilities = BedrockModelCapabilities.get_instance()
+        
+        # Get region and profile name if available from config
         profile_name = None
         
-        # Extract AWS configuration
+        # Get the recommended region for this model
+        recommended_region = None
+        best_regions = model_capabilities.get_best_regions_for_model(model_id)
+        if best_regions:
+            recommended_region = best_regions[0]
+        
+        # Extract AWS configuration and determine final region to use
+        region_name = None  # This will be the actual region we use
+        config_region = None  # This is just what's in the config
+        
         try:
             aws_config = getattr(config, 'aws', None)
             if aws_config is not None:
-                region_name = getattr(aws_config, 'region', None)
+                config_region = getattr(aws_config, 'region', None)
                 profile_name = getattr(aws_config, 'profile_name', None)
                 
                 # Display AWS configuration in a user-friendly format
                 self.output.print("\n[AWS Configuration]")
-                self.output.print(f"  Region: {region_name or 'Not configured (will use default)'}")
+                self.output.print(f"  Config Region: {config_region or 'Not configured'}")
                 self.output.print(f"  Profile: {profile_name or 'Not configured (will use default)'}")
             else:
                 self.output.print("\n[AWS Configuration]")
-                self.output.print("  No AWS configuration found. Using default settings.")
+                self.output.print("  No AWS configuration found.")
                 
         except Exception as e:
             self.output.warning(f"Error accessing AWS configuration: {str(e)}")
-            self.output.print("  Falling back to default AWS settings.")
+            self.output.print("  Falling back to default settings.")
             # Fall back to None values
-            region_name = None
+            config_region = None
             profile_name = None
+            
+        # Determine which region to use in this priority order:
+        # 1. Recommended region from model capabilities (if available)
+        # 2. Region from AWS configuration (if available)
+        # 3. Let the BedrockClientFactory choose (typically us-west-2)
+        
+        if recommended_region:
+            region_name = recommended_region
+            self.output.print(f"  Selected Region: {region_name} (recommended for this model)")
+        elif config_region:
+            region_name = config_region
+            self.output.print(f"  Selected Region: {region_name} (from configuration)")
+        else:
+            self.output.print("  Selected Region: Will be auto-selected by client factory")
         
         # Create parameter model for selected model and populate from args
         self.model_param_model = ModelParameters.for_model(model_id)
