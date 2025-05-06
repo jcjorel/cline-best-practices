@@ -50,6 +50,11 @@
 # system:json
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-06T14:11:59Z : Updated to support new parameter-based model discovery by CodeAssistant
+# * Modified _get_project_supported_models to work with new PARAMETER_CLASSES approach
+# * Replaced direct access to SUPPORTED_MODELS with dynamic extraction from parameter classes
+# * Added support for client_factory dynamic model discovery integration
+# * Maintained backward compatibility with existing code
 # 2025-05-04T19:35:00Z : Updated get_best_regions_for_model to filter by accessibility by CodeAssistant
 # * Added check_accessibility parameter to get_model_regions
 # * Modified get_best_regions_for_model to only return accessible regions
@@ -66,11 +71,6 @@
 # * Simplified region selection logic
 # * Integrated latency tracking directly
 # * Added simple cache file operations
-# 2025-05-03T20:58:00Z : Updated cache structure to match JSON format by CodeAssistant
-# * Modified cache structure to match bedrock_model_profile_mapping.json
-# * Updated model discovery to work with the new structure
-# * Implemented ARN-based profile mapping for inference profiles
-# * Improved region handling and model lookup
 ###############################################################################
 
 import logging
@@ -79,6 +79,7 @@ import copy
 import time
 import os
 import json
+import importlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Optional, Any, Set, Union, Tuple
 
@@ -202,8 +203,9 @@ class BedrockModelDiscovery(BaseDiscovery):
             "last_updated": {}
         }
         
-        # Get project supported models from model classes
-        self.project_supported_models = self._get_project_supported_models()
+        # Get project supported models from client_factory
+        from ..client_factory import get_all_supported_model_ids
+        self.project_supported_models = get_all_supported_model_ids()
         self.logger.info(f"Loaded {len(self.project_supported_models)} project-supported models")
         
         # Try to load cache from default location
@@ -849,59 +851,20 @@ class BedrockModelDiscovery(BaseDiscovery):
         Get prompt caching support status for all available models.
         
         [Design principles]
-        - Comprehensive support status
-        - Simple mapping format
-        - Useful for debugging and testing
+        - Comprehensive capability checking
+        - Model ID based lookup
+        - Complete mapping
         
         [Implementation details]
         - Gets all available models
-        - Creates a mapping of model IDs to support status
-        - Returns dictionary for easy lookup
+        - Checks each model for prompt caching support
+        - Returns model ID to support status mapping
         
         Returns:
-            Dict[str, bool]: Dictionary mapping model IDs to prompt caching support status
+            Dict[str, bool]: Mapping of model IDs to their prompt caching support status
         """
         all_models = self.get_all_models()
         return {
             model["modelId"]: self.supports_prompt_caching(model["modelId"])
             for model in all_models
         }
-    
-    def _get_project_supported_models(self) -> List[str]:
-        """
-        [Method intent]
-        Get the list of Bedrock models supported by the project from model classes.
-        
-        [Design principles]
-        - Dynamic model discovery from project files
-        - No hardcoding of model IDs
-        - Centralized model reference list
-        
-        [Implementation details]
-        - Imports model classes dynamically to avoid circular imports
-        - Extracts SUPPORTED_MODELS class variables from model classes
-        - Handles import errors gracefully
-        - Returns consolidated list of model IDs
-        
-        Returns:
-            List[str]: List of model IDs supported by project model classes
-        """
-        supported_models = []
-        
-        try:
-            # Import model classes dynamically to avoid circular imports
-            from ..models.claude3 import ClaudeEnhancedChatBedrockConverse
-            supported_models.extend(ClaudeEnhancedChatBedrockConverse.SUPPORTED_MODELS)
-            self.logger.debug(f"Found {len(ClaudeEnhancedChatBedrockConverse.SUPPORTED_MODELS)} Claude models")
-        except (ImportError, AttributeError) as e:
-            self.logger.warning(f"Could not load Claude models: {str(e)}")
-        
-        try:
-            from ..models.nova import NovaEnhancedChatBedrockConverse
-            supported_models.extend(NovaEnhancedChatBedrockConverse.SUPPORTED_MODELS)
-            self.logger.debug(f"Found {len(NovaEnhancedChatBedrockConverse.SUPPORTED_MODELS)} Nova models")
-        except (ImportError, AttributeError) as e:
-            self.logger.warning(f"Could not load Nova models: {str(e)}")
-            
-        # Deduplicate the list
-        return list(set(supported_models))

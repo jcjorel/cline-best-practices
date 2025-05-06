@@ -49,6 +49,19 @@
 # system:langchain_aws.chat_models.bedrock_converse
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-06T13:43:42Z : Implemented dynamic model discovery by CodeAssistant
+# * Added _discover_client_classes for auto-discovery of model implementations
+# * Added _build_model_mappings for mapping models to client and parameter classes
+# * Added _ensure_caches_initialized for lazy initialization with caching
+# * Added helper functions for accessing model metadata
+# * Updated create_langchain_chatbedrock to use new discovery system
+# 2025-05-06T12:57:00Z : Applied DRY principle to client factory by CodeAssistant
+# * Extracted common code into reusable helper methods
+# * Created _verify_model_support for model validation logic
+# * Created _extract_region_from_profile_arn for ARN parsing
+# * Created _select_best_region for region selection logic
+# * Created _select_inference_profile for profile handling
+# * Created _get_model_specific_class for model class determination
 # 2025-05-06T10:45:00Z : Fixed model parameter handling for LangChain compatibility by CodeAssistant
 # * Modified create_langchain_chatbedrock to properly handle model parameters
 # * Added property initialization after model creation to set parameters
@@ -59,11 +72,6 @@
 # * Added imports for model-specific LangChain wrappers
 # * Updated create_langchain_chatbedrock to use model-specific implementations
 # * Improved model detection logic based on SUPPORTED_MODELS lists
-# 2025-05-05T11:24:00Z : Added LangChain ChatBedrockConverse factory method by CodeAssistant
-# * Added create_langchain_chatbedrock method using langchain_aws.ChatBedrockConverse
-# * Implemented model discovery integration for LangChain ChatBedrockConverse
-# * Added automatic region selection and inference profile handling
-# * Ensured proper error handling and validation for LangChain integration
 ###############################################################################
 
 """
@@ -74,13 +82,331 @@ import logging
 import importlib
 import pkgutil
 import inspect
-from typing import Dict, Any, List, Optional, Type, Set, Union
+import os
+import sys
+from typing import Dict, Any, List, Optional, Type, Set, Union, Tuple
 
 from .langchain_wrapper import EnhancedChatBedrockConverse
-from .models.claude3 import ClaudeEnhancedChatBedrockConverse
-from .models.nova import NovaEnhancedChatBedrockConverse
 from .discovery.models import BedrockModelDiscovery
 from ..common.exceptions import LLMError, UnsupportedModelError, ConfigurationError
+
+# Cache for discovered classes to avoid repeated scans
+_client_classes_cache = None
+_model_to_client_class_cache = None
+_model_to_parameter_class_cache = None
+
+def _discover_client_classes() -> List[Type[EnhancedChatBedrockConverse]]:
+    """
+    [Function intent]
+    Discovers all EnhancedChatBedrockConverse subclasses in the models directory.
+    
+    [Design principles]
+    - Dynamic discovery without hardcoding
+    - Import all modules in models directory
+    - Inspect classes to find EnhancedChatBedrockConverse subclasses
+    
+    [Implementation details]
+    - Uses pkgutil to find modules
+    - Uses inspect to identify subclasses
+    - Returns list of discovered classes
+    
+    Returns:
+        List[Type[EnhancedChatBedrockConverse]]: List of discovered client classes
+    """
+    client_classes = []
+    logger = logging.getLogger("BedrockClientFactory")
+    
+    # Define the package containing model implementations
+    models_package = 'dbp.llm.bedrock.models'
+    
+    # Import models package
+    try:
+        package = importlib.import_module(models_package)
+        package_path = os.path.dirname(package.__file__)
+        
+        # Find all modules in the package
+        for _, module_name, is_pkg in pkgutil.iter_modules([package_path]):
+            if not is_pkg:  # Skip subpackages, only load modules
+                try:
+                    # Import the module
+                    module = importlib.import_module(f"{models_package}.{module_name}")
+                    
+                    # Find all EnhancedChatBedrockConverse subclasses
+                    for name, obj in inspect.getmembers(module):
+                        if (inspect.isclass(obj) and 
+                            issubclass(obj, EnhancedChatBedrockConverse) and 
+                            obj != EnhancedChatBedrockConverse):
+                            client_classes.append(obj)
+                except ImportError as e:
+                    # Log warning but continue with other modules
+                    logger.warning(f"Could not import module {module_name}: {str(e)}")
+    except ImportError as e:
+        # Log error if models package cannot be imported
+        logger.error(f"Could not import models package: {str(e)}")
+        
+    return client_classes
+
+def _build_model_mappings(client_classes: List[Type[EnhancedChatBedrockConverse]]) -> Tuple[Dict, Dict]:
+    """
+    [Function intent]
+    Builds mappings between model IDs, client classes, and parameter classes.
+    
+    [Design principles]
+    - Create efficient lookup structures
+    - Map from model ID to client class
+    - Map from model ID to parameter class
+    
+    [Implementation details]
+    - Extracts supported models from parameter classes
+    - Creates dictionary mappings for fast lookup
+    - Validates no duplicate model IDs across client classes
+    
+    Args:
+        client_classes: List of discovered EnhancedChatBedrockConverse subclasses
+        
+    Returns:
+        Tuple[Dict, Dict]: Mappings from model ID to client class and parameter class
+    """
+    model_to_client_class = {}
+    model_to_parameter_class = {}
+    logger = logging.getLogger("BedrockClientFactory")
+    
+    for client_class in client_classes:
+        if not hasattr(client_class, 'PARAMETER_CLASSES') or not client_class.PARAMETER_CLASSES:
+            logger.warning(f"Client class {client_class.__name__} has no PARAMETER_CLASSES")
+            continue
+            
+        for param_class in client_class.PARAMETER_CLASSES:
+            if hasattr(param_class, 'Config') and hasattr(param_class.Config, 'supported_models'):
+                for model_id in param_class.Config.supported_models:
+                    # Check for duplicate model ID mappings
+                    if model_id in model_to_client_class:
+                        logger.warning(
+                            f"Model ID {model_id} already mapped to {model_to_client_class[model_id].__name__}, "
+                            f"now also found in {client_class.__name__}"
+                        )
+                    
+                    # Map model ID to client class and parameter class
+                    model_to_client_class[model_id] = client_class
+                    model_to_parameter_class[model_id] = param_class
+    
+    return model_to_client_class, model_to_parameter_class
+
+def _ensure_caches_initialized():
+    """
+    [Function intent]
+    Ensures the discovery caches are initialized.
+    
+    [Design principles]
+    - Lazy initialization
+    - One-time discovery
+    - Thread-safe initialization
+    
+    [Implementation details]
+    - Checks if caches are already initialized
+    - Performs discovery if needed
+    - Updates all caches
+    """
+    global _client_classes_cache, _model_to_client_class_cache, _model_to_parameter_class_cache
+    
+    # If caches are already initialized, return
+    if _client_classes_cache is not None:
+        return
+        
+    # Discover client classes
+    _client_classes_cache = _discover_client_classes()
+    
+    # Build model mappings
+    _model_to_client_class_cache, _model_to_parameter_class_cache = _build_model_mappings(_client_classes_cache)
+
+def get_all_supported_model_ids() -> List[str]:
+    """
+    [Function intent]
+    Returns a list of all supported model IDs across all discovered client classes.
+    
+    [Design principles]
+    - Provide complete model discovery
+    - Ensure initialization happens
+    
+    [Implementation details]
+    - Initializes discovery caches if needed
+    - Returns all keys from model mapping
+    
+    Returns:
+        List[str]: List of all supported model IDs
+    """
+    _ensure_caches_initialized()
+    return list(_model_to_client_class_cache.keys())
+
+def get_client_class_for_model(model_id: str) -> Type[EnhancedChatBedrockConverse]:
+    """
+    [Function intent]
+    Returns the appropriate client class for a given model ID.
+    
+    [Design principles]
+    - Direct mapping lookup
+    - Error handling for unknown models
+    
+    [Implementation details]
+    - Initializes discovery caches if needed
+    - Looks up client class from mapping
+    - Raises exception if model is not supported
+    
+    Args:
+        model_id: The Bedrock model ID
+        
+    Returns:
+        Type[EnhancedChatBedrockConverse]: The client class for the model
+        
+    Raises:
+        UnsupportedModelError: If no client class supports the model ID
+    """
+    _ensure_caches_initialized()
+    
+    # Check for exact model ID match
+    if model_id in _model_to_client_class_cache:
+        return _model_to_client_class_cache[model_id]
+    
+    # Check for model ID prefix match (for versioned models)
+    model_base = model_id.split(':')[0]
+    for supported_model_id, client_class in _model_to_client_class_cache.items():
+        supported_base = supported_model_id.split(':')[0]
+        if model_base == supported_base:
+            return client_class
+    
+    # No match found, raise exception
+    raise UnsupportedModelError(f"No client class supports model ID: {model_id}")
+
+def get_parameter_class_for_model(model_id: str):
+    """
+    [Function intent]
+    Returns the appropriate parameter class for a given model ID.
+    
+    [Design principles]
+    - Direct mapping lookup
+    - Error handling for unknown models
+    
+    [Implementation details]
+    - Initializes discovery caches if needed
+    - Looks up parameter class from mapping
+    - Raises exception if model is not supported
+    
+    Args:
+        model_id: The Bedrock model ID
+        
+    Returns:
+        The parameter class for the model
+        
+    Raises:
+        UnsupportedModelError: If no parameter class supports the model ID
+    """
+    _ensure_caches_initialized()
+    
+    # Check for exact model ID match
+    if model_id in _model_to_parameter_class_cache:
+        return _model_to_parameter_class_cache[model_id]
+    
+    # Check for model ID prefix match (for versioned models)
+    model_base = model_id.split(':')[0]
+    for supported_model_id, param_class in _model_to_parameter_class_cache.items():
+        supported_base = supported_model_id.split(':')[0]
+        if model_base == supported_base:
+            return param_class
+    
+    # No match found, raise exception
+    raise UnsupportedModelError(f"No parameter class supports model ID: {model_id}")
+
+def get_parameter_instance_for_client(client_instance: EnhancedChatBedrockConverse):
+    """
+    [Function intent]
+    Returns the parameter instance associated with a client instance.
+    
+    [Design principles]
+    - Direct access to client's parameter instance
+    - Type verification
+    
+    [Implementation details]
+    - Verifies client is an EnhancedChatBedrockConverse instance
+    - Returns the parameters attribute
+    
+    Args:
+        client_instance: The client instance
+        
+    Returns:
+        The parameter instance for the client
+        
+    Raises:
+        TypeError: If client_instance is not an EnhancedChatBedrockConverse instance
+        AttributeError: If client_instance has no parameters attribute
+    """
+    if not isinstance(client_instance, EnhancedChatBedrockConverse):
+        raise TypeError(f"Expected EnhancedChatBedrockConverse instance, got {type(client_instance).__name__}")
+    
+    # The client should have initialized its parameters instance
+    if not hasattr(client_instance, 'parameters') or client_instance.parameters is None:
+        raise AttributeError(f"Client instance has no initialized parameters")
+        
+    return client_instance.parameters
+
+def get_model_info(model_id: str) -> Dict[str, Any]:
+    """
+    [Function intent]
+    Returns comprehensive metadata about a model based on its ID, including references
+    to concrete implementation classes.
+    
+    [Design principles]
+    - Single lookup point for model metadata
+    - Complete information including class references
+    - Consistent return structure
+    
+    [Implementation details]
+    - Uses existing discovery mechanisms to find model classes
+    - Extracts metadata from both client and parameter classes
+    - Returns a dictionary with all model information
+    
+    Args:
+        model_id: The Bedrock model ID
+        
+    Returns:
+        Dict[str, Any]: Dictionary containing:
+            - model_id: Original model ID
+            - model_provider: Provider name (e.g., "Amazon", "Anthropic")
+            - model_family_friendly_name: Model family name (e.g., "Nova", "Claude")
+            - model_version: Version string (e.g., "3.5", "1.0")
+            - model_variant: Variant name (e.g., "Sonnet", "Lite")
+            - minor_version: Text after ':' in model_id
+            - client_class: Reference to concrete client class
+            - parameter_class: Reference to concrete parameter class
+            
+    Raises:
+        UnsupportedModelError: If model is not supported
+    """
+    _ensure_caches_initialized()
+    
+    try:
+        # Get concrete classes
+        client_class = get_client_class_for_model(model_id)
+        param_class = get_parameter_class_for_model(model_id)
+        
+        # Extract metadata using class methods
+        minor_version = client_class.get_minor_version(model_id)
+        model_version = param_class.get_model_version(model_id)
+        model_variant = param_class.get_model_variant(model_id)
+        
+        return {
+            "model_id": model_id,
+            "model_provider": client_class.model_provider,
+            "model_family_friendly_name": client_class.model_family_friendly_name,
+            "model_version": model_version,
+            "model_variant": model_variant,
+            "minor_version": minor_version,
+            "client_class": client_class,
+            "parameter_class": param_class
+        }
+    except UnsupportedModelError as e:
+        raise e
+    except Exception as e:
+        raise UnsupportedModelError(f"Error retrieving model info for {model_id}: {str(e)}")
 
 
 class BedrockClientFactory:
@@ -105,6 +431,232 @@ class BedrockClientFactory:
     - Raises exceptions on all error conditions
     - Verifies model support against project-supported models
     """
+    
+    @classmethod
+    def _verify_model_support(cls, model_id: str, discovery: Any, logger: logging.Logger) -> None:
+        """
+        [Method intent]
+        Verify that the model ID is supported by the project, checking both exact matches
+        and model family prefix matches.
+        
+        [Design principles]
+        - Fail-fast validation
+        - Clear error messages
+        - Project model support verification
+        
+        [Implementation details]
+        - Checks if model ID is directly in project supported models
+        - Falls back to checking model prefix support
+        - Raises exception with descriptive error message when not supported
+        
+        Args:
+            model_id: The Bedrock model ID to verify
+            discovery: BedrockModelDiscovery instance
+            logger: Logger instance for error messages
+            
+        Raises:
+            UnsupportedModelError: If model ID is not supported
+        """
+        project_models = discovery.project_supported_models
+        if model_id not in project_models:
+            # Check if the model has a supported base prefix
+            model_base = model_id.split(":")[0]
+            supported_prefixes = {m.split(":")[0] for m in project_models}
+            
+            if not any(model_base == prefix for prefix in supported_prefixes):
+                error_msg = f"Model ID {model_id} is not supported by this project. " + \
+                          f"Supported model prefixes: {', '.join(sorted(supported_prefixes))}"
+                logger.error(error_msg)
+                raise UnsupportedModelError(error_msg)
+    
+    @classmethod
+    def _extract_region_from_profile_arn(cls, inference_profile_arn: str, region_name: Optional[str], logger: logging.Logger) -> str:
+        """
+        [Method intent]
+        Extract and validate region information from an inference profile ARN.
+        
+        [Design principles]
+        - Clean ARN parsing
+        - Transparent region override logging
+        
+        [Implementation details]
+        - Extracts region from ARN format: arn:aws:bedrock:REGION:account-id:...
+        - Logs message when overriding provided region
+        - Returns the extracted region
+        
+        Args:
+            inference_profile_arn: The inference profile ARN
+            region_name: Optional current region name that might be overridden
+            logger: Logger instance for information messages
+            
+        Returns:
+            str: Extracted region from ARN
+        """
+        # Extract region from ARN format: arn:aws:bedrock:REGION:account-id:...
+        arn_parts = inference_profile_arn.split(':')
+        if len(arn_parts) >= 4 and arn_parts[3]:
+            # Extract region from ARN
+            extracted_region = arn_parts[3]
+            
+            # Override region_name with the region from the ARN
+            if region_name and region_name != extracted_region:
+                # Log that we're overriding the provided region
+                logger.info(f"Overriding provided region {region_name} with region {extracted_region} from inference profile ARN")
+            
+            return extracted_region
+        
+        # Return original region if extraction failed
+        return region_name
+    
+    @classmethod
+    def _select_best_region(
+        cls,
+        model_id: str,
+        region_name: Optional[str],
+        use_model_discovery: bool,
+        preferred_regions: Optional[List[str]],
+        discovery: Any,
+        logger: logging.Logger
+    ) -> str:
+        """
+        [Method intent]
+        Select the best region for a model based on discovery, provided region, or default.
+        
+        [Design principles]
+        - Intelligent model region selection
+        - Clear region selection priority
+        - Fail-fast for unavailable models
+        
+        [Implementation details]
+        - Uses model discovery when available
+        - Falls back to provided region
+        - Uses default region as last resort
+        - Raises clear exceptions when no region is available
+        
+        Args:
+            model_id: The Bedrock model ID
+            region_name: Optional provided region name
+            use_model_discovery: Whether to use model discovery
+            preferred_regions: Optional list of preferred regions
+            discovery: BedrockModelDiscovery instance
+            logger: Logger instance
+            
+        Returns:
+            str: Selected region name
+            
+        Raises:
+            ConfigurationError: If no available regions found
+        """
+        # Return existing region if provided
+        if region_name:
+            return region_name
+            
+        # Find the best region if not specified and using model discovery
+        if use_model_discovery:
+            best_regions = discovery.get_best_regions_for_model(model_id, preferred_regions)
+            if not best_regions:
+                error_msg = f"No available regions found for model {model_id}"
+                logger.error(error_msg)
+                raise ConfigurationError(error_msg)
+            
+            selected_region = best_regions[0]
+            logger.info(f"Selected best region for {model_id}: {selected_region}")
+            return selected_region
+        
+        # Default region as fallback only if not using model discovery
+        default_region = "us-west-2"
+        logger.info(f"No region specified and model discovery disabled, using default: {default_region}")
+        return default_region
+    
+    @classmethod
+    def _select_inference_profile(
+        cls, 
+        model_id: str,
+        region_name: str,
+        inference_profile_arn: Optional[str], 
+        discovery: Any,
+        logger: logging.Logger
+    ) -> Optional[str]:
+        """
+        [Method intent]
+        Select the appropriate inference profile for a model if not explicitly provided.
+        
+        [Design principles]
+        - Automatic inference profile selection
+        - Priority-based profile selection
+        - Clear error handling for required profiles
+        
+        [Implementation details]
+        - Returns existing profile ARN if provided
+        - Prioritizes SYSTEM_DEFINED profiles
+        - Falls back to other available profiles
+        - Raises error if profile required but none available
+        
+        Args:
+            model_id: The Bedrock model ID
+            region_name: AWS region name
+            inference_profile_arn: Optional explicitly provided inference profile ARN
+            discovery: BedrockModelDiscovery instance
+            logger: Logger instance
+            
+        Returns:
+            Optional[str]: Selected inference profile ARN or None
+            
+        Raises:
+            ConfigurationError: If profile required but none available
+        """
+        # Return the provided profile if available
+        if inference_profile_arn:
+            return inference_profile_arn
+            
+        # Only proceed if we have a region_name
+        if not region_name:
+            return None
+            
+        # Get model information
+        model_info = discovery.get_model(model_id, region_name)
+        if not model_info:
+            return None
+            
+        # Get available inference profiles
+        profiles = model_info.get("referencedByInstanceProfiles", [])
+        
+        # First try to find SYSTEM_DEFINED profiles
+        system_defined_profiles = []
+        other_profiles = []
+        
+        for profile in profiles:
+            if "inferenceProfileArn" in profile:
+                if profile.get("inferenceProfileType") == "SYSTEM_DEFINED":
+                    system_defined_profiles.append(profile)
+                else:
+                    other_profiles.append(profile)
+        
+        # Select profile based on priority: SYSTEM_DEFINED first, then others
+        selected_profile = None
+        profile_source = None
+        
+        if system_defined_profiles:
+            selected_profile = system_defined_profiles[0]
+            profile_source = "SYSTEM_DEFINED"
+        elif other_profiles:
+            selected_profile = other_profiles[0]
+            profile_source = "default"
+        
+        # Use the selected profile if available
+        if selected_profile and "inferenceProfileArn" in selected_profile:
+            selected_arn = selected_profile["inferenceProfileArn"]
+            logger.info(f"Auto-selected {profile_source} inference profile ARN for {model_id}: {selected_arn}")
+            return selected_arn
+        
+        # If the model requires an inference profile and none was found, raise error
+        if model_info.get("requiresInferenceProfile", False):
+            error_msg = f"Model {model_id} requires an inference profile, but none was found"
+            logger.error(error_msg)
+            raise ConfigurationError(error_msg)
+            
+        # No profile needed or found
+        return None
     
     @classmethod
     def create_langchain_chatbedrock(
@@ -181,87 +733,23 @@ class BedrockClientFactory:
             discovery = BedrockModelDiscovery.get_instance()
             
             # Verify this model is supported by the project
-            project_models = discovery._get_project_supported_models()
-            if model_id not in project_models:
-                # Check if the model has a supported base prefix
-                model_base = model_id.split(":")[0]
-                supported_prefixes = {m.split(":")[0] for m in project_models}
-                
-                if not any(model_base == prefix for prefix in supported_prefixes):
-                    error_msg = f"Model ID {model_id} is not supported by this project. " + \
-                               f"Supported model prefixes: {', '.join(sorted(supported_prefixes))}"
-                    logger.error(error_msg)
-                    raise UnsupportedModelError(error_msg)
+            cls._verify_model_support(model_id, discovery, logger)
             
             # Process inference profile ARN and extract region if available
             if inference_profile_arn:
-                # Extract region from ARN format: arn:aws:bedrock:REGION:account-id:...
-                arn_parts = inference_profile_arn.split(':')
-                if len(arn_parts) >= 4 and arn_parts[3]:
-                    # Override region_name with the region from the ARN
-                    extracted_region = arn_parts[3]
-                    if region_name and region_name != extracted_region:
-                        # Log that we're overriding the provided region
-                        logger.info(f"Overriding provided region {region_name} with region {extracted_region} from inference profile ARN")
-                    region_name = extracted_region
+                region_name = cls._extract_region_from_profile_arn(inference_profile_arn, region_name, logger)
             
-            # Find the best region if not specified and using model discovery
-            if not region_name and use_model_discovery:
-                best_regions = discovery.get_best_regions_for_model(model_id, preferred_regions)
-                if not best_regions:
-                    error_msg = f"No available regions found for model {model_id}"
-                    logger.error(error_msg)
-                    raise ConfigurationError(error_msg)
-                
-                region_name = best_regions[0]
-                logger.info(f"Selected best region for {model_id}: {region_name}")
-            
-            # Default region as fallback only if not using model discovery
-            elif not region_name:
-                region_name = "us-west-2"  # Default region
-                logger.info(f"No region specified and model discovery disabled, using default: {region_name}")
+            # Find the best region if needed
+            region_name = cls._select_best_region(
+                model_id, region_name, use_model_discovery, 
+                preferred_regions, discovery, logger
+            )
                     
-            # Check for automatic inference profile selection if not explicitly provided
-            # We want to check for inference profiles regardless of use_model_discovery
-            # if we have a region_name and no explicit inference_profile_arn
-            if not inference_profile_arn and region_name:
-                model_info = discovery.get_model(model_id, region_name)
-                if model_info:
-                    # Get available inference profiles
-                    profiles = model_info.get("referencedByInstanceProfiles", [])
-                    
-                    # First try to find SYSTEM_DEFINED profiles
-                    system_defined_profiles = []
-                    other_profiles = []
-                    
-                    for profile in profiles:
-                        if "inferenceProfileArn" in profile:
-                            if profile.get("inferenceProfileType") == "SYSTEM_DEFINED":
-                                system_defined_profiles.append(profile)
-                            else:
-                                other_profiles.append(profile)
-                    
-                    # Select profile based on priority: SYSTEM_DEFINED first, then others
-                    selected_profile = None
-                    profile_source = None
-                    
-                    if system_defined_profiles:
-                        selected_profile = system_defined_profiles[0]
-                        profile_source = "SYSTEM_DEFINED"
-                    elif other_profiles:
-                        selected_profile = other_profiles[0]
-                        profile_source = "default"
-                    
-                    # Use the selected profile if available
-                    if selected_profile and "inferenceProfileArn" in selected_profile:
-                        inference_profile_arn = selected_profile["inferenceProfileArn"]
-                        logger.info(f"Auto-selected {profile_source} inference profile ARN for {model_id}: {inference_profile_arn}")
-                    
-                    # If the model requires an inference profile and none was found, raise error
-                    elif model_info.get("requiresInferenceProfile", False):
-                        error_msg = f"Model {model_id} requires an inference profile, but none was found"
-                        logger.error(error_msg)
-                        raise ConfigurationError(error_msg)
+            # Select inference profile if needed
+            inference_profile_arn = cls._select_inference_profile(
+                model_id, region_name, inference_profile_arn, 
+                discovery, logger
+            )
             
             try:
                 # Import AWS client factory
@@ -298,24 +786,21 @@ class BedrockClientFactory:
                     "client": bedrock_client,
                 }
                 
-                # Determine the appropriate class based on model ID
-                model_class = EnhancedChatBedrockConverse  # Default fallback
+                # Use our new discovery system to get the appropriate client class
+                try:
+                    model_class = get_client_class_for_model(model_id)
+                    logger.info(f"Using {model_class.__name__} for model {model_id}")
+                except UnsupportedModelError:
+                    # This shouldn't happen, since we've already verified the model is supported above
+                    # But include fallback logic for robustness
+                    logger.warning(f"No specific client class found for {model_id}, using base class")
+                    raise
                 
-                # Check for Claude models
-                if any(model_id.startswith(m.split(':')[0]) for m in ClaudeEnhancedChatBedrockConverse.SUPPORTED_MODELS):
-                    model_class = ClaudeEnhancedChatBedrockConverse
-                    logger.info(f"Using Claude-specific implementation for model {model_id}")
-                
-                # Check for Nova models
-                elif any(model_id.startswith(m.split(':')[0]) for m in NovaEnhancedChatBedrockConverse.SUPPORTED_MODELS):
-                    model_class = NovaEnhancedChatBedrockConverse
-                    logger.info(f"Using Nova-specific implementation for model {model_id}")
-                
-                # Create the model-specific instance with ONLY the required parameters
-                # Many LangChain chat models have strict validation and don't accept extra kwargs
+                # Create the model instance
                 try:
                     chat_bedrock = model_class(
-                        **chat_model_params,
+                        model=model_param,  
+                        client=bedrock_client,
                         logger=logger
                     )
                     
@@ -324,6 +809,12 @@ class BedrockClientFactory:
                     if model_kwargs:
                         # Store model kwargs outside of the model for future use if needed
                         object.__setattr__(chat_bedrock, "_cached_model_kwargs", model_kwargs)
+                        
+                        # Apply model kwargs directly to the parameters object if it exists
+                        if hasattr(chat_bedrock, "parameters") and chat_bedrock.parameters:
+                            for key, value in model_kwargs.items():
+                                if hasattr(chat_bedrock.parameters, key):
+                                    setattr(chat_bedrock.parameters, key, value)
                 
                 except Exception as e:
                     # Detailed error logging to help debug parameter issues

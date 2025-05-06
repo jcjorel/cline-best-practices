@@ -36,6 +36,11 @@
 # system:json
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-06T13:41:59Z : Implemented Dynamic Model Discovery by CodeAssistant
+# * Updated ClaudeEnhancedChatBedrockConverse to use PARAMETER_CLASSES instead of SUPPORTED_MODELS
+# * Removed duplicate _CLAUDE_MODELS list in favor of parameter class definition
+# * Linked parameter classes directly to client class via PARAMETER_CLASSES
+# * Maintained backward compatibility with existing code
 # 2025-05-06T11:23:45Z : Removed redundant get_model_id_constraint methods by CodeAssistant
 # * Removed get_model_id_constraint methods from all parameter classes
 # * Using base class implementation that references Config.supported_models
@@ -50,11 +55,6 @@
 # * Imported abstract ClaudeParameters from claude.py
 # * Added model-specific max_tokens constraints
 # * Added Claude 3.7-exclusive reasoning profile
-# 2025-05-05T22:15:07Z : Refactored to use EnhancedChatBedrockConverse by CodeAssistant
-# * Removed legacy EnhancedBedrockBase implementation
-# * Created new ClaudeEnhancedChatBedrockConverse class
-# * Implemented Claude-specific _extract_text_from_chunk method
-# * Preserved SUPPORTED_MODELS definition for discovery
 ###############################################################################
 
 import json
@@ -210,27 +210,16 @@ class ClaudeEnhancedChatBedrockConverse(EnhancedChatBedrockConverse):
     
     [Implementation details]
     - Implements Claude-specific _extract_text_from_chunk method
-    - Maintains SUPPORTED_MODELS for model discovery
+    - References parameter classes for supported models
     - Optimized for Claude models
     """
     
-    # Keep the supported models list from the original class
-    # Supported Claude models - helps with validation
-    _CLAUDE_MODELS = [
-        # Claude 3 models
-        "anthropic.claude-3-haiku-20240307-v1:0", 
-        "anthropic.claude-3-sonnet-20240229-v1:0",
-        "anthropic.claude-3-opus-20240229-v1:0",
-        # Claude 3.5 models
-        "anthropic.claude-3-5-haiku-20241022-v1:0", 
-        "anthropic.claude-3-5-sonnet-20240620-v1:0",
-        "anthropic.claude-3-5-sonnet-20241022-v2:0",
-        # Claude 3.7 models
-        "anthropic.claude-3-7-sonnet-20250219-v1:0"
-    ]
+    # Implementation of required abstract properties
+    model_provider: ClassVar[str] = "Anthropic"
+    model_family_friendly_name: ClassVar[str] = "Claude"
     
-    # Set the class-level SUPPORTED_MODELS for model discovery
-    SUPPORTED_MODELS: ClassVar[list] = _CLAUDE_MODELS
+    # Reference parameter classes instead of duplicating model lists
+    PARAMETER_CLASSES = [Claude3Parameters, Claude35Parameters, Claude37Parameters]
     
     def _extract_text_from_chunk(self, content: Any) -> str:
         """

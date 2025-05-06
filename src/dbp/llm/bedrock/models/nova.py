@@ -33,6 +33,11 @@
 # system:json
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-06T13:40:17Z : Implemented Dynamic Model Discovery by CodeAssistant
+# * Updated NovaEnhancedChatBedrockConverse to use PARAMETER_CLASSES instead of SUPPORTED_MODELS
+# * Removed duplicate _NOVA_MODELS list in favor of parameter class definition
+# * Leveraged base class compatibility method for model discovery
+# * Maintained backward compatibility with existing code
 # 2025-05-05T22:16:36Z : Refactored to use EnhancedChatBedrockConverse by CodeAssistant
 # * Removed legacy EnhancedBedrockBase implementation
 # * Created new NovaEnhancedChatBedrockConverse class
@@ -47,12 +52,6 @@
 # * Renamed _format_messages_internal to _format_messages
 # * Renamed _format_model_kwargs_internal to _format_model_kwargs
 # * No functional changes, only method renaming for abstract method implementation
-# 2025-05-04T23:45:00Z : Refactored to use template method pattern for request preparation by CodeAssistant
-# * Removed duplicated stream_chat implementation
-# * Added standardized parameter handling through internal methods
-# * Implemented _format_messages_internal, _format_model_kwargs_internal
-# * Added _get_system_content and _get_model_specific_params methods
-# * Updated process_multimodal_message to use _prepare_request
 ###############################################################################
 
 import json
@@ -77,6 +76,71 @@ class NovaParameters(ModelParameters):
     - Adds Nova-specific parameters like top_k and repetition_penalty
     - Defines profiles for different use cases
     """
+    
+    @classmethod
+    def get_model_version(cls, model_id: str) -> str:
+        """
+        [Method intent]
+        Extract Nova version (e.g., 1.0) from model ID.
+        
+        [Design principles]
+        - Nova-specific version parsing
+        - Format standardization
+        - Handle diverse Nova model ID formats
+        
+        [Implementation details]
+        - Parses Nova model ID format to extract version
+        - Currently all Nova models are version 1.0
+        - Returns standardized version string
+        
+        Args:
+            model_id: The model ID to extract version from
+            
+        Returns:
+            str: Version string (e.g., "1.0")
+        """
+        # Nova models follow pattern: amazon.nova-<variant>-v<version>:<minor>
+        parts = model_id.split(".")
+        if len(parts) >= 2 and parts[0] == "amazon":
+            model_parts = parts[1].split("-")
+            for part in model_parts:
+                if part.startswith("v") and part[1:].isdigit():
+                    return part[1:] + ".0"  # e.g., v1 becomes 1.0
+        return "1.0"  # Default version if unable to extract
+    
+    @classmethod
+    def get_model_variant(cls, model_id: str) -> str:
+        """
+        [Method intent]
+        Extract Nova variant (e.g., "Lite") from model ID.
+        
+        [Design principles]
+        - Nova-specific variant parsing
+        - Proper capitalization
+        - Handle diverse Nova model ID formats
+        
+        [Implementation details]
+        - Parses Nova model ID format to extract variant
+        - Returns standardized variant string with proper capitalization
+        - Falls back to "Unknown" if variant can't be determined
+        
+        Args:
+            model_id: The model ID to extract variant from
+            
+        Returns:
+            str: Variant string (e.g., "Lite", "Micro", "Pro", "Premier")
+        """
+        parts = model_id.split(".")
+        if len(parts) >= 2 and parts[0] == "amazon":
+            if "lite" in parts[1]:
+                return "Lite"
+            elif "micro" in parts[1]:
+                return "Micro"
+            elif "pro" in parts[1]:
+                return "Pro"
+            elif "premier" in parts[1]:
+                return "Premier"
+        return "Unknown"  # Default if unable to extract
 
     # Nova-specific parameters
     top_k: int = Field(
@@ -146,20 +210,16 @@ class NovaEnhancedChatBedrockConverse(EnhancedChatBedrockConverse):
     
     [Implementation details]
     - Implements Nova-specific _extract_text_from_chunk method
-    - Maintains SUPPORTED_MODELS for model discovery
+    - References NovaParameters class for supported models
     - Support for all Nova model variants
     """
     
-    # Keep the supported models list from the original class
-    _NOVA_MODELS = [
-        "amazon.nova-lite-v1:0",
-        "amazon.nova-micro-v1:0",
-        "amazon.nova-pro-v1:0",
-        "amazon.nova-premier-v1:0",
-    ]
+    # Implementation of required abstract properties
+    model_provider: ClassVar[str] = "Amazon"
+    model_family_friendly_name: ClassVar[str] = "Nova"
     
-    # Set the class-level SUPPORTED_MODELS for model discovery
-    SUPPORTED_MODELS: ClassVar[list] = _NOVA_MODELS
+    # Reference parameter classes instead of duplicating model lists
+    PARAMETER_CLASSES = [NovaParameters]
     
     def _extract_text_from_chunk(self, content: Any) -> str:
         """

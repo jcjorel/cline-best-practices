@@ -180,6 +180,56 @@ class ModelParameters(BaseModel, ABC):
         le=1.0, 
         description="Nucleus sampling parameter."
     )
+    
+    @classmethod
+    @abstractmethod
+    def get_model_version(cls, model_id: str) -> str:
+        """
+        [Method intent]
+        Retrieve the model version based on its model_id (e.g., 3.5 for Claude, 1.0 for Nova).
+        
+        [Design principles]
+        - Consistent version format across model types
+        - Model-specific parsing logic
+        - Standardized return format
+        
+        [Implementation details]
+        - Must be implemented by each concrete parameter class
+        - Parses model_id string according to model-specific format
+        - Returns version as a string in a consistent format (e.g. "1.0", "3.5")
+        
+        Args:
+            model_id: The model ID to extract version from
+            
+        Returns:
+            str: Version string
+        """
+        pass
+        
+    @classmethod
+    @abstractmethod
+    def get_model_variant(cls, model_id: str) -> str:
+        """
+        [Method intent]
+        Retrieve the model variant based on its model_id (e.g., "Sonnet" for Claude, "Lite" for Nova).
+        
+        [Design principles]
+        - Consistent variant naming across model types
+        - Model-specific parsing logic
+        - Proper capitalization and formatting
+        
+        [Implementation details]
+        - Must be implemented by each concrete parameter class
+        - Parses model_id string according to model-specific format
+        - Returns variant as a properly formatted string
+        
+        Args:
+            model_id: The model ID to extract variant from
+            
+        Returns:
+            str: Variant string
+        """
+        pass
 
     # Class registry to keep track of all parameter models
     _registry: ClassVar[Dict[str, Type["ModelParameters"]]] = {}

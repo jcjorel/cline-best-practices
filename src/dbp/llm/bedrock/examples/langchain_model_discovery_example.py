@@ -30,11 +30,23 @@ if __name__ == "__main__":
     
     # Import directly from the project structure
     from dbp.llm.bedrock.discovery.models import BedrockModelDiscovery
-    from dbp.llm.bedrock.client_factory import BedrockClientFactory
+    from dbp.llm.bedrock.client_factory import (
+        BedrockClientFactory,
+        get_all_supported_model_ids,
+        get_client_class_for_model,
+        get_parameter_class_for_model,
+        get_parameter_instance_for_client
+    )
 else:
     # Relative imports when used as part of the package
     from ..discovery.models import BedrockModelDiscovery
-    from ..client_factory import BedrockClientFactory
+    from ..client_factory import (
+        BedrockClientFactory,
+        get_all_supported_model_ids,
+        get_client_class_for_model,
+        get_parameter_class_for_model,
+        get_parameter_instance_for_client
+    )
 
 # Import LangChain components
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
@@ -295,13 +307,22 @@ async def display_project_supported_models(shared_state: Dict[str, Any]):
     # Get model discovery from shared state
     model_discovery = shared_state.get("model_discovery")
     
+    # Get dynamically discovered models using the new discovery system
+    print("\nDynamic Model Discovery:")
+    dynamic_models = get_all_supported_model_ids()
+    print(f"Discovered {len(dynamic_models)} models using dynamic discovery system:")
+    for model_id in sorted(dynamic_models):
+        client_class = get_client_class_for_model(model_id)
+        param_class = get_parameter_class_for_model(model_id)
+        print(f"  - {model_id} → {client_class.__name__} with {param_class.__name__}")
+    
     # Get project-supported models from shared state
     project_models = shared_state.get("project_models")
     if not project_models:
         print("No project-supported models found!")
         return
     
-    print(f"Found {len(project_models)} project-supported models:")
+    print(f"\nFound {len(project_models)} project-supported models:")
     for model_id in sorted(project_models):
         print(f"  - {model_id}")
     
@@ -325,10 +346,13 @@ async def display_project_supported_models(shared_state: Dict[str, Any]):
         best_regions = model_discovery.get_best_regions_for_model(model_id)
         best_region = best_regions[0] if best_regions else "N/A"
         
-        # Check if model is compatible with LangChain
-        # In this context, all models that can work with Bedrock are compatible,
-        # but we may want to check for specific features or constraints
-        langchain_compatible = "Yes"
+        # Check if model is compatible with LangChain using dynamic discovery
+        try:
+            # Check if there's a compatible class using the new discovery system
+            client_class = get_client_class_for_model(model_id)
+            langchain_compatible = "Yes"
+        except Exception:
+            langchain_compatible = "No"
         
         # Format for display
         short_model_id = model_id.split(":")[0]
@@ -375,36 +399,32 @@ async def test_system_prompt_variants(shared_state: Dict[str, Any]):
         print(f"\n--- Testing System Prompt Format #{i+1} ---")
         print(f"System prompt: {system_prompt.content}")
         
-        try:
-            # Create LangChain client
-            chat_model = BedrockClientFactory.create_langchain_chatbedrock(
-                model_id=test_model_id,
-                logger=logger,
-                use_model_discovery=True
-            )
-            
-            # Create message list with system prompt
-            messages = [
-                system_prompt,
-                HumanMessage(content=test_prompt)
-            ]
-            
-            # Send prompt to get response
-            print(f"\nSending test prompt: {test_prompt}")
-            print("Response:")
-            print("-------------------------------------------")
-            
-            # Stream the response
-            response_text = ""
-            async for chunk in chat_model.astream_text(messages):
-                response_text += chunk
-                print(chunk, end="", flush=True)
-            
-            print("\n-------------------------------------------")
-            print(f"Response length: {len(response_text)} characters")
-            
-        except Exception as e:
-            print(f"Error testing system prompt: {str(e)}")
+        # Create LangChain client
+        chat_model = BedrockClientFactory.create_langchain_chatbedrock(
+            model_id=test_model_id,
+            logger=logger,
+            use_model_discovery=True
+        )
+        
+        # Create message list with system prompt
+        messages = [
+            system_prompt,
+            HumanMessage(content=test_prompt)
+        ]
+        
+        # Send prompt to get response
+        print(f"\nSending test prompt: {test_prompt}")
+        print("Response:")
+        print("-------------------------------------------")
+        
+        # Stream the response
+        response_text = ""
+        async for chunk in chat_model.astream_text(messages):
+            response_text += chunk
+            print(chunk, end="", flush=True)
+        
+        print("\n-------------------------------------------")
+        print(f"Response length: {len(response_text)} characters")
     
     print("\nSystem prompt variant testing complete")
 
@@ -423,56 +443,81 @@ async def test_langchain_conversation_memory(shared_state: Dict[str, Any]):
     model_id = sorted(project_models)[0]
     print(f"Using model {model_id} for conversation memory test")
     
-    try:
-        # Import LangChain components for conversation memory
-        from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+    # Create LangChain chat model
+    chat_model = BedrockClientFactory.create_langchain_chatbedrock(
+        model_id=model_id,
+        use_model_discovery=True,
+        logger=logger
+    )
+    
+    # Initialize conversation with a system message
+    conversation = [
+        SystemMessage(content="You are a helpful assistant that provides information about AWS services in a concise manner.")
+    ]
+    
+    # Define a multi-turn conversation
+    questions = [
+        "What is Amazon S3?",
+        "What storage classes does it offer?",
+        "Which one is best for infrequently accessed data?",
+        "How does that compare to Glacier?"
+    ]
+    
+    # Conduct the conversation
+    for i, question in enumerate(questions):
+        print(f"\nQuestion {i+1}: {question}")
         
-        # Create LangChain chat model
-        chat_model = BedrockClientFactory.create_langchain_chatbedrock(
-            model_id=model_id,
-            use_model_discovery=True,
-            logger=logger
-        )
+        # Add user message to the conversation
+        conversation.append(HumanMessage(content=question))
         
-        # Initialize conversation with a system message
-        conversation = [
-            SystemMessage(content="You are a helpful assistant that provides information about AWS services in a concise manner.")
-        ]
+        # Get model response
+        print("Response:")
+        print("-" * 50)
         
-        # Define a multi-turn conversation
-        questions = [
-            "What is Amazon S3?",
-            "What storage classes does it offer?",
-            "Which one is best for infrequently accessed data?",
-            "How does that compare to Glacier?"
-        ]
+        # Stream the response
+        response_text = ""
+        async for chunk in chat_model.astream_text(conversation):
+            response_text += chunk
+            print(chunk, end="", flush=True)
         
-        # Conduct the conversation
-        for i, question in enumerate(questions):
-            print(f"\nQuestion {i+1}: {question}")
-            
-            # Add user message to the conversation
-            conversation.append(HumanMessage(content=question))
-            
-            # Get model response
-            print("Response:")
-            print("-" * 50)
-            
-            # Stream the response
-            response_text = ""
-            async for chunk in chat_model.astream_text(conversation):
-                response_text += chunk
-                print(chunk, end="", flush=True)
-            
-            print("\n" + "-" * 50)
-            
-            # Add AI response to conversation history
-            conversation.append(AIMessage(content=response_text))
+        print("\n" + "-" * 50)
         
-        print("\nConversation memory test complete!")
+        # Add AI response to conversation history
+        conversation.append(AIMessage(content=response_text))
+    
+    print("\nConversation memory test complete!")
+
+
+async def test_dynamic_discovery(shared_state: Dict[str, Any]):
+    """Test the new dynamic discovery functions."""
+    print("\n=== Testing Dynamic Discovery Functions ===")
+    
+    # Get all supported models
+    supported_models = get_all_supported_model_ids()
+    print(f"Discovered {len(supported_models)} supported models:")
+    for model_id in sorted(supported_models):
+        print(f"  - {model_id}")
+    
+    # Take the first model as an example
+    if supported_models:
+        example_model = sorted(supported_models)[0]
+        print(f"\nDetails for example model {example_model}:")
         
-    except Exception as e:
-        print(f"Error in conversation memory test: {str(e)}")
+        # Get client class for this model
+        client_class = get_client_class_for_model(example_model)
+        print(f"Client class: {client_class.__name__}")
+        
+        # Get parameter class for this model
+        param_class = get_parameter_class_for_model(example_model)
+        print(f"Parameter class: {param_class.__name__}")
+        
+        # Show parameter values
+        param_instance = param_class()
+        print(f"Default parameter values:")
+        for param_name, param_value in param_instance.dict().items():
+            print(f"  - {param_name}: {param_value}")
+    
+    print("\nDynamic discovery testing complete!")
 
 
 async def main():
@@ -506,7 +551,10 @@ async def main():
         "project_models": project_models
     }
     
-    # Run key examples in a logical sequence
+    # Test our new dynamic discovery functions first
+    await test_dynamic_discovery(shared_state)
+    
+    # Run other examples as before
     await display_project_supported_models(shared_state)
     await test_system_prompt_variants(shared_state)
     await langchain_with_discovery(shared_state)

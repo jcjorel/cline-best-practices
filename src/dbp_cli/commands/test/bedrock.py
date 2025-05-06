@@ -32,12 +32,18 @@
 # codebase:src/dbp/llm/bedrock/langchain_wrapper.py
 # codebase:src/dbp/llm/bedrock/models/claude3.py
 # codebase:src/dbp/llm/bedrock/models/nova.py
+# codebase:src/dbp/llm/bedrock/client_factory.py
 # codebase:src/dbp_cli/commands/base.py
 # codebase:src/dbp_cli/commands/test/bedrock_commands.py
 # system:prompt_toolkit
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-06T16:32:00Z : Applied DRY principle with BedrockClientFactory.get_model_info() by CodeAssistant
+# * Updated _get_available_models to use centralized model info from factory
+# * Updated _get_model_family to use official model metadata
+# * Updated _get_model_constraints to leverage model metadata for token limits
+# * Added dependency on client_factory.py for centralized model information
 # 2025-05-06T12:25:00Z : Removed redundant command handling methods by CodeAssistant
 # * Removed methods duplicated in bedrock_commands.py
 # * Kept only unique methods in main file
@@ -53,11 +59,6 @@
 # * Created _handle_streaming_error for centralized error handling
 # * Simplified code flow with specialized helper methods
 # * Improved readability and maintainability of message processing
-# 2025-05-06T12:01:25Z : Applied command parsing DRY principle by CodeAssistant
-# * Added _parse_config_command method to centralize command parsing logic
-# * Created structured command representation with command types
-# * Separated command parsing from execution logic for cleaner code
-# * Improved extensibility for adding new command types
 ###############################################################################
 
 """
@@ -241,115 +242,88 @@ class BedrockTestCommandHandler:
     def _get_available_models(self):
         """
         [Function intent]
-        Dynamically discover supported Bedrock models using the BedrockClientFactory helper methods.
+        Dynamically discover supported Bedrock models using the BedrockClientFactory.get_model_info() method.
         
         [Design principles]
-        - Use centralized discovery mechanism
-        - Robust error handling for missing modules
+        - Use centralized discovery mechanism with single source of truth
+        - Strict error propagation for debugging
         - Organization by model family
         
         [Implementation details]
-        - Uses BedrockClientFactory helper methods for model discovery
+        - Uses BedrockClientFactory.get_model_info() for complete model metadata
         - Returns dictionary mapping model_id to model information
+        - Propagates errors instead of using fallbacks or degraded modes
         
         Returns:
             dict: Dictionary mapping model_id to model information
+            
+        Raises:
+            ImportError: If BedrockClientFactory module cannot be imported
+            Exception: For any other errors during model processing
         """
         models_dict = {}
         
-        try:
-            # Import the BedrockClientFactory to use its helper methods
-            from dbp.llm.bedrock.client_factory import (
-                get_all_supported_model_ids,
-                get_client_class_for_model,
-                get_parameter_class_for_model
-            )
-            
-            # Get all supported model IDs
-            model_ids = get_all_supported_model_ids()
-            
-            # For each model ID, get its client class and parameter class
-            for model_id in model_ids:
-                try:
-                    client_class = get_client_class_for_model(model_id)
-                    param_class = get_parameter_class_for_model(model_id)
-                    
-                    # Get model family name from client class name
-                    family_name = client_class.__name__.replace('EnhancedChatBedrockConverse', '')
-                    
-                    # Add model to dictionary
-                    models_dict[model_id] = {
-                        'class': client_class,
-                        'module': client_class.__module__,
-                        'family': self._get_model_family(model_id, family_name),
-                        'parameter_class': param_class
-                    }
-                except Exception as e:
-                    self.output.warning(f"Error processing model {model_id}: {str(e)}")
+        # Import the BedrockClientFactory and model info methods
+        from dbp.llm.bedrock.client_factory import (
+            get_all_supported_model_ids,
+            get_model_info
+        )
         
-        except ImportError as e:
-            self.output.warning(f"Could not import BedrockClientFactory module: {str(e)}")
-        except Exception as e:
-            self.output.warning(f"Error discovering models: {str(e)}")
+        # Get all supported model IDs
+        model_ids = get_all_supported_model_ids()
+        
+        # For each model ID, get complete model info
+        for model_id in model_ids:
+            # Get comprehensive model information
+            model_info = get_model_info(model_id)
+            
+            # Create friendly family name with provider
+            family_display = f"{model_info['model_family_friendly_name']} ({model_info['model_provider']})"
+            
+            # Add model to dictionary with standard information
+            models_dict[model_id] = {
+                'class': model_info['client_class'],
+                'module': model_info['client_class'].__module__,
+                'family': family_display,
+                'parameter_class': model_info['parameter_class']
+            }
         
         return models_dict
     
     def _get_model_family(self, model_id, family_name=""):
         """
         [Function intent]
-        Determine the model family based on model ID and class name.
-        Unified method combining previous _determine_model_family and _get_model_family_name functions.
+        Determine the model family based on model ID using the BedrockClientFactory.get_model_info() method.
         
         [Design principles]
-        - Reliable pattern matching
-        - Human-readable family names
-        - Single source of truth for model family identification
+        - Single source of truth for model family names
+        - Strict error propagation for debugging
+        - Consistent naming across the application
         
         [Implementation details]
-        - Uses model ID patterns for identification
-        - Uses class name as fallback hint
-        - Returns consistent family naming across the application
-        - Supports both display names and internal family identifiers
+        - Uses get_model_info() to retrieve official model family information
+        - Returns consistent family naming from model metadata
+        - Does not implement fallback mechanisms to ensure problems are immediately visible
         
         Args:
             model_id: The model ID to determine family for
-            family_name: Optional family name hint from class name
+            family_name: Optional family name hint (for backward compatibility, not used)
             
         Returns:
             str: Human-readable model family name
+            
+        Raises:
+            Exception: If model info cannot be retrieved or model is not supported
         """
-        if not model_id:
-            return "Unknown"
-            
-        model_id_lower = model_id.lower()
         
-        # Claude model detection with version specificity
-        if "claude-3-5" in model_id_lower:
-            return "Claude 3.5 (Anthropic)"
-        elif "claude-3-7" in model_id_lower: 
-            return "Claude 3.7 (Anthropic)"
-        elif "claude-3" in model_id_lower:
-            return "Claude 3 (Anthropic)"
-        elif "claude" in model_id_lower or "anthropic" in model_id_lower or family_name == "Claude":
-            return "Claude (Anthropic)"
-            
-        # Amazon models
-        elif "titan" in model_id_lower:
-            return "Titan (Amazon)"
-        elif "nova" in model_id_lower or family_name == "Nova":
-            return "Nova (Amazon)"
-            
-        # Other common models
-        elif "llama" in model_id_lower or "meta" in model_id_lower:
-            return "Llama (Meta)"
-        elif "falcon" in model_id_lower:
-            return "Falcon (TII)"
-        elif "mistral" in model_id_lower:
-            return "Mistral"
-        elif "cohere" in model_id_lower:
-            return "Cohere"
-        else:
-            return "Other"
+        # Import the model info method from BedrockClientFactory
+        from dbp.llm.bedrock.client_factory import get_model_info
+        
+        # Get model information from the factory - will raise an exception if not supported
+        model_info = get_model_info(model_id)
+        
+        # Return the formatted family name with provider
+        return f"{model_info['model_family_friendly_name']} ({model_info['model_provider']})"
     
     def _prompt_for_model_selection(self):
         """
@@ -687,56 +661,67 @@ class BedrockTestCommandHandler:
     def _get_model_constraints(self, model_id):
         """
         [Function intent]
-        Get model-specific constraints and capabilities for a given model ID.
-        Acts as a centralized source of truth for all model-specific information.
+        Get model-specific constraints and capabilities for a given model ID using
+        BedrockClientFactory.get_model_info() as the single source of truth.
         
         [Design principles]
-        - Centralized constraint management
-        - Single source of truth for model capabilities
-        - DRY implementation for model-specific logic
+        - Centralized constraint management through factory metadata
+        - Consistent naming and identification across the application
+        - Direct error propagation without fallbacks
         
         [Implementation details]
-        - Covers token limits and other model constraints
-        - Organizes constraints by model family
+        - Uses get_model_info() for model family and provider information
+        - Determines token limits based on model family and version
         - Returns a comprehensive constraint dictionary
-        - Uses pattern matching for model identification
+        - Raises exceptions rather than using fallbacks
         
         Args:
             model_id: The model ID to get constraints for
             
         Returns:
             dict: Dictionary containing model constraints and capabilities
+            
+        Raises:
+            Exception: If model info cannot be retrieved or model is not supported
         """
+        # Handle None case with explicit error
         if not model_id:
-            return {"max_tokens": None, "family": "Unknown", "family_short": "Unknown"}
+            raise ValueError("Model ID cannot be None")
         
-        model_id_lower = model_id.lower()
+        # Import the model info method from BedrockClientFactory
+        from dbp.llm.bedrock.client_factory import get_model_info
+        
+        # Get comprehensive model information - will raise exception if model not supported
+        model_info = get_model_info(model_id)
         constraints = {}
         
         # Get family information with full vendor name
-        constraints["family"] = self._get_model_family(model_id)
+        constraints["family"] = f"{model_info['model_family_friendly_name']} ({model_info['model_provider']})"
         
         # Get short family name (without vendor)
-        if " (" in constraints["family"]:
-            constraints["family_short"] = constraints["family"].split(" (")[0]
-        else:
-            constraints["family_short"] = constraints["family"]
+        constraints["family_short"] = model_info['model_family_friendly_name']
         
-        # Token limits by model family
-        if "claude-3-5" in model_id_lower:
-            constraints["max_tokens"] = 8192
-        elif "claude-3-7" in model_id_lower:
-            constraints["max_tokens"] = 64000
-        elif "claude-3" in model_id_lower:
+        # Extract model family and version for token limits
+        model_family = model_info['model_family_friendly_name'].lower()
+        model_version = model_info.get('model_version', '')
+        
+        # Token limits based on model family and version
+        if model_family == "claude":
+            if model_version == "3.5":
+                constraints["max_tokens"] = 8192
+            elif model_version == "3.7":
+                constraints["max_tokens"] = 64000
+            elif model_version.startswith("3"):  # Any Claude 3.x
+                constraints["max_tokens"] = 4096
+            else:  # Other Claude models
+                constraints["max_tokens"] = 4096
+        elif model_family == "nova":
             constraints["max_tokens"] = 4096
-        elif "claude" in model_id_lower:
-            constraints["max_tokens"] = 4096  # Default for other Claude models
-        elif "nova" in model_id_lower:
-            constraints["max_tokens"] = 4096  # Approximate for Nova models
-        elif "titan" in model_id_lower:
-            constraints["max_tokens"] = 4096  # Approximate for Titan models
+        elif model_family == "titan":
+            constraints["max_tokens"] = 4096
         else:
-            constraints["max_tokens"] = None  # Unknown model
+            # For unrecognized models, use default 4096 as a reasonable guess
+            constraints["max_tokens"] = 4096
         
         return constraints
     

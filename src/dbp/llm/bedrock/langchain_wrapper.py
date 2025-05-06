@@ -41,6 +41,12 @@
 # system:langchain_aws.chat_models.bedrock_converse
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-06T13:36:59Z : Updated for dynamic model discovery by CodeAssistant
+# * Added PARAMETER_CLASSES class variable to store associated parameter classes
+# * Added _initialize_parameters method to select parameter class based on model
+# * Added compatibility properties for SUPPORTED_MODELS
+# * Modified init to automatically initialize appropriate parameters
+# * Implemented dynamic discovery of parameters and models
 # 2025-05-05T23:08:00Z : Removed extract_text_from_chunk static method by CodeAssistant
 # * Completely removed the static extract_text_from_chunk method
 # * Now relying exclusively on model-specific _extract_text_from_chunk implementations
@@ -56,14 +62,6 @@
 # * Updated astream, stream_text, and astream_text to use the new hook method
 # * Preserved original extract_text_from_chunk static method for backwards compatibility
 # * Improved separation of concerns for model-specific text extraction
-# 2025-05-05T16:59:08Z : Simplified implementation with KISS principle by CodeAssistant
-# * Applied direct retry logic in stream/astream methods for better readability
-# * Removed complex wrappers and middleware functions
-# * Improved extract_text_from_chunk to handle LangChain objects
-# 2025-05-05T15:25:36Z : Added text extraction and streaming methods by CodeAssistant
-# * Added extract_text_from_chunk method for clean text extraction from any model responses
-# * Implemented stream_text and astream_text methods for text-only streaming
-# * Made text extraction model-agnostic (works with any model, not just Claude)
 ###############################################################################
 
 import asyncio
@@ -71,7 +69,7 @@ import abc
 import logging
 import random
 import time
-from typing import Any, Dict, List, Iterator, AsyncIterator, ClassVar
+from typing import Any, Dict, List, Iterator, AsyncIterator, ClassVar, Type
 
 import botocore.exceptions
 import orjson
@@ -79,7 +77,7 @@ from langchain_aws.chat_models.bedrock_converse import ChatBedrockConverse
 from langchain_core.language_models.chat_models import BaseMessage
 from langchain_core.messages import AIMessageChunk
 
-from ..common.exceptions import ClientError, InvocationError, LLMError, ModelNotAvailableError, StreamingError
+from ..common.exceptions import ClientError, InvocationError, LLMError, ModelNotAvailableError, StreamingError, UnsupportedModelError
 
 
 class EnhancedChatBedrockConverse(ChatBedrockConverse, abc.ABC):
@@ -93,37 +91,75 @@ class EnhancedChatBedrockConverse(ChatBedrockConverse, abc.ABC):
     - Direct method overrides with clear retry logic
     - Unified error classification for consistency
     - Model-agnostic text extraction
+    - Dynamic parameter class selection based on model ID
     
     [Implementation details]
     - Directly overrides key methods with retry logic
     - Maintains full compatibility with LangChain API
     - Handles both sync and async methods consistently
     - Provides specialized text-only streaming methods
+    - Associates parameter classes with model implementations
     """
+    
+    # Abstract class properties that must be defined by concrete model classes
+    model_provider: ClassVar[str] = abc.abstractproperty()
+    model_family_friendly_name: ClassVar[str] = abc.abstractproperty()
 
     # Default retry configuration
     DEFAULT_MAX_RETRIES: ClassVar[int] = 7
     DEFAULT_BASE_DELAY: ClassVar[float] = 10.0
     DEFAULT_MAX_DELAY: ClassVar[float] = 120.0
     
+    # Class variable to store associated parameter classes
+    PARAMETER_CLASSES: ClassVar[List[Type]] = []  # Base class has empty list, subclasses will override
+    
+    @classmethod
+    def get_minor_version(cls, model_id: str) -> str:
+        """
+        [Method intent]
+        Extract the minor version string from a model ID (text after the ":" character).
+        
+        [Design principles]
+        - Simple version extraction
+        - Handle cases where no minor version exists
+        
+        [Implementation details]
+        - Splits model_id on ":" character
+        - Returns the part after ":" or empty string if no colon exists
+        
+        Args:
+            model_id: The full model ID string
+            
+        Returns:
+            str: Minor version string (part after colon) or empty string
+        """
+        if ":" in model_id:
+            return model_id.split(":", 1)[1]
+        return ""
+    
     def __init__(
         self,
+        model: str,
         **kwargs
     ):
         """
         [Method intent]
-        Initialize the enhanced ChatBedrockConverse with retry configuration.
+        Initialize the enhanced ChatBedrockConverse with retry configuration
+        and appropriate parameter instance.
         
         [Design principles]
         - Full compatibility with parent class
         - Simple parameter configuration
+        - Automatic parameter class selection
         
         [Implementation details]
         - Extracts and stores our custom parameters before passing the rest to parent
         - Sets up retry configuration as class attributes
         - Configures logging
+        - Initializes appropriate parameter class based on the model ID
         
         Args:
+            model: Model ID for initialization
             **kwargs: All arguments for ChatBedrockConverse
         """
         # Extract our custom parameters from kwargs
@@ -132,9 +168,13 @@ class EnhancedChatBedrockConverse(ChatBedrockConverse, abc.ABC):
         base_delay = kwargs.pop('base_delay', self.DEFAULT_BASE_DELAY)
         max_delay = kwargs.pop('max_delay', self.DEFAULT_MAX_DELAY)
         logger = kwargs.pop('logger', logging.getLogger(__name__))
-                
+        
+        # Store model ID for parameter initialization using object.__setattr__ to bypass Pydantic validation
+        object.__setattr__(self, "model_id", model)
+        object.__setattr__(self, "parameters", None)  # Will be instantiated with appropriate parameter class
+        
         # Initialize the parent class with cleaned kwargs
-        super().__init__(**kwargs)
+        super().__init__(model=model, **kwargs)
         
         # Ensure the logger level is at least WARNING
         if logger.level < logging.WARNING or logger.level == 0:
@@ -146,6 +186,68 @@ class EnhancedChatBedrockConverse(ChatBedrockConverse, abc.ABC):
         object.__setattr__(self, "base_delay", base_delay)
         object.__setattr__(self, "max_delay", max_delay)
         object.__setattr__(self, "logger", logger)
+        
+        # Initialize parameters based on model ID
+        self._initialize_parameters(model, **kwargs)
+    
+    def _initialize_parameters(self, model_id: str, **kwargs):
+        """
+        [Method intent]
+        Initialize the appropriate parameter class instance based on model_id.
+        
+        [Design principles]
+        - Automatic parameter class selection
+        - Model ID validation
+        - Initialization with appropriate parameters
+        - Support for inference profile ARNs
+        
+        [Implementation details]
+        - Extracts base model ID from inference profile ARN if needed
+        - Searches through all parameter classes for matching model ID
+        - Creates instance of matching parameter class
+        - Raises clear exception if no match is found
+        
+        Args:
+            model_id (str): The model ID or inference profile ARN to find parameters for
+            **kwargs: Parameters to initialize the parameter class
+            
+        Raises:
+            UnsupportedModelError: If no parameter class supports the model ID
+        """
+        # Extract base model ID from inference profile ARN if necessary
+        base_model_id = model_id
+        if model_id.startswith("arn:aws:bedrock:") and "inference-profile" in model_id:
+            # Extract model ID from ARN: arn:aws:bedrock:region:account:inference-profile/REGION.PROVIDER.MODEL_ID
+            parts = model_id.split("/")
+            if len(parts) > 1:
+                # The model ID part is after the last "/"
+                extracted_id = parts[-1]
+                # Handle region prefix like 'eu.amazon.nova-lite-v1:0' -> 'amazon.nova-lite-v1:0'
+                if '.' in extracted_id:
+                    # Split by '.' and skip the first part (region code)
+                    id_parts = extracted_id.split('.')
+                    if len(id_parts) > 1:
+                        base_model_id = '.'.join(id_parts[1:])  # Skip the region part
+                else:
+                    base_model_id = extracted_id
+        
+        for param_class in self.PARAMETER_CLASSES:
+            if hasattr(param_class, 'Config') and hasattr(param_class.Config, 'supported_models'):
+                # First, try exact match with the base ID
+                if base_model_id in param_class.Config.supported_models:
+                    object.__setattr__(self, "parameters", param_class(**kwargs))
+                    return
+                
+                # Or check for model ID prefix match (for versioned models)
+                base_model_prefix = base_model_id.split(':')[0]
+                for supported_id in param_class.Config.supported_models:
+                    supported_base = supported_id.split(':')[0]
+                    if base_model_prefix == supported_base:
+                        object.__setattr__(self, "parameters", param_class(**kwargs))
+                        return
+                
+        # If no matching parameter class is found, raise an exception
+        raise UnsupportedModelError(f"No parameter class supports model ID: {model_id}")
                     
     def _classify_bedrock_error(self, error: botocore.exceptions.ClientError) -> Exception:
         """
@@ -436,3 +538,23 @@ class EnhancedChatBedrockConverse(ChatBedrockConverse, abc.ABC):
             clean_text = self._extract_text_from_chunk(content)
             if clean_text:
                 yield clean_text
+                
+    # Compatibility properties and methods
+    
+    @property
+    def SUPPORTED_MODELS(self):
+        """Legacy property for backward compatibility"""
+        all_models = []
+        for param_class in self.PARAMETER_CLASSES:
+            if hasattr(param_class, 'Config') and hasattr(param_class.Config, 'supported_models'):
+                all_models.extend(param_class.Config.supported_models)
+        return all_models
+
+    @classmethod
+    def get_supported_models(cls):
+        """Legacy method for backward compatibility"""
+        all_models = []
+        for param_class in cls.PARAMETER_CLASSES:
+            if hasattr(param_class, 'Config') and hasattr(param_class.Config, 'supported_models'):
+                all_models.extend(param_class.Config.supported_models)
+        return all_models

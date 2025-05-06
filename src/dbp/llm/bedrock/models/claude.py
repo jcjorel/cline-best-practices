@@ -74,6 +74,71 @@ class ClaudeParameters(ModelParameters, ABC):
     - Default profiles for base Claude functionality
     - Uses parent class get_model_id_constraint that references Config.supported_models
     """
+    
+    @classmethod
+    def get_model_version(cls, model_id: str) -> str:
+        """
+        [Method intent]
+        Extract Claude version (e.g., 3.0, 3.5, 3.7) from model ID.
+        
+        [Design principles]
+        - Claude-specific version parsing
+        - Format standardization 
+        - Handle diverse Claude model ID formats
+        
+        [Implementation details]
+        - Parses Claude model ID format to extract version
+        - Returns standardized version string
+        - Falls back to version detection by key segments in model ID
+        
+        Args:
+            model_id: The model ID to extract version from
+            
+        Returns:
+            str: Version string (e.g., "3.0", "3.5", "3.7")
+        """
+        # Claude models follow pattern: anthropic.claude-<version>-<variant>-<date>-<model_rev>:<minor>
+        if "claude-3-5" in model_id:
+            return "3.5"
+        elif "claude-3-7" in model_id:
+            return "3.7"
+        elif "claude-3" in model_id:
+            return "3.0"
+        elif "claude-2" in model_id:
+            return "2.0"
+        elif "claude-instant" in model_id:
+            return "1.0"
+        return "Unknown"
+    
+    @classmethod
+    def get_model_variant(cls, model_id: str) -> str:
+        """
+        [Method intent]
+        Extract Claude variant (e.g., "Sonnet", "Haiku", "Opus") from model ID.
+        
+        [Design principles]
+        - Claude-specific variant parsing
+        - Proper capitalization
+        - Handle diverse Claude model ID formats
+        
+        [Implementation details]
+        - Parses Claude model ID format to extract variant
+        - Returns standardized variant string with proper capitalization
+        - Falls back to "Unknown" if variant can't be determined
+        
+        Args:
+            model_id: The model ID to extract variant from
+            
+        Returns:
+            str: Variant string (e.g., "Sonnet", "Haiku", "Opus")
+        """
+        if "sonnet" in model_id.lower():
+            return "Sonnet"
+        elif "haiku" in model_id.lower():
+            return "Haiku"
+        elif "opus" in model_id.lower():
+            return "Opus"
+        return "Unknown"
 
     # Claude-specific parameters with official AWS constraints
     temperature: float = Field(
