@@ -37,6 +37,11 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-06T12:20:45Z : Separated command handling into dedicated file by CodeAssistant
+# * Created BedrockCommandHandler class for command management
+# * Moved special command processing logic to dedicated handler
+# * Implemented state synchronization via callback system
+# * Enhanced modularity through clear separation of concerns
 # 2025-05-06T12:04:30Z : Applied message handling DRY principle by CodeAssistant  
 # * Added _format_chat_messages method for consistent message formatting
 # * Created _handle_streaming_error for centralized error handling
@@ -70,7 +75,7 @@ import inspect
 import logging
 import sys
 import traceback
-from typing import Dict, List, Any, Optional, Tuple, Type
+from typing import Dict, List, Any, Optional, Tuple, Type, Callable
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import InMemoryHistory
@@ -81,6 +86,9 @@ from prompt_toolkit.validation import Validator, ValidationError
 from src.dbp.llm.bedrock.langchain_wrapper import EnhancedChatBedrockConverse
 from src.dbp.llm.bedrock.model_parameters import ModelParameters
 from src.dbp.config.config_manager import ConfigurationManager
+
+# Import command handler
+from .bedrock_commands import BedrockCommandHandler
 
 
 class BedrockTestCommandHandler:
@@ -153,6 +161,7 @@ class BedrockTestCommandHandler:
         self.chat_history = []
         self.model_parameters = {}
         self.current_model_id = None  # Store current model ID for recreating parameter models
+        self.command_handler = None  # Will be initialized after model_param_model is ready
     
     def execute(self, args):
         """
@@ -423,6 +432,7 @@ class BedrockTestCommandHandler:
         - Gets AWS credentials from config manager
         - Uses the model class from discovery
         - Uses ModelParameters for model-specific parameter constraints
+        - Initializes command handler for special command processing
         
         Args:
             model_id: ID of the model to initialize
@@ -472,6 +482,20 @@ class BedrockTestCommandHandler:
         # Test the client initialization
         if self.model_client is None:
             raise ValueError(f"Failed to initialize client for model: {model_id}")
+            
+        # Initialize the command handler
+        self.command_handler = BedrockCommandHandler(
+            output_formatter=self.output,
+            model_param_model=self.model_param_model,
+            current_model_id=self.current_model_id,
+            get_model_constraints_fn=self._get_model_constraints,
+            chat_history=self.chat_history,
+            state_callbacks={
+                "on_history_clear": lambda: setattr(self, "chat_history", []),
+                "on_apply_profile": self._on_apply_profile,
+                "on_parameter_change": lambda param, value: None  # No-op for now
+            }
+        )
 
     def _run_interactive_chat(self):
         """
@@ -518,16 +542,16 @@ class BedrockTestCommandHandler:
 
                 # Check if this is a special command
                 if user_input.startswith("/"):
-                    # Process special commands and get action result
-                    command_result = self._process_special_command(user_input)
+                    # Process special commands using the dedicated handler
+                    command_result = self.command_handler.process_command(user_input)
                     
                     # Handle command result
-                    if command_result == "exit":
+                    if command_result == BedrockCommandHandler.RESULT_EXIT:
                         break  # Exit loop and end chat
-                    elif command_result == "continue":
+                    elif command_result == BedrockCommandHandler.RESULT_CONTINUE:
                         continue  # Skip to next iteration
                     # command_result == "normal" means process as normal message
-                    elif command_result == "normal":
+                    elif command_result == BedrockCommandHandler.RESULT_NORMAL:
                         pass
                     else:
                         # Unknown result, treat as normal message
@@ -1269,6 +1293,33 @@ class BedrockTestCommandHandler:
             
         # Unknown command - should be treated as normal message
         return "normal"
+    
+    def _on_apply_profile(self, profile_name):
+        """
+        [Function intent]
+        Apply a parameter profile and update related state.
+        
+        [Design principles]
+        - Clean state synchronization
+        - Proper model recreation
+        - Consistent parameter handling
+        
+        [Implementation details]
+        - Creates a fresh parameter model with the specified profile
+        - Synchronizes state across main handler and command handler
+        - Called as callback from the command handler
+        
+        Args:
+            profile_name: Name of the profile to apply
+        """
+        # Create a fresh model with just the profile settings
+        if self.current_model_id:
+            self.model_param_model = ModelParameters.for_model(self.current_model_id)
+            self.model_param_model._apply_profile(profile_name)
+            
+            # Update the command handler's reference to the new model parameters
+            if self.command_handler:
+                self.command_handler.update_model_param_model(self.model_param_model)
     
     def _get_multiline_input(self, session):
         """
