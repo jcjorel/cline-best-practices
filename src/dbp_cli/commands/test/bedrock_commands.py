@@ -34,6 +34,11 @@
 # system:logging
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-06T22:10:00Z : Enhanced command registry for auto-completion support by CodeAssistant
+# * Updated command registry with rich metadata for completion
+# * Added methods to support command completion
+# * Added parameter value provider methods
+# * Added version-agnostic field type utilities
 # 2025-05-06T19:47:00Z : Simplified parameter validation by leveraging pydantic capabilities by CodeAssistant
 # * Removed _extract_field_constraints() and _validate_constraints() methods
 # * Directly used model_param_model.validate_config() for parameter validation
@@ -111,15 +116,60 @@ class BedrockCommandHandler:
         self.chat_history = chat_history or []
         self.state_callbacks = state_callbacks or {}
         
-        # Command registry - maps command prefixes to handler methods
+        # Enhanced command registry - maps command prefixes to handler metadata
         self.command_registry = {
-            "/help": self.cmd_help,
-            "/exit": self.cmd_exit,
-            "/quit": self.cmd_exit,
-            "/clear": self.cmd_clear,
-            "/config": self.cmd_config
+            "/help": {
+                "handler": self.cmd_help,
+                "help": "Show available commands and usage",
+                "parameters": {}
+            },
+            "/exit": {
+                "handler": self.cmd_exit,
+                "help": "Exit the chat session",
+                "parameters": {}
+            },
+            "/quit": {
+                "handler": self.cmd_exit,
+                "help": "Exit the chat session (alias for /exit)",
+                "parameters": {}
+            },
+            "/clear": {
+                "handler": self.cmd_clear,
+                "help": "Clear chat history",
+                "parameters": {}
+            },
+            "/config": {
+                "handler": self.cmd_config,
+                "help": "Show or change model parameters",
+                "parameters": {
+                    "profile": {
+                        "help": "Apply a parameter profile",
+                        "values": lambda: list(self.model_param_model._profiles.keys()),
+                        "completion_hint": "<profile_name>"
+                    }
+                    # Parameter name completion handled dynamically
+                }
+            }
         }
     
+    def get_command_registry(self):
+        """
+        [Function intent]
+        Get the command registry for auto-completion.
+        
+        [Design principles]
+        - Simple accessor for command registry
+        - Supports external command completer
+        
+        [Implementation details]
+        - Returns the command registry dictionary
+        - Used by the CommandCompleter
+        
+        Returns:
+            dict: The command registry
+        """
+        return self.command_registry
+        
     def process_command(self, command_text):
         """
         [Function intent]
@@ -131,6 +181,7 @@ class BedrockCommandHandler:
         - Clear error handling
         
         [Implementation details]
+        - Enhanced to work with the new registry structure
         - Finds matching command prefix
         - Delegates to appropriate handler
         - Handles missing commands gracefully
@@ -150,7 +201,8 @@ class BedrockCommandHandler:
         
         # Execute the appropriate command handler if found
         if matching_prefix:
-            handler = self.command_registry[matching_prefix]
+            cmd_info = self.command_registry[matching_prefix]
+            handler = cmd_info["handler"]
             # Pass the remainder of the command (after the prefix) to the handler
             return handler(command_text[len(matching_prefix):].strip())
             
@@ -598,6 +650,98 @@ class BedrockCommandHandler:
             pass
             
         return desc
+    
+    def get_parameter_values(self, param_name):
+        """
+        [Function intent]
+        Get possible values for a parameter based on context.
+        
+        [Design principles]
+        - Type-aware value generation
+        - Support for different parameter types
+        - Extensible for new parameter types
+        
+        [Implementation details]
+        - Handles different parameter types
+        - Returns appropriate values for each parameter type
+        - Supports dynamic values based on current state
+        
+        Args:
+            param_name: The parameter name to get values for
+            
+        Returns:
+            list: Possible values for the parameter
+        """
+        if param_name == 'profile':
+            return list(self.model_param_model._profiles.keys())
+        elif param_name in self.model_param_model.__fields__:
+            field = self.model_param_model.__fields__[param_name]
+            
+            # Handle enum types
+            if self._is_enum_field(field):
+                return self._get_enum_values(field)
+                
+            # Handle boolean parameters
+            elif self._get_field_type(field) is bool:
+                return ['True', 'False']
+                
+        return []
+    
+    def _is_enum_field(self, field):
+        """
+        [Function intent]
+        Check if a field is an enum type.
+        
+        [Design principles]
+        - Compatible with different Pydantic versions
+        - Robust detection of enum types
+        
+        [Implementation details]
+        - Inspects field type metadata
+        - Works with both Pydantic v1 and v2
+        
+        Args:
+            field: The field to check
+            
+        Returns:
+            bool: True if the field is an enum type
+        """
+        # Logic to detect enum types in Pydantic fields
+        field_type = self._get_field_type(field)
+        
+        # Check for enum types in different ways
+        if hasattr(field_type, '__members__'):
+            return True
+            
+        # Additional enum detection logic
+        return False
+    
+    def _get_enum_values(self, field):
+        """
+        [Function intent]
+        Get possible values for an enum field.
+        
+        [Design principles]
+        - Compatible with different Pydantic versions
+        - Extract values in a consistent format
+        
+        [Implementation details]
+        - Extracts enum values from field metadata
+        - Works with both Pydantic v1 and v2
+        
+        Args:
+            field: The enum field to get values for
+            
+        Returns:
+            list: Enum values as strings
+        """
+        field_type = self._get_field_type(field)
+        
+        # Extract enum values
+        if hasattr(field_type, '__members__'):
+            return list(field_type.__members__.keys())
+            
+        return []
     
     def _get_field_type(self, field, current_value=None):
         """

@@ -35,6 +35,7 @@
 # codebase:src/dbp/llm/bedrock/client_factory.py
 # codebase:src/dbp_cli/commands/base.py
 # codebase:src/dbp_cli/commands/test/bedrock_commands.py
+# codebase:src/dbp_cli/commands/test/command_completion.py
 # system:prompt_toolkit
 # system:asyncio
 ###############################################################################
@@ -89,8 +90,9 @@ from dbp.llm.bedrock.langchain_wrapper import EnhancedChatBedrockConverse
 from dbp.llm.bedrock.model_parameters import ModelParameters
 from dbp.config.config_manager import ConfigurationManager
 
-# Import command handler
+# Import command handler and completer
 from .bedrock_commands import BedrockCommandHandler
+from .command_completion import CommandCompleter
 
 
 class BedrockTestCommandHandler:
@@ -536,6 +538,7 @@ class BedrockTestCommandHandler:
         - Clear error handling
         
         [Implementation details]
+        - Enhanced with command completion support
         - Uses prompt_toolkit for enhanced input experience
         - Displays streaming responses in real time
         - Maintains chat history for context
@@ -544,9 +547,13 @@ class BedrockTestCommandHandler:
         Returns:
             int: Exit code (0 for success, non-zero for error)
         """
-        # Create prompt session
+        # Create prompt session with command completion
         history = InMemoryHistory()
-        session = PromptSession(history=history)
+        command_completer = CommandCompleter(self.command_handler)
+        session = PromptSession(
+            history=history,
+            completer=command_completer
+        )
         
         # Define styling
         style = Style.from_dict({
@@ -556,11 +563,12 @@ class BedrockTestCommandHandler:
         
         # Display welcome message
         self.output.print(f"\nInteractive chat mode with {self.model_client.model_id}")
-        self.output.print("Type '/exit' to quit, '/help' for available commands\n")
+        self.output.print("Type '/exit' to quit, '/help' for available commands")
+        self.output.print("Use Tab for command and parameter auto-completion\n")
         
         while True:
             try:
-                # Get user input
+                # Get user input with enhanced completion
                 user_input = session.prompt("User > ", style=style)
                 
                 # Skip empty inputs
