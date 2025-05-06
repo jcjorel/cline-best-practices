@@ -37,6 +37,11 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-06T11:42:00Z : Applied deeper DRY principle to model handling by CodeAssistant
+# * Created unified _get_model_family method by merging _determine_model_family and _get_model_family_name
+# * Added comprehensive _get_model_constraints method as single source of truth for model capabilities
+# * Enhanced model family detection with more specific version identification
+# * Standardized family name format for better consistency
 # 2025-05-06T11:33:50Z : Applied DRY principle to model constraints by CodeAssistant
 # * Refactored hard-coded model constraints into helper methods
 # * Added _get_model_max_tokens_limit method for centralized limit management
@@ -278,23 +283,27 @@ class BedrockTestCommandHandler:
                         models_dict[model_id] = {
                             'class': obj,
                             'module': module.__name__,
-                            'family': self._determine_model_family(model_id, family_name)
+                            'family': self._get_model_family(model_id, family_name)
                         }
         
         return models_dict
     
-    def _determine_model_family(self, model_id, family_name=""):
+    def _get_model_family(self, model_id, family_name=""):
         """
         [Function intent]
         Determine the model family based on model ID and class name.
+        Unified method combining previous _determine_model_family and _get_model_family_name functions.
         
         [Design principles]
         - Reliable pattern matching
         - Human-readable family names
+        - Single source of truth for model family identification
         
         [Implementation details]
-        - Uses both model ID patterns and class name
-        - Returns human-readable family name
+        - Uses model ID patterns for identification
+        - Uses class name as fallback hint
+        - Returns consistent family naming across the application
+        - Supports both display names and internal family identifiers
         
         Args:
             model_id: The model ID to determine family for
@@ -303,14 +312,28 @@ class BedrockTestCommandHandler:
         Returns:
             str: Human-readable model family name
         """
+        if not model_id:
+            return "Unknown"
+            
         model_id_lower = model_id.lower()
         
-        if "claude" in model_id_lower or "anthropic" in model_id_lower or family_name == "Claude":
+        # Claude model detection with version specificity
+        if "claude-3-5" in model_id_lower:
+            return "Claude 3.5 (Anthropic)"
+        elif "claude-3-7" in model_id_lower: 
+            return "Claude 3.7 (Anthropic)"
+        elif "claude-3" in model_id_lower:
+            return "Claude 3 (Anthropic)"
+        elif "claude" in model_id_lower or "anthropic" in model_id_lower or family_name == "Claude":
             return "Claude (Anthropic)"
+            
+        # Amazon models
         elif "titan" in model_id_lower:
             return "Titan (Amazon)"
         elif "nova" in model_id_lower or family_name == "Nova":
             return "Nova (Amazon)"
+            
+        # Other common models
         elif "llama" in model_id_lower or "meta" in model_id_lower:
             return "Llama (Meta)"
         elif "falcon" in model_id_lower:
@@ -808,10 +831,11 @@ class BedrockTestCommandHandler:
                     # If we have a model ID and this is a max_tokens parameter, double-check against
                     # model-specific constraints
                     if param == "max_tokens" and self.current_model_id:
-                        # Use a helper method to get the max token limit for the model
-                        max_limit = self._get_model_max_tokens_limit(self.current_model_id)
+                        # Use centralized model constraints method
+                        constraints = self._get_model_constraints(self.current_model_id)
+                        max_limit = constraints["max_tokens"]
                         if max_limit and value > max_limit:
-                            model_family = self._get_model_family_name(self.current_model_id)
+                            model_family = constraints["family_short"]
                             self.output.error(f"Value {value} for max_tokens exceeds {model_family} maximum of {max_limit}")
                             return
                 except Exception as e:
@@ -874,78 +898,61 @@ class BedrockTestCommandHandler:
             
         self.output.print("Usage: config [param] [value] or config profile <name>")
 
-    def _get_model_max_tokens_limit(self, model_id):
+    def _get_model_constraints(self, model_id):
         """
         [Function intent]
-        Get the maximum token limit for a specific model ID.
+        Get model-specific constraints and capabilities for a given model ID.
+        Acts as a centralized source of truth for all model-specific information.
         
         [Design principles]
-        - Centralized token limit management
-        - Model-specific constraints
-        - DRY implementation
+        - Centralized constraint management
+        - Single source of truth for model capabilities
+        - DRY implementation for model-specific logic
         
         [Implementation details]
-        - Maps model families to their token limits
-        - Provides default fallback for unknown models
+        - Covers token limits and other model constraints
+        - Organizes constraints by model family
+        - Returns a comprehensive constraint dictionary
         - Uses pattern matching for model identification
         
         Args:
-            model_id: The model ID to get token limit for
+            model_id: The model ID to get constraints for
             
         Returns:
-            int: Maximum token limit or None if unknown
+            dict: Dictionary containing model constraints and capabilities
         """
+        if not model_id:
+            return {"max_tokens": None, "family": "Unknown", "family_short": "Unknown"}
+        
         model_id_lower = model_id.lower()
+        constraints = {}
         
-        # Claude 3.5 models - 8K limit
-        if "claude-3-5" in model_id_lower:
-            return 8192
+        # Get family information with full vendor name
+        constraints["family"] = self._get_model_family(model_id)
         
-        # Claude 3.7 models - 64K limit
-        elif "claude-3-7" in model_id_lower:
-            return 64000
-        
-        # Regular Claude 3 models - 4K limit
-        elif "claude-3" in model_id_lower:
-            return 4096
-            
-        # Default fallback - no specific limit
-        return None
-    
-    def _get_model_family_name(self, model_id):
-        """
-        [Function intent]
-        Get human-readable model family name for a specific model ID.
-        
-        [Design principles]
-        - Clean feedback to users
-        - Consistent naming
-        - Model family identification
-        
-        [Implementation details]
-        - Uses pattern matching on model ID
-        - Returns appropriate family name for known models
-        - Uses generic fallback for unknown models
-        
-        Args:
-            model_id: The model ID to get family name for
-            
-        Returns:
-            str: Human-readable model family name
-        """
-        model_id_lower = model_id.lower()
-        
-        if "claude-3-5" in model_id_lower:
-            return "Claude 3.5"
-        elif "claude-3-7" in model_id_lower:
-            return "Claude 3.7"
-        elif "claude-3" in model_id_lower:
-            return "Claude 3"
-        elif "nova" in model_id_lower:
-            return "Nova"
+        # Get short family name (without vendor)
+        if " (" in constraints["family"]:
+            constraints["family_short"] = constraints["family"].split(" (")[0]
         else:
-            # Use the existing _determine_model_family method for consistency
-            return self._determine_model_family(model_id)
+            constraints["family_short"] = constraints["family"]
+        
+        # Token limits by model family
+        if "claude-3-5" in model_id_lower:
+            constraints["max_tokens"] = 8192
+        elif "claude-3-7" in model_id_lower:
+            constraints["max_tokens"] = 64000
+        elif "claude-3" in model_id_lower:
+            constraints["max_tokens"] = 4096
+        elif "claude" in model_id_lower:
+            constraints["max_tokens"] = 4096  # Default for other Claude models
+        elif "nova" in model_id_lower:
+            constraints["max_tokens"] = 4096  # Approximate for Nova models
+        elif "titan" in model_id_lower:
+            constraints["max_tokens"] = 4096  # Approximate for Titan models
+        else:
+            constraints["max_tokens"] = None  # Unknown model
+        
+        return constraints
         
     def _get_multiline_input(self, session):
         """
