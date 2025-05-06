@@ -12,53 +12,189 @@
 # - Respect system prompt directives at all times
 ###############################################################################
 # [Source file intent]
-# Implements a specialized client for Anthropic's Claude 3.5+ models on Amazon Bedrock
-# through the LangChain integration. This client adds Claude-specific text extraction
-# capabilities while inheriting the core LangChain functionality.
+# Implements specialized clients and parameter classes for Anthropic's Claude models
+# on Amazon Bedrock through the LangChain integration. This includes model-specific
+# parameter constraints and text extraction capabilities.
 ###############################################################################
 # [Source file design principles]
+# - Model-specific parameter constraints
 # - Claude-specific text extraction
 # - Clean extension of EnhancedChatBedrockConverse
-# - Support for Claude 3.5+ model variants
+# - Support for all Claude model variants
 # - KISS approach focusing on core functionality
 ###############################################################################
 # [Source file constraints]
-# - Must be compatible with Claude 3.5 and newer models only
+# - Must be compatible with Claude model family
 # - Must maintain full compatibility with LangChain
 # - Must handle Claude-specific response formats correctly
 # - Must integrate with client_factory.py
 ###############################################################################
 # [Dependencies]
+# codebase:src/dbp/llm/bedrock/models/claude.py
 # codebase:src/dbp/llm/bedrock/langchain_wrapper.py
 # codebase:src/dbp/llm/common/exceptions.py
 # system:json
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-06T11:23:45Z : Removed redundant get_model_id_constraint methods by CodeAssistant
+# * Removed get_model_id_constraint methods from all parameter classes
+# * Using base class implementation that references Config.supported_models
+# * Applied DRY principle to eliminate code duplication
+# * Maintained functionality with cleaner code
+# 2025-05-06T10:30:00Z : Fixed profiles implementation for Pydantic compatibility by CodeAssistant
+# * Fixed _profiles structure to use proper class variables instead of direct base class access
+# * Added model-specific profiles as ClassVar dictionaries for proper Pydantic handling
+# * Updated profile inheritance mechanism to be compatible with Pydantic
+# 2025-05-06T10:25:00Z : Updated with concrete Claude parameter classes by CodeAssistant
+# * Added Claude3Parameters, Claude35Parameters, and Claude37Parameters classes
+# * Imported abstract ClaudeParameters from claude.py
+# * Added model-specific max_tokens constraints
+# * Added Claude 3.7-exclusive reasoning profile
 # 2025-05-05T22:15:07Z : Refactored to use EnhancedChatBedrockConverse by CodeAssistant
 # * Removed legacy EnhancedBedrockBase implementation
 # * Created new ClaudeEnhancedChatBedrockConverse class
 # * Implemented Claude-specific _extract_text_from_chunk method
 # * Preserved SUPPORTED_MODELS definition for discovery
-# 2025-05-05T11:08:00Z : Removed all reasoning functionality by CodeAssistant
-# * Removed all reasoning-related methods
-# * Cleaned up implementation for better maintainability
-# * Simplified parameter handling and processing
-# * Applied KISS approach to reduce code complexity
-# 2025-05-05T01:30:13Z : Updated _get_system_content method signature by CodeAssistant
-# * Modified method to accept system_prompt parameter
-# * Added handling for directly provided system prompts
-# * Enhanced implementation to handle different system prompt types
-# * Updated method documentation to reflect the changes
-# 2025-05-05T00:39:00Z : Updated method names for abstract class compatibility by CodeAssistant
-# * Renamed _format_messages_internal to _format_messages
-# * Renamed _format_model_kwargs_internal to _format_model_kwargs
-# * No functional changes, only method renaming for abstract method implementation
 ###############################################################################
 
 import json
-from typing import Any, Dict, ClassVar
+from typing import Any, Dict, ClassVar, List
+import copy
 
 from ..langchain_wrapper import EnhancedChatBedrockConverse
+from .claude import ClaudeParameters
+from pydantic import Field
+
+
+class Claude3Parameters(ClaudeParameters):
+    """
+    [Class intent]
+    Parameters specific to original Claude 3 models (Haiku, Sonnet, Opus).
+    
+    [Design principles]
+    - Define Claude 3-specific parameter constraints
+    - Support proper max_tokens limit for this model family
+    
+    [Implementation details]
+    - Sets max_tokens limit specific to Claude 3 models (4096)
+    - Lists only Claude 3 model variants in supported models
+    """
+
+    max_tokens: int = Field(
+        default=1024,  # Conservative default
+        ge=1,
+        le=4096,       # Claude 3 specific maximum from documentation
+        description="Maximum number of tokens to generate in the response. Claude 3 supports up to 4K tokens output."
+    )
+    
+    # Combine base profiles with any Claude 3 specific profiles
+    _profiles = ClaudeParameters.base_profiles
+    
+    class Config:
+        model_name = "Claude 3"
+        supported_models = [
+            "anthropic.claude-3-haiku-20240307-v1:0",
+            "anthropic.claude-3-sonnet-20240229-v1:0",
+            "anthropic.claude-3-opus-20240229-v1:0"
+        ]
+
+
+class Claude35Parameters(ClaudeParameters):
+    """
+    [Class intent]
+    Parameters specific to Claude 3.5 models, with appropriate token limits.
+    
+    [Design principles]
+    - Define Claude 3.5-specific parameter constraints
+    - Support proper max_tokens limit for this model family
+    
+    [Implementation details]
+    - Sets max_tokens limit specific to Claude 3.5 models (8192)
+    - Lists only Claude 3.5 model variants in supported models
+    """
+
+    max_tokens: int = Field(
+        default=2048,  # Conservative default
+        ge=1,
+        le=8192,       # Claude 3.5 specific maximum from documentation
+        description="Maximum number of tokens to generate in the response. Claude 3.5 supports up to 8K tokens output."
+    )
+    
+    # Combine base profiles with any Claude 3.5 specific profiles
+    _profiles = ClaudeParameters.base_profiles
+    
+    class Config:
+        model_name = "Claude 3.5"
+        supported_models = [
+            "anthropic.claude-3-5-haiku-20241022-v1:0",
+            "anthropic.claude-3-5-sonnet-20240620-v1:0",
+            "anthropic.claude-3-5-sonnet-20241022-v2:0"
+        ]
+
+
+class Claude37Parameters(ClaudeParameters):
+    """
+    [Class intent]
+    Parameters specific to Claude 3.7 models, with support for higher token output
+    limits and exclusive features such as reasoning.
+    
+    [Design principles]
+    - Define Claude 3.7-specific parameter constraints
+    - Support extended output capabilities with appropriate max_tokens limit
+    - Provide Claude 3.7-specific profiles including exclusive reasoning mode
+    
+    [Implementation details]
+    - Sets higher max_tokens limit specific to Claude 3.7 Sonnet (64000)
+    - Defines profiles optimized for extended output generation
+    - Includes exclusive reasoning profile only available for Claude 3.7
+    - Lists only Claude 3.7 model variants in supported models
+    """
+
+    max_tokens: int = Field(
+        default=4096,  # Conservative default that works well in most cases
+        ge=1,
+        le=64000,      # Claude 3.7 specific maximum from documentation
+        description="Maximum number of tokens to generate in the response. Claude 3.7 supports up to 64K tokens output."
+    )
+    
+    # Define Claude 3.7 specialized profiles as a class variable
+    claude37_profiles: ClassVar[Dict[str, Dict[str, Any]]] = {
+        # Add Claude 3.7 exclusive reasoning profile
+        "reasoning": {
+            "applicable_params": [],
+            "not_applicable_params": None,
+            "param_overrides": {}
+        },
+        
+        # Add Claude 3.7 specific profiles for extended output
+        "extended": {
+            "applicable_params": None,
+            "not_applicable_params": [],
+            "param_overrides": {
+                "max_tokens": 16000,  # Higher but reasonable default for extended outputs
+                "temperature": 0.7
+            }
+        },
+        
+        "long_form": {
+            "applicable_params": None,
+            "not_applicable_params": [],
+            "param_overrides": {
+                "max_tokens": 32000,  # For very long-form content generation
+                "temperature": 0.8,
+                "top_p": 0.95
+            }
+        }
+    }
+    
+    # Combine base profiles with Claude 3.7 specific profiles
+    _profiles = {**ClaudeParameters.base_profiles, **claude37_profiles}
+    
+    class Config:
+        model_name = "Claude 3.7"
+        supported_models = [
+            "anthropic.claude-3-7-sonnet-20250219-v1:0"
+        ]
 
 
 class ClaudeEnhancedChatBedrockConverse(EnhancedChatBedrockConverse):
@@ -75,16 +211,21 @@ class ClaudeEnhancedChatBedrockConverse(EnhancedChatBedrockConverse):
     [Implementation details]
     - Implements Claude-specific _extract_text_from_chunk method
     - Maintains SUPPORTED_MODELS for model discovery
-    - Optimized for Claude 3.5+ models
+    - Optimized for Claude models
     """
     
     # Keep the supported models list from the original class
     # Supported Claude models - helps with validation
-    # Only supporting Claude 3.5+ models as per requirements
     _CLAUDE_MODELS = [
+        # Claude 3 models
+        "anthropic.claude-3-haiku-20240307-v1:0", 
+        "anthropic.claude-3-sonnet-20240229-v1:0",
+        "anthropic.claude-3-opus-20240229-v1:0",
+        # Claude 3.5 models
         "anthropic.claude-3-5-haiku-20241022-v1:0", 
         "anthropic.claude-3-5-sonnet-20240620-v1:0",
         "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        # Claude 3.7 models
         "anthropic.claude-3-7-sonnet-20250219-v1:0"
     ]
     

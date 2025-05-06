@@ -12,54 +12,50 @@
 # - Respect system prompt directives at all times
 ###############################################################################
 # [Source file intent]
-# Implements the LLM test command handler which provides testing functionality
-# for the LLM subsystem. This handler delegates to provider-specific handlers
-# for testing different LLM providers like Bedrock.
+# Provides command-line interface for testing LLM functionality across different providers.
+# This handler serves as a container for provider-specific LLM testing commands, currently
+# supporting AWS Bedrock models through the BedrockTestCommandHandler.
 ###############################################################################
 # [Source file design principles]
-# - Provider-based delegation for extensible testing capabilities
-# - Clean command structure with clear help text
-# - Consistent error handling and user feedback
+# - Provider-specific subcommand structure for clear organization
+# - Consistent interface across providers for intuitive usage
+# - Extensible design to easily add support for additional LLM providers
 ###############################################################################
 # [Source file constraints]
-# - Must not include provider-specific implementation details
-# - Should act as a thin delegation layer to provider-specific handlers
+# - Must maintain compatibility with the CLI command hierarchy
+# - Must properly initialize and delegate to provider-specific handlers
 ###############################################################################
 # [Dependencies]
-# codebase:src/dbp_cli/commands/base.py
 # codebase:src/dbp_cli/commands/test/bedrock.py
+# codebase:src/dbp_cli/commands/base.py
 ###############################################################################
 # [GenAI tool change history]
-# 2025-05-02T14:08:42Z : Initial implementation of LLMTestCommandHandler by CodeAssistant
-# * Created command handler for LLM testing with Bedrock provider support
+# 2025-05-06T00:18:38Z : Initial implementation of LLMTestCommandHandler by CodeAssistant
+# * Implemented command structure with provider-specific subcommands
+# * Added Bedrock provider support
 ###############################################################################
 
-import argparse
-import logging
-from typing import Optional
+"""
+LLM test command implementation for testing LLM functionalities.
+"""
 
-from ..base import BaseCommandHandler
-# Direct import now that we've fixed the package structure
 from .bedrock import BedrockTestCommandHandler
-
-logger = logging.getLogger(__name__)
 
 class LLMTestCommandHandler:
     """
     [Class intent]
-    Test LLM functionality using server codebase components.
-    This handler provides testing capabilities for the LLM subsystem
-    with support for various providers.
+    Provides command-line interface for testing LLM functionality
+    using actual LLM implementations from the server codebase.
     
     [Design principles]
-    - Provider-based subcommand structure for organizational clarity
-    - Extensible design for adding new LLM providers
-    - Consistent error handling and user experience
+    - Provider-specific subcommand structure
+    - Consistent interface across providers
+    - Extensible for additional LLM providers
     
     [Implementation details]
-    Implements a provider-based command structure that delegates to
-    specialized provider handlers based on the llm_provider parameter.
-    Each provider handler is implemented in a dedicated module.
+    - Uses subparsers for different LLM providers
+    - Currently supports Bedrock provider
+    - Delegates to specialized handlers for each provider
     """
     
     @staticmethod
@@ -78,7 +74,7 @@ class LLMTestCommandHandler:
         - Currently supports 'bedrock' subcommand
         
         Args:
-            parser: Command-line argument parser
+            parser: ArgumentParser object to add arguments to
         """
         subparsers = parser.add_subparsers(dest="llm_provider", help="LLM provider to test")
         
@@ -137,5 +133,5 @@ class LLMTestCommandHandler:
                 self.progress
             ).execute(args)
         else:
-            self.output.error("Please specify an LLM provider")
+            self.output.error("Please specify an LLM provider (bedrock)")
             return 1

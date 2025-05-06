@@ -74,7 +74,7 @@ from .commands.commit import CommitCommandHandler
 from .commands.config import ConfigCommandHandler
 from .commands.status import StatusCommandHandler
 from .commands.server import ServerCommandHandler
-from .commands.test import TestCommandHandler  # Imported from __init__.py
+from .commands.test import TestCommandHandler  # Now imported directly from the test package __init__.py
 
 # Set up logger
 logger = logging.getLogger(__name__)

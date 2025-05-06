@@ -12,58 +12,73 @@
 # - Respect system prompt directives at all times
 ###############################################################################
 # [Source file intent]
-# Implements the main test command handler which serves as an entry point for
-# all testing functionality in the CLI. The test command provides direct access
-# to server-side components for testing and debugging purposes.
+# Provides command-line interface for testing various system components directly
+# using server codebase functionality. This command serves as an entry point for
+# running interactive tests against different parts of the system.
 ###############################################################################
 # [Source file design principles]
-# - Hierarchical command structure with clear delegation
-# - Extensible design to accommodate future test subcommands
-# - Consistent error handling and user feedback
-# - Uses subparsers for clean command-line interface
+# - Clear subcommand structure for different test types
+# - Extensible design to easily add support for additional test categories
+# - Consistent interface with other CLI commands
 ###############################################################################
 # [Source file constraints]
-# - Test commands are intended for development and debugging, not production use
-# - All subcommands must follow the same handler pattern
+# - Must maintain compatibility with the CLI command hierarchy
+# - Must properly initialize and delegate to specialized test handlers
 ###############################################################################
 # [Dependencies]
 # codebase:src/dbp_cli/commands/base.py
 # codebase:src/dbp_cli/commands/test/llm.py
 ###############################################################################
 # [GenAI tool change history]
-# 2025-05-02T14:16:38Z : Restructured TestCommandHandler to avoid circular imports by CodeAssistant
-# * Moved TestCommandHandler directly into __init__.py to avoid circular imports
-# 2025-05-02T14:07:26Z : Created package initialization file by CodeAssistant
-# * Initial implementation of the test command package
+# 2025-05-06T00:26:13Z : Fixed circular import issue by moving TestCommandHandler into __init__.py by CodeAssistant
+# * Resolved circular dependency between test.py and __init__.py
+# 2025-05-06T00:19:53Z : Initial implementation of TestCommandHandler by CodeAssistant
+# * Implemented command structure with test type subcommands
+# * Added LLM test type support
 ###############################################################################
 
-import argparse
-import logging
-from typing import Optional
-
-from ..base import BaseCommandHandler
+"""
+Test command implementation for running tests against system components.
+"""
+from ...commands.base import BaseCommandHandler
 from .llm import LLMTestCommandHandler
-
-logger = logging.getLogger(__name__)
 
 class TestCommandHandler(BaseCommandHandler):
     """
     [Class intent]
-    Test subsystems directly using server codebase components.
-    This command handler provides a gateway to various test capabilities
-    organized into logical subcommands.
+    Provides command-line interface for testing system components directly
+    using server codebase functionality.
     
     [Design principles]
-    - Clear subcommand structure for organization of test features
-    - Consistent interface following command handler pattern
-    - Extensible framework for adding new test functionality
-    - Direct access to server components for testing
+    - Clear subcommand structure for different test types
+    - Extensible for additional test types in the future
+    - Consistent interface with other CLI commands
     
     [Implementation details]
-    Implements a parent command that delegates to specialized test
-    subcommands based on the test_type parameter. Each subcommand
-    is implemented in a dedicated module with its own handler class.
+    - Extends BaseCommandHandler for CLI integration
+    - Uses subparsers for organized command structure
+    - Delegates to specialized handlers for each test type
     """
+    
+    def __init__(self, mcp_client, output_formatter, progress_indicator):
+        """
+        [Function intent]
+        Initialize the test command handler with required dependencies.
+        
+        [Design principles]
+        - Proper initialization of parent class
+        - Dependency injection for required services
+        
+        [Implementation details]
+        - Calls parent class constructor with required arguments
+        - Stores references to required services for later use
+        
+        Args:
+            mcp_client: MCP client for API access
+            output_formatter: Output formatter for displaying results
+            progress_indicator: Progress indicator for showing progress
+        """
+        super().__init__(mcp_client, output_formatter, progress_indicator)
     
     def add_arguments(self, parser):
         """
@@ -80,7 +95,7 @@ class TestCommandHandler(BaseCommandHandler):
         - Currently supports 'llm' subcommand
         
         Args:
-            parser: Command-line argument parser
+            parser: ArgumentParser object to add arguments to
         """
         subparsers = parser.add_subparsers(dest="test_type", help="Type of test to run")
         

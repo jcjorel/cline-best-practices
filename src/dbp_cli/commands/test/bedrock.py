@@ -12,106 +12,109 @@
 # - Respect system prompt directives at all times
 ###############################################################################
 # [Source file intent]
-# Implements the AWS Bedrock test command handler which provides interactive
-# testing capabilities for Bedrock LLM models. This handler supports dynamic
-# model discovery, interactive chat with streaming responses, and parameter
-# configuration.
+# Provides a command-line interface for testing AWS Bedrock models using LangChain wrapper classes
+# for interactive chat with streaming responses. This allows direct testing of the Bedrock model
+# implementations without requiring the full MCP server infrastructure.
 ###############################################################################
 # [Source file design principles]
-# - Dynamic model discovery using reflection
-# - Stream-based response handling for real-time feedback
-# - Clear user interface for testing and interaction
-# - Consistent error handling and user feedback
-# - Support for model parameter configuration
+# - Dynamic model discovery using reflection to avoid hardcoding model IDs
+# - Interactive model selection when not explicitly specified
+# - Clean streaming response display with asyncio
+# - Support for special commands for configuration and control
+# - Robust error handling to provide good feedback to users
 ###############################################################################
 # [Source file constraints]
-# - Requires AWS credentials to be configured
-# - Relies on prompt_toolkit for enhanced input experience
-# - Requires asyncio support for streaming responses
+# - Relies on LangChain wrapper classes existing at src/dbp/llm/bedrock/models/
+# - Depends on prompt_toolkit and asyncio for enhanced interaction
+# - Requires AWS credentials to be properly configured
 ###############################################################################
 # [Dependencies]
-# codebase:src/dbp/llm/bedrock/enhanced_base.py
-# codebase:src/dbp/llm/bedrock/models
-# codebase:src/dbp/llm/common/streaming.py
-# codebase:src/dbp/config/config_manager.py
+# codebase:src/dbp/llm/bedrock/langchain_wrapper.py
+# codebase:src/dbp/llm/bedrock/models/claude3.py
+# codebase:src/dbp/llm/bedrock/models/nova.py
+# codebase:src/dbp_cli/commands/base.py
+# system:prompt_toolkit
+# system:asyncio
 ###############################################################################
 # [GenAI tool change history]
-# 2025-05-03T01:27:44Z : Added inference profile support by CodeAssistant
-# * Implemented handling of inference profiles for Bedrock models
-# * Display and autoselect profile when only one is available
-# * Allow user to choose from multiple profiles when present
-# * Pass selected profile to model initialization
-# 2025-05-02T14:09:47Z : Initial implementation of BedrockTestCommandHandler by CodeAssistant
-# * Created handler implementation with model discovery, chat interface, and parameter configuration
+# 2025-05-06T11:17:00Z : Improved error handling for invalid models by CodeAssistant
+# * Added user-friendly error handling for unsupported models
+# * Removed stack trace display for better user experience
+# * Added display of available models when an invalid model is specified
+# * Organized available models by family for easier selection
+# 2025-05-06T11:13:40Z : Enhanced model-specific parameter constraints by CodeAssistant
+# * Added model ID-based validation for max_tokens parameter
+# * Added explicit checks for Claude 3/3.5/3.7 model token limits
+# * Added debug output to help diagnose constraint issues
+# * Fixed issue allowing tokens beyond model-specific limits
+# 2025-05-06T11:10:40Z : Fixed parameter validation in _handle_config_command by CodeAssistant
+# * Enhanced validation logic to enforce field constraints (min/max values)
+# * Added comprehensive constraint extraction for both Pydantic v1 and v2
+# * Fixed handling of inclusive (le/ge) and exclusive (lt/gt) constraints
+# * Added detailed error messages for constraint violations
+# 2025-05-06T11:05:00Z : Fixed profile application to properly override command line args by CodeAssistant
+# * Added current_model_id tracking to store model ID for recreating parameter models
+# * Modified profile application to create fresh parameter model that discards CLI args
+# * Ensured profile settings take precedence over command line arguments
+# * Improved error handling for profile application when model ID is not available
+# 2025-05-06T10:48:30Z : Fixed field description access in _print_help by CodeAssistant
+# * Fixed field.field_info.description access error in help command
+# * Added safe attribute access with getattr and fallback
+# * Updated _handle_config_command for consistent field description access
+# * Improved error handling for description access
+# 2025-05-06T10:38:15Z : Fixed parameter passing in _process_model_response by CodeAssistant
+# * Fixed model parameter passing to avoid validation errors
+# * Removed redundant model_kwargs from astream_text call
+# * Parameters are now only set once during model initialization
+# * Added logging for stream errors
+# 2025-05-06T00:15:54Z : Initial implementation of BedrockTestCommandHandler by CodeAssistant
+# * Implemented dynamic model discovery and selection
+# * Implemented interactive chat with streaming responses
+# * Implemented special command handling
 ###############################################################################
 
+"""
+Bedrock test command implementation for testing AWS Bedrock models.
+"""
+
+import asyncio
 import os
-import sys
-import logging
 import importlib
 import inspect
-import asyncio
-from typing import Dict, Any, List, Optional, Type, AsyncIterator
+import logging
+import sys
+import traceback
+from typing import Dict, List, Any, Optional, Tuple, Type
 
-logger = logging.getLogger(__name__)
+from prompt_toolkit import PromptSession
+from prompt_toolkit.history import InMemoryHistory
+from prompt_toolkit.styles import Style
+from prompt_toolkit.validation import Validator, ValidationError
+
+# Import LangChain wrapper classes
+from src.dbp.llm.bedrock.langchain_wrapper import EnhancedChatBedrockConverse
+from src.dbp.llm.bedrock.model_parameters import ModelParameters
+from src.dbp.config.config_manager import ConfigurationManager
+
 
 class BedrockTestCommandHandler:
     """
     [Class intent]
-    Test AWS Bedrock models using server codebase components directly.
-    Provides an interactive CLI interface for testing and exploring
-    different Bedrock models with streaming responses.
+    Provides command-line interface for testing AWS Bedrock models using
+    LangChain wrapper classes for interactive chat with streaming responses.
     
     [Design principles]
-    - Dynamic model discovery to avoid hardcoding model IDs
-    - Interactive CLI interface with streaming responses
-    - Parameter configuration for model testing
-    - Clean organization of model families
+    - Dynamic model discovery using reflection
+    - Interactive model selection when not specified
+    - Streaming response display with asyncio
+    - Special commands for configuration and control
     
     [Implementation details]
-    Uses Python reflection to discover available Bedrock model implementations,
-    initializes the appropriate model client, and provides an interactive
-    chat interface with streaming response display. Supports parameter
-    configuration and special commands.
+    - Uses LangChain wrapper classes from src/dbp/llm/bedrock/models/
+    - Discovers models based on SUPPORTED_MODELS class attributes
+    - Streams responses using astream_text method
+    - Manages conversation history for multi-turn chat
     """
-    
-    # Common model parameters
-    MODEL_PARAMETERS = {
-        "temperature": {
-            "type": float,
-            "default": 0.7,
-            "help": "Model temperature (0.0 to 1.0)",
-            "min": 0.0,
-            "max": 1.0
-        },
-        "max_tokens": {
-            "type": int,
-            "default": 1024,
-            "help": "Maximum tokens in response",
-            "min": 1,
-            "max": 4096
-        },
-        "top_p": {
-            "type": float,
-            "default": 0.9,
-            "help": "Top-p sampling parameter",
-            "min": 0.0,
-            "max": 1.0
-        },
-        "top_k": {
-            "type": int,
-            "default": 50,
-            "help": "Top-k sampling parameter",
-            "min": 0,
-            "max": 500
-        },
-        "use_reasoning": {
-            "type": bool,
-            "default": False,
-            "help": "Enable reasoning mode for models that support it",
-            "values": [True, False]
-        }
-    }
     
     @staticmethod
     def add_arguments(parser):
@@ -126,24 +129,18 @@ class BedrockTestCommandHandler:
         
         [Implementation details]
         - Adds model selection argument
-        - Adds model parameter arguments
+        - Adds model parameter arguments using ModelParameters
         
         Args:
-            parser: Command-line argument parser
+            parser: ArgumentParser object to add arguments to
         """
         parser.add_argument(
             "--model", "-m",
             help="Bedrock model to use (if not specified, will prompt to choose)"
         )
         
-        # Add model parameters
-        for param_name, param_config in BedrockTestCommandHandler.MODEL_PARAMETERS.items():
-            parser.add_argument(
-                f"--{param_name}",
-                type=param_config["type"],
-                default=param_config["default"],
-                help=param_config["help"]
-            )
+        # Add model parameters using ModelParameters
+        ModelParameters.add_arguments_to_parser(parser)
     
     def __init__(self, mcp_client, output_formatter, progress_indicator):
         """
@@ -169,7 +166,7 @@ class BedrockTestCommandHandler:
         self.model_client = None
         self.chat_history = []
         self.model_parameters = {}
-        self.model_class = None
+        self.current_model_id = None  # Store current model ID for recreating parameter models
     
     def execute(self, args):
         """
@@ -182,9 +179,8 @@ class BedrockTestCommandHandler:
         - Logical execution flow
         
         [Implementation details]
-        - Extracts model parameters from args
+        - Stores args for later use in model initialization
         - Handles model selection (interactive if not specified)
-        - Handles inference profile selection if available
         - Initializes model client
         - Runs interactive chat session
         
@@ -195,12 +191,8 @@ class BedrockTestCommandHandler:
             int: Exit code (0 for success, non-zero for error)
         """
         try:
-            # Extract model parameters from args
-            self.model_parameters = {
-                param: getattr(args, param)
-                for param in self.MODEL_PARAMETERS.keys()
-                if hasattr(args, param)
-            }
+            # Store args for use in _initialize_model
+            self.args = args
             
             # If model is not specified, prompt user to choose
             model_id = args.model
@@ -208,34 +200,55 @@ class BedrockTestCommandHandler:
                 model_id = self._prompt_for_model_selection()
                 if not model_id:  # User cancelled
                     return 1
+                    
+            # Store the current model ID for later parameter model recreation
+            self.current_model_id = model_id
             
-            # Check for inference profiles and select one if available
-            inference_profile_id = self._handle_inference_profiles(model_id)
-            if inference_profile_id is False:  # User cancelled profile selection
-                return 1
-
             # Initialize the model client
-            self._initialize_model(model_id, inference_profile_id)
-            
-            # Log the inference profile usage
-            if inference_profile_id:
-                self.output.print("\nStarting chat with inference profile enabled...")
-            
-            # Start interactive chat session
-            return self._run_interactive_chat()
+            try:
+                self._initialize_model(model_id)
+                # Start interactive chat session
+                return self._run_interactive_chat()
+            except Exception as e:
+                if "UnsupportedModelError" in str(type(e)):
+                    # Handle unsupported model gracefully
+                    self.output.error(f"Unsupported model: {model_id}")
+                    
+                    # Get list of available models to suggest to the user
+                    available_models = self._get_available_models()
+                    if available_models:
+                        # Group by family for easier reading
+                        model_families = {}
+                        for model_id in available_models:
+                            family = available_models[model_id]['family']
+                            if family not in model_families:
+                                model_families[family] = []
+                            model_families[family].append(model_id)
+                        
+                        self.output.print("\nAvailable models:")
+                        for family, models in model_families.items():
+                            self.output.print(f"\n{family}:")
+                            for model in sorted(models):
+                                self.output.print(f"  {model}")
+                    else:
+                        self.output.print("\nNo available models found. Please check your installation.")
+                    return 1
+                else:
+                    # Re-raise for other errors
+                    raise
+                
         except KeyboardInterrupt:
             print("\nOperation cancelled")
             return 130
         except Exception as e:
             self.output.error(f"Error in Bedrock test: {str(e)}")
-            import traceback
-            traceback.print_exc()
+            # Don't show stack trace for better user experience
             return 1
-        
+    
     def _get_available_models(self):
         """
         [Function intent]
-        Dynamically discover supported Bedrock models by inspecting the model modules.
+        Dynamically discover supported Bedrock models using LangChain wrapper classes.
         
         [Design principles]
         - Dynamic discovery instead of hardcoding
@@ -243,97 +256,76 @@ class BedrockTestCommandHandler:
         - Organization by model family
         
         [Implementation details]
-        - Uses reflection to examine model modules
-        - Finds subclasses of EnhancedBedrockBase
-        - Extracts model IDs from class attributes
-        - Returns dictionary mapping model_id to model class and metadata
+        - Uses reflection to find model classes
+        - Checks for SUPPORTED_MODELS attribute
+        - Returns dictionary mapping model_id to model information
         
         Returns:
             dict: Dictionary mapping model_id to model information
         """
-        import os
-        import importlib
-        import inspect
-        
-        # Import EnhancedBedrockBase here to avoid cyclic imports
-        from dbp.llm.bedrock.enhanced_base import EnhancedBedrockBase
-        
         models_dict = {}
         
-        # Get the directory where model implementations are located
-        models_dir = os.path.join(os.path.dirname(__file__), "../../../dbp/llm/bedrock/models")
-        
-        if not os.path.exists(models_dir):
-            self.output.warning(f"Models directory not found: {models_dir}")
+        # Import model modules
+        try:
+            from src.dbp.llm.bedrock.models import claude3, nova
+            # Add more model modules as they become available
+        except ImportError as e:
+            self.output.warning(f"Could not import model modules: {e}")
             return models_dict
+            
+        # Get all modules to scan
+        modules_to_scan = [claude3, nova]  # Add more as needed
         
-        # Iterate through modules in the models directory
-        for filename in os.listdir(models_dir):
-            if filename.endswith('.py') and not filename.startswith('__'):
-                module_name = filename[:-3]  # Remove .py extension
-                
-                try:
-                    # Import the module dynamically
-                    module_path = f"dbp.llm.bedrock.models.{module_name}"
-                    module = importlib.import_module(module_path)
+        # Find model client classes in each module
+        for module in modules_to_scan:
+            for name, obj in inspect.getmembers(module):
+                if (inspect.isclass(obj) and 
+                    issubclass(obj, EnhancedChatBedrockConverse) and 
+                    obj != EnhancedChatBedrockConverse and
+                    hasattr(obj, 'SUPPORTED_MODELS')):
                     
-                    # Find model client classes (subclasses of EnhancedBedrockBase)
-                    for name, obj in inspect.getmembers(module):
-                        if (inspect.isclass(obj) and 
-                            issubclass(obj, EnhancedBedrockBase) and 
-                            obj != EnhancedBedrockBase):
-                            
-                            # Get supported model IDs if available
-                            if hasattr(obj, 'SUPPORTED_MODELS'):
-                                for model_id in obj.SUPPORTED_MODELS:
-                                    models_dict[model_id] = {
-                                        'class': obj,
-                                        'module': module_name,
-                                        'family': self._determine_model_family(model_id)
-                                    }
-                            
-                            # If no SUPPORTED_MODELS attribute, check for DEFAULT_MODEL_ID
-                            elif hasattr(obj, 'DEFAULT_MODEL_ID'):
-                                model_id = obj.DEFAULT_MODEL_ID
-                                models_dict[model_id] = {
-                                    'class': obj,
-                                    'module': module_name,
-                                    'family': self._determine_model_family(model_id)
-                                }
-                
-                except (ImportError, AttributeError) as e:
-                    # Log error but continue with other modules
-                    self.output.warning(f"Could not load models from {module_name}: {e}")
+                    # Get model family name from class name
+                    family_name = name.replace('EnhancedChatBedrockConverse', '')
+                    
+                    # Register each supported model
+                    for model_id in obj.SUPPORTED_MODELS:
+                        models_dict[model_id] = {
+                            'class': obj,
+                            'module': module.__name__,
+                            'family': self._determine_model_family(model_id, family_name)
+                        }
         
         return models_dict
     
-    def _determine_model_family(self, model_id):
+    def _determine_model_family(self, model_id, family_name=""):
         """
         [Function intent]
-        Determine the model family based on model ID.
+        Determine the model family based on model ID and class name.
         
         [Design principles]
         - Reliable pattern matching
-        - Maintainable grouping rules
         - Human-readable family names
         
         [Implementation details]
-        - Uses pattern matching on model ID
+        - Uses both model ID patterns and class name
         - Returns human-readable family name
         
         Args:
             model_id: The model ID to determine family for
+            family_name: Optional family name hint from class name
             
         Returns:
             str: Human-readable model family name
         """
         model_id_lower = model_id.lower()
         
-        if "claude" in model_id_lower:
+        if "claude" in model_id_lower or "anthropic" in model_id_lower or family_name == "Claude":
             return "Claude (Anthropic)"
         elif "titan" in model_id_lower:
             return "Titan (Amazon)"
-        elif "llama" in model_id_lower:
+        elif "nova" in model_id_lower or family_name == "Nova":
+            return "Nova (Amazon)"
+        elif "llama" in model_id_lower or "meta" in model_id_lower:
             return "Llama (Meta)"
         elif "falcon" in model_id_lower:
             return "Falcon (TII)"
@@ -341,8 +333,6 @@ class BedrockTestCommandHandler:
             return "Mistral"
         elif "cohere" in model_id_lower:
             return "Cohere"
-        elif "nova" in model_id_lower:
-            return "Nova (Amazon)"
         else:
             return "Other"
     
@@ -406,9 +396,6 @@ class BedrockTestCommandHandler:
                     selected_model = model_options[choice_idx]
                     model_info = available_models[selected_model]
                     self.output.print(f"Selected model: {selected_model} ({model_info['family']})")
-                    
-                    # Store the model class for initialization
-                    self.model_class = model_info['class']
                     return selected_model
                 else:
                     self.output.print(f"Please enter a number between 1 and {len(model_options)}")
@@ -418,165 +405,65 @@ class BedrockTestCommandHandler:
                 self.output.print("\nOperation cancelled")
                 return None
     
-    def _handle_inference_profiles(self, model_id):
+    def _initialize_model(self, model_id):
         """
         [Function intent]
-        Check if the selected model has inference profiles and handle profile selection.
-        
-        [Design principles]
-        - Automatic selection for single profile
-        - Interactive selection for multiple profiles
-        - Clear display of profile information
-        
-        [Implementation details]
-        - Gets inference profiles for the selected model
-        - Automatically selects the profile if only one is available
-        - Prompts for selection if multiple profiles are available
-        - Returns the selected profile ID or None if no profiles
-        
-        Args:
-            model_id: ID of the selected model
-            
-        Returns:
-            str: Selected inference profile ID, None if no profiles, False if cancelled
-        """
-        # Get AWS configuration from config manager
-        from dbp.config.config_manager import ConfigurationManager
-        
-        config_manager = ConfigurationManager()
-        config = config_manager.get_typed_config()
-        
-        # Create model discovery instance
-        from dbp.llm.bedrock.model_discovery import BedrockModelDiscovery
-        discovery = BedrockModelDiscovery(
-            profile_name=config.aws.credentials_profile,
-            logger=self.output
-        )
-        
-        # Get inference profile IDs for the model
-        profile_ids = discovery.get_inference_profile_ids(model_id, config.aws.region)
-        
-        if not profile_ids:
-            return None
-        
-        if len(profile_ids) == 1:
-            # Only one profile, display and select it automatically
-            profile_id = profile_ids[0]
-            profile = discovery.get_inference_profile(model_id, profile_id, config.aws.region)
-            description = profile.get("description", "No description available")
-            
-            self.output.print(f"\nModel has one inference profile:")
-            self.output.print(f"  ID: {profile_id}")
-            self.output.print(f"  Description: {description}")
-            self.output.print("\nAutomatically selecting this profile.")
-            return profile_id
-        else:
-            # Multiple profiles, ask user to choose
-            self.output.print(f"\nModel has {len(profile_ids)} inference profiles:")
-            profiles = []
-            
-            for i, profile_id in enumerate(profile_ids):
-                profile = discovery.get_inference_profile(model_id, profile_id, config.aws.region)
-                description = profile.get("description", "No description available")
-                
-                self.output.print(f"  [{i+1}] {profile_id}")
-                self.output.print(f"      Description: {description}")
-                profiles.append({"id": profile_id, "description": description})
-            
-            # Prompt for selection
-            while True:
-                try:
-                    choice = input("\nEnter profile number (or 'q' to quit): ")
-                    
-                    if choice.lower() in ('q', 'quit', 'exit'):
-                        self.output.print("Exiting...")
-                        return False
-                    
-                    choice_idx = int(choice) - 1
-                    if 0 <= choice_idx < len(profiles):
-                        selected_profile = profiles[choice_idx]
-                        self.output.print(f"Selected profile: {selected_profile['id']}")
-                        return selected_profile['id']
-                    else:
-                        self.output.print(f"Please enter a number between 1 and {len(profiles)}")
-                except ValueError:
-                    self.output.print("Please enter a valid number")
-                except KeyboardInterrupt:
-                    self.output.print("\nOperation cancelled")
-                    return False
-
-    def _initialize_model(self, model_id, inference_profile_id=None):
-        """
-        [Function intent]
-        Initialize the Bedrock model client using the appropriate model class.
+        Initialize the selected LangChain model implementation.
         
         [Design principles]
         - Use correct model-specific implementation
-        - Validate model availability before initializing
         - Proper configuration from system settings
-        - Support for inference profiles
+        - Model-specific parameter handling
         
         [Implementation details]
-        - First checks if model exists in Bedrock
-        - Uses the model class from discovery when available
-        - Falls back to generic class if needed
         - Gets AWS credentials from config manager
-        - Configures inference profile if specified
+        - Uses the model class from discovery
+        - Uses ModelParameters for model-specific parameter constraints
         
         Args:
             model_id: ID of the model to initialize
-            inference_profile_id: Optional inference profile ID to use
             
         Raises:
-            ValueError: If the model is not available or initialization fails
+            ValueError: If the model initialization fails
         """
         # Get AWS configuration from config manager
-        from dbp.config.config_manager import ConfigurationManager
-        
         config_manager = ConfigurationManager()
         config = config_manager.get_typed_config()
         
-        # First check if model exists in Bedrock
-        from dbp.llm.bedrock.model_discovery import BedrockModelDiscovery
-        discovery = BedrockModelDiscovery(
-            profile_name=config.aws.credentials_profile,
-            logger=logger
+        # Import the BedrockClientFactory
+        from src.dbp.llm.bedrock.client_factory import BedrockClientFactory
+        
+        # Get region and profile name if available
+        region_name = None
+        profile_name = None
+        if hasattr(config, 'aws'):
+            if hasattr(config.aws, 'region'):
+                region_name = config.aws.region
+            if hasattr(config.aws, 'profile_name'):
+                profile_name = config.aws.profile_name
+        
+        # Create parameter model for selected model and populate from args
+        self.model_param_model = ModelParameters.for_model(model_id)
+        
+        # Apply selected profile if specified
+        if hasattr(self.args, "profile") and self.args.profile:
+            self.model_param_model._apply_profile(self.args.profile)
+            
+        # Update with CLI args (these override profile defaults)
+        self.model_param_model.update_from_args(vars(self.args))
+        
+        # Convert to model_kwargs format
+        model_kwargs = self.model_param_model.to_model_kwargs()
+        
+        # Use the BedrockClientFactory to create the model instance
+        self.model_client = BedrockClientFactory.create_langchain_chatbedrock(
+            model_id=model_id,
+            region_name=region_name,
+            profile_name=profile_name,
+            model_kwargs=model_kwargs,  # Pass model parameters properly formatted
+            use_model_discovery=True,
+            logger=logging.getLogger("BedrockTestCommandHandler")
         )
-        
-        # Verify model availability
-        available_regions = discovery.get_model_regions(model_id)
-        if not available_regions:
-            raise ValueError(f"Model '{model_id}' is not available in any region. Please verify the model ID.")
-            
-        # Get the appropriate model class
-        # If we already have the model class from selection, use it
-        if hasattr(self, 'model_class') and self.model_class is not None:
-            model_class = self.model_class
-        else:
-            # Otherwise, re-discover the appropriate model class
-            available_models = self._get_available_models()
-            if model_id not in available_models:
-                # Fallback to EnhancedBedrockBase if specific model class not found
-                from dbp.llm.bedrock.enhanced_base import EnhancedBedrockBase
-                model_class = EnhancedBedrockBase
-            else:
-                model_class = available_models[model_id]['class']
-        
-        # Initialize the model client using the discovered class
-        # Enable model discovery to automatically find the best region where the model is available
-        client_params = {
-            "model_id": model_id,
-            "region_name": config.aws.region,
-            "profile_name": config.aws.credentials_profile,
-            "use_model_discovery": True  # Enable model discovery to handle region availability
-        }
-        
-        # Add inference profile if specified
-        if inference_profile_id:
-            client_params["inference_profile_id"] = inference_profile_id
-            self.output.print(f"Using inference profile: {inference_profile_id}")
-            
-        self.model_client = model_class(**client_params)
         
         # Test the client initialization
         if self.model_client is None:
@@ -602,14 +489,6 @@ class BedrockTestCommandHandler:
         Returns:
             int: Exit code (0 for success, non-zero for error)
         """
-        try:
-            from prompt_toolkit import PromptSession
-            from prompt_toolkit.history import InMemoryHistory
-            from prompt_toolkit.styles import Style
-        except ImportError:
-            self.output.error("prompt_toolkit package not found. Please install it with: pip install prompt_toolkit")
-            return 1
-            
         # Create prompt session
         history = InMemoryHistory()
         session = PromptSession(history=history)
@@ -622,26 +501,27 @@ class BedrockTestCommandHandler:
         
         # Display welcome message
         self.output.print(f"\nInteractive chat mode with {self.model_client.model_id}")
-        self.output.print("Type 'exit' to quit, 'help' for available commands\n")
+        self.output.print("Type '/exit' to quit, '/help' for available commands\n")
         
         while True:
             try:
                 # Get user input
                 user_input = session.prompt("User > ", style=style)
                 
-                # Process special commands
-                if user_input.lower() in ["exit", "quit"]:
+                # Process special commands that start with "/"
+                if user_input.lower() in ["/exit", "/quit"]:
                     self.output.print("\nExiting interactive chat mode.")
                     break
-                elif user_input.lower() == "help":
+                elif user_input.lower() == "/help":
                     self._print_help()
                     continue
-                elif user_input.lower() == "clear":
+                elif user_input.lower() == "/clear":
                     self.chat_history = []
                     self.output.print("Chat history cleared.")
                     continue
-                elif user_input.lower().startswith("config"):
-                    self._handle_config_command(user_input)
+                elif user_input.lower().startswith("/config"):
+                    # Remove the leading slash when handling the config command
+                    self._handle_config_command(user_input[1:])
                     continue
                 elif not user_input.strip():
                     # Skip empty inputs
@@ -661,11 +541,10 @@ class BedrockTestCommandHandler:
                 break
             except Exception as e:
                 self.output.error(f"Error during chat: {str(e)}")
-                import traceback
                 traceback.print_exc()
         
         return 0
-    
+
     def _process_model_response(self):
         """
         [Function intent]
@@ -678,33 +557,30 @@ class BedrockTestCommandHandler:
         
         [Implementation details]
         - Uses asyncio to process stream
-        - Displays response chunks as they arrive
+        - Uses LangChain's astream_text method for clean text streaming
         - Updates chat history with complete response
         - Handles streaming errors gracefully
         """
-        import asyncio
-        
         self.output.print("\nAssistant > ", end="", flush=True)
         
-        # Use the model's stream_chat method with our parameters
         response_text = ""
         
         async def process_stream():
             nonlocal response_text
             try:
-                # Prepare messages format from history
-                messages = [msg.copy() for msg in self.chat_history]
+                # Format messages for the LangChain model
+                messages = [{"role": msg["role"], "content": msg["content"]} 
+                            for msg in self.chat_history]
                 
-                # Stream the response
-                async for chunk in self.model_client.stream_chat(
-                    messages=messages,
-                    **self.model_parameters
-                ):
-                    if "delta" in chunk and "text" in chunk["delta"]:
-                        delta_text = chunk["delta"]["text"]
-                        response_text += delta_text
-                        print(delta_text, end="", flush=True)
+                # Stream the response using LangChain wrapper's astream_text method
+                # IMPORTANT: Do not pass model_kwargs here as they were already
+                # set during model initialization, which avoids the validation error
+                async for chunk in self.model_client.astream_text(messages=messages):
+                    print(chunk, end="", flush=True)
+                    response_text += chunk
+                    
             except Exception as e:
+                logging.error(f"Error during streaming: {str(e)}")
                 print(f"\nError during streaming: {str(e)}")
         
         # Run the async function
@@ -730,98 +606,325 @@ class BedrockTestCommandHandler:
         
         [Implementation details]
         - Lists all available commands
-        - Shows current model parameters
+        - Shows current model parameters and profiles
         """
         self.output.print("\nAvailable commands:")
-        self.output.print("  exit, quit     - Exit the chat session")
-        self.output.print("  help           - Show this help message")
-        self.output.print("  clear          - Clear chat history")
-        self.output.print("  config         - Show current model parameters")
-        self.output.print("  config [param] [value] - Change a model parameter")
-        self.output.print("    Available parameters:")
+        self.output.print("  /exit, /quit   - Exit the chat session")
+        self.output.print("  /help          - Show this help message")
+        self.output.print("  /clear         - Clear chat history")
+        self.output.print("  /config        - Show current model parameters")
+        self.output.print("  /config profile <name> - Apply a parameter profile")
+        self.output.print("  /config [param] [value] - Change a model parameter")
         
-        for param, config in self.MODEL_PARAMETERS.items():
-            self.output.print(
-                f"      {param}: {config['help']} "
-                f"(current: {self.model_parameters.get(param, config['default'])})"
-            )
+        # Show available profiles
+        self.output.print("\nAvailable parameter profiles:")
+        for profile_name in self.model_param_model._profiles.keys():
+            if profile_name == self.model_param_model._current_profile:
+                self.output.print(f"  * {profile_name} (active)")
+            else:
+                self.output.print(f"  - {profile_name}")
+        
+        # Show available parameters
+        self.output.print("\nAvailable parameters:")
+        for field_name, field in self.model_param_model.__fields__.items():
+            # Only show applicable parameters in current profile
+            if self.model_param_model.is_applicable(field_name):
+                value = getattr(self.model_param_model, field_name)
+                
+                # Get description using getattr to handle different Pydantic versions
+                desc = ""
+                try:
+                    # Try direct attribute access first
+                    if hasattr(field, 'description'):
+                        desc = field.description
+                    # Then try field_info if available (without assuming its structure)
+                    elif hasattr(field, 'field_info') and hasattr(field.field_info, 'description'):
+                        desc = field.field_info.description
+                    # Finally try schema
+                    elif hasattr(field, 'schema') and callable(field.schema):
+                        try:
+                            schema = field.schema()
+                            if isinstance(schema, dict) and 'description' in schema:
+                                desc = schema['description']
+                        except:
+                            pass
+                except Exception:
+                    # Fallback for any access errors
+                    desc = ""
+                    
+                self.output.print(f"  {field_name} = {value} ({desc})")
         
         self.output.print()
 
-    def _handle_config_command(self, command):
+    def _handle_config_command(self, command_input):
         """
         [Function intent]
-        Handle the config command to view or change model parameters.
+        Handle the config command to show or modify model parameters.
         
         [Design principles]
         - Clear parameter display
-        - Validation of parameter values
-        - Helpful error messages
+        - Input validation
+        - User feedback
+        - Profile support
         
         [Implementation details]
-        - Parses command parts
+        - Parses config command format
         - Validates parameter names and values
-        - Updates parameters when valid
-        - Shows current configuration when no parameters specified
+        - Updates parameters and provides feedback
+        - Handles profile selection
         
         Args:
-            command: The config command string
+            command_input: Config command input from user
         """
-        parts = command.split()
+        parts = command_input.split(None, 3)
         
-        # Just 'config' - show current configuration
+        # Just "config" - show current config
         if len(parts) == 1:
-            self.output.print("\nCurrent model parameters:")
-            for param, value in self.model_parameters.items():
-                self.output.print(f"  {param}: {value}")
+            # Use _print_help to show parameters
+            self._print_help()
             return
-        
-        # 'config param value' - change a parameter
-        if len(parts) == 3:
+            
+        # Handle "config profile <name>" - Apply a profile
+        if len(parts) >= 3 and parts[1].lower() == "profile":
+            profile_name = parts[2]
+            
+            if profile_name not in self.model_param_model._profiles:
+                self.output.error(f"Unknown profile: {profile_name}")
+                self.output.print("Available profiles: " + ", ".join(self.model_param_model._profiles.keys()))
+                return
+            
+            # Create a fresh parameter model with this profile
+            # This ensures command line arguments are discarded
+            if self.current_model_id:
+                # Create a fresh model with just the profile settings
+                self.model_param_model = ModelParameters.for_model(self.current_model_id)
+                self.model_param_model._apply_profile(profile_name)
+                self.output.print(f"Applied profile: {profile_name}")
+                
+                # Show updated parameters
+                self.output.print("\nCurrent parameters:")
+                for field_name, field in self.model_param_model.__fields__.items():
+                    if self.model_param_model.is_applicable(field_name):
+                        value = getattr(self.model_param_model, field_name)
+                        self.output.print(f"  {field_name} = {value}")
+                return
+            else:
+                self.output.error("Cannot apply profile: Model ID not available")
+                return
+            
+        # "config param value" - set parameter
+        if len(parts) >= 3:
             param = parts[1]
             value_str = parts[2]
             
-            if param not in self.MODEL_PARAMETERS:
-                self.output.print(f"Unknown parameter: {param}")
-                return
+            # Debugging to help understand parameter limits
+            self.output.print(f"Checking parameter '{param}' with value '{value_str}'...")
             
-            param_config = self.MODEL_PARAMETERS[param]
+            # Check if parameter exists and is applicable
+            if param not in self.model_param_model.__fields__:
+                self.output.error(f"Unknown parameter: {param}")
+                return
+                
+            if not self.model_param_model.is_applicable(param):
+                self.output.error(f"Parameter '{param}' is not applicable in current profile: {self.model_param_model._current_profile}")
+                return
+                
+            field = self.model_param_model.__fields__[param]
+            
+            # Safe access to field type - handling different Pydantic versions
+            field_type = None
+            
+            # Try different ways to access the type information
+            if hasattr(field, 'type_'):
+                # Pydantic v1 style
+                field_type = field.type_
+            elif hasattr(field, 'annotation'):
+                # Pydantic v2 style
+                field_type = field.annotation
+            else:
+                # Fallback to the type of the current value
+                current_value = getattr(self.model_param_model, param)
+                field_type = type(current_value)
+            
+            # Handle Optional types
+            if hasattr(field_type, "__origin__") and field_type.__origin__ is Union:
+                field_type = field_type.__args__[0]  # Get the actual type from Optional
             
             try:
-                # Handle boolean parameters specially
-                if param_config["type"] == bool:
-                    # Convert string to boolean
-                    if value_str.lower() in ['true', 'yes', 'y', '1', 'on']:
-                        value = True
-                    elif value_str.lower() in ['false', 'no', 'n', '0', 'off']:
-                        value = False
-                    else:
-                        self.output.print(f"Invalid boolean value. Use true/false, yes/no, y/n, 1/0, or on/off")
-                        return
-                        
-                    # Check if value is in allowed values if specified
-                    if "values" in param_config and value not in param_config["values"]:
-                        self.output.print(f"Invalid value. Allowed values are: {param_config['values']}")
-                        return
-                else:
-                    # Convert value to the correct type
-                    value = param_config["type"](value_str)
-                    
-                    # Validate range
-                    if "min" in param_config and value < param_config["min"]:
-                        self.output.print(f"Value too small. Minimum is {param_config['min']}")
-                        return
-                        
-                    if "max" in param_config and value > param_config["max"]:
-                        self.output.print(f"Value too large. Maximum is {param_config['max']}")
-                        return
+                # Convert and validate value
+                value = field_type(value_str)
                 
-                # Update parameter
-                self.model_parameters[param] = value
-                self.output.print(f"Updated {param} to {value}")
+                # Validate constraints using proper validation (handles both Pydantic v1 and v2)
+                try:
+                    # Try to validate using the model's built-in validator
+                    # Create a temporary dict with just the parameter we're setting
+                    validate_data = {param: value}
+                    
+                    # Check constraints directly from field
+                    constraints = {}
+                    
+                    # Extract min constraint (ge or gt)
+                    if hasattr(field, 'ge'):
+                        constraints['min'] = field.ge
+                        constraints['min_inclusive'] = True
+                    elif hasattr(field, 'gt'):
+                        constraints['min'] = field.gt
+                        constraints['min_inclusive'] = False
+                    elif hasattr(field, 'field_info'):
+                        if hasattr(field.field_info, 'ge'):
+                            constraints['min'] = field.field_info.ge
+                            constraints['min_inclusive'] = True
+                        elif hasattr(field.field_info, 'gt'):
+                            constraints['min'] = field.field_info.gt
+                            constraints['min_inclusive'] = False
+                            
+                    # Extract max constraint (le or lt)
+                    if hasattr(field, 'le'):
+                        constraints['max'] = field.le
+                        constraints['max_inclusive'] = True
+                    elif hasattr(field, 'lt'):
+                        constraints['max'] = field.lt
+                        constraints['max_inclusive'] = False
+                    elif hasattr(field, 'field_info'):
+                        if hasattr(field.field_info, 'le'):
+                            constraints['max'] = field.field_info.le
+                            constraints['max_inclusive'] = True
+                        elif hasattr(field.field_info, 'lt'):
+                            constraints['max'] = field.field_info.lt
+                            constraints['max_inclusive'] = False
+                    
+                    # Debug constraint output
+                    self.output.print(f"Found constraints: {constraints}")
+                    
+                    # Manual validation using extracted constraints
+                    if 'min' in constraints:
+                        min_val = constraints['min']
+                        if constraints['min_inclusive']:
+                            if value < min_val:
+                                self.output.error(f"Value {value} for {param} must be at least {min_val}")
+                                return
+                        else:
+                            if value <= min_val:
+                                self.output.error(f"Value {value} for {param} must be greater than {min_val}")
+                                return
+                                
+                    if 'max' in constraints:
+                        max_val = constraints['max']
+                        if constraints['max_inclusive']:
+                            if value > max_val:
+                                self.output.error(f"Value {value} for {param} must be at most {max_val}")
+                                return
+                        else:
+                            if value >= max_val:
+                                self.output.error(f"Value {value} for {param} must be less than {max_val}")
+                                return
+                    
+                    # If we have a model ID and this is a max_tokens parameter, double-check against
+                    # model-specific constraints from the parameter class for safety
+                    if param == "max_tokens" and self.current_model_id:
+                        # For anthropic.claude-3-5-sonnet models, ensure max_tokens <= 8192
+                        if "anthropic.claude-3-5" in self.current_model_id and value > 8192:
+                            self.output.error(f"Value {value} for max_tokens exceeds Claude 3.5 maximum of 8192")
+                            return
+                        # For anthropic.claude-3 models, ensure max_tokens <= 4096
+                        elif "anthropic.claude-3-" in self.current_model_id and "3-5" not in self.current_model_id and "3-7" not in self.current_model_id and value > 4096:
+                            self.output.error(f"Value {value} for max_tokens exceeds Claude 3 maximum of 4096")
+                            return
+                        # For anthropic.claude-3-7 models, ensure max_tokens <= 64000
+                        elif "anthropic.claude-3-7" in self.current_model_id and value > 64000:
+                            self.output.error(f"Value {value} for max_tokens exceeds Claude 3.7 maximum of 64000")
+                            return
+                except Exception as e:
+                    self.output.error(f"Value validation error for {param}: {str(e)}")
+                    return
+                    
+                # Set parameter
+                setattr(self.model_param_model, param, value)
+                self.output.print(f"Set {param} = {value}")
                 
             except ValueError:
-                self.output.print(f"Invalid value for {param}: {value_str}")
+                self.output.error(f"Invalid value for {param}: {value_str}")
+            
+            return
+            
+        # "config param" - show specific parameter
+        if len(parts) == 2:
+            param = parts[1]
+            
+            # Handle special case for "profile" to show current profile
+            if param.lower() == "profile":
+                self.output.print(f"Current profile: {self.model_param_model._current_profile}")
                 return
-        else:
-            self.output.print("Usage: config [parameter] [value]")
+                
+            if param not in self.model_param_model.__fields__:
+                self.output.error(f"Unknown parameter: {param}")
+                return
+                
+            # Get value and description - with safe access to description
+            value = getattr(self.model_param_model, param)
+            field = self.model_param_model.__fields__[param]
+            
+            # Get description using getattr to handle different Pydantic versions
+            desc = ""
+            try:
+                # Try direct attribute access first
+                if hasattr(field, 'description'):
+                    desc = field.description
+                # Then try field_info if available
+                elif hasattr(field, 'field_info') and hasattr(field.field_info, 'description'):
+                    desc = field.field_info.description
+                # Finally try schema
+                elif hasattr(field, 'schema') and callable(field.schema):
+                    try:
+                        schema = field.schema()
+                        if isinstance(schema, dict) and 'description' in schema:
+                            desc = schema['description']
+                    except:
+                        pass
+            except Exception:
+                # Fallback for any access errors
+                desc = ""
+            
+            # Show applicability info
+            applicable = self.model_param_model.is_applicable(param)
+            applicable_str = " (applicable)" if applicable else " (not applicable in current profile)"
+            
+            self.output.print(f"{param} = {value} ({desc}){applicable_str}")
+            return
+            
+        self.output.print("Usage: config [param] [value] or config profile <name>")
+
+    def _get_multiline_input(self, session):
+        """
+        [Function intent]
+        Get multiline input from user with support for cancellation.
+        
+        [Design principles]
+        - Support for longer prompts
+        - Clear visual feedback
+        - Consistent user experience
+        
+        [Implementation details]
+        - Uses prompt_toolkit's multiline mode
+        - Supports Ctrl+Enter to submit
+        - Validates non-empty input
+        
+        Args:
+            session: PromptSession instance
+            
+        Returns:
+            str: The multiline input text
+        """
+        class EmptyInputValidator(Validator):
+            def validate(self, document):
+                text = document.text
+                if not text.strip() and text.endswith('\n'):
+                    raise ValidationError(message="Input cannot be empty")
+
+        self.output.print("Enter multiline input (Ctrl+Enter to submit):")
+        
+        return session.prompt(
+            "> ", 
+            multiline=True, 
+            validator=EmptyInputValidator()
+        ).rstrip()

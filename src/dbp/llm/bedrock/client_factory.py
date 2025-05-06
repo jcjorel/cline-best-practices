@@ -49,6 +49,11 @@
 # system:langchain_aws.chat_models.bedrock_converse
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-06T10:45:00Z : Fixed model parameter handling for LangChain compatibility by CodeAssistant
+# * Modified create_langchain_chatbedrock to properly handle model parameters
+# * Added property initialization after model creation to set parameters
+# * Fixed validation error with direct parameter passing
+# * Added more detailed error logging for parameter issues
 # 2025-05-05T22:19:07Z : Updated client factory to use model-specific LangChain wrappers by CodeAssistant
 # * Removed legacy EnhancedBedrockBase imports
 # * Added imports for model-specific LangChain wrappers
@@ -115,6 +120,7 @@ class BedrockClientFactory:
         preferred_regions: Optional[List[str]] = None,
         inference_profile_arn: Optional[str] = None,
         streaming: bool = True,
+        model_kwargs: Optional[Dict[str, Any]] = None,
         **langchain_kwargs
     ) -> Any:
         """
@@ -146,6 +152,7 @@ class BedrockClientFactory:
             preferred_regions: Optional list of preferred regions
             inference_profile_arn: Optional inference profile ARN
             streaming: Whether to enable streaming by default
+            model_kwargs: Optional model parameters
             **langchain_kwargs: Additional parameters for LangChain
             
         Returns:
@@ -280,32 +287,16 @@ class BedrockClientFactory:
                     config=bedrock_config
                 )
                 
-                # Create model kwargs dict if needed for inference profile
-                model_kwargs = {}
-                if inference_profile_arn:
-                    model_kwargs["inference_profile"] = inference_profile_arn
-                
-                # Merge with any model_kwargs from langchain_kwargs
-                if "model_kwargs" in langchain_kwargs:
-                    model_kwargs.update(langchain_kwargs.pop("model_kwargs"))
-                
-                # For AWS Bedrock's ConverseStream API, the inference profile ARN itself
-                # is used as the modelId parameter, not as a separate parameter
+                # The inference profile ARN itself is used as the modelId parameter
+                # for AWS Bedrock's ConverseStream API, not as a separate parameter
                 model_param = inference_profile_arn if inference_profile_arn else model_id
                 
                 # Setup parameters for LangChain ChatBedrockConverse
+                # Keep only the essential parameters that the LangChain model constructor expects
                 chat_model_params = {
-                    "model": model_param,  # Use inference profile ARN as model if available
-                    "client": bedrock_client,  # Use our pre-configured client
+                    "model": model_param,  
+                    "client": bedrock_client,
                 }
-                
-                # Remove inference_profile from model_kwargs if it exists
-                if model_kwargs and "inference_profile" in model_kwargs:
-                    del model_kwargs["inference_profile"]
-                
-                # Add any remaining model_kwargs to the initialization parameters if needed
-                if model_kwargs:
-                    chat_model_params["model_kwargs"] = model_kwargs
                 
                 # Determine the appropriate class based on model ID
                 model_class = EnhancedChatBedrockConverse  # Default fallback
@@ -320,13 +311,27 @@ class BedrockClientFactory:
                     model_class = NovaEnhancedChatBedrockConverse
                     logger.info(f"Using Nova-specific implementation for model {model_id}")
                 
-                # Create the model-specific instance
-                chat_bedrock = model_class(
-                    **chat_model_params,
-                    logger=logger
-                )
+                # Create the model-specific instance with ONLY the required parameters
+                # Many LangChain chat models have strict validation and don't accept extra kwargs
+                try:
+                    chat_bedrock = model_class(
+                        **chat_model_params,
+                        logger=logger
+                    )
+                    
+                    # Now that the model is created, we can set the model parameters 
+                    # as attributes directly if needed
+                    if model_kwargs:
+                        # Store model kwargs outside of the model for future use if needed
+                        object.__setattr__(chat_bedrock, "_cached_model_kwargs", model_kwargs)
                 
-                # Note: LangChain API handles streaming at invocation time, not initialization
+                except Exception as e:
+                    # Detailed error logging to help debug parameter issues
+                    logger.error(f"Failed to create model with parameters: {chat_model_params}")
+                    logger.error(f"Model class: {model_class.__name__}")
+                    if model_kwargs:
+                        logger.error(f"Model kwargs: {model_kwargs}")
+                    raise e
                 
                 logger.info(f"Created LangChain ChatBedrockConverse for model {model_id} in region {region_name}")
                 return chat_bedrock

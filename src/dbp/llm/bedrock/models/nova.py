@@ -59,6 +59,78 @@ import json
 from typing import Any, Dict, ClassVar
 
 from ..langchain_wrapper import EnhancedChatBedrockConverse
+from ..model_parameters import ModelParameters
+from pydantic import Field
+
+class NovaParameters(ModelParameters):
+    """
+    [Class intent]
+    Parameters specific to Nova models with support for Nova-specific
+    constraints and parameters.
+    
+    [Design principles]
+    - Define Nova-specific parameter constraints
+    - Support Nova-specific parameters
+    - Implement Nova-specific parameter profiles
+    
+    [Implementation details]
+    - Adds Nova-specific parameters like top_k and repetition_penalty
+    - Defines profiles for different use cases
+    """
+
+    # Nova-specific parameters
+    top_k: int = Field(
+        default=50, 
+        ge=0, 
+        le=500, 
+        description="Only sample from the top K most likely tokens."
+    )
+    repetition_penalty: float = Field(
+        default=1.0,
+        ge=1.0,
+        le=2.0,
+        description="Penalizes repetition in generated text."
+    )
+    
+    # Define Nova-specific profiles
+    _profiles = {
+        # Default profile - all parameters are applicable
+        "default": {
+            "applicable_params": None,  # All parameters are potentially applicable
+            "not_applicable_params": [],  # No parameters are excluded
+            "param_overrides": {}  # No parameter overrides
+        },
+        
+        # Concise mode - focused on shorter responses
+        "concise": {
+            "applicable_params": None,
+            "not_applicable_params": [],
+            "param_overrides": {
+                "max_tokens": 300,
+                "temperature": 0.4
+            }
+        },
+        
+        # Creative mode - more diverse outputs
+        "creative": {
+            "applicable_params": None,
+            "not_applicable_params": [],
+            "param_overrides": {
+                "temperature": 0.9,
+                "top_p": 0.95,
+                "repetition_penalty": 1.2
+            }
+        }
+    }
+    
+    class Config:
+        model_name = "Nova"
+        supported_models = [
+            "amazon.nova-lite-v1:0",
+            "amazon.nova-micro-v1:0",
+            "amazon.nova-pro-v1:0",
+            "amazon.nova-premier-v1:0"
+        ]
 
 
 class NovaEnhancedChatBedrockConverse(EnhancedChatBedrockConverse):
