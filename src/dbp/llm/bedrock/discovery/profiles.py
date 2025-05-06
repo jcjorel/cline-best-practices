@@ -35,7 +35,8 @@
 # codebase:src/dbp/api_providers/aws/exceptions.py
 # codebase:src/dbp/llm/bedrock/discovery/discovery_core.py
 # codebase:src/dbp/llm/bedrock/discovery/association.py
-# codebase:src/dbp/llm/bedrock/discovery/models.py
+# codebase:src/dbp/llm/bedrock/discovery/models_core.py
+# codebase:src/dbp/llm/bedrock/discovery/models_capabilities.py
 # system:threading
 # system:logging
 # system:copy
@@ -133,7 +134,7 @@ class BedrockProfileDiscovery(BaseDiscovery):
         
         # Import model_discovery here to avoid circular imports
         if model_discovery is None:
-            from .models import BedrockModelDiscovery
+            from .models_capabilities import BedrockModelCapabilities as BedrockModelDiscovery
             self.model_discovery = BedrockModelDiscovery.get_instance()
         else:
             self.model_discovery = model_discovery

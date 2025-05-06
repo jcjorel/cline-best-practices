@@ -87,7 +87,7 @@ import sys
 from typing import Dict, Any, List, Optional, Type, Set, Union, Tuple
 
 from .langchain_wrapper import EnhancedChatBedrockConverse
-from .discovery.models import BedrockModelDiscovery
+from .discovery.models_capabilities import BedrockModelCapabilities as BedrockModelDiscovery
 from ..common.exceptions import LLMError, UnsupportedModelError, ConfigurationError
 
 # Cache for discovered classes to avoid repeated scans

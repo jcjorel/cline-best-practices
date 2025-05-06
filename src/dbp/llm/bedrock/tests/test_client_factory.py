@@ -63,7 +63,7 @@ class TestBedrockClientFactory:
     """Test suite for BedrockClientFactory."""
 
     @patch('dbp.api_providers.aws.client_factory.AWSClientFactory.get_instance')
-    @patch('dbp.llm.bedrock.discovery.models.BedrockModelDiscovery.get_instance')
+    @patch('dbp.llm.bedrock.discovery.models_capabilities.BedrockModelCapabilities.get_instance')
     def test_create_claude_model(self, mock_discovery, mock_aws_factory):
         """Test creating a Claude model using the factory."""
         # Setup mock discovery
@@ -85,7 +85,7 @@ class TestBedrockClientFactory:
         assert isinstance(model, ClaudeEnhancedChatBedrockConverse)
 
     @patch('dbp.api_providers.aws.client_factory.AWSClientFactory.get_instance')
-    @patch('dbp.llm.bedrock.discovery.models.BedrockModelDiscovery.get_instance')
+    @patch('dbp.llm.bedrock.discovery.models_capabilities.BedrockModelCapabilities.get_instance')
     def test_create_nova_model(self, mock_discovery, mock_aws_factory):
         """Test creating a Nova model using the factory."""
         # Setup mock discovery
@@ -107,7 +107,7 @@ class TestBedrockClientFactory:
         assert isinstance(model, NovaEnhancedChatBedrockConverse)
 
     @patch('dbp.api_providers.aws.client_factory.AWSClientFactory.get_instance')
-    @patch('dbp.llm.bedrock.discovery.models.BedrockModelDiscovery.get_instance')
+    @patch('dbp.llm.bedrock.discovery.models_capabilities.BedrockModelCapabilities.get_instance')
     def test_create_generic_model(self, mock_discovery, mock_aws_factory):
         """Test creating a generic model using the factory."""
         # Setup mock discovery
@@ -132,7 +132,7 @@ class TestBedrockClientFactory:
         assert not isinstance(model, NovaEnhancedChatBedrockConverse)
 
     @patch('dbp.api_providers.aws.client_factory.AWSClientFactory.get_instance')
-    @patch('dbp.llm.bedrock.discovery.models.BedrockModelDiscovery.get_instance')
+    @patch('dbp.llm.bedrock.discovery.models_capabilities.BedrockModelCapabilities.get_instance')
     def test_model_prefix_matching(self, mock_discovery, mock_aws_factory):
         """Test model prefix matching for class selection."""
         # Setup mock discovery
@@ -154,7 +154,7 @@ class TestBedrockClientFactory:
         assert isinstance(model, ClaudeEnhancedChatBedrockConverse)
 
     @patch('dbp.api_providers.aws.client_factory.AWSClientFactory.get_instance')
-    @patch('dbp.llm.bedrock.discovery.models.BedrockModelDiscovery.get_instance')
+    @patch('dbp.llm.bedrock.discovery.models_capabilities.BedrockModelCapabilities.get_instance')
     def test_inference_profile_handling(self, mock_discovery, mock_aws_factory):
         """Test inference profile handling."""
         # Setup mock discovery

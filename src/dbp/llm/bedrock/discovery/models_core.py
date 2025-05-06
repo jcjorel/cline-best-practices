@@ -12,10 +12,10 @@
 # - Respect system prompt directives at all times
 ###############################################################################
 # [Source file intent]
-# Discovers and provides information about available AWS Bedrock models across regions.
-# Optimizes model discovery through parallel scanning, caching, and latency-based 
-# region prioritization to provide efficient access to Bedrock foundation models.
-# Also handles inference profile association with models for provisioned throughput support.
+# Provides core functionality for discovering AWS Bedrock models across regions.
+# Handles model discovery through parallel scanning and region prioritization 
+# to provide efficient access to Bedrock foundation models.
+# Part of a split architecture with models_capabilities.py extending this functionality.
 ###############################################################################
 # [Source file design principles]
 # - Efficient parallel scanning using ThreadPoolExecutor
@@ -23,15 +23,14 @@
 # - Latency-optimized region selection
 # - Comprehensive model metadata extraction
 # - Singleton pattern for project-wide reuse
-# - Cache-first approach for performance
-# - Combined model and profile discovery
+# - Clear separation between core discovery and extended capabilities
 ###############################################################################
 # [Source file constraints]
 # - Must handle concurrent access from multiple threads
 # - Must minimize AWS API calls through effective caching
 # - Must provide optimal region selection for best performance
 # - Must handle AWS credential management securely
-# - Must be backward compatible with existing Bedrock client implementations
+# - Must support extension through inheritance for additional capabilities
 ###############################################################################
 # [Dependencies]
 # codebase:src/dbp/api_providers/aws/client_factory.py
@@ -46,40 +45,19 @@
 # system:time
 # system:logging
 # system:copy
-# system:os
-# system:json
 ###############################################################################
 # [GenAI tool change history]
-# 2025-05-06T14:11:59Z : Updated to support new parameter-based model discovery by CodeAssistant
-# * Modified _get_project_supported_models to work with new PARAMETER_CLASSES approach
-# * Replaced direct access to SUPPORTED_MODELS with dynamic extraction from parameter classes
-# * Added support for client_factory dynamic model discovery integration
+# 2025-05-06T23:23:00Z : Created models_core.py as part of models.py file split by CodeAssistant
+# * Split from original models.py file
+# * Extracted core discovery functionality into separate file
+# * Preserved singleton pattern for use with extended capabilities class
 # * Maintained backward compatibility with existing code
-# 2025-05-04T19:35:00Z : Updated get_best_regions_for_model to filter by accessibility by CodeAssistant
-# * Added check_accessibility parameter to get_model_regions
-# * Modified get_best_regions_for_model to only return accessible regions
-# * Enhanced method documentation to reflect accessibility filtering
-# 2025-05-04T10:37:00Z : Added prompt caching support detection by CodeAssistant
-# * Added model capability checking for prompt caching
-# * Implemented supports_prompt_caching method
-# * Added get_prompt_caching_models method
-# * Added get_prompt_caching_support_status method
-# 2025-05-03T23:04:42Z : Simplified BedrockModelDiscovery implementation by CodeAssistant
-# * Integrated caching directly into the class
-# * Simplified singleton implementation and constructor
-# * Consolidated scanning methods with cleaner API
-# * Simplified region selection logic
-# * Integrated latency tracking directly
-# * Added simple cache file operations
 ###############################################################################
 
 import logging
 import threading
 import copy
 import time
-import os
-import json
-import importlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Optional, Any, Set, Union, Tuple
 
@@ -100,7 +78,6 @@ class BedrockModelDiscovery(BaseDiscovery):
     [Class intent]
     Discovers and provides information about available AWS Bedrock models across regions,
     with optimized region selection based on latency measurements and user preferences.
-    Also detects model capabilities including prompt caching support.
     
     [Design principles]
     - Efficient parallel scanning using ThreadPoolExecutor
@@ -108,27 +85,14 @@ class BedrockModelDiscovery(BaseDiscovery):
     - Latency-optimized region selection
     - Comprehensive model metadata extraction
     - Singleton pattern for project-wide reuse
-    - Integrated caching for performance
-    - Capability-based model feature detection
     
     [Implementation details]
     - Uses AWSClientFactory for client access
     - Implements parallel region scanning with latency measurement
-    - Caches discovery results with integrated memory cache
     - Provides latency-based sorting of regions
     - Maps model availability by region
     - Simplifies API with sensible defaults
-    - Detects model-specific capabilities like prompt caching
     """
-    
-    # Define models that support prompt caching
-    _PROMPT_CACHING_SUPPORTED_MODELS = [
-        "anthropic.claude-3-5-haiku-",  # Claude 3.5 Haiku
-        "anthropic.claude-3-7-sonnet-", # Claude 3.7 Sonnet
-        "amazon.nova-micro-",           # Nova Micro
-        "amazon.nova-lite-",            # Nova Lite
-        "amazon.nova-pro-"              # Nova Pro
-    ]
     
     # Class variables for singleton pattern
     _instance = None
@@ -207,12 +171,6 @@ class BedrockModelDiscovery(BaseDiscovery):
         from ..client_factory import get_all_supported_model_ids
         self.project_supported_models = get_all_supported_model_ids()
         self.logger.info(f"Loaded {len(self.project_supported_models)} project-supported models")
-        
-        # Try to load cache from default location
-        try:
-            self.load_cache_from_file()
-        except Exception as e:
-            self.logger.warning(f"Failed to load cache: {str(e)}")
     
     def scan_all_regions(self, regions: Optional[List[str]] = None, force_refresh: bool = False) -> Dict[str, Dict[str, Dict[str, Any]]]:
         """
@@ -305,12 +263,6 @@ class BedrockModelDiscovery(BaseDiscovery):
                 if "last_updated" not in self._memory_cache:
                     self._memory_cache["last_updated"] = {}
                 self._memory_cache["last_updated"]["models"] = time.time()
-            
-            # Try to save cache after updates
-            try:
-                self.save_cache_to_file()
-            except Exception as e:
-                self.logger.warning(f"Failed to save cache: {str(e)}")
         
         return result
     
@@ -644,33 +596,7 @@ class BedrockModelDiscovery(BaseDiscovery):
             
         # Format to match expected structure
         return {"models": copy.deepcopy(models)}
-    
-    def clear_cache(self) -> None:
-        """
-        [Method intent]
-        Clear all cached model data.
-        
-        [Design principles]
-        - Complete cache clearing
-        - Thread safety
-        
-        [Implementation details]
-        - Removes all model mapping from cache
-        - Preserves latency data
-        - Logs clearing operations
-        
-        Returns:
-            None
-        """
-        with self._lock:
-            if "models" in self._memory_cache:
-                del self._memory_cache["models"]
-            if "last_updated" in self._memory_cache:
-                if "models" in self._memory_cache["last_updated"]:
-                    del self._memory_cache["last_updated"]["models"]
-        
-        self.logger.info("Model discovery cache cleared")
-        
+
     def update_latency(self, region: str, latency_seconds: float) -> None:
         """
         [Method intent]
@@ -702,169 +628,3 @@ class BedrockModelDiscovery(BaseDiscovery):
             else:
                 # Exponential smoothing
                 latency_data[region] = (alpha * latency_seconds) + ((1 - alpha) * current)
-    
-    def load_cache_from_file(self, file_path: Optional[str] = None) -> bool:
-        """
-        [Method intent]
-        Load model and latency data from a JSON file.
-        
-        [Design principles]
-        - Simple file I/O
-        - Optional operation
-        - Default path handling
-        
-        [Implementation details]
-        - Uses default path if none specified
-        - Basic JSON file loading
-        - Updates memory cache with loaded data
-        
-        Args:
-            file_path: Optional path to cache file
-            
-        Returns:
-            bool: True if loading succeeded, False otherwise
-        """
-        path = file_path or os.path.join(os.path.expanduser("~"), ".dbp", "cache", "bedrock_discovery.json")
-        
-        try:
-            if not os.path.exists(path):
-                return False
-                
-            with open(path, "r") as f:
-                data = json.load(f)
-            
-            # Update memory cache with loaded data
-            with self._lock:
-                if "models" in data:
-                    self._memory_cache["models"] = data["models"]
-                if "latency" in data:
-                    self._memory_cache["latency"] = data["latency"]
-                if "last_updated" in data:
-                    self._memory_cache["last_updated"] = data["last_updated"]
-                
-            self.logger.info(f"Loaded model discovery cache from {path}")
-            return True
-            
-        except Exception as e:
-            self.logger.warning(f"Error loading cache from {path}: {str(e)}")
-            return False
-
-    def save_cache_to_file(self, file_path: Optional[str] = None) -> bool:
-        """
-        [Method intent]
-        Save current model and latency data to a JSON file.
-        
-        [Design principles]
-        - Simple file I/O
-        - Optional operation
-        - Default path handling
-        
-        [Implementation details]
-        - Uses default path if none specified
-        - Basic JSON file saving
-        - Creates parent directories if needed
-        
-        Args:
-            file_path: Optional path to cache file
-            
-        Returns:
-            bool: True if saving succeeded, False otherwise
-        """
-        path = file_path or os.path.join(os.path.expanduser("~"), ".dbp", "cache", "bedrock_discovery.json")
-        
-        try:
-            # Ensure directory exists
-            os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-            
-            # Create a copy of the data to save
-            with self._lock:
-                data = {
-                    "models": copy.deepcopy(self._memory_cache.get("models", {})),
-                    "latency": copy.deepcopy(self._memory_cache.get("latency", {})),
-                    "last_updated": copy.deepcopy(self._memory_cache.get("last_updated", {}))
-                }
-            
-            with open(path, "w") as f:
-                json.dump(data, f, indent=2)
-                
-            self.logger.info(f"Saved model discovery cache to {path}")
-            return True
-            
-        except Exception as e:
-            self.logger.warning(f"Error saving cache to {path}: {str(e)}")
-            return False
-    
-    def supports_prompt_caching(self, model_id: str) -> bool:
-        """
-        [Method intent]
-        Check if a specific model supports prompt caching.
-        
-        [Design principles]
-        - Simple capability checking
-        - Model ID prefix matching
-        - Clear boolean interface
-        
-        [Implementation details]
-        - Checks if model ID starts with any of the supported model prefixes
-        - Returns boolean indicating support
-        
-        Args:
-            model_id: The Bedrock model ID to check
-            
-        Returns:
-            bool: True if the model supports prompt caching, False otherwise
-        """
-        # Check if the model ID starts with any of the supported prefixes
-        for prefix in self._PROMPT_CACHING_SUPPORTED_MODELS:
-            if model_id.startswith(prefix):
-                return True
-                
-        return False
-    
-    def get_prompt_caching_models(self) -> List[Dict[str, Any]]:
-        """
-        [Method intent]
-        Get all models that support prompt caching.
-        
-        [Design principles]
-        - Filtering based on model capability
-        - Reuse existing model data
-        - Provide complete model information
-        
-        [Implementation details]
-        - Gets all available models
-        - Filters models that support prompt caching
-        - Returns filtered list with full model information
-        
-        Returns:
-            List[Dict[str, Any]]: List of models that support prompt caching
-        """
-        all_models = self.get_all_models()
-        return [
-            model for model in all_models 
-            if self.supports_prompt_caching(model["modelId"])
-        ]
-    
-    def get_prompt_caching_support_status(self) -> Dict[str, bool]:
-        """
-        [Method intent]
-        Get prompt caching support status for all available models.
-        
-        [Design principles]
-        - Comprehensive capability checking
-        - Model ID based lookup
-        - Complete mapping
-        
-        [Implementation details]
-        - Gets all available models
-        - Checks each model for prompt caching support
-        - Returns model ID to support status mapping
-        
-        Returns:
-            Dict[str, bool]: Mapping of model IDs to their prompt caching support status
-        """
-        all_models = self.get_all_models()
-        return {
-            model["modelId"]: self.supports_prompt_caching(model["modelId"])
-            for model in all_models
-        }

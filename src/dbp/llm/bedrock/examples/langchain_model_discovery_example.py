@@ -29,7 +29,7 @@ if __name__ == "__main__":
     sys.path.insert(0, parent_dir)
     
     # Import directly from the project structure
-    from dbp.llm.bedrock.discovery.models import BedrockModelDiscovery
+    from dbp.llm.bedrock.discovery.models_capabilities import BedrockModelCapabilities as BedrockModelDiscovery
     from dbp.llm.bedrock.client_factory import (
         BedrockClientFactory,
         get_all_supported_model_ids,
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     )
 else:
     # Relative imports when used as part of the package
-    from ..discovery.models import BedrockModelDiscovery
+    from ..discovery.models_capabilities import BedrockModelCapabilities as BedrockModelDiscovery
     from ..client_factory import (
         BedrockClientFactory,
         get_all_supported_model_ids,
@@ -77,7 +77,7 @@ logging.getLogger('urllib3').setLevel(logging.WARNING)
 logging.getLogger('asyncio').setLevel(logging.WARNING)
 
 # Set discovery logger to INFO level
-logging.getLogger('dbp.llm.bedrock.discovery.models').setLevel(logging.INFO)
+logging.getLogger('dbp.llm.bedrock.discovery.models_capabilities').setLevel(logging.INFO)
 
 
 class DateTimeJSONEncoder(json.JSONEncoder):

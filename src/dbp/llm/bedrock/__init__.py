@@ -47,7 +47,8 @@ from .client_common import BedrockClientError
 from .client_common import BedrockRequestFormatter, BedrockClientMixin, invoke_bedrock_model
 
 # Discovery components
-from .discovery.models import BedrockModelDiscovery
+from .discovery.models_capabilities import BedrockModelCapabilities as BedrockModelDiscovery
+from .discovery.models_capabilities import BedrockModelCapabilities
 from .discovery.profiles import BedrockProfileDiscovery
 
 # New LangChain-based implementations
@@ -66,6 +67,7 @@ __all__ = [
     
     # Discovery components
     "BedrockModelDiscovery",
+    "BedrockModelCapabilities",
     "BedrockProfileDiscovery",
     
     # New LangChain-based implementations
