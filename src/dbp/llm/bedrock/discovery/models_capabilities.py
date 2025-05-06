@@ -382,10 +382,11 @@ class BedrockModelCapabilities(BedrockModelDiscovery):
             "timestamp": self._memory_cache.get("last_updated", {}).get("models", "Unknown")
         }
     
-    def format_availability_table(self, table_data: Dict[str, Any]) -> str:
+    def format_availability_table(self, table_data: Dict[str, Any], selected_model: Optional[str] = None) -> str:
         """
         [Method intent]
         Format model availability data as a text table for display with precise column alignment.
+        When a specific model is selected, displays detailed availability information for that model.
         
         [Design principles]
         - Clean table formatting with perfect column alignment
@@ -393,6 +394,7 @@ class BedrockModelCapabilities(BedrockModelDiscovery):
         - Fixed-width columns with proper spacing
         - Visual consistency across all rows
         - Human-readable timestamp display
+        - Enhanced display for selected single models
         
         [Implementation details]
         - Formats model data as a fixed-width text table
@@ -400,9 +402,11 @@ class BedrockModelCapabilities(BedrockModelDiscovery):
         - Adds header and footer lines with proper alignment
         - Ensures text doesn't break column boundaries
         - Converts timestamp to human-readable format
+        - Special formatting for displaying a single selected model
         
         Args:
             table_data: Dict containing models data from get_model_availability_table()
+            selected_model: Optional model ID for focused display
             
         Returns:
             str: Formatted table as a string with perfectly aligned columns
@@ -433,7 +437,47 @@ class BedrockModelCapabilities(BedrockModelDiscovery):
         else:
             human_readable_time = "Unknown"
         
-        # Create header with consistent separators
+        # Special case: If we have a selected model and it's in the table data, display detailed information
+        if selected_model and table_data["models"] and len(table_data["models"]) == 1:
+            model_entry = table_data["models"][0]
+            
+            # Create a more focused display for a single selected model
+            table = []
+            table.append(f"\nSelected Model Availability (as of {human_readable_time}):")
+            table.append("-" * 80)
+            
+            # Model information section
+            full_model_id = model_entry.get("model_id", "Unknown")
+            short_model_id = model_entry.get("short_model_id", "Unknown")
+            
+            if full_model_id != short_model_id:
+                table.append(f"Model ID: {short_model_id} ({full_model_id})")
+            else:
+                table.append(f"Model ID: {full_model_id}")
+            
+            # Display all regions without truncation for a single model
+            regions = model_entry.get("available_regions", [])
+            if regions:
+                table.append(f"Available in {len(regions)} regions:")
+                for region in sorted(regions):
+                    table.append(f"  - {region}")
+            else:
+                table.append("Available regions: None")
+            
+            # Best region with clear labeling
+            best_region = model_entry.get("best_region", "N/A")
+            table.append(f"Recommended region: {best_region}")
+            
+            # Additional capabilities if available
+            if self.supports_prompt_caching(model_entry.get("model_id", "")):
+                table.append("Capabilities: Supports prompt caching")
+            
+            table.append("-" * 80)
+            
+            return "\n".join(table)
+        
+        # Original multi-model table display for when no specific model is selected
+        # or multiple models are in table_data
         table = []
         table.append(f"\nAvailability Summary (as of {human_readable_time}):")
         separator_line = "-" * total_width

@@ -40,6 +40,11 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-07T00:15:00Z : Added model availability display in interactive chat by CodeAssistant
+# * Integrated BedrockModelCapabilities to show availability details
+# * Added format_availability_table call for the selected model
+# * Enhanced user experience by displaying availability before chat prompt
+# * Added dependency on models_capabilities.py
 # 2025-05-06T18:38:00Z : Added parameter validation to model initialization by CodeAssistant
 # * Enhanced _initialize_model with explicit parameter validation
 # * Added detailed error reporting for validation failures
@@ -51,11 +56,6 @@
 # * Updated _get_model_constraints to leverage model metadata for token limits
 # * Added dependency on client_factory.py for centralized model information
 # 2025-05-06T12:25:00Z : Removed redundant command handling methods by CodeAssistant
-# * Removed methods duplicated in bedrock_commands.py
-# * Kept only unique methods in main file
-# * Updated dependencies to include bedrock_commands.py
-# * Enhanced maintainability through method reduction
-# 2025-05-06T12:20:45Z : Separated command handling into dedicated file by CodeAssistant
 # * Created BedrockCommandHandler class for command management
 # * Moved special command processing logic to dedicated handler
 # * Implemented state synchronization via callback system
@@ -90,6 +90,7 @@ from prompt_toolkit.shortcuts import CompleteStyle
 from dbp.llm.bedrock.langchain_wrapper import EnhancedChatBedrockConverse
 from dbp.llm.bedrock.model_parameters import ModelParameters
 from dbp.config.config_manager import ConfigurationManager
+from dbp.llm.bedrock.discovery.models_capabilities import BedrockModelCapabilities
 
 # Import command handler and completer
 from .bedrock_commands import BedrockCommandHandler
@@ -207,6 +208,13 @@ class BedrockTestCommandHandler:
             # Initialize the model client
             try:
                 self._initialize_model(model_id)
+                        # Display model availability information
+                model_capabilities = BedrockModelCapabilities.get_instance()
+                
+                availability_data = model_capabilities.get_model_availability_table(model_id)
+                availability_display = model_capabilities.format_availability_table(availability_data, model_id)
+                self.output.print(availability_display)        
+
                 # Start interactive chat session
                 return self._run_interactive_chat()
             except Exception as e:
@@ -567,6 +575,7 @@ class BedrockTestCommandHandler:
         
         # Display welcome message
         self.output.print(f"\nInteractive chat mode with {self.model_client.model_id}")
+        
         self.output.print("Type '/exit' to quit, '/help' for available commands")
         self.output.print("Use Tab for command and parameter auto-completion")
         self.output.print("Press Tab twice to see all available options\n")
