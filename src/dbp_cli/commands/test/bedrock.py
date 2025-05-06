@@ -37,6 +37,11 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-06T12:04:30Z : Applied message handling DRY principle by CodeAssistant  
+# * Added _format_chat_messages method for consistent message formatting
+# * Created _handle_streaming_error for centralized error handling
+# * Simplified code flow with specialized helper methods
+# * Improved readability and maintainability of message processing
 # 2025-05-06T12:01:25Z : Applied command parsing DRY principle by CodeAssistant
 # * Added _parse_config_command method to centralize command parsing logic
 # * Created structured command representation with command types
@@ -52,21 +57,6 @@
 # * Created unified error message formatting for constraint violations
 # * Standardized validation logic for min/max values with inclusivity handling
 # * Improved code readability by removing nested validation branches
-# 2025-05-06T11:51:45Z : Applied extensive DRY principle to field type handling by CodeAssistant
-# * Added _get_field_type helper to centralize field type extraction logic
-# * Implemented version-agnostic type access across Pydantic versions
-# * Added robust handling of Optional/Union types with proper unwrapping
-# * Improved fallback handling with current value type detection
-# 2025-05-06T11:50:30Z : Applied comprehensive DRY principle to constraint handling by CodeAssistant
-# * Extracted duplicated constraint extraction logic into _extract_field_constraints helper method
-# * Created schema-based constraints detection with fallbacks for different Pydantic versions
-# * Added support for OpenAPI-compatible constraint extraction from schema objects
-# * Improved constraint validation readability and maintainability
-# 2025-05-06T11:47:30Z : Applied advanced DRY principle to field handling by CodeAssistant
-# * Extracted duplicated field description logic into _get_field_description helper method
-# * Created version-agnostic field metadata accessor with Pydantic v1/v2 compatibility
-# * Standardized field description retrieval across multiple methods
-# * Improved error handling with graceful fallbacks for field information access
 ###############################################################################
 
 """
@@ -561,6 +551,48 @@ class BedrockTestCommandHandler:
         
         return 0
 
+    def _format_chat_messages(self):
+        """
+        [Function intent]
+        Format internal chat history into the structure expected by LangChain.
+        
+        [Design principles]
+        - Consistent message formatting
+        - Clean separation of internal and external formats
+        - Reusable conversion logic
+        
+        [Implementation details]
+        - Converts internal chat history format to LangChain format
+        - Maintains role and content structure
+        - Can be used by any method that needs formatted messages
+        
+        Returns:
+            list: List of messages in LangChain-compatible format
+        """
+        return [{"role": msg["role"], "content": msg["content"]} 
+                for msg in self.chat_history]
+    
+    def _handle_streaming_error(self, error):
+        """
+        [Function intent]
+        Handle errors during streaming responses in a consistent way.
+        
+        [Design principles]
+        - Centralized error handling
+        - Consistent user feedback
+        - Proper logging
+        
+        [Implementation details]
+        - Logs error details
+        - Provides user-friendly error message
+        - Can be used by any method that handles streaming
+        
+        Args:
+            error: The exception that occurred
+        """
+        logging.error(f"Error during streaming: {str(error)}")
+        print(f"\nError during streaming: {str(error)}")
+    
     def _process_model_response(self):
         """
         [Function intent]
@@ -584,9 +616,8 @@ class BedrockTestCommandHandler:
         async def process_stream():
             nonlocal response_text
             try:
-                # Format messages for the LangChain model
-                messages = [{"role": msg["role"], "content": msg["content"]} 
-                            for msg in self.chat_history]
+                # Get formatted messages using our helper method
+                messages = self._format_chat_messages()
                 
                 # Stream the response using LangChain wrapper's astream_text method
                 # IMPORTANT: Do not pass model_kwargs here as they were already
@@ -596,8 +627,8 @@ class BedrockTestCommandHandler:
                     response_text += chunk
                     
             except Exception as e:
-                logging.error(f"Error during streaming: {str(e)}")
-                print(f"\nError during streaming: {str(e)}")
+                # Handle streaming errors consistently
+                self._handle_streaming_error(e)
         
         # Run the async function
         try:
