@@ -40,6 +40,11 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-07T00:38:00Z : Enhanced welcome message with double tab completion guidance by CodeAssistant
+# * Updated welcome message to explain the double tab functionality for empty input
+# * Added clearer instructions to show the difference between empty input and command completion
+# * Improved user guidance on command discovery features
+# * Enhanced overall usability of the completion system
 # 2025-05-07T00:30:00Z : Fixed region selection to prioritize recommended region by CodeAssistant
 # * Added logic to prioritize recommended regions from model capabilities
 # * Improved region selection with clear priority order: recommended → config → default
@@ -216,6 +221,7 @@ class BedrockTestCommandHandler:
                         # Display model availability information
                 model_capabilities = BedrockModelCapabilities.get_instance()
                 
+                 
                 availability_data = model_capabilities.get_model_availability_table(model_id)
                 availability_display = model_capabilities.format_availability_table(availability_data, model_id)
                 self.output.print(availability_display)        
@@ -609,7 +615,8 @@ class BedrockTestCommandHandler:
         
         self.output.print("Type '/exit' to quit, '/help' for available commands")
         self.output.print("Use Tab for command and parameter auto-completion")
-        self.output.print("Press Tab twice to see all available options\n")
+        self.output.print("Press Tab twice on empty input to see all commands")
+        self.output.print("Press Tab twice after a command to see available options\n")
         
         while True:
             try:

@@ -13,7 +13,8 @@
 ###############################################################################
 # [Source file intent]
 # Provides command completion functionality for the Bedrock test CLI interactive
-# chat interface, enhancing user experience with auto-completion for commands
+# chat interface, enhancing user experience with auto-completion for commands.
+# Supports both empty input (double tab) completion and completion for commands
 # starting with '/'.
 ###############################################################################
 # [Source file design principles]
@@ -32,6 +33,11 @@
 # codebase:src/dbp_cli/commands/test/bedrock_commands.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-07T00:36:00Z : Added empty input command completion on double tab by CodeAssistant
+# * Added functionality to show all commands when pressing Tab with empty input
+# * Updated function intent documentation to reflect empty input handling
+# * Enhanced design principles to support double tab completion without slash prefix
+# * Modified implementation details to recognize and handle empty input state
 # 2025-05-06T22:35:00Z : Improved completion priority logic by CodeAssistant
 # * Completely redesigned the completion logic with explicit priority handling
 # * Fixed edge case with "/config profile " space completion showing "profile" again
@@ -48,7 +54,8 @@ Command completion module for Bedrock test CLI.
 
 This module provides command completion functionality for the Bedrock test CLI
 interactive chat interface, enhancing user experience with auto-completion for
-commands starting with '/'.
+commands. Supports both empty input completion (double tab to show all commands)
+and completion for commands starting with '/'.
 """
 
 from prompt_toolkit.completion import Completer, Completion
@@ -57,17 +64,21 @@ from typing import Iterable, List, Dict, Any, Callable, Optional
 class CommandCompleter(Completer):
     """
     [Class intent]
-    Provides command completion for CLI commands starting with '/'.
+    Provides command completion for CLI commands with enhanced user experience.
+    Supports both empty input (double tab to show all commands) and commands
+    starting with '/'.
     
     [Design principles]
     - Context-aware completion based on command structure
     - Support for command name, parameter name, and parameter value completion
     - Dynamic value generation based on command context
+    - Empty input completion for discoverable commands
     
     [Implementation details]
     - Uses enhanced command registry for completion metadata
     - Parses command input to determine completion context
     - Supports dynamic parameter value providers
+    - Shows all available commands on double tab with empty input
     """
     
     def __init__(self, command_handler):
@@ -97,11 +108,13 @@ class CommandCompleter(Completer):
         - Context-aware completions
         - Progressive parsing of command input
         - Clear separation of completion types
+        - Support for empty input completion (double tab)
         
         [Implementation details]
         - Parses the document text to identify completion context
         - Generates appropriate completions based on context
         - Returns completions with metadata for display
+        - Shows command completions on double tab with empty input
         
         Args:
             document: The document containing the input text
@@ -112,6 +125,17 @@ class CommandCompleter(Completer):
         """
         text = document.text_before_cursor
         
+        # Handle empty or whitespace-only input for double tab (showing all commands)
+        if not text.strip():
+            # Return completions for all commands
+            for cmd, data in self.command_handler.get_command_registry().items():
+                yield Completion(
+                    cmd,
+                    display=cmd,
+                    display_meta=data.get('help', '')
+                )
+            return
+            
         # Only provide completions for command text starting with '/'
         if not text.startswith('/'):
             return
