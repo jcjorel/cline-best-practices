@@ -79,9 +79,9 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.validation import Validator, ValidationError
 
 # Import LangChain wrapper classes
-from src.dbp.llm.bedrock.langchain_wrapper import EnhancedChatBedrockConverse
-from src.dbp.llm.bedrock.model_parameters import ModelParameters
-from src.dbp.config.config_manager import ConfigurationManager
+from dbp.llm.bedrock.langchain_wrapper import EnhancedChatBedrockConverse
+from dbp.llm.bedrock.model_parameters import ModelParameters
+from dbp.config.config_manager import ConfigurationManager
 
 # Import command handler
 from .bedrock_commands import BedrockCommandHandler
@@ -233,22 +233,23 @@ class BedrockTestCommandHandler:
             return 130
         except Exception as e:
             self.output.error(f"Error in Bedrock test: {str(e)}")
-            # Don't show stack trace for better user experience
+            # Print traceback for debugging
+            import traceback
+            traceback.print_exc()
             return 1
     
     def _get_available_models(self):
         """
         [Function intent]
-        Dynamically discover supported Bedrock models using LangChain wrapper classes.
+        Dynamically discover supported Bedrock models using the BedrockClientFactory helper methods.
         
         [Design principles]
-        - Dynamic discovery instead of hardcoding
+        - Use centralized discovery mechanism
         - Robust error handling for missing modules
         - Organization by model family
         
         [Implementation details]
-        - Uses reflection to find model classes
-        - Checks for SUPPORTED_MODELS attribute
+        - Uses BedrockClientFactory helper methods for model discovery
         - Returns dictionary mapping model_id to model information
         
         Returns:
@@ -256,35 +257,40 @@ class BedrockTestCommandHandler:
         """
         models_dict = {}
         
-        # Import model modules
         try:
-            from src.dbp.llm.bedrock.models import claude3, nova
-            # Add more model modules as they become available
-        except ImportError as e:
-            self.output.warning(f"Could not import model modules: {e}")
-            return models_dict
+            # Import the BedrockClientFactory to use its helper methods
+            from dbp.llm.bedrock.client_factory import (
+                get_all_supported_model_ids,
+                get_client_class_for_model,
+                get_parameter_class_for_model
+            )
             
-        # Get all modules to scan
-        modules_to_scan = [claude3, nova]  # Add more as needed
+            # Get all supported model IDs
+            model_ids = get_all_supported_model_ids()
+            
+            # For each model ID, get its client class and parameter class
+            for model_id in model_ids:
+                try:
+                    client_class = get_client_class_for_model(model_id)
+                    param_class = get_parameter_class_for_model(model_id)
+                    
+                    # Get model family name from client class name
+                    family_name = client_class.__name__.replace('EnhancedChatBedrockConverse', '')
+                    
+                    # Add model to dictionary
+                    models_dict[model_id] = {
+                        'class': client_class,
+                        'module': client_class.__module__,
+                        'family': self._get_model_family(model_id, family_name),
+                        'parameter_class': param_class
+                    }
+                except Exception as e:
+                    self.output.warning(f"Error processing model {model_id}: {str(e)}")
         
-        # Find model client classes in each module
-        for module in modules_to_scan:
-            for name, obj in inspect.getmembers(module):
-                if (inspect.isclass(obj) and 
-                    issubclass(obj, EnhancedChatBedrockConverse) and 
-                    obj != EnhancedChatBedrockConverse and
-                    hasattr(obj, 'SUPPORTED_MODELS')):
-                    
-                    # Get model family name from class name
-                    family_name = name.replace('EnhancedChatBedrockConverse', '')
-                    
-                    # Register each supported model
-                    for model_id in obj.SUPPORTED_MODELS:
-                        models_dict[model_id] = {
-                            'class': obj,
-                            'module': module.__name__,
-                            'family': self._get_model_family(model_id, family_name)
-                        }
+        except ImportError as e:
+            self.output.warning(f"Could not import BedrockClientFactory module: {str(e)}")
+        except Exception as e:
+            self.output.warning(f"Error discovering models: {str(e)}")
         
         return models_dict
     
@@ -441,16 +447,33 @@ class BedrockTestCommandHandler:
         config = config_manager.get_typed_config()
         
         # Import the BedrockClientFactory
-        from src.dbp.llm.bedrock.client_factory import BedrockClientFactory
+        from dbp.llm.bedrock.client_factory import BedrockClientFactory
         
         # Get region and profile name if available
         region_name = None
         profile_name = None
-        if hasattr(config, 'aws'):
-            if hasattr(config.aws, 'region'):
-                region_name = config.aws.region
-            if hasattr(config.aws, 'profile_name'):
-                profile_name = config.aws.profile_name
+        
+        # Extract AWS configuration
+        try:
+            aws_config = getattr(config, 'aws', None)
+            if aws_config is not None:
+                region_name = getattr(aws_config, 'region', None)
+                profile_name = getattr(aws_config, 'profile_name', None)
+                
+                # Display AWS configuration in a user-friendly format
+                self.output.print("\n[AWS Configuration]")
+                self.output.print(f"  Region: {region_name or 'Not configured (will use default)'}")
+                self.output.print(f"  Profile: {profile_name or 'Not configured (will use default)'}")
+            else:
+                self.output.print("\n[AWS Configuration]")
+                self.output.print("  No AWS configuration found. Using default settings.")
+                
+        except Exception as e:
+            self.output.warning(f"Error accessing AWS configuration: {str(e)}")
+            self.output.print("  Falling back to default AWS settings.")
+            # Fall back to None values
+            region_name = None
+            profile_name = None
         
         # Create parameter model for selected model and populate from args
         self.model_param_model = ModelParameters.for_model(model_id)
