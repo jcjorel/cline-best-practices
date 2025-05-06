@@ -34,6 +34,11 @@
 # system:logging
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-06T19:47:00Z : Simplified parameter validation by leveraging pydantic capabilities by CodeAssistant
+# * Removed _extract_field_constraints() and _validate_constraints() methods
+# * Directly used model_param_model.validate_config() for parameter validation
+# * Simplified the command handling code with direct validation
+# * Eliminated complex constraint extraction logic in favor of built-in validation
 # 2025-05-06T12:13:00Z : Created file for command handling separation by CodeAssistant
 # * Extracted command handling logic from bedrock.py
 # * Implemented command registry for extensible command management
@@ -67,7 +72,7 @@ class BedrockCommandHandler:
     - Uses command registry pattern for command routing
     - Provides callback mechanism for state coordination
     - Separates command parsing from execution
-    - Reuses field extraction and validation logic
+    - Leverages Pydantic for parameter validation
     """
     
     # Result code definitions
@@ -415,8 +420,8 @@ class BedrockCommandHandler:
             param = command["param"]
             value_str = command["value"]
             
-            # Debugging to help understand parameter limits
-            self.output.print(f"Checking parameter '{param}' with value '{value_str}'...")
+            # Debugging to help understand parameter validation
+            self.output.print(f"Validating parameter '{param}' with value '{value_str}'...")
             
             # Check if parameter exists and is applicable
             if param not in self.model_param_model.__fields__:
@@ -438,16 +443,10 @@ class BedrockCommandHandler:
                 
                 # Validate constraints using proper validation (handles both Pydantic v1 and v2)
                 try:
-                    # Extract field constraints using our helper method
-                    constraints = self._extract_field_constraints(field)
-                    
-                    # Debug constraint output
-                    self.output.print(f"Found constraints: {constraints}")
-                    
-                    # Validate the value using extracted constraints
-                    error_msg = self._validate_constraints(param, value, constraints)
-                    if error_msg:
-                        self.output.error(error_msg)
+                    # Validate the value using Pydantic's built-in validation
+                    valid, errors = self.model_param_model.validate_config({param: value})
+                    if not valid:
+                        self.output.error(errors[param])
                         return
                     
                     # If we have a model ID and this is a max_tokens parameter, double-check against
@@ -646,138 +645,6 @@ class BedrockCommandHandler:
                 
         return field_type
     
-    def _extract_field_constraints(self, field):
-        """
-        [Function intent]
-        Extract field constraints from a Pydantic field with version compatibility.
-        
-        [Design principles]
-        - Version-agnostic constraint extraction
-        - Support for both inclusive and exclusive ranges
-        - Clean error handling with reasonable defaults
-        - Centralized constraint management
-        
-        [Implementation details]
-        - Handles both Pydantic v1 and v2 field structures
-        - Extracts min/max constraints with inclusivity information
-        - Returns a structured dictionary of constraints
-        - Works with both direct field attributes and field_info
-        
-        Args:
-            field: Pydantic field to extract constraints from
-            
-        Returns:
-            dict: Dictionary containing extracted constraints
-        """
-        constraints = {}
-        
-        # Extract min constraint (ge or gt)
-        if hasattr(field, 'ge'):
-            constraints['min'] = field.ge
-            constraints['min_inclusive'] = True
-        elif hasattr(field, 'gt'):
-            constraints['min'] = field.gt
-            constraints['min_inclusive'] = False
-        elif hasattr(field, 'field_info'):
-            if hasattr(field.field_info, 'ge'):
-                constraints['min'] = field.field_info.ge
-                constraints['min_inclusive'] = True
-            elif hasattr(field.field_info, 'gt'):
-                constraints['min'] = field.field_info.gt
-                constraints['min_inclusive'] = False
-                
-        # Extract max constraint (le or lt)
-        if hasattr(field, 'le'):
-            constraints['max'] = field.le
-            constraints['max_inclusive'] = True
-        elif hasattr(field, 'lt'):
-            constraints['max'] = field.lt
-            constraints['max_inclusive'] = False
-        elif hasattr(field, 'field_info'):
-            if hasattr(field.field_info, 'le'):
-                constraints['max'] = field.field_info.le
-                constraints['max_inclusive'] = True
-            elif hasattr(field.field_info, 'lt'):
-                constraints['max'] = field.field_info.lt
-                constraints['max_inclusive'] = False
-                
-        # Try to extract from schema (works in some cases)
-        if not constraints and hasattr(field, 'schema') and callable(field.schema):
-            try:
-                schema = field.schema()
-                if isinstance(schema, dict):
-                    if 'minimum' in schema:
-                        constraints['min'] = schema['minimum']
-                        constraints['min_inclusive'] = True
-                    elif 'exclusiveMinimum' in schema:
-                        constraints['min'] = schema['exclusiveMinimum']
-                        constraints['min_inclusive'] = False
-                        
-                    if 'maximum' in schema:
-                        constraints['max'] = schema['maximum']
-                        constraints['max_inclusive'] = True
-                    elif 'exclusiveMaximum' in schema:
-                        constraints['max'] = schema['exclusiveMaximum']
-                        constraints['max_inclusive'] = False
-            except:
-                pass
-                
-        return constraints
-    
-    def _validate_constraints(self, param_name, value, constraints):
-        """
-        [Function intent]
-        Validate a parameter value against extracted constraints.
-        
-        [Design principles]
-        - Centralized constraint validation logic
-        - Clear error messaging
-        - Support for inclusive and exclusive ranges
-        - Returns error messages instead of raising exceptions
-        
-        [Implementation details]
-        - Handles both min and max constraints
-        - Considers inclusivity settings for proper validation
-        - Returns formatted error messages with constraint details
-        - Returns None if validation passes
-        
-        Args:
-            param_name: Name of the parameter being validated
-            value: Parameter value to validate
-            constraints: Dictionary of constraints from _extract_field_constraints
-            
-        Returns:
-            str: Error message if validation fails, None if validation passes
-        """
-        if not constraints:
-            return None
-            
-        # Validate minimum constraints
-        if 'min' in constraints:
-            min_val = constraints['min']
-            inclusive = constraints.get('min_inclusive', True)
-            
-            if inclusive:  # ge: value >= min
-                if value < min_val:
-                    return f"Value {value} for {param_name} must be at least {min_val}"
-            else:  # gt: value > min
-                if value <= min_val:
-                    return f"Value {value} for {param_name} must be greater than {min_val}"
-                    
-        # Validate maximum constraints
-        if 'max' in constraints:
-            max_val = constraints['max']
-            inclusive = constraints.get('max_inclusive', True)
-            
-            if inclusive:  # le: value <= max
-                if value > max_val:
-                    return f"Value {value} for {param_name} must be at most {max_val}"
-            else:  # lt: value < max
-                if value >= max_val:
-                    return f"Value {value} for {param_name} must be less than {max_val}"
-        
-        # No constraint violations
-        return None
     
     def update_model_param_model(self, model_param_model):
         """

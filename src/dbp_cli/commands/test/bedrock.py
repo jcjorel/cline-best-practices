@@ -39,6 +39,11 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-06T18:38:00Z : Added parameter validation to model initialization by CodeAssistant
+# * Enhanced _initialize_model with explicit parameter validation
+# * Added detailed error reporting for validation failures
+# * Improved user feedback with parameter display
+# * Added more robust error handling for profile application
 # 2025-05-06T16:32:00Z : Applied DRY principle with BedrockClientFactory.get_model_info() by CodeAssistant
 # * Updated _get_available_models to use centralized model info from factory
 # * Updated _get_model_family to use official model metadata
@@ -452,15 +457,44 @@ class BedrockTestCommandHandler:
         # Create parameter model for selected model and populate from args
         self.model_param_model = ModelParameters.for_model(model_id)
         
-        # Apply selected profile if specified
+        # Apply selected profile if specified, with validation
         if hasattr(self.args, "profile") and self.args.profile:
-            self.model_param_model._apply_profile(self.args.profile)
+            self.output.print(f"Applying parameter profile: {self.args.profile}")
+            try:
+                self.model_param_model._apply_profile(self.args.profile, validate_overrides=True)
+            except ValueError as e:
+                self.output.error(f"Profile validation error: {str(e)}")
+                return None
             
-        # Update with CLI args (these override profile defaults)
-        self.model_param_model.update_from_args(vars(self.args))
-        
+        # Update with CLI args with validation (these override profile defaults)
+        try:
+            args_dict = vars(self.args)
+            # Explicitly validate parameters before updating
+            valid, errors = self.model_param_model.validate_config({
+                k: v for k, v in args_dict.items() 
+                if k in self.model_param_model.__fields__ and v is not None
+            })
+            
+            if not valid:
+                error_messages = [f"- {param}: {msg}" for param, msg in errors.items()]
+                error_str = "\n".join(error_messages)
+                self.output.error(f"Parameter validation failed:\n{error_str}")
+                return None
+                
+            # If validation passes, update with the args
+            self.model_param_model.update_from_args(args_dict, validate_first=False)  # Already validated
+            self.output.print("Parameter validation successful")
+        except Exception as e:
+            self.output.error(f"Parameter validation error: {str(e)}")
+            return None
+            
         # Convert to model_kwargs format
         model_kwargs = self.model_param_model.to_model_kwargs()
+        
+        # Display the model parameters being used
+        self.output.print("\n[Model Parameters]")
+        for param_name, param_value in model_kwargs.items():
+            self.output.print(f"  {param_name}: {param_value}")
         
         # Use the BedrockClientFactory to create the model instance
         self.model_client = BedrockClientFactory.create_langchain_chatbedrock(

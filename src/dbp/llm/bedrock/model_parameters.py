@@ -38,6 +38,11 @@
 # system:pydantic
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-06T18:37:00Z : Added explicit parameter validation capabilities by CodeAssistant
+# * Added validate_config method for validating parameter values against constraints
+# * Updated update_from_args to validate parameters before applying them
+# * Enhanced _apply_profile to validate profile parameter overrides
+# * Improved error reporting with detailed error messages for validation failures
 # 2025-05-06T11:22:15Z : Made get_model_id_constraint non-abstract by CodeAssistant
 # * Changed get_model_id_constraint from abstract to concrete implementation
 # * Implemented DRY design by using Config.supported_models directly
@@ -51,15 +56,6 @@
 # * Updated add_arguments_to_parser to use annotations instead of field type
 # * Added explicit type detection for parameters
 # * Fixed error handling to prevent attribute access errors
-# 2025-05-06T09:31:00Z : Fixed parameter field handling for CLI arguments by CodeAssistant
-# * Updated get_all_param_fields method to use a clean approach without modifying FieldInfo objects
-# * Added detailed documentation about parameter variants
-# * Fixed add_arguments_to_parser method to work with the new field tracking approach
-# 2025-05-06T09:14:05Z : Initial implementation of ModelParameters class by CodeAssistant
-# * Created base ModelParameters class with common parameters
-# * Added registry mechanism for model-specific parameter classes
-# * Added factory method for creating appropriate parameter instance
-# * Added profile system for parameter applicability
 ###############################################################################
 
 """
@@ -69,8 +65,8 @@ Parameters definition for AWS Bedrock LLM models with Pydantic validation.
 import logging
 import inspect
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Type, ClassVar, Optional, List, Union, get_type_hints
-from pydantic import BaseModel, Field, validator
+from typing import Dict, Any, Type, ClassVar, Optional, List, Union, get_type_hints, Tuple
+from pydantic import BaseModel, Field, validator, ValidationError
 
 class ModelParameters(BaseModel, ABC):
     """
@@ -345,26 +341,29 @@ class ModelParameters(BaseModel, ABC):
         # If all classes are abstract (shouldn't happen), create a simple concrete class on the fly
         raise ValueError(f"No concrete parameter class found for model {model_id}")
     
-    def _apply_profile(self, profile_name: str) -> None:
+    def _apply_profile(self, profile_name: str, validate_overrides: bool = True) -> None:
         """
         [Method intent]
-        Apply a named profile to this parameter instance.
+        Apply a named profile to this parameter instance with validation of parameter overrides.
         
         [Design principles]
         - Safe profile application with fallback
-        - Clear logging of profile changes
+        - Strong validation of profile parameter values
+        - Clear error reporting for profile parameter validation failures
         - Proper parameter value overrides
         
         [Implementation details]
         - Falls back to "default" profile if requested profile doesn't exist
+        - Validates parameter overrides from profile using Pydantic validation
         - Applies parameter overrides from profile
         - Updates current profile tracking
         
         Args:
             profile_name: Name of the profile to apply
+            validate_overrides: If True, validate profile parameter overrides before applying
             
         Raises:
-            ValueError: If neither requested profile nor "default" profile exist
+            ValueError: If profile doesn't exist or if parameter overrides fail validation
         """
         # If profile doesn't exist, fall back to default
         if profile_name not in self._profiles:
@@ -372,10 +371,25 @@ class ModelParameters(BaseModel, ABC):
             profile_name = "default"
         
         profile = self._profiles[profile_name]
+        
+        # Get parameter overrides from profile
+        param_overrides = profile.get("param_overrides", {})
+        
+        # Validate parameter overrides if requested
+        if validate_overrides and param_overrides:
+            valid, errors = self.validate_config(param_overrides)
+            if not valid:
+                error_messages = [f"- {param}: {msg}" for param, msg in errors.items()]
+                raise ValueError(
+                    f"Invalid parameter values in profile '{profile_name}':\n" + 
+                    "\n".join(error_messages)
+                )
+        
+        # Update current profile
         self._current_profile = profile_name
         
         # Apply overrides from profile
-        for param, value in profile.get("param_overrides", {}).items():
+        for param, value in param_overrides.items():
             if hasattr(self, param):
                 setattr(self, param, value)
     
@@ -502,33 +516,99 @@ class ModelParameters(BaseModel, ABC):
                     
         return result
     
-    def update_from_args(self, args_dict: Dict[str, Any]) -> "ModelParameters":
+    def validate_config(self, config_dict: Dict[str, Any]) -> Tuple[bool, Dict[str, str]]:
+        """
+        [Function intent]
+        Validate user-provided configuration values against parameter class constraints
+        using Pydantic's validation mechanism.
+        
+        [Design principles]
+        - Explicit validation before parameter application
+        - Detailed error reporting for each invalid parameter
+        - Support for batch validation of multiple parameters
+        
+        [Implementation details]
+        - Validates each parameter individually to collect all errors
+        - Returns validation status and error messages for each failed parameter
+        - Only validates parameters that are applicable in current profile
+        
+        Args:
+            config_dict: Dictionary of parameter values to validate
+            
+        Returns:
+            Tuple containing:
+            - bool: True if all provided values are valid, False otherwise
+            - Dict[str, str]: Dictionary mapping parameter names to error messages for invalid parameters
+        """
+        errors = {}
+        valid = True
+        
+        # Only validate applicable parameters
+        applicable_config = {
+            k: v for k, v in config_dict.items() 
+            if k in self.__fields__ and self.is_applicable(k) and v is not None
+        }
+        
+        # Validate each parameter individually to collect all errors
+        for param_name, value in applicable_config.items():
+            try:
+                # Create a model with just this parameter to validate it
+                param_dict = {param_name: value}
+                type(self)(**param_dict)
+            except ValidationError as e:
+                valid = False
+                for error in e.errors():
+                    if error["loc"][0] == param_name:
+                        errors[param_name] = error["msg"]
+        
+        return valid, errors
+    
+    def update_from_args(self, args_dict: Dict[str, Any], validate_first: bool = True) -> "ModelParameters":
         """
         [Method intent]
-        Update parameters from arguments dictionary (e.g., CLI args).
+        Update parameters from arguments dictionary (e.g., CLI args) with optional validation.
         
         [Design principles]
         - Seamless integration with CLI arguments
-        - Skip None values
-        - Respect parameter applicability
+        - Strong validation before parameter application
+        - Detailed error reporting for validation failures
+        - Skip None values and non-applicable parameters
         - Return self for chaining
         
         [Implementation details]
+        - Optionally validates parameters before updating
         - Updates only fields defined in the model
         - Only updates applicable parameters
         - Returns self for method chaining
+        - Raises ValueError with detailed error messages when validation fails
         
         Args:
-            args_dict: Dictionary of arguments
+            args_dict: Dictionary of arguments to update
+            validate_first: If True, validate parameters before updating
             
         Returns:
             ModelParameters: Self, for method chaining
+            
+        Raises:
+            ValueError: If validate_first is True and validation fails, with detailed error messages
         """
-        for field_name in self.__fields__:
-            # Only update applicable parameters
-            if self.is_applicable(field_name):
-                if field_name in args_dict and args_dict[field_name] is not None:
-                    setattr(self, field_name, args_dict[field_name])
+        # Filter to only include parameters that are applicable and not None
+        applicable_args = {
+            k: v for k, v in args_dict.items() 
+            if k in self.__fields__ and self.is_applicable(k) and v is not None
+        }
+        
+        # Validate parameters if requested
+        if validate_first and applicable_args:
+            valid, errors = self.validate_config(applicable_args)
+            if not valid:
+                error_messages = [f"- {param}: {msg}" for param, msg in errors.items()]
+                raise ValueError(f"Invalid parameter values:\n" + "\n".join(error_messages))
+                
+        # Update parameters
+        for field_name, value in applicable_args.items():
+            setattr(self, field_name, value)
+                
         return self
     
     @classmethod
