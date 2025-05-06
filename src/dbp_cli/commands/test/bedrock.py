@@ -37,6 +37,21 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-06T11:51:45Z : Applied extensive DRY principle to field type handling by CodeAssistant
+# * Added _get_field_type helper to centralize field type extraction logic
+# * Implemented version-agnostic type access across Pydantic versions
+# * Added robust handling of Optional/Union types with proper unwrapping
+# * Improved fallback handling with current value type detection
+# 2025-05-06T11:50:30Z : Applied comprehensive DRY principle to constraint handling by CodeAssistant
+# * Extracted duplicated constraint extraction logic into _extract_field_constraints helper method
+# * Created schema-based constraints detection with fallbacks for different Pydantic versions
+# * Added support for OpenAPI-compatible constraint extraction from schema objects
+# * Improved constraint validation readability and maintainability
+# 2025-05-06T11:47:30Z : Applied advanced DRY principle to field handling by CodeAssistant
+# * Extracted duplicated field description logic into _get_field_description helper method
+# * Created version-agnostic field metadata accessor with Pydantic v1/v2 compatibility
+# * Standardized field description retrieval across multiple methods
+# * Improved error handling with graceful fallbacks for field information access
 # 2025-05-06T11:42:00Z : Applied deeper DRY principle to model handling by CodeAssistant
 # * Created unified _get_model_family method by merging _determine_model_family and _get_model_family_name
 # * Added comprehensive _get_model_constraints method as single source of truth for model capabilities
@@ -52,16 +67,6 @@
 # * Removed stack trace display for better user experience
 # * Added display of available models when an invalid model is specified
 # * Organized available models by family for easier selection
-# 2025-05-06T11:13:40Z : Enhanced model-specific parameter constraints by CodeAssistant
-# * Added model ID-based validation for max_tokens parameter
-# * Added explicit checks for Claude 3/3.5/3.7 model token limits
-# * Added debug output to help diagnose constraint issues
-# * Fixed issue allowing tokens beyond model-specific limits
-# 2025-05-06T11:10:40Z : Fixed parameter validation in _handle_config_command by CodeAssistant
-# * Enhanced validation logic to enforce field constraints (min/max values)
-# * Added comprehensive constraint extraction for both Pydantic v1 and v2
-# * Fixed handling of inclusive (le/ge) and exclusive (lt/gt) constraints
-# * Added detailed error messages for constraint violations
 ###############################################################################
 
 """
@@ -603,6 +608,49 @@ class BedrockTestCommandHandler:
         if response_text:
             self.chat_history.append({"role": "assistant", "content": response_text})
 
+    def _get_field_description(self, field):
+        """
+        [Function intent]
+        Extract field description from Pydantic field with version compatibility.
+        
+        [Design principles]
+        - Version-agnostic access to field metadata
+        - Graceful fallbacks for different Pydantic versions
+        - Clean error handling
+        
+        [Implementation details]
+        - Supports both Pydantic v1 and v2 field structures
+        - Tries multiple accessor patterns for description
+        - Returns empty string if no description is found
+        
+        Args:
+            field: Pydantic field to extract description from
+            
+        Returns:
+            str: Field description or empty string if not found
+        """
+        desc = ""
+        try:
+            # Try direct attribute access first (Pydantic v1)
+            if hasattr(field, 'description'):
+                desc = field.description
+            # Then try field_info if available (Pydantic v2)
+            elif hasattr(field, 'field_info') and hasattr(field.field_info, 'description'):
+                desc = field.field_info.description
+            # Finally try schema (works with both v1 and v2)
+            elif hasattr(field, 'schema') and callable(field.schema):
+                try:
+                    schema = field.schema()
+                    if isinstance(schema, dict) and 'description' in schema:
+                        desc = schema['description']
+                except:
+                    pass
+        except Exception:
+            # Fallback for any access errors
+            pass
+            
+        return desc
+    
     def _print_help(self):
         """
         [Function intent]
@@ -640,26 +688,8 @@ class BedrockTestCommandHandler:
             if self.model_param_model.is_applicable(field_name):
                 value = getattr(self.model_param_model, field_name)
                 
-                # Get description using getattr to handle different Pydantic versions
-                desc = ""
-                try:
-                    # Try direct attribute access first
-                    if hasattr(field, 'description'):
-                        desc = field.description
-                    # Then try field_info if available (without assuming its structure)
-                    elif hasattr(field, 'field_info') and hasattr(field.field_info, 'description'):
-                        desc = field.field_info.description
-                    # Finally try schema
-                    elif hasattr(field, 'schema') and callable(field.schema):
-                        try:
-                            schema = field.schema()
-                            if isinstance(schema, dict) and 'description' in schema:
-                                desc = schema['description']
-                        except:
-                            pass
-                except Exception:
-                    # Fallback for any access errors
-                    desc = ""
+                # Get field description using the centralized helper method
+                desc = self._get_field_description(field)
                     
                 self.output.print(f"  {field_name} = {value} ({desc})")
         
@@ -740,24 +770,8 @@ class BedrockTestCommandHandler:
                 
             field = self.model_param_model.__fields__[param]
             
-            # Safe access to field type - handling different Pydantic versions
-            field_type = None
-            
-            # Try different ways to access the type information
-            if hasattr(field, 'type_'):
-                # Pydantic v1 style
-                field_type = field.type_
-            elif hasattr(field, 'annotation'):
-                # Pydantic v2 style
-                field_type = field.annotation
-            else:
-                # Fallback to the type of the current value
-                current_value = getattr(self.model_param_model, param)
-                field_type = type(current_value)
-            
-            # Handle Optional types
-            if hasattr(field_type, "__origin__") and field_type.__origin__ is Union:
-                field_type = field_type.__args__[0]  # Get the actual type from Optional
+            # Get field type using our helper method
+            field_type = self._get_field_type(field, getattr(self.model_param_model, param))
             
             try:
                 # Convert and validate value
@@ -769,38 +783,8 @@ class BedrockTestCommandHandler:
                     # Create a temporary dict with just the parameter we're setting
                     validate_data = {param: value}
                     
-                    # Check constraints directly from field
-                    constraints = {}
-                    
-                    # Extract min constraint (ge or gt)
-                    if hasattr(field, 'ge'):
-                        constraints['min'] = field.ge
-                        constraints['min_inclusive'] = True
-                    elif hasattr(field, 'gt'):
-                        constraints['min'] = field.gt
-                        constraints['min_inclusive'] = False
-                    elif hasattr(field, 'field_info'):
-                        if hasattr(field.field_info, 'ge'):
-                            constraints['min'] = field.field_info.ge
-                            constraints['min_inclusive'] = True
-                        elif hasattr(field.field_info, 'gt'):
-                            constraints['min'] = field.field_info.gt
-                            constraints['min_inclusive'] = False
-                            
-                    # Extract max constraint (le or lt)
-                    if hasattr(field, 'le'):
-                        constraints['max'] = field.le
-                        constraints['max_inclusive'] = True
-                    elif hasattr(field, 'lt'):
-                        constraints['max'] = field.lt
-                        constraints['max_inclusive'] = False
-                    elif hasattr(field, 'field_info'):
-                        if hasattr(field.field_info, 'le'):
-                            constraints['max'] = field.field_info.le
-                            constraints['max_inclusive'] = True
-                        elif hasattr(field.field_info, 'lt'):
-                            constraints['max'] = field.field_info.lt
-                            constraints['max_inclusive'] = False
+                    # Extract field constraints using our helper method
+                    constraints = self._extract_field_constraints(field)
                     
                     # Debug constraint output
                     self.output.print(f"Found constraints: {constraints}")
@@ -868,26 +852,8 @@ class BedrockTestCommandHandler:
             value = getattr(self.model_param_model, param)
             field = self.model_param_model.__fields__[param]
             
-            # Get description using getattr to handle different Pydantic versions
-            desc = ""
-            try:
-                # Try direct attribute access first
-                if hasattr(field, 'description'):
-                    desc = field.description
-                # Then try field_info if available
-                elif hasattr(field, 'field_info') and hasattr(field.field_info, 'description'):
-                    desc = field.field_info.description
-                # Finally try schema
-                elif hasattr(field, 'schema') and callable(field.schema):
-                    try:
-                        schema = field.schema()
-                        if isinstance(schema, dict) and 'description' in schema:
-                            desc = schema['description']
-                    except:
-                        pass
-            except Exception:
-                # Fallback for any access errors
-                desc = ""
+            # Get description using our centralized helper method
+            desc = self._get_field_description(field)
             
             # Show applicability info
             applicable = self.model_param_model.is_applicable(param)
@@ -898,6 +864,130 @@ class BedrockTestCommandHandler:
             
         self.output.print("Usage: config [param] [value] or config profile <name>")
 
+    def _get_field_type(self, field, current_value=None):
+        """
+        [Function intent]
+        Extract field type from a Pydantic field with version compatibility.
+        
+        [Design principles]
+        - Version-agnostic type extraction
+        - Support for both Pydantic v1 and v2
+        - Handles Optional/Union types
+        - Clean error handling with reasonable defaults
+        
+        [Implementation details]
+        - Supports both Pydantic v1 and v2 field structures
+        - Handles Optional types by extracting the inner type
+        - Falls back to current value type if metadata extraction fails
+        
+        Args:
+            field: Pydantic field to extract type from
+            current_value: Current field value for fallback type detection
+            
+        Returns:
+            type: The extracted field type
+        """
+        field_type = None
+        
+        # Try different ways to access the type information
+        if hasattr(field, 'type_'):
+            # Pydantic v1 style
+            field_type = field.type_
+        elif hasattr(field, 'annotation'):
+            # Pydantic v2 style
+            field_type = field.annotation
+        else:
+            # Fallback to the type of the current value
+            field_type = type(current_value) if current_value is not None else str
+        
+        # Handle Optional types
+        if hasattr(field_type, "__origin__") and field_type.__origin__ is Union:
+            # Get the actual type from Optional (assuming first non-None type)
+            for arg_type in field_type.__args__:
+                if arg_type is not type(None):  # noqa: E721
+                    field_type = arg_type
+                    break
+                
+        return field_type
+    
+    def _extract_field_constraints(self, field):
+        """
+        [Function intent]
+        Extract field constraints from a Pydantic field with version compatibility.
+        
+        [Design principles]
+        - Version-agnostic constraint extraction
+        - Support for both inclusive and exclusive ranges
+        - Clean error handling with reasonable defaults
+        - Centralized constraint management
+        
+        [Implementation details]
+        - Handles both Pydantic v1 and v2 field structures
+        - Extracts min/max constraints with inclusivity information
+        - Returns a structured dictionary of constraints
+        - Works with both direct field attributes and field_info
+        
+        Args:
+            field: Pydantic field to extract constraints from
+            
+        Returns:
+            dict: Dictionary containing extracted constraints
+        """
+        constraints = {}
+        
+        # Extract min constraint (ge or gt)
+        if hasattr(field, 'ge'):
+            constraints['min'] = field.ge
+            constraints['min_inclusive'] = True
+        elif hasattr(field, 'gt'):
+            constraints['min'] = field.gt
+            constraints['min_inclusive'] = False
+        elif hasattr(field, 'field_info'):
+            if hasattr(field.field_info, 'ge'):
+                constraints['min'] = field.field_info.ge
+                constraints['min_inclusive'] = True
+            elif hasattr(field.field_info, 'gt'):
+                constraints['min'] = field.field_info.gt
+                constraints['min_inclusive'] = False
+                
+        # Extract max constraint (le or lt)
+        if hasattr(field, 'le'):
+            constraints['max'] = field.le
+            constraints['max_inclusive'] = True
+        elif hasattr(field, 'lt'):
+            constraints['max'] = field.lt
+            constraints['max_inclusive'] = False
+        elif hasattr(field, 'field_info'):
+            if hasattr(field.field_info, 'le'):
+                constraints['max'] = field.field_info.le
+                constraints['max_inclusive'] = True
+            elif hasattr(field.field_info, 'lt'):
+                constraints['max'] = field.field_info.lt
+                constraints['max_inclusive'] = False
+                
+        # Try to extract from schema (works in some cases)
+        if not constraints and hasattr(field, 'schema') and callable(field.schema):
+            try:
+                schema = field.schema()
+                if isinstance(schema, dict):
+                    if 'minimum' in schema:
+                        constraints['min'] = schema['minimum']
+                        constraints['min_inclusive'] = True
+                    elif 'exclusiveMinimum' in schema:
+                        constraints['min'] = schema['exclusiveMinimum']
+                        constraints['min_inclusive'] = False
+                        
+                    if 'maximum' in schema:
+                        constraints['max'] = schema['maximum']
+                        constraints['max_inclusive'] = True
+                    elif 'exclusiveMaximum' in schema:
+                        constraints['max'] = schema['exclusiveMaximum']
+                        constraints['max_inclusive'] = False
+            except:
+                pass
+                
+        return constraints
+    
     def _get_model_constraints(self, model_id):
         """
         [Function intent]
