@@ -37,6 +37,11 @@
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-06T11:33:50Z : Applied DRY principle to model constraints by CodeAssistant
+# * Refactored hard-coded model constraints into helper methods
+# * Added _get_model_max_tokens_limit method for centralized limit management
+# * Added _get_model_family_name method for consistent model family naming
+# * Improved readability and maintainability of parameter validation
 # 2025-05-06T11:17:00Z : Improved error handling for invalid models by CodeAssistant
 # * Added user-friendly error handling for unsupported models
 # * Removed stack trace display for better user experience
@@ -52,25 +57,6 @@
 # * Added comprehensive constraint extraction for both Pydantic v1 and v2
 # * Fixed handling of inclusive (le/ge) and exclusive (lt/gt) constraints
 # * Added detailed error messages for constraint violations
-# 2025-05-06T11:05:00Z : Fixed profile application to properly override command line args by CodeAssistant
-# * Added current_model_id tracking to store model ID for recreating parameter models
-# * Modified profile application to create fresh parameter model that discards CLI args
-# * Ensured profile settings take precedence over command line arguments
-# * Improved error handling for profile application when model ID is not available
-# 2025-05-06T10:48:30Z : Fixed field description access in _print_help by CodeAssistant
-# * Fixed field.field_info.description access error in help command
-# * Added safe attribute access with getattr and fallback
-# * Updated _handle_config_command for consistent field description access
-# * Improved error handling for description access
-# 2025-05-06T10:38:15Z : Fixed parameter passing in _process_model_response by CodeAssistant
-# * Fixed model parameter passing to avoid validation errors
-# * Removed redundant model_kwargs from astream_text call
-# * Parameters are now only set once during model initialization
-# * Added logging for stream errors
-# 2025-05-06T00:15:54Z : Initial implementation of BedrockTestCommandHandler by CodeAssistant
-# * Implemented dynamic model discovery and selection
-# * Implemented interactive chat with streaming responses
-# * Implemented special command handling
 ###############################################################################
 
 """
@@ -820,19 +806,13 @@ class BedrockTestCommandHandler:
                                 return
                     
                     # If we have a model ID and this is a max_tokens parameter, double-check against
-                    # model-specific constraints from the parameter class for safety
+                    # model-specific constraints
                     if param == "max_tokens" and self.current_model_id:
-                        # For anthropic.claude-3-5-sonnet models, ensure max_tokens <= 8192
-                        if "anthropic.claude-3-5" in self.current_model_id and value > 8192:
-                            self.output.error(f"Value {value} for max_tokens exceeds Claude 3.5 maximum of 8192")
-                            return
-                        # For anthropic.claude-3 models, ensure max_tokens <= 4096
-                        elif "anthropic.claude-3-" in self.current_model_id and "3-5" not in self.current_model_id and "3-7" not in self.current_model_id and value > 4096:
-                            self.output.error(f"Value {value} for max_tokens exceeds Claude 3 maximum of 4096")
-                            return
-                        # For anthropic.claude-3-7 models, ensure max_tokens <= 64000
-                        elif "anthropic.claude-3-7" in self.current_model_id and value > 64000:
-                            self.output.error(f"Value {value} for max_tokens exceeds Claude 3.7 maximum of 64000")
+                        # Use a helper method to get the max token limit for the model
+                        max_limit = self._get_model_max_tokens_limit(self.current_model_id)
+                        if max_limit and value > max_limit:
+                            model_family = self._get_model_family_name(self.current_model_id)
+                            self.output.error(f"Value {value} for max_tokens exceeds {model_family} maximum of {max_limit}")
                             return
                 except Exception as e:
                     self.output.error(f"Value validation error for {param}: {str(e)}")
@@ -894,6 +874,79 @@ class BedrockTestCommandHandler:
             
         self.output.print("Usage: config [param] [value] or config profile <name>")
 
+    def _get_model_max_tokens_limit(self, model_id):
+        """
+        [Function intent]
+        Get the maximum token limit for a specific model ID.
+        
+        [Design principles]
+        - Centralized token limit management
+        - Model-specific constraints
+        - DRY implementation
+        
+        [Implementation details]
+        - Maps model families to their token limits
+        - Provides default fallback for unknown models
+        - Uses pattern matching for model identification
+        
+        Args:
+            model_id: The model ID to get token limit for
+            
+        Returns:
+            int: Maximum token limit or None if unknown
+        """
+        model_id_lower = model_id.lower()
+        
+        # Claude 3.5 models - 8K limit
+        if "claude-3-5" in model_id_lower:
+            return 8192
+        
+        # Claude 3.7 models - 64K limit
+        elif "claude-3-7" in model_id_lower:
+            return 64000
+        
+        # Regular Claude 3 models - 4K limit
+        elif "claude-3" in model_id_lower:
+            return 4096
+            
+        # Default fallback - no specific limit
+        return None
+    
+    def _get_model_family_name(self, model_id):
+        """
+        [Function intent]
+        Get human-readable model family name for a specific model ID.
+        
+        [Design principles]
+        - Clean feedback to users
+        - Consistent naming
+        - Model family identification
+        
+        [Implementation details]
+        - Uses pattern matching on model ID
+        - Returns appropriate family name for known models
+        - Uses generic fallback for unknown models
+        
+        Args:
+            model_id: The model ID to get family name for
+            
+        Returns:
+            str: Human-readable model family name
+        """
+        model_id_lower = model_id.lower()
+        
+        if "claude-3-5" in model_id_lower:
+            return "Claude 3.5"
+        elif "claude-3-7" in model_id_lower:
+            return "Claude 3.7"
+        elif "claude-3" in model_id_lower:
+            return "Claude 3"
+        elif "nova" in model_id_lower:
+            return "Nova"
+        else:
+            # Use the existing _determine_model_family method for consistency
+            return self._determine_model_family(model_id)
+        
     def _get_multiline_input(self, session):
         """
         [Function intent]
