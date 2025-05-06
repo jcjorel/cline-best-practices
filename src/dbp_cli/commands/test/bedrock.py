@@ -84,6 +84,7 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.styles import Style
 from prompt_toolkit.validation import Validator, ValidationError
+from prompt_toolkit.shortcuts import CompleteStyle
 
 # Import LangChain wrapper classes
 from dbp.llm.bedrock.langchain_wrapper import EnhancedChatBedrockConverse
@@ -552,7 +553,10 @@ class BedrockTestCommandHandler:
         command_completer = CommandCompleter(self.command_handler)
         session = PromptSession(
             history=history,
-            completer=command_completer
+            completer=command_completer,
+            complete_while_typing=False,  # Show completions only when Tab is pressed
+            complete_in_thread=True,      # Run completion in a separate thread for responsiveness
+            complete_style=CompleteStyle.MULTI_COLUMN  # Show completions in a multi-column menu
         )
         
         # Define styling
@@ -564,7 +568,8 @@ class BedrockTestCommandHandler:
         # Display welcome message
         self.output.print(f"\nInteractive chat mode with {self.model_client.model_id}")
         self.output.print("Type '/exit' to quit, '/help' for available commands")
-        self.output.print("Use Tab for command and parameter auto-completion\n")
+        self.output.print("Use Tab for command and parameter auto-completion")
+        self.output.print("Press Tab twice to see all available options\n")
         
         while True:
             try:

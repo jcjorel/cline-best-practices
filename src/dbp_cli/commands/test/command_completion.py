@@ -32,6 +32,11 @@
 # codebase:src/dbp_cli/commands/test/bedrock_commands.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-06T22:35:00Z : Improved completion priority logic by CodeAssistant
+# * Completely redesigned the completion logic with explicit priority handling
+# * Fixed edge case with "/config profile " space completion showing "profile" again
+# * Added early return statements to ensure only one completion type is shown
+# * Separated parameter name and value completion into distinct code paths
 # 2025-05-06T22:10:00Z : Initial creation of command completion module by CodeAssistant
 # * Implemented CommandCompleter class for prompt_toolkit integration
 # * Added support for command, parameter name, and parameter value completion
@@ -118,44 +123,52 @@ class CommandCompleter(Completer):
         if len(parts) == 1:
             cmd_fragment = parts[0]
             yield from self._complete_command(cmd_fragment)
+            return
             
-        # Case 2: Completing a parameter name or value
-        elif len(parts) >= 2:
-            command = parts[0]
+        # For all other cases, we need at least 2 parts and a valid command
+        if len(parts) < 2:
+            return
             
-            # Check if the command exists in the registry
-            if command not in self.command_handler.get_command_registry():
+        command = parts[0]
+            
+        # Check if the command exists in the registry
+        if command not in self.command_handler.get_command_registry():
+            return
+            
+        # Get command info from registry
+        cmd_info = self.command_handler.get_command_registry()[command]
+        
+        # If command has no parameters, no completions to offer
+        if not cmd_info.get('parameters', {}):
+            return
+            
+        # Case 2: Parameter value completion - highest priority
+        # This handles "/config profile " with a space after parameter
+        if len(parts) == 2 and text.endswith(' '):
+            param = parts[1]
+            
+            # If this is a valid parameter, complete values
+            if param in cmd_info.get('parameters', {}):
+                yield from self._complete_parameter_value(command, param, '')
+                return
+            
+        # Case 3: Parameter value with partial input
+        # This handles "/config profile d" with partial value
+        elif len(parts) == 3:
+            param = parts[1]
+            
+            # If this is a valid parameter, complete values
+            if param in cmd_info.get('parameters', {}):
+                value_fragment = parts[2]
+                yield from self._complete_parameter_value(command, param, value_fragment)
                 return
                 
-            # Get command info from registry
-            cmd_info = self.command_handler.get_command_registry()[command]
-            
-            # If command has no parameters, no completions to offer
-            if not cmd_info.get('parameters', {}):
-                return
-                
-            # Case 2a: We're at a position to complete a parameter name or value
-            if len(parts) == 2:
-                # If the input ends with a space, we're starting a new parameter
-                if text.endswith(' '):
-                    yield from self._complete_parameters(command)
-                else:
-                    # Otherwise, we're completing a partial parameter
-                    yield from self._complete_parameters(command, parts[1])
-            
-            # Case 2b: We have a parameter and we're completing its value
-            elif len(parts) == 3:
-                param = parts[1]
-                
-                # If param exists and we're starting or continuing a value
-                if param in cmd_info.get('parameters', {}):
-                    # If value is empty or partial
-                    if text.endswith(' '):
-                        value_fragment = ''
-                    else:
-                        value_fragment = parts[2]
-                        
-                    yield from self._complete_parameter_value(command, param, value_fragment)
+        # Case 4: Parameter name completion (lowest priority)
+        # Only reached if we're not completing values
+        if len(parts) == 2 and not text.endswith(' '):
+            yield from self._complete_parameters(command, parts[1])
+        else:
+            yield from self._complete_parameters(command)
     
     def _complete_command(self, cmd_fragment):
         """
