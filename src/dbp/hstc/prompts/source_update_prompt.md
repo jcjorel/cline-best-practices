@@ -35,9 +35,9 @@ You must return a valid raw JSON object, without preambule or postambule additio
   }},
   "changes": [
     {{
-      "context_before": "import sys\nimport os\n\ndef example_function():\n", <!-- Can be any string -->
-      "original_text": "    # This is an example function.\n", <!-- This contains string(s) between comment sequences. IT NEVER CONTAINS CODE! -->
-      "replacement_text": "    \"\"\"\n    [Function intent]\n    Brief description.\n\n    [Design principles]\n    Key design patterns.\n\n    [Implementation details]\n    Technical details.\n    \"\"\"" <!-- This contains string(s) between comment sequences.IT NEVER CONTAINS CODE! -->
+      "context_before": "import sys\nimport os\n\ndef example_function():\n", <!-- Can be any string. BE CAREFUL! INCLUDE CR/LF CHARACTERS UP TO 'original_text' ! -->
+      "original_text": "    # This is an example function.\n", <!-- This contains string(s) between comment sequences. IT NEVER CONTAINS CLASS/FUNCTION DECLARATION OR CODE! -->
+      "replacement_text": "    \"\"\"\n    [Function intent]\n    Brief description.\n\n    [Design principles]\n    Key design patterns.\n\n    [Implementation details]\n    Technical details.\n    \"\"\"" <!-- This contains string(s) between comment sequences.IT NEVER CONTAINS CLASS/FUNCTION DECLARATION OR CODE! -->
     }},
     {{
       "context_before": "# Configuration constants\n\n", <!-- Can be any string -->
