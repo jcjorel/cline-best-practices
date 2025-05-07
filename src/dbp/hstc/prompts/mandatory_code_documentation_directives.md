@@ -79,7 +79,7 @@ All code must be documented at TWO distinct levels without exception:
 - ALWAYS follow the exact template provided in `GENAI_FUNCTION_TEMPLATE.txt`
 - These sections are required for all functions and class methods regardless of complexity or size
 
-#### Documentation Quality Standards
+### Documentation Quality Standards
 - Write insightful comments that allow developers to understand key aspects of file and class/methods/functions without reading code
 - When using adjectives (like "clear", "simple", "efficient", "appropriate", "optimal", "robust", etc.), ALWAYS provide one or more specific justifications in the same sentence to prove the adjective is deserved
 - Avoid vague wording in justifications and provide precise technical reasons
