@@ -157,6 +157,31 @@ class ModeldiscoveryCommandHandler(BaseCommandHandler):
                     if not has_regions:
                         self.output.info("\nNo regions are associated with models. Run 'dbp modeldiscovery bedrock scan' to discover model availability.")
                     
+                    # Check for models with access issues
+                    models_with_issues = capabilities.get_models_with_access_issues()
+                    if models_with_issues:
+                        # Define column widths for the access issues table
+                        model_width = 40
+                        issues_total_width = 120  # Set a reasonable total width
+                        regions_width = issues_total_width - model_width - 5  # 5 for separator and padding
+                        
+                        # Create header for access issues table
+                        self.output.info("\nModels with Access Issues:")
+                        separator_line = "-" * issues_total_width
+                        self.output.print(separator_line)
+                        header = f"{'Model ID':<{model_width}} | {'Unusable regions (model not enabled or IAM permission issues)'}"
+                        self.output.print(header)
+                        self.output.print(separator_line)
+                        
+                        # Add rows for each model with access issues
+                        for model in models_with_issues:
+                            model_id = model['short_model_id']
+                            regions = ", ".join(model['inaccessible_regions'])
+                            row = f"{model_id:<{model_width}} | {regions}"
+                            self.output.print(row)
+                        
+                        self.output.print(separator_line)
+                    
                     # Get and display cache information
                     last_updated = table_data.get("timestamp", "Unknown")
                     

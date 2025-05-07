@@ -461,6 +461,55 @@ class BedrockModelCapabilities(BedrockModelDiscovery):
             "timestamp": self._memory_cache.get("last_updated", {}).get("models", "Unknown")
         }
     
+    def get_models_with_access_issues(self) -> List[Dict[str, Any]]:
+        """
+        [Method intent]
+        Identify models with access issues (present in regions but not accessible).
+        
+        [Design principles]
+        - Comprehensive access issue reporting
+        - Filtering for models with problems
+        - Clear issue isolation
+        
+        [Implementation details]
+        - Checks cached model data across regions
+        - Identifies regions where models exist but are not accessible
+        - Associates inaccessible regions with model IDs
+        - Returns only models that have at least one problematic region
+        
+        Returns:
+            List[Dict[str, Any]]: List of models with access issues, including inaccessible regions
+        """
+        result = []
+        
+        # Get all project models
+        project_models = self.project_supported_models
+        
+        with self._lock:
+            cached_models = self._memory_cache.get("models", {})
+            
+            # For each model, find regions where it exists but is not accessible
+            for model_id in project_models:
+                inaccessible_regions = []
+                
+                # Check each region for this model
+                for region, models in cached_models.items():
+                    if model_id in models:
+                        # If the model exists but is marked as not accessible, add to inaccessible regions
+                        if models[model_id].get("accessible") is False:
+                            inaccessible_regions.append(region)
+                
+                # If we found any inaccessible regions, add to result
+                if inaccessible_regions:
+                    short_model_id = model_id.split(":")[0]
+                    result.append({
+                        "model_id": model_id,
+                        "short_model_id": short_model_id,
+                        "inaccessible_regions": sorted(inaccessible_regions)
+                    })
+        
+        return result
+    
     def format_availability_table(self, table_data: Dict[str, Any], selected_model: Optional[str] = None) -> str:
         """
         [Method intent]
