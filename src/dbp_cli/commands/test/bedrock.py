@@ -35,11 +35,14 @@
 # codebase:src/dbp/llm/bedrock/client_factory.py
 # codebase:src/dbp_cli/commands/base.py
 # codebase:src/dbp_cli/commands/test/bedrock_commands.py
-# codebase:src/dbp_cli/commands/test/command_completion.py
+# codebase:src/dbp_cli/commands/test/bedrock_command_completion.py
 # system:prompt_toolkit
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-07T07:47:32Z : Updated import path for CommandCompleter by CodeAssistant
+# * Changed import from command_completion.py to bedrock_command_completion.py
+# * Updated dependency reference in header section
 # 2025-05-07T00:38:00Z : Enhanced welcome message with double tab completion guidance by CodeAssistant
 # * Updated welcome message to explain the double tab functionality for empty input
 # * Added clearer instructions to show the difference between empty input and command completion
@@ -55,26 +58,6 @@
 # * Added format_availability_table call for the selected model
 # * Enhanced user experience by displaying availability before chat prompt
 # * Added dependency on models_capabilities.py
-# 2025-05-06T18:38:00Z : Added parameter validation to model initialization by CodeAssistant
-# * Enhanced _initialize_model with explicit parameter validation
-# * Added detailed error reporting for validation failures
-# * Improved user feedback with parameter display
-# * Added more robust error handling for profile application
-# 2025-05-06T16:32:00Z : Applied DRY principle with BedrockClientFactory.get_model_info() by CodeAssistant
-# * Updated _get_available_models to use centralized model info from factory
-# * Updated _get_model_family to use official model metadata
-# * Updated _get_model_constraints to leverage model metadata for token limits
-# * Added dependency on client_factory.py for centralized model information
-# 2025-05-06T12:25:00Z : Removed redundant command handling methods by CodeAssistant
-# * Created BedrockCommandHandler class for command management
-# * Moved special command processing logic to dedicated handler
-# * Implemented state synchronization via callback system
-# * Enhanced modularity through clear separation of concerns
-# 2025-05-06T12:04:30Z : Applied message handling DRY principle by CodeAssistant  
-# * Added _format_chat_messages method for consistent message formatting
-# * Created _handle_streaming_error for centralized error handling
-# * Simplified code flow with specialized helper methods
-# * Improved readability and maintainability of message processing
 ###############################################################################
 
 """
@@ -104,7 +87,7 @@ from dbp.llm.bedrock.discovery.models_capabilities import BedrockModelCapabiliti
 
 # Import command handler and completer
 from .bedrock_commands import BedrockCommandHandler
-from .command_completion import CommandCompleter
+from .bedrock_command_completion import CommandCompleter
 
 
 class BedrockTestCommandHandler:

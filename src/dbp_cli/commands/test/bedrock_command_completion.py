@@ -33,6 +33,9 @@
 # codebase:src/dbp_cli/commands/test/bedrock_commands.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-07T07:45:27Z : Renamed file from command_completion.py to bedrock_command_completion.py by CodeAssistant
+# * File renamed to better reflect its Bedrock-specific functionality
+# * No changes to file content other than this history update
 # 2025-05-07T00:36:00Z : Added empty input command completion on double tab by CodeAssistant
 # * Added functionality to show all commands when pressing Tab with empty input
 # * Updated function intent documentation to reflect empty input handling
@@ -43,10 +46,6 @@
 # * Fixed edge case with "/config profile " space completion showing "profile" again
 # * Added early return statements to ensure only one completion type is shown
 # * Separated parameter name and value completion into distinct code paths
-# 2025-05-06T22:10:00Z : Initial creation of command completion module by CodeAssistant
-# * Implemented CommandCompleter class for prompt_toolkit integration
-# * Added support for command, parameter name, and parameter value completion
-# * Created utils for extracting parameter values from different field types
 ###############################################################################
 
 """
