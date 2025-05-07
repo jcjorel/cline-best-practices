@@ -75,6 +75,7 @@ from .commands.config import ConfigCommandHandler
 from .commands.status import StatusCommandHandler
 from .commands.server import ServerCommandHandler
 from .commands.test import TestCommandHandler  # Now imported directly from the test package __init__.py
+from .commands.modeldiscovery import ModeldiscoveryCommandHandler
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -184,6 +185,7 @@ class DocumentationProgrammingCLI:
             "status": StatusCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
             "server": ServerCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
             "test": TestCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
+            "modeldiscovery": ModeldiscoveryCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
         }
     
     def _create_parser(self) -> argparse.ArgumentParser:

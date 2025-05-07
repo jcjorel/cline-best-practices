@@ -37,6 +37,11 @@
 # system:logging
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-07T08:24:00Z : Added TTL and selective cache clearing support by CodeAssistant
+# * Added CACHE_TTL_SECONDS constant (7 days)
+# * Implemented is_cache_expired method for TTL-based cache validation
+# * Added clear_bedrock_models_cache method to selectively clear model data
+# * Preserved latency statistics and other cache content in selective clear
 # 2025-05-06T23:26:00Z : Created models_capabilities.py as part of models.py file split by CodeAssistant
 # * Split from original models.py file
 # * Extracted extended capabilities functionality into separate file
@@ -47,6 +52,7 @@
 import os
 import json
 import logging
+import time
 from typing import Dict, List, Optional, Any
 
 from .models_core import BedrockModelDiscovery
@@ -79,6 +85,9 @@ class BedrockModelCapabilities(BedrockModelDiscovery):
         "amazon.nova-lite-",            # Nova Lite
         "amazon.nova-pro-"              # Nova Pro
     ]
+    
+    # Cache TTL (7 days in seconds)
+    CACHE_TTL_SECONDS = 7 * 24 * 60 * 60  # 7 days
     
     @classmethod
     def get_instance(cls, scan_on_init: bool = False):
@@ -169,7 +178,7 @@ class BedrockModelCapabilities(BedrockModelDiscovery):
             self.logger.warning(f"Error loading cache from {path}: {str(e)}")
             return False
 
-    def save_cache_to_file(self, file_path: Optional[str] = None) -> bool:
+    def save_cache_to_file(self, file_path: Optional[str] = None, force_empty_models: bool = False) -> bool:
         """
         [Method intent]
         Save current model and latency data to a JSON file.
@@ -178,14 +187,17 @@ class BedrockModelCapabilities(BedrockModelDiscovery):
         - Simple file I/O
         - Optional operation
         - Default path handling
+        - Support for forcing empty models cache
         
         [Implementation details]
         - Uses default path if none specified
         - Basic JSON file saving
         - Creates parent directories if needed
+        - Option to force empty models in the saved cache
         
         Args:
             file_path: Optional path to cache file
+            force_empty_models: If True, save with empty models dict regardless of memory cache
             
         Returns:
             bool: True if saving succeeded, False otherwise
@@ -199,10 +211,14 @@ class BedrockModelCapabilities(BedrockModelDiscovery):
             # Create a copy of the data to save
             with self._lock:
                 data = {
-                    "models": self._memory_cache.get("models", {}),
+                    "models": {} if force_empty_models else self._memory_cache.get("models", {}),
                     "latency": self._memory_cache.get("latency", {}),
                     "last_updated": self._memory_cache.get("last_updated", {})
                 }
+                
+                # Log whether models cache is empty for debugging
+                models_empty = not data["models"]
+                self.logger.info(f"Saving cache with models_empty={models_empty}")
             
             with open(path, "w") as f:
                 json.dump(data, f, indent=2)
@@ -239,6 +255,69 @@ class BedrockModelCapabilities(BedrockModelDiscovery):
                     del self._memory_cache["last_updated"]["models"]
         
         self.logger.info("Model discovery cache cleared")
+    
+    def clear_bedrock_models_cache(self) -> None:
+        """
+        [Method intent]
+        Selectively clear only the AWS Bedrock models definition from cache,
+        preserving region latency statistics and other cache content.
+        
+        [Design principles]
+        - Selective cache clearing
+        - Preserve performance-related statistics
+        - Thread safety
+        
+        [Implementation details]
+        - Removes only model mapping from cache
+        - Maintains latency data and other cache content
+        - Updates last_updated timestamp to trigger next scan
+        - Logs clearing operation
+        
+        Returns:
+            None
+        """
+        with self._lock:
+            if "models" in self._memory_cache:
+                del self._memory_cache["models"]
+            if "last_updated" in self._memory_cache:
+                if "models" in self._memory_cache["last_updated"]:
+                    del self._memory_cache["last_updated"]["models"]
+        
+        self.logger.info("AWS Bedrock models cache cleared, region latency statistics preserved")
+    
+    def is_cache_expired(self) -> bool:
+        """
+        [Method intent]
+        Check if the model discovery cache has expired based on TTL
+        or if the cache is empty.
+        
+        [Design principles]
+        - Simple TTL check
+        - Time-based expiration
+        - Default TTL period
+        - Empty cache detection
+        
+        [Implementation details]
+        - Checks if models cache exists and has content
+        - Compares last updated timestamp with current time
+        - Uses CACHE_TTL_SECONDS as expiration period
+        
+        Returns:
+            bool: True if cache has expired or is empty, False otherwise
+        """
+        with self._lock:
+            # Check if models cache is empty or doesn't exist
+            models_cache = self._memory_cache.get("models", {})
+            if not models_cache:
+                return True
+                
+            # Check timestamp
+            last_updated = self._memory_cache.get("last_updated", {}).get("models", 0)
+            if not last_updated:
+                return True
+                
+            current_time = time.time()
+            return (current_time - last_updated) > self.CACHE_TTL_SECONDS
     
     def supports_prompt_caching(self, model_id: str) -> bool:
         """

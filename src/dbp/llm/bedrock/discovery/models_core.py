@@ -59,7 +59,7 @@ import threading
 import copy
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, List, Optional, Any, Set, Union, Tuple
+from typing import Dict, List, Optional, Any, Set, Union, Tuple, Callable
 
 import boto3
 import botocore.exceptions
@@ -172,7 +172,12 @@ class BedrockModelDiscovery(BaseDiscovery):
         self.project_supported_models = get_all_supported_model_ids()
         self.logger.info(f"Loaded {len(self.project_supported_models)} project-supported models")
     
-    def scan_all_regions(self, regions: Optional[List[str]] = None, force_refresh: bool = False) -> Dict[str, Dict[str, Dict[str, Any]]]:
+    def scan_all_regions(
+        self, 
+        regions: Optional[List[str]] = None, 
+        force_refresh: bool = False,
+        progress_callback: Optional[Callable[[int, int], None]] = None
+    ) -> Dict[str, Dict[str, Dict[str, Any]]]:
         """
         [Method intent]
         Scan AWS regions for Bedrock models, either using cache or forcing a fresh scan.
@@ -244,9 +249,21 @@ class BedrockModelDiscovery(BaseDiscovery):
                 return model_dict
             
             # Use parallel scanning from base class
+            total_regions = len(to_scan)
+            scanned_regions = 0
+            
+            # Define a progress callback wrapper
+            def scan_with_progress(region):
+                nonlocal scanned_regions
+                result = scan_region_wrapper(region)
+                scanned_regions += 1
+                if progress_callback:
+                    progress_callback(scanned_regions, total_regions)
+                return result
+            
             scan_results = self.scan_regions_parallel(
                 regions=to_scan,
-                scan_function=scan_region_wrapper
+                scan_function=scan_with_progress
             )
             
             # Update result and cache with scan results
