@@ -239,7 +239,7 @@ class ModeldiscoveryCommandHandler(BaseCommandHandler):
                     region_count = len(result.get("models", {}))
                     model_count = sum(len(models) for models in result.get("models", {}).values())
                     
-                    self.output.success(f"Scan complete: Found {model_count} models across {region_count} regions")
+                    self.output.success(f"Scan complete: Found {model_count} models across {region_count} enabled regions")
                     self.output.info(f"Cache updated. Next update in 7 days unless forced.")
                     return 0
                 else:
