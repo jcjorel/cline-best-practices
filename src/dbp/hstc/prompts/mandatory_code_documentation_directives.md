@@ -72,17 +72,19 @@ All code must be documented at TWO distinct levels without exception:
 ### Function/Class-level Documentation
 - This documentation is MANDATORY for ALL functions, methods, and classes without exception
 - Documentation MUST include these specific labeled sections in this exact order:
-  a. "[Function/Class method/Class intent]" - Intent, Purpose and functional role description
-  b. "[Design principles]" - Hold meaningful information to use the associated code elsewhere in the codebase (architectural patterns, constraints/limitations if any)
-  c. "[Implementation details]" - Must contain technical information needed to understand and maintain the associated code
+  a. "[Function/Class method/Class intent]" - Free text describing precisely the intent, purpose and functional role description
+  b. "[Design principles]" - Extensive plain text containing meaningful and precise technical information to use the associated code elsewhere in the codebase (architectural patterns, integration advices, constraints/limitations if any)
+  c. "[Implementation details]" - Extensive plain text containing detailed technical information needed to understand and maintain the associated code. It must describe the logic, algorithms, used external APIs and dependencies of the implementation.
 - Include standard language-appropriate parameter/return documentation according to language conventions
 - ALWAYS follow the exact template provided in `GENAI_FUNCTION_TEMPLATE.txt`
 - These sections are required for all functions and class methods regardless of complexity or size
 
 ### Documentation Quality Standards
 - Write insightful comments that allow developers to understand key aspects of file and class/methods/functions without reading code
-- When using adjectives (like "clear", "simple", "efficient", "appropriate", "optimal", "robust", etc.), ALWAYS provide one or more specific justifications in the same sentence to prove the adjective is deserved
+- **When using adjectives (like "clear", "simple", "efficient", "appropriate", "optimal", "robust", etc.), ALWAYS provide one or more specific justifications in the same sentence to provide proofs that the adjective is deserved**
 - Avoid vague wording in justifications and provide precise technical reasons
+- When you are introducing a new concept in a comment, explain it at large
+- Comment strings must be broken at 100 character width at maximum before to wrap with a new line and continue
 
 **Python Function Documentation Example**:
 ```python
