@@ -76,6 +76,7 @@ from .commands.status import StatusCommandHandler
 from .commands.server import ServerCommandHandler
 from .commands.test import TestCommandHandler  # Now imported directly from the test package __init__.py
 from .commands.modeldiscovery import ModeldiscoveryCommandHandler
+from .commands.hstc import HSTCCommand
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -186,6 +187,7 @@ class DocumentationProgrammingCLI:
             "server": ServerCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
             "test": TestCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
             "modeldiscovery": ModeldiscoveryCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
+            "hstc": HSTCCommand(self.mcp_client, self.output_formatter, self.progress_indicator),
         }
     
     def _create_parser(self) -> argparse.ArgumentParser:
@@ -266,6 +268,11 @@ class DocumentationProgrammingCLI:
             "--no-progress",
             action="store_true",
             help="Disable progress indicators"
+        )
+        parser.add_argument(
+            "--debug",
+            action="store_true",
+            help="Enable debug mode with stack traces on errors"
         )
         
         # Create subparsers for commands
@@ -445,8 +452,10 @@ class DocumentationProgrammingCLI:
             self.logger.error(f"Unexpected error: {e}", exc_info=True)
             self.output_formatter.error(f"Unexpected error: {e}")
             
-            if self.logger.level <= logging.DEBUG:
+            # Print stack trace if debug mode or verbose logging is enabled
+            if hasattr(parsed_args, 'debug') and parsed_args.debug or self.logger.level <= logging.DEBUG:
                 import traceback
+                print("\nStack trace:", file=sys.stderr)
                 traceback.print_exc()
                 
             return 1

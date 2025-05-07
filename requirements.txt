@@ -41,6 +41,7 @@ watchdog>=2.1.0; sys_platform == 'win32'
 jsonschema>=4.0.0
 pyyaml>=6.0
 jinja2>=3.1.2  # For template processing in prompt management
+json-repair>=0.44.1  # For repairing malformed JSON from LLM responses
 
 # Testing and development
 pytest>=6.0.0

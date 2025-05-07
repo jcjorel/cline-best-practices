@@ -49,6 +49,10 @@
 # system:langchain_aws.chat_models.bedrock_converse
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-07T10:40:52Z : Fixed _select_best_region error handling by CodeAssistant
+# * Implemented proper error handling when model discovery is disabled and no region is specified
+# * Replaced fallback to default region with explicit ConfigurationError
+# * Improved fail-fast behavior to prevent silent defaults in critical configurations
 # 2025-05-06T13:43:42Z : Implemented dynamic model discovery by CodeAssistant
 # * Added _discover_client_classes for auto-discovery of model implementations
 # * Added _build_model_mappings for mapping models to client and parameter classes
@@ -62,16 +66,6 @@
 # * Created _select_best_region for region selection logic
 # * Created _select_inference_profile for profile handling
 # * Created _get_model_specific_class for model class determination
-# 2025-05-06T10:45:00Z : Fixed model parameter handling for LangChain compatibility by CodeAssistant
-# * Modified create_langchain_chatbedrock to properly handle model parameters
-# * Added property initialization after model creation to set parameters
-# * Fixed validation error with direct parameter passing
-# * Added more detailed error logging for parameter issues
-# 2025-05-05T22:19:07Z : Updated client factory to use model-specific LangChain wrappers by CodeAssistant
-# * Removed legacy EnhancedBedrockBase imports
-# * Added imports for model-specific LangChain wrappers
-# * Updated create_langchain_chatbedrock to use model-specific implementations
-# * Improved model detection logic based on SUPPORTED_MODELS lists
 ###############################################################################
 
 """
@@ -563,10 +557,10 @@ class BedrockClientFactory:
             logger.info(f"Selected best region for {model_id}: {selected_region}")
             return selected_region
         
-        # Default region as fallback only if not using model discovery
-        default_region = "us-west-2"
-        logger.info(f"No region specified and model discovery disabled, using default: {default_region}")
-        return default_region
+        # If region isn't specified and model discovery is disabled, throw error
+        error_msg = f"Region must be specified when model discovery is disabled"
+        logger.error(error_msg)
+        raise ConfigurationError(error_msg)
     
     @classmethod
     def _select_inference_profile(
@@ -763,7 +757,7 @@ class BedrockClientFactory:
                 bedrock_config = botocore.config.Config(
                     retries={"max_attempts": max_retries},
                     connect_timeout=timeout,
-                    read_timeout=120  # Higher read timeout for AI services
+                    read_timeout=900  # Much higher read timeout (15 minutes) for large documents
                 )
                 
                 # Get the boto3 client for bedrock using our factory
