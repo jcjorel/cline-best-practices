@@ -41,8 +41,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "dbp=dbp_cli.cli:main",  # Original CLI (legacy)
-            "dbp-click=dbp_cli.cli_click.main:main",  # New Click-based CLI
+            "dbp=dbp_cli.cli_click.main:main",  # CLI implementation
         ],
     },
 )
