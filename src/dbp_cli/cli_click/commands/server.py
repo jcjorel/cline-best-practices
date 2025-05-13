@@ -37,6 +37,11 @@
 # system:requests
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-13T16:19:00Z : Fixed config_manager access via context by CodeAssistant
+# * Updated all instances of ctx.config_manager to ctx.obj.config_manager
+# * Fixed 'Context' object has no attribute 'config_manager' error
+# * Corrected context attribute access pattern to match AppContext class design
+# * Ensured consistent configuration access throughout the file
 # 2025-05-13T01:39:15Z : Fixed import statements for proper module resolution by CodeAssistant
 # * Changed relative imports (from ...cli_click.common) to absolute imports (from dbp_cli.cli_click.common)
 # * Fixed ImportError: attempted relative import beyond top-level package
@@ -132,7 +137,7 @@ def start_command(ctx: click.Context, host: str, port: int, foreground: bool, lo
             _clear_pid_file(ctx)
 
     # Get required PID file path from configuration manager
-    config = ctx.config_manager.get_typed_config()
+    config = ctx.obj.config_manager.get_typed_config()
     pid_file_path = config.mcp_server.pid_file
     pid_file = Path(pid_file_path)
     pid_file.parent.mkdir(parents=True, exist_ok=True)
@@ -160,7 +165,7 @@ def start_command(ctx: click.Context, host: str, port: int, foreground: bool, lo
             return
         else:
             # Get required log directory from configuration manager
-            config = ctx.config_manager.get_typed_config()
+            config = ctx.obj.config_manager.get_typed_config()
             logs_dir_path = config.mcp_server.logs_dir
             logs_dir = Path(logs_dir_path)
             logs_dir.mkdir(parents=True, exist_ok=True)
@@ -192,7 +197,7 @@ def start_command(ctx: click.Context, host: str, port: int, foreground: bool, lo
             output.info("Process started, waiting for server initialization...")
 
             # Get timeout from config
-            config = ctx.config_manager.get_typed_config()
+            config = ctx.obj.config_manager.get_typed_config()
             startup_timeout = config.initialization.timeout_seconds
 
             # Initial check if process is still running
@@ -481,7 +486,7 @@ def restart_command(ctx: click.Context, host: str, port: int, foreground: bool, 
             _clear_pid_file(ctx)
 
     # Get required PID file path from configuration manager
-    config = ctx.config_manager.get_typed_config()
+    config = ctx.obj.config_manager.get_typed_config()
     pid_file_path = config.mcp_server.pid_file
     pid_file = Path(pid_file_path)
     pid_file.parent.mkdir(parents=True, exist_ok=True)
@@ -510,7 +515,7 @@ def restart_command(ctx: click.Context, host: str, port: int, foreground: bool, 
             return
         else:
             # Get required log directory from configuration manager
-            config = ctx.config_manager.get_typed_config()
+            config = ctx.obj.config_manager.get_typed_config()
             logs_dir_path = config.mcp_server.logs_dir
             logs_dir = Path(logs_dir_path)
             logs_dir.mkdir(parents=True, exist_ok=True)
@@ -571,7 +576,7 @@ def status_command(ctx: click.Context) -> None:
     output = get_output_adapter(ctx)
     
     # Construct server URL from host and port configuration
-    config = ctx.config_manager.get_typed_config()
+    config = ctx.obj.config_manager.get_typed_config()
     host = config.mcp_server.host
     port = config.mcp_server.port
     server_url = f"http://{host}:{port}"
@@ -716,7 +721,7 @@ def _get_server_pid(ctx: click.Context) -> Optional[int]:
     Reads and parses the PID as an integer if the file exists.
     Returns None if the file doesn't exist or can't be read properly.
     """
-    config = ctx.config_manager.get_typed_config()
+    config = ctx.obj.config_manager.get_typed_config()
     pid_file_path = config.mcp_server.pid_file
 
     try:
@@ -744,7 +749,7 @@ def _clear_pid_file(ctx: click.Context) -> None:
     Checks if the PID file exists before attempting deletion.
     Logs errors if deletion fails but doesn't raise exceptions.
     """
-    config = ctx.config_manager.get_typed_config()
+    config = ctx.obj.config_manager.get_typed_config()
     pid_file_path = config.mcp_server.pid_file
 
     try:
