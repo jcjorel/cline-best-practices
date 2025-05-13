@@ -36,6 +36,10 @@
 # other:- src/dbp_cli/commands/base.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-12T08:57:00Z : Added ClickGroupAdapter for Click-based commands by CodeAssistant
+# * Created adapter to bridge Click command groups with the CLI framework
+# * Fixed 'Group' object has no attribute 'add_arguments' error
+# * Fixed UnboundLocalError for parsed_args in error handling
 # 2025-04-25T10:06:00Z : Updated to use get_typed_config() instead of deprecated get() method by CodeAssistant
 # * Replaced config_manager.get() calls with direct attribute access via get_typed_config()
 # * Fixed server startup failure caused by deprecated method exception
@@ -46,8 +50,6 @@
 # * Fixed issue with missing configuration keys for MCP server components
 # 2025-04-15T14:52:30Z : Added ServerCommandHandler to command registry by CodeAssistant
 # * Integrated server management functionality into CLI.
-# 2025-04-15T13:15:30Z : Initial creation of DocumentationProgrammingCLI by CodeAssistant
-# * Implemented main CLI class with command registration and entry point.
 ###############################################################################
 
 import argparse
@@ -67,6 +69,7 @@ from .exceptions import CLIError, ConfigurationError, AuthenticationError
 
 # Import command handlers
 from .commands.base import BaseCommandHandler
+from .commands.click_adapter import ClickGroupAdapter
 # Import only the commands that directly align with MCP tools
 from .commands.query import QueryCommandHandler
 from .commands.commit import CommitCommandHandler
@@ -77,6 +80,7 @@ from .commands.server import ServerCommandHandler
 from .commands.test import TestCommandHandler  # Now imported directly from the test package __init__.py
 from .commands.modeldiscovery import ModeldiscoveryCommandHandler
 from .commands.hstc import HSTCCommand
+from .commands.hstc_agno.cli import hstc_agno
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -188,6 +192,7 @@ class DocumentationProgrammingCLI:
             "test": TestCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
             "modeldiscovery": ModeldiscoveryCommandHandler(self.mcp_client, self.output_formatter, self.progress_indicator),
             "hstc": HSTCCommand(self.mcp_client, self.output_formatter, self.progress_indicator),
+            "hstc_agno": ClickGroupAdapter(hstc_agno, self.mcp_client, self.output_formatter, self.progress_indicator),
         }
     
     def _create_parser(self) -> argparse.ArgumentParser:
@@ -469,14 +474,34 @@ def main() -> int:
     [Implementation details]
     Creates an instance of the DocumentationProgrammingCLI class and calls its run method.
     Returns the exit code from the run method to the operating system.
+    Displays a deprecation warning about the transition to Click-based CLI.
     
     [Design principles]
     Minimal entry point - delegates all logic to the CLI class.
     Standard executable pattern - follows conventional CLI entry point pattern.
     Exit code propagation - passes CLI exit code back to the operating system.
+    User notification - warns about upcoming interface changes.
     
     Returns:
         Exit code (0 for success, non-zero for failure)
     """
+    # Display deprecation warning
+    import warnings
+    warnings.warn(
+        "\n"
+        "┌──────────────────────────── DEPRECATION WARNING ─────────────────────────┐\n"
+        "│                                                                          │\n"
+        "│  This CLI interface is being deprecated in favor of the new Click-based  │\n"
+        "│  version. Please start using 'dbp-click' command instead of 'dbp'.       │\n"
+        "│                                                                          │\n"
+        "│  The new interface provides improved help text, better error messages,   │\n"
+        "│  and enhanced tab completion while maintaining the same functionality.   │\n"
+        "│                                                                          │\n"
+        "│  This legacy interface will be removed in a future release.              │\n"
+        "│                                                                          │\n"
+        "└──────────────────────────────────────────────────────────────────────────┘\n",
+        DeprecationWarning, stacklevel=2
+    )
+    
     cli = DocumentationProgrammingCLI()
     return cli.run()

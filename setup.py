@@ -25,6 +25,9 @@ setup(
     install_requires=[
         "requests>=2.25.0",
         "colorama>=0.4.4",
+        "boto3>=1.38.0",
+        "agno>=1.0.0",
+        "click>=8.0.0",
     ],
     extras_require={
         "dev": [
@@ -38,7 +41,8 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "dbp=dbp_cli.cli:main",
+            "dbp=dbp_cli.cli:main",  # Original CLI (legacy)
+            "dbp-click=dbp_cli.cli_click.main:main",  # New Click-based CLI
         ],
     },
 )
