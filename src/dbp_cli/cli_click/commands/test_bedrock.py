@@ -34,12 +34,15 @@
 # codebase:src/dbp/llm/bedrock/model_parameters.py
 # codebase:src/dbp/llm/bedrock/client_factory.py
 # codebase:src/dbp/llm/bedrock/discovery/models_capabilities.py
-# codebase:src/dbp_cli/commands/test/bedrock_commands.py
-# codebase:src/dbp_cli/commands/test/bedrock_command_completion.py
 # system:prompt_toolkit
 # system:asyncio
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-13T16:13:00Z : Internalized BedrockCommandHandler and CommandCompleter by CodeAssistant
+# * Implemented BedrockCommandHandler and CommandCompleter directly in the file
+# * Removed imports from the legacy CLI implementation that was removed
+# * Removed external dependencies on dbp_cli.commands.test package
+# * Updated file header to reflect removed dependencies
 # 2025-05-13T13:36:00Z : Enhanced BedrockTester to use get_output_adapter by CodeAssistant
 # * Updated BedrockTester to use get_output_adapter() for consistent adapter management
 # * Improved output formatting reliability by using the centralized adapter function
@@ -91,9 +94,299 @@ from dbp.llm.bedrock.model_parameters import ModelParameters
 from dbp.config.config_manager import ConfigurationManager
 from dbp.llm.bedrock.discovery.models_capabilities import BedrockModelCapabilities
 
-# Import command handler and completer from original implementation
-from dbp_cli.commands.test.bedrock_commands import BedrockCommandHandler
-from dbp_cli.commands.test.bedrock_command_completion import CommandCompleter
+# Implement command handler and completer directly (previously imported from old CLI)
+class BedrockCommandHandler:
+    """
+    Handler for Bedrock test commands. Ported from the original CLI implementation.
+    
+    Provides special commands processing for the interactive Bedrock test functionality.
+    """
+    
+    # Command result constants
+    RESULT_NORMAL = "normal"
+    RESULT_CONTINUE = "continue"
+    RESULT_EXIT = "exit"
+    
+    def __init__(self, output_formatter, model_param_model, current_model_id, 
+                get_model_constraints_fn, chat_history, state_callbacks=None):
+        """Initialize the command handler."""
+        self.output_formatter = output_formatter
+        self.model_param_model = model_param_model
+        self.current_model_id = current_model_id
+        self.get_model_constraints_fn = get_model_constraints_fn
+        self.chat_history = chat_history
+        self.state_callbacks = state_callbacks or {}
+        
+    def process_command(self, cmd_text):
+        """Process a special command prefixed with '/'."""
+        cmd_parts = cmd_text[1:].strip().split()
+        if not cmd_parts:
+            return self.RESULT_CONTINUE
+            
+        cmd = cmd_parts[0].lower()
+        args = cmd_parts[1:]
+        
+        # Exit command
+        if cmd in ["exit", "quit"]:
+            return self.RESULT_EXIT
+            
+        # Help command
+        elif cmd == "help":
+            self._show_help()
+            return self.RESULT_CONTINUE
+            
+        # History command
+        elif cmd == "history":
+            self._show_history()
+            return self.RESULT_CONTINUE
+            
+        # Clear command
+        elif cmd == "clear":
+            self._clear_history()
+            return self.RESULT_CONTINUE
+            
+        # Profile command
+        elif cmd == "profile":
+            if not args:
+                self._show_profiles()
+            else:
+                self._apply_profile(args[0])
+            return self.RESULT_CONTINUE
+            
+        # Parameters command
+        elif cmd in ["params", "parameters"]:
+            self._show_parameters()
+            return self.RESULT_CONTINUE
+            
+        # Set command
+        elif cmd == "set":
+            if len(args) >= 2:
+                self._set_parameter(args[0], " ".join(args[1:]))
+            else:
+                self.output_formatter.error("Usage: /set <parameter> <value>")
+            return self.RESULT_CONTINUE
+            
+        # Info command
+        elif cmd == "info":
+            self._show_info()
+            return self.RESULT_CONTINUE
+            
+        # Command not recognized - treat as normal input
+        return self.RESULT_NORMAL
+    
+    def _show_help(self):
+        """Show available commands and their descriptions."""
+        self.output_formatter.info("Available commands:")
+        self.output_formatter.info("  /exit, /quit - Exit the chat")
+        self.output_formatter.info("  /help - Show this help message")
+        self.output_formatter.info("  /history - Show chat history")
+        self.output_formatter.info("  /clear - Clear chat history")
+        self.output_formatter.info("  /profile <name> - Apply parameter profile")
+        self.output_formatter.info("  /params, /parameters - Show current parameters")
+        self.output_formatter.info("  /set <parameter> <value> - Set parameter value")
+        self.output_formatter.info("  /info - Show model information")
+        
+    def _show_history(self):
+        """Show chat history."""
+        if not self.chat_history:
+            self.output_formatter.info("Chat history is empty.")
+            return
+            
+        self.output_formatter.info("Chat history:")
+        for i, message in enumerate(self.chat_history):
+            role_display = "User" if message["role"] == "user" else "Assistant"
+            self.output_formatter.info(f"[{i+1}] {role_display}: {message['content'][:60]}...")
+            
+    def _clear_history(self):
+        """Clear chat history."""
+        self.chat_history.clear()
+        if "on_history_clear" in self.state_callbacks:
+            self.state_callbacks["on_history_clear"]()
+        self.output_formatter.info("Chat history cleared.")
+        
+    def _show_profiles(self):
+        """Show available parameter profiles."""
+        profiles = self.model_param_model._get_available_profiles()
+        
+        if not profiles:
+            self.output_formatter.info("No parameter profiles available for this model.")
+            return
+            
+        self.output_formatter.info("Available parameter profiles:")
+        for profile in profiles:
+            self.output_formatter.info(f"  {profile}")
+            
+    def _apply_profile(self, profile_name):
+        """Apply a parameter profile."""
+        try:
+            if "on_apply_profile" in self.state_callbacks:
+                self.state_callbacks["on_apply_profile"](profile_name)
+            else:
+                self.model_param_model._apply_profile(profile_name)
+                
+            self.output_formatter.info(f"Applied profile: {profile_name}")
+        except Exception as e:
+            self.output_formatter.error(f"Failed to apply profile: {str(e)}")
+            
+    def _show_parameters(self):
+        """Show current parameters."""
+        self.output_formatter.info("Current parameters:")
+        params = self.model_param_model.to_dict()
+        for name, value in params.items():
+            self.output_formatter.info(f"  {name}: {value}")
+            
+    def _set_parameter(self, param_name, value_str):
+        """Set parameter value."""
+        try:
+            # Parse value based on type
+            value = self._parse_parameter_value(value_str)
+            
+            # Check if parameter exists
+            if not hasattr(self.model_param_model, param_name):
+                self.output_formatter.error(f"Unknown parameter: {param_name}")
+                return
+                
+            # Set parameter value
+            setattr(self.model_param_model, param_name, value)
+            self.output_formatter.info(f"Set {param_name} = {value}")
+            
+            # Notify callbacks
+            if "on_parameter_change" in self.state_callbacks:
+                self.state_callbacks["on_parameter_change"](param_name, value)
+                
+        except Exception as e:
+            self.output_formatter.error(f"Failed to set parameter: {str(e)}")
+            
+    def _parse_parameter_value(self, value_str):
+        """Parse parameter value string to appropriate type."""
+        # Try parsing as float
+        try:
+            if '.' in value_str:
+                return float(value_str)
+            else:
+                return int(value_str)
+        except ValueError:
+            pass
+            
+        # Handle boolean values
+        if value_str.lower() in ['true', 'yes', 'on']:
+            return True
+        if value_str.lower() in ['false', 'no', 'off']:
+            return False
+            
+        # Default to string
+        return value_str
+        
+    def _show_info(self):
+        """Show model information."""
+        self.output_formatter.info(f"Current model: {self.current_model_id}")
+        
+        # Get model constraints
+        try:
+            constraints = self.get_model_constraints_fn(self.current_model_id)
+            
+            self.output_formatter.info("Model information:")
+            self.output_formatter.info(f"  Model family: {constraints.get('family', 'Unknown')}")
+            self.output_formatter.info(f"  Max tokens: {constraints.get('max_tokens', 'Unknown')}")
+            
+        except Exception as e:
+            self.output_formatter.error(f"Error retrieving model info: {str(e)}")
+    
+    def update_model_param_model(self, model_param_model):
+        """Update the model parameter model reference."""
+        self.model_param_model = model_param_model
+
+
+class CommandCompleter:
+    """
+    Command completer for interactive Bedrock test. Ported from the original CLI implementation.
+    
+    Provides auto-completion for special commands and their parameters.
+    """
+    
+    def __init__(self, command_handler):
+        """Initialize the command completer."""
+        self.command_handler = command_handler
+        
+        # Define command completions
+        self.completions = {
+            "": [
+                "/exit", "/quit", "/help", "/history", "/clear",
+                "/profile", "/params", "/parameters", "/set", "/info"
+            ],
+            "profile": [],  # Will be populated dynamically
+            "set": [],      # Will be populated dynamically
+        }
+        
+    def get_completions(self, document, complete_event):
+        """Get completions for the current input."""
+        from prompt_toolkit.completion import Completion
+        
+        text = document.text
+        
+        # Complete commands
+        if text.startswith("/"):
+            parts = text[1:].split()
+            
+            # Complete root commands
+            if len(parts) <= 1:
+                cmd_prefix = parts[0] if parts else ""
+                for cmd in self.completions[""]:
+                    if cmd[1:].startswith(cmd_prefix):
+                        yield Completion(cmd[1:], start_position=-len(cmd_prefix))
+                        
+            # Complete command parameters
+            elif len(parts) == 2:
+                cmd = parts[0]
+                param_prefix = parts[1]
+                
+                # Handle profile completion
+                if cmd == "profile":
+                    profiles = self._get_profiles()
+                    for profile in profiles:
+                        if profile.startswith(param_prefix):
+                            yield Completion(profile, start_position=-len(param_prefix))
+                            
+                # Handle set parameter completion
+                elif cmd == "set":
+                    params = self._get_parameters()
+                    for param in params:
+                        if param.startswith(param_prefix):
+                            yield Completion(param, start_position=-len(param_prefix))
+                            
+            # Complete parameter values
+            elif len(parts) == 3 and parts[0] == "set":
+                param = parts[1]
+                value_prefix = parts[2]
+                
+                # Complete boolean parameters
+                param_type = self._get_parameter_type(param)
+                if param_type == bool:
+                    for value in ["true", "false"]:
+                        if value.startswith(value_prefix.lower()):
+                            yield Completion(value, start_position=-len(value_prefix))
+    
+    def _get_profiles(self):
+        """Get available parameter profiles."""
+        try:
+            return self.command_handler.model_param_model._get_available_profiles()
+        except Exception:
+            return []
+    
+    def _get_parameters(self):
+        """Get available parameters."""
+        try:
+            return list(self.command_handler.model_param_model.to_dict().keys())
+        except Exception:
+            return []
+    
+    def _get_parameter_type(self, param_name):
+        """Get parameter type."""
+        try:
+            value = getattr(self.command_handler.model_param_model, param_name)
+            return type(value)
+        except Exception:
+            return str
 
 # Set up logger
 logger = logging.getLogger(__name__)
