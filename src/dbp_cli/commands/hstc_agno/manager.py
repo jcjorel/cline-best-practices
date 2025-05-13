@@ -73,7 +73,7 @@ class HSTCManager:
     Generates implementation plans based on processing results.
     """
     
-    def __init__(self, base_dir: Optional[Path] = None):
+    def __init__(self, base_dir: Optional[Path] = None, show_prompts: bool = True):
         """
         [Class method intent]
         Initializes the HSTC Manager with the specified base directory.
@@ -88,12 +88,14 @@ class HSTCManager:
         
         Args:
             base_dir: Base directory for file operations (defaults to current working directory)
+            show_prompts: Whether to display prompts and responses from LLM agents
         """
         self.base_dir = base_dir or Path.cwd()
         self.file_analyzer = None
         self.doc_generator = None
         self.processed_files: Dict[str, Any] = {}
         self.dependency_cache: Dict[str, Any] = {}
+        self.show_prompts = show_prompts
         
         # Initialize agents
         self.initialize_agents()
@@ -110,12 +112,13 @@ class HSTCManager:
         [Implementation details]
         Creates agent instances with appropriate parameters.
         Configures base directory for file operations.
+        Passes show_prompts setting to control prompt display behavior.
         """
         # Create File Analyzer Agent
-        self.file_analyzer = FileAnalyzerAgent(base_dir=self.base_dir)
+        self.file_analyzer = FileAnalyzerAgent(base_dir=self.base_dir, show_prompts=self.show_prompts)
         
         # Create Documentation Generator Agent
-        self.doc_generator = DocumentationGeneratorAgent()
+        self.doc_generator = DocumentationGeneratorAgent(show_prompts=self.show_prompts)
     
     def process_file(self, file_path: str, options: Dict[str, Any]) -> Dict[str, Any]:
         """

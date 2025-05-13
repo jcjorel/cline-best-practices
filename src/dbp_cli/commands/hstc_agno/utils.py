@@ -262,173 +262,65 @@ def _is_in_string(line: str, pos: int) -> bool:
     return False
 
 
-# Language Detection Utilities
+# LLM Prompt Logging Utility
 
-def get_language_by_extension(file_path: str) -> str:
+def log_prompt_to_file(model_id: str, agent_name: str, prompt: str, response: str) -> str:
     """
     [Function intent]
-    Get programming language by file extension.
+    Log LLM prompt and response to a debug file for visibility and tracking.
     
     [Design principles]
-    Uses file extension as primary language identifier.
-    Provides consistent language naming for comment format selection.
+    Provides a persistent record of LLM interactions for debugging.
+    Creates human-readable output with clear prompt/response separation.
     
     [Implementation details]
-    Maintains a comprehensive mapping of file extensions to language names.
-    Falls back to "unknown" when extension is not recognized.
+    Creates a log directory if it doesn't exist.
+    Appends to a log file with timestamps, model information, and conversation.
+    Each entry is clearly delimited for easy parsing.
+    Returns the path to the created log file for reference.
     
     Args:
-        file_path: Path to the file
+        model_id: ID of the model used
+        agent_name: Name of the agent using the model
+        prompt: The prompt sent to the model
+        response: The response received from the model
         
     Returns:
-        str: Detected programming language or "unknown"
+        str: Path to the log file that was written
     """
-    extension_map = {
-        '.py': 'python',
-        '.js': 'javascript',
-        '.ts': 'typescript',
-        '.jsx': 'javascript',
-        '.tsx': 'typescript',
-        '.java': 'java',
-        '.c': 'c',
-        '.cpp': 'c++',
-        '.h': 'c',
-        '.hpp': 'c++',
-        '.cs': 'csharp',
-        '.go': 'go',
-        '.rb': 'ruby',
-        '.php': 'php',
-        '.swift': 'swift',
-        '.kt': 'kotlin',
-        '.rs': 'rust',
-        '.sh': 'shell',
-        '.bash': 'shell',
-        '.md': 'markdown',
-        '.html': 'html',
-        '.css': 'css',
-        '.xml': 'xml',
-        '.json': 'json',
-        '.yml': 'yaml',
-        '.yaml': 'yaml',
-    }
+    # Create log directory if it doesn't exist
+    log_dir = Path.cwd() / "scratchpad" / "hstc_agno_logs"
+    os.makedirs(log_dir, exist_ok=True)
     
-    _, ext = os.path.splitext(file_path.lower())
-    return extension_map.get(ext, "unknown")
+    # Create log filename based on date
+    date_str = datetime.utcnow().strftime("%Y%m%d")
+    log_file = log_dir / f"agno_prompts_{date_str}.log"
+    
+    # Format the log entry
+    timestamp = get_current_timestamp()
+    log_entry = f"""
+==========================================================================
+TIMESTAMP: {timestamp}
+AGENT: {agent_name}
+MODEL: {model_id}
+==========================================================================
+PROMPT:
+--------------------------------------------------------------------------
+{prompt}
+--------------------------------------------------------------------------
+RESPONSE:
+--------------------------------------------------------------------------
+{response}
+==========================================================================
 
-
-def get_default_comment_format(language: str) -> Dict[str, Any]:
-    """
-    [Function intent]
-    Get default comment format for a programming language.
+"""
     
-    [Design principles]
-    Centralizes language-specific comment syntax knowledge.
-    Supports accurate comment extraction for multiple languages.
-    
-    [Implementation details]
-    Provides comprehensive comment format information for supported languages.
-    Includes inline comments, block comments, and docstring formats.
-    Returns empty format for unsupported languages.
-    
-    Args:
-        language: Programming language name
+    # Append to log file
+    with open(log_file, "a") as f:
+        f.write(log_entry)
         
-    Returns:
-        Dict containing default comment format information
-    """
-    formats = {
-        'python': {
-            'inline_comment': '#',
-            'block_comment_start': '"""',
-            'block_comment_end': '"""',
-            'docstring_format': 'triple quotes',
-            'docstring_start': '"""',
-            'docstring_end': '"""',
-            'has_documentation_comments': True
-        },
-        'javascript': {
-            'inline_comment': '//',
-            'block_comment_start': '/*',
-            'block_comment_end': '*/',
-            'docstring_format': 'JSDoc',
-            'docstring_start': '/**',
-            'docstring_end': '*/',
-            'has_documentation_comments': True
-        },
-        'typescript': {
-            'inline_comment': '//',
-            'block_comment_start': '/*',
-            'block_comment_end': '*/',
-            'docstring_format': 'JSDoc',
-            'docstring_start': '/**',
-            'docstring_end': '*/',
-            'has_documentation_comments': True
-        },
-        'java': {
-            'inline_comment': '//',
-            'block_comment_start': '/*',
-            'block_comment_end': '*/',
-            'docstring_format': 'JavaDoc',
-            'docstring_start': '/**',
-            'docstring_end': '*/',
-            'has_documentation_comments': True
-        },
-        'c': {
-            'inline_comment': '//',
-            'block_comment_start': '/*',
-            'block_comment_end': '*/',
-            'docstring_format': 'block comment',
-            'docstring_start': '/**',
-            'docstring_end': '*/',
-            'has_documentation_comments': True
-        },
-        'c++': {
-            'inline_comment': '//',
-            'block_comment_start': '/*',
-            'block_comment_end': '*/',
-            'docstring_format': 'block comment',
-            'docstring_start': '/**',
-            'docstring_end': '*/',
-            'has_documentation_comments': True
-        },
-        'csharp': {
-            'inline_comment': '//',
-            'block_comment_start': '/*',
-            'block_comment_end': '*/',
-            'docstring_format': 'XML comments',
-            'docstring_start': '///',
-            'docstring_end': None,
-            'has_documentation_comments': True
-        },
-        'ruby': {
-            'inline_comment': '#',
-            'block_comment_start': '=begin',
-            'block_comment_end': '=end',
-            'docstring_format': 'RDoc',
-            'docstring_start': '#',
-            'docstring_end': None,
-            'has_documentation_comments': True
-        },
-        'go': {
-            'inline_comment': '//',
-            'block_comment_start': '/*',
-            'block_comment_end': '*/',
-            'docstring_format': 'GoDoc',
-            'docstring_start': '//',
-            'docstring_end': None,
-            'has_documentation_comments': True
-        },
-    }
-    
-    return formats.get(language.lower(), {
-        'inline_comment': None,
-        'block_comment_start': None,
-        'block_comment_end': None,
-        'docstring_format': None,
-        'docstring_start': None,
-        'docstring_end': None,
-        'has_documentation_comments': False
-    })
+    # Return the log file path for reference
+    return str(log_file)
 
 
 # File Path Utilities
@@ -640,18 +532,14 @@ def verify_models_and_utils(verbose: bool = False) -> bool:
                 print(f"Error parsing dependency string: {dep_str} -> {dep_dict}")
             return False
         
-        # Test language detection
-        lang = get_language_by_extension("test.py")
-        if lang != "python":
+        # Test prompt logging
+        try:
+            log_prompt_to_file("test-model", "TestAgent", "Test prompt", "Test response")
             if verbose:
-                print(f"Error detecting language for test.py: {lang}")
-            return False
-        
-        # Test comment format retrieval
-        comment_format = get_default_comment_format("python")
-        if comment_format["inline_comment"] != "#":
+                print("Prompt logging test passed")
+        except Exception as e:
             if verbose:
-                print(f"Error getting comment format for python: {comment_format}")
+                print(f"Error testing prompt logging: {e}")
             return False
         
         if verbose:

@@ -1,0 +1,71 @@
+{
+  "dependencies": [
+    {
+      "name": "pytest",
+      "kind": "system",
+      "path_or_package": "pytest",
+      "imported_names": [],
+      "called_names": []
+    },
+    {
+      "name": "click.testing",
+      "kind": "system",
+      "path_or_package": "click.testing",
+      "imported_names": [],
+      "called_names": []
+    },
+    {
+      "name": "codebase: src/dbp_cli/cli_click/main.py",
+      "kind": "codebase",
+      "path_or_package": "src.dbp_cli.cli_click.main",
+      "imported_names": [
+        "cli",
+        "main",
+        "version_command"
+      ],
+      "called_names": []
+    },
+    {
+      "name": "codebase: src/dbp_cli/cli_click/common.py",
+      "kind": "codebase",
+      "path_or_package": "src.dbp_cli.cli_click.common",
+      "imported_names": [
+        "Context"
+      ],
+      "called_names": [
+        "get_version",
+        "output_formatter.print"
+      ]
+    },
+    {
+      "name": "codebase: src/dbp_cli/cli_click/tests/conftest.py",
+      "kind": "codebase",
+      "path_or_package": "src.dbp_cli.cli_click.tests.conftest",
+      "imported_names": [
+        "cli_runner",
+        "cli_invoke"
+      ],
+      "called_names": []
+    },
+    {
+      "name": "unittest.mock",
+      "kind": "system",
+      "path_or_package": "unittest.mock",
+      "imported_names": [
+        "patch",
+        "MagicMock"
+      ],
+      "called_names": []
+    },
+    {
+      "name": "click",
+      "kind": "system",
+      "path_or_package": "click",
+      "imported_names": [
+        "Abort",
+        "UsageError"
+      ],
+      "called_names": []
+    }
+  ]
+}

@@ -36,33 +36,38 @@
 # system:agno.models.anthropic
 # codebase:src/dbp_cli/commands/hstc_agno/models.py
 # codebase:src/dbp_cli/commands/hstc_agno/utils.py
+# codebase:src/dbp_cli/commands/hstc_agno/abstract_agent.py
 # codebase:src/dbp/api_providers/aws/client_factory.py
 # codebase:src/dbp/llm/bedrock/discovery/models_capabilities.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-13T17:38:00Z : Refactored to use AbstractAgnoAgent by CodeAssistant
+# * Modified agents to inherit from AbstractAgnoAgent
+# * Removed duplicated code for prompt display and response processing
+# * Implemented abstract methods for state management
 # 2025-05-13T10:59:00Z : Added model discovery for optimal region selection by CodeAssistant
 # * Integrated BedrockModelDiscovery for finding best regions for each model
 # * Used get_best_regions_for_model to automatically select optimal region
 # 2025-05-13T10:54:00Z : Fixed AWS credentials issue by CodeAssistant
 # * Added integration with AWS client factory for proper AWS credentials
 # * Used session from AWS client factory for AwsBedrock model
-# 2025-05-12T07:07:30Z : Initial implementation by CodeAssistant
-# * Created agent class skeletons
-# * Added basic model initialization
 ###############################################################################
 
 import json
 import os
+import re
 from typing import Dict, List, Optional, Any, Union
 from pathlib import Path
+from json_repair import repair_json
 
-from agno.agent import Agent
 from agno.models.aws.bedrock import AwsBedrock
 from agno.models.anthropic import Claude
 from agno.tools.file import FileTools
+from agno.tools.reasoning import ReasoningTools
 from dbp.api_providers.aws.client_factory import AWSClientFactory
 from dbp.llm.bedrock.discovery.models_capabilities import BedrockModelCapabilities as BedrockModelDiscovery
 
+from .abstract_agent import AbstractAgnoAgent
 from .models import (
     CommentFormat,
     Dependency,
@@ -77,14 +82,12 @@ from .utils import (
     get_current_timestamp,
     parse_dependency_string,
     extract_comment_blocks,
-    get_language_by_extension,
-    get_default_comment_format,
     read_file_content,
     is_binary_file
 )
 
 
-class FileAnalyzerAgent(Agent):
+class FileAnalyzerAgent(AbstractAgnoAgent):
     """
     [Class intent]
     Agent for analyzing source files using Nova Micro. Efficiently processes
@@ -103,6 +106,7 @@ class FileAnalyzerAgent(Agent):
         self, 
         model_id: str = "anthropic.claude-3-haiku-20240307-v1:0",
         base_dir: Optional[Path] = None,
+        show_prompts: bool = True,
         **kwargs
     ):
         """
@@ -144,6 +148,7 @@ class FileAnalyzerAgent(Agent):
         
         # Initialize Nova model for file analysis with boto3 session
         model = AwsBedrock(id=model_id, session=session)
+        
         # Add tools to kwargs to pass to parent constructor
         if 'tools' in kwargs:
             if isinstance(kwargs['tools'], list):
@@ -152,12 +157,19 @@ class FileAnalyzerAgent(Agent):
                 kwargs['tools'] = [kwargs['tools'], file_tools]
         else:
             kwargs['tools'] = [file_tools]
-            
-        super().__init__(model=model, **kwargs)
-        self.file_tools = file_tools
         
         # Initialize state for storing analysis results
         self.file_metadata = {}
+        self.file_tools = file_tools
+            
+        # Call parent constructor with model and agent name
+        super().__init__(
+            model=model,
+            model_id=model_id,
+            agent_name="FileAnalyzerAgent",
+            show_prompts=show_prompts,
+            **kwargs
+        )
     
     def analyze_file(self, file_path: str) -> Dict[str, Any]:
         """
@@ -200,17 +212,20 @@ class FileAnalyzerAgent(Agent):
             return metadata
         
         # Detect file type
-        file_type_info = self.analyze_file_type(file_content)
+        file_type_info = self.analyze_file_type(file_content, file_path)
         metadata.update(file_type_info)
         
-        # For source code files, perform deeper analysis
+        # For source code files, use language info from file_type_info
         if file_type_info["file_type"] == "source_code":
-            # Detect language
-            language_info = self.detect_language(file_content, file_path)
-            metadata.update(language_info)
+            # Language info is already in file_type_info
+            metadata["language"] = file_type_info.get("language", "unknown")
+            metadata["confidence"] = file_type_info.get("confidence", 0)
+            metadata["file_extension"] = file_type_info.get("file_extension", "")
             
+            import pdb
+            pdb.set_trace()
             # Identify comment formats for this language
-            comment_formats = self.identify_comment_formats(language_info["language"])
+            comment_formats = self.identify_comment_formats(file_type_info.get("language", "unknown"))
             metadata["comment_formats"] = comment_formats
             
             # Extract header comment
@@ -219,11 +234,11 @@ class FileAnalyzerAgent(Agent):
                 metadata["header_comment"] = header_comment
             
             # Extract dependencies
-            dependency_info = self.extract_dependencies(file_content, language_info["language"])
+            dependency_info = self.extract_dependencies(file_content, file_type_info.get("language", "unknown"))
             metadata["dependencies"] = dependency_info.get("dependencies", [])
             
             # Extract function comments
-            function_info = self.extract_function_comments(file_content, language_info["language"], comment_formats)
+            function_info = self.extract_function_comments(file_content, file_type_info.get("language", "unknown"), comment_formats)
             metadata["definitions"] = function_info.get("definitions", [])
         
         # Store results in agent state
@@ -231,97 +246,95 @@ class FileAnalyzerAgent(Agent):
         
         return metadata
     
-    def _process_run_response(self, response_obj: Any) -> str:
-        """
-        [Function intent]
-        Process a response from the Agno run method to extract text content.
-        
-        [Design principles]
-        Provides consistent handling of response objects across methods.
-        Handles different types of response objects gracefully.
-        
-        [Implementation details]
-        Attempts various methods to extract text from the response object.
-        Falls back to string conversion if specific attributes aren't available.
-        
-        Args:
-            response_obj: Response object from self.run()
-            
-        Returns:
-            str: Extracted text content from the response
-        """
-        # Try using to_json() method if available
-        if hasattr(response_obj, 'to_json'):
-            try:
-                return json.dumps(response_obj.to_json())
-            except (TypeError, AttributeError):
-                pass
-                
-        # Try getting string representation for JSON parsing
-        if hasattr(response_obj, 'content'):
-            return response_obj.content
-        elif hasattr(response_obj, 'text'):
-            return response_obj.text
-        elif isinstance(response_obj, str):
-            return response_obj
-        else:
-            # Fallback to string conversion
-            return str(response_obj)
     
-    def analyze_file_type(self, file_content: str) -> Dict[str, Any]:
+    def analyze_file_type(self, file_content: str, file_path: str = "") -> Dict[str, Any]:
         """
         [Function intent]
-        Analyze content to determine file type.
-        
+        Analyze content to determine file type using LLM classifier with MIME type hints.
+
         [Design principles]
-        Uses lightweight text analysis to categorize file content.
-        Maps content patterns to standard file type categories.
-        
+        Uses MIME type hints from 'magic' package as guidance for LLM classification.
+        Preserves both initial and confirmed MIME types for transparency.
+
         [Implementation details]
-        Samples the beginning of the file for classification.
-        Uses LLM to identify patterns in file content.
-        
+        Gets initial MIME type using 'magic' package if possible.
+        Uses file extension as secondary hint if available.
+        Always passes these hints to the LLM classifier for final determination.
+        Returns both the initial magic-detected MIME type and LLM-confirmed MIME type.
+
         Args:
             file_content: Content of the file to analyze
-            
+            file_path: Optional path to the file for extension and MIME detection
+
         Returns:
-            Dict containing file type information
+            Dict containing:
+            - file_type: The general type of file (e.g., "source_code", "markdown")
+            - is_binary: Whether the file appears to be binary
+            - initial_mime_type: MIME type determined by magic package
+            - confirmed_mime_type: MIME type confirmed by LLM analysis
         """
-        # Simple content-based detection for common file types
-        # This provides a fallback in case the LLM response parsing fails
-        default_type = {"file_type": "unknown", "is_binary": False}
-        
+        # Default response if everything fails
+        default_type = {
+            "file_type": "unknown", 
+            "is_binary": False,
+            "initial_mime_type": "application/octet-stream",
+            "confirmed_mime_type": "application/octet-stream"
+        }
+
         if not file_content:
             return default_type
-            
-        # Check for common file signatures
-        if file_content.startswith("<?xml"):
-            return {"file_type": "xml", "is_binary": False}
-        elif file_content.startswith("<!DOCTYPE html") or "<html" in file_content[:100]:
-            return {"file_type": "html", "is_binary": False}
-        elif file_content.startswith("{") and "}" in file_content:
-            return {"file_type": "json", "is_binary": False}
-        elif file_content.startswith("---") or file_content.startswith("#"):
-            return {"file_type": "markdown", "is_binary": False}
-        elif any(keyword in file_content[:1000] for keyword in ["def ", "class ", "import ", "from ", "public ", "void ", "function"]):
-            return {"file_type": "source_code", "is_binary": False}
-            
-        # Build prompt for file type detection
-        prompt = f"""
-        Examine the following file content and determine its type.
-        Return a JSON structure with:
-        - file_type: The general type of file (e.g., "source_code", "markdown", "data", "configuration")
-        - is_binary: Whether the file appears to be binary (true/false)
-        
-        File content (first 1000 chars):
-        ```
-        {file_content[:1000]}
-        ```
-        
-        Return only the JSON object with no other text.
-        """
+
+        # Get MIME type hint using 'magic' if available
+        initial_mime_type = "application/octet-stream"
+        file_extension = ""
         
         try:
+            import magic
+            if file_path:
+                initial_mime_type = magic.from_file(file_path, mime=True)
+                file_extension = os.path.splitext(file_path)[1]
+                self.log(f"Magic detected MIME type: {initial_mime_type} for file with extension {file_extension}", "DEBUG")
+        except (ImportError, Exception) as e:
+            # Fallback if magic isn't available or errors
+            self.log(f"MIME type detection failed: {str(e)}", "WARNING")
+            
+            # Try to get extension from file path as fallback
+            if file_path:
+                file_extension = os.path.splitext(file_path)[1]
+            
+        # Build prompt for LLM file type detection with MIME type hints
+        prompt = f"""
+        Examine the following file content and determine its type and programming language.
+        
+        Initial MIME type (detected by a file type guesser): {initial_mime_type}
+        File extension hint: {file_extension}
+        
+        Important: These hints are ONLY suggestions. You must make your own determination based primarily on the file content.
+        
+        Examples for source code files:
+        - Python files often start with imports, comments, or docstrings - even if they start with '#' characters
+        - JavaScript/TypeScript may begin with imports, comments, or function declarations
+        - Source code with comments at the top is still source code, not markdown
+        - Files with shebang lines (#!/usr/bin/env python) are always executable source code
+        
+        Return a JSON structure with:
+        - file_type: The general type of file (e.g., "source_code", "markdown", "data", "configuration")
+        - language: The programming language if it's source code (e.g., "Python", "JavaScript", "TypeScript")
+        - confidence: Your confidence level in the language detection (0-100 integer)
+        - file_extension: The typical file extension for this language (e.g., ".py", ".js")
+        - is_binary: Whether the file appears to be binary (should be false for all text files)
+        - confirmed_mime_type: Your assessment of the correct MIME type for this file
+        
+File content (first 4000 chars):
+```
+{file_content[:4000]}
+```
+        
+        **CRITICAL**: No explanation, no commentary, just the JSON object.
+        """
+
+        try:
+            # Always run the LLM classifier for all non-empty files
             response_obj = self.run(prompt)
             
             # Process the response object to extract text
@@ -329,212 +342,248 @@ class FileAnalyzerAgent(Agent):
             if not response_text:
                 return default_type
                 
-            # Look for JSON content - sometimes the LLM includes extra text
-            if '{' in response_text and '}' in response_text:
-                json_start = response_text.find('{')
-                json_end = response_text.rfind('}') + 1
-                json_content = response_text[json_start:json_end]
-                try:
-                    result = json.loads(json_content)
-                    # Verify the required keys exist
-                    if "file_type" not in result:
-                        result["file_type"] = "unknown"
-                    if "is_binary" not in result:
-                        result["is_binary"] = False
-                    return result
-                except json.JSONDecodeError:
-                    pass
-                    
-            # Try parsing the whole response as JSON
-            try:
-                result = json.loads(response_text)
-                # Verify the required keys exist
-                if "file_type" in result and isinstance(result, dict):
-                    if "is_binary" not in result:
-                        result["is_binary"] = False
-                    return result
-            except json.JSONDecodeError:
-                pass
+            # Default result in case JSON parsing fails
+            result = {
+                "file_type": "unknown",
+                "is_binary": False,
+                "language": "unknown",
+                "confidence": 0,
+                "file_extension": "",
+                "initial_mime_type": initial_mime_type
+            }
                 
-            # If we reach here, JSON parsing failed
-            return default_type
+            # Extract JSON from response
+            try:
+                # Try to find JSON content in the response
+                repaired_text = repair_json(response_text)
+                parsed_result = json.loads(repaired_text)
+                
+                # Update fields from parsed result
+                result.update(parsed_result)
+            except (json.JSONDecodeError, ValueError, AttributeError) as e:
+                # Log the error but continue with default values
+                print(f"Failed to parse LLM response as JSON: {e}")
+                print(f"Response was: {response_text[:100]}...")
+                
+            # Ensure required fields exist and MIME type is always included
+            if "confirmed_mime_type" not in result or not result["confirmed_mime_type"]:
+                result["confirmed_mime_type"] = initial_mime_type
+            result["initial_mime_type"] = initial_mime_type
+                
+            return result
                 
         except Exception as e:
             # Handle all exceptions gracefully
             print(f"Error in analyze_file_type: {e}")
-            return default_type
-    
-    def detect_language(self, file_content: str, file_path: str) -> Dict[str, Any]:
-        """
-        [Function intent]
-        Determine the programming language with confidence score.
+            raise
         
-        [Design principles]
-        Prioritizes extension-based detection for accuracy.
-        Falls back to content analysis when extension is unknown.
-        
-        [Implementation details]
-        Combines file extension analysis with content inspection.
-        Produces confidence scores to indicate detection reliability.
-        
-        Args:
-            file_content: Content of the file to analyze
-            file_path: Path to the file (for extension-based detection)
-            
-        Returns:
-            Dict containing language information and confidence score
-        """
-        # Try extension-based detection first
-        extension_language = get_language_by_extension(file_path)
-        if extension_language != "unknown":
-            return {
-                "language": extension_language,
-                "confidence": 90,  # High confidence for extension-based detection
-                "file_extension": os.path.splitext(file_path)[1]
-            }
-        
-        # If extension-based detection fails, use LLM to analyze content
-        prompt = f"""
-        Analyze this source code and determine:
-        1. The primary programming language
-        2. Your confidence level (0-100%)
-        
-        Source code (first 2000 chars):
-        ```
-        {file_content[:2000]}
-        ```
-        
-        Return a JSON object with these fields:
-        - language: The primary programming language
-        - confidence: Your confidence as an integer percentage
-        - file_extension: The typical file extension for this language
-        
-        Return only the JSON object with no other text.
-        """
-        
-        response_obj = self.run(prompt)
-        try:
-            # Process the response object to extract text
-            response_text = self._process_run_response(response_obj)
-            
-            # Parse the response text as JSON
-            return json.loads(response_text)
-            
-        except (json.JSONDecodeError, TypeError, AttributeError) as e:
-            # Handle the error gracefully
-            print(f"Error parsing language detection response: {e}")
-            return {"language": "unknown", "confidence": 0, "file_extension": ""}
-    
     def identify_comment_formats(self, language: str) -> Dict[str, Any]:
         """
         [Function intent]
         Identify comment formats for the detected language.
         
         [Design principles]
-        Uses pre-defined formats for common languages.
-        Falls back to LLM analysis for uncommon languages.
+        Uses LLM to analyze and determine appropriate comment formats.
+        Handles any programming language without relying on predefined formats.
         
         [Implementation details]
-        Retrieves comment syntax from a predefined database.
-        Dynamically generates syntax information for unknown languages.
+        Generates comment format information dynamically using LLM.
+        Returns a list of comment styles with start and stop sequences.
+        Ensures conversation history is cleared to prevent context contamination.
         
         Args:
             language: The detected programming language
             
         Returns:
-            Dict containing comment syntax information
+            Dict containing comment style information with start/stop sequences
         """
-        # Try to get default comment format from utilities
-        default_format = get_default_comment_format(language)
-        if default_format["inline_comment"] is not None:
-            # We have a known format for this language
-            return default_format
-        
-        # If language is not in our defaults, use LLM to determine comment format
+        # Use LLM to determine comment format for the language
         prompt = f"""
-        For the {language} programming language, provide a JSON object with these fields:
-        - inline_comment: The syntax for inline comments (e.g., "//", "#")
-        - block_comment_start: The syntax to start a block comment (e.g., "/*")
-        - block_comment_end: The syntax to end a block comment (e.g., "*/")
-        - docstring_format: The syntax for docstrings or documentation comments
-        - docstring_start: The syntax to start a docstring
-        - docstring_end: The syntax to end a docstring
-        - has_documentation_comments: Whether the language has special documentation comments
+        For the {language} programming language, provide a JSON object describing ALL comment styles.
         
-        Include null for any syntax that doesn't apply to this language.
-        Return only the JSON object with no other text.
+        Examples:
+        - For Python, include both # single-line comments and triple-quote docstrings
+        - For JavaScript, include // single-line comments, /* */ block comments, and /** */ JSDoc comments
+        - For any language with shebang style (#!), include that as a style
+        
+        Return a JSON object with the following structure:
+        {{
+          "language": "{language}",
+          "comment_and_metadata_styles": [
+            {{
+              "name": "Descriptive name of comment style", 
+              "start_sequence": "Comment start sequence",
+              "stop_sequence": "Comment stop sequence"
+            }},
+            <!-- Include all comment styles for this language, like inline comments, block comments, docstrings, etc. -->
+          ]
+        }}
+        
+        **CRITICAL**: Add no explanation, no commentary, dump just the JSON object.
         """
         
-        response_obj = self.run(prompt)
+        # Run with clear_history=True to ensure previous conversation doesn't affect the result
+        response_obj = self.run(prompt, clear_history=True)
         try:
             # Process the response object to extract text
             response_text = self._process_run_response(response_obj)
             
             # Parse the response text as JSON
-            return json.loads(response_text)
+            result = json.loads(response_text)
+            
+            # Ensure comment_and_metadata_styles exists and is a list
+            if "comment_and_metadata_styles" not in result or not isinstance(result["comment_and_metadata_styles"], list):
+                result["comment_and_metadata_styles"] = []
+                
+            # Ensure language field is set
+            if "language" not in result:
+                result["language"] = language
+                
+            return result
             
         except (json.JSONDecodeError, TypeError, AttributeError) as e:
-            # Handle the error gracefully
-            print(f"Error parsing comment format response: {e}")
-            return {
-                "inline_comment": None,
-                "block_comment_start": None,
-                "block_comment_end": None,
-                "docstring_format": None,
-                "docstring_start": None,
-                "docstring_end": None,
-                "has_documentation_comments": False
-            }
-    
+            error_msg = f"Failed to parse comment format response for {language}: {e}"
+            self.log(error_msg, "ERROR")
+            raise ValueError(error_msg)
+                
     def extract_header_comment(self, file_content: str, comment_formats: Dict[str, Any]) -> Optional[str]:
         """
         [Function intent]
-        Extract header comment from file content.
+        Extract all header comments, empty lines and whitespace from the beginning of the file.
         
         [Design principles]
-        Prioritizes simple pattern matching for efficiency.
-        Falls back to intelligent extraction for complex formats.
+        Captures everything until the first non-comment, non-empty line (actual code).
+        Preserves all comment blocks, whitespace and formatting to maintain the header structure.
         
         [Implementation details]
-        Detects block comments at file start for simple extraction.
-        Uses LLM for complex or ambiguous comment formats.
+        Analyzes the file line by line to detect the end of header section.
+        Falls back to LLM for complex or ambiguous comment formats.
         
         Args:
             file_content: Content of the file
-            comment_formats: Comment format information
+            comment_formats: Comment format information with start/stop sequences
             
         Returns:
-            Header comment or None if not found
+            Complete header comment block or None if not found
         """
-        # First try simple extraction - check for block comment at start of file
-        if comment_formats.get("block_comment_start") and comment_formats.get("block_comment_end"):
-            block_start = comment_formats.get("block_comment_start")
-            block_end = comment_formats.get("block_comment_end")
+        # Get all comment style information
+        comment_styles = []
+        if "comment_and_metadata_styles" in comment_formats and isinstance(comment_formats["comment_and_metadata_styles"], list):
+            comment_styles = comment_formats["comment_and_metadata_styles"]
+        
+        # Extract all single-line and multi-line comment markers
+        single_line_markers = []
+        block_start_markers = []
+        block_end_markers = []
+        
+        for style in comment_styles:
+            start_seq = style.get("start_sequence", "")
+            stop_seq = style.get("stop_sequence", "")
             
-            # Check if file starts with a block comment
-            if file_content.strip().startswith(block_start):
-                end_pos = file_content.find(block_end, len(block_start))
-                if end_pos != -1:
-                    return file_content[:end_pos + len(block_end)].strip()
+            # Single line comment markers (like # or //)
+            if start_seq and (not stop_seq or start_seq == stop_seq or stop_seq == "\n"):
+                single_line_markers.append(start_seq)
+            
+            # Block comment markers (like /* */ or """ """)
+            if start_seq and stop_seq and start_seq != stop_seq and stop_seq != "\n":
+                block_start_markers.append(start_seq)
+                block_end_markers.append(stop_seq)
+        
+        # Define some default markers if none were found
+        if not single_line_markers:
+            single_line_markers = ["#", "//", "--"]
+        if not block_start_markers:
+            block_start_markers = ["/*", "/**", "'''", '"""']
+            block_end_markers = ["*/", "*/", "'''", '"""']
+        
+        # Split file content into lines
+        lines = file_content.splitlines()
+        header_lines = []
+        
+        in_block_comment = False
+        current_block_marker = None
+        
+        for line in lines:
+            stripped_line = line.strip()
+            
+            # Skip empty or whitespace-only lines at beginning of file
+            if not header_lines and not stripped_line:
+                header_lines.append(line)
+                continue
+            
+            # Check if we're inside a block comment
+            if in_block_comment:
+                header_lines.append(line)
+                # Check for end of block comment
+                for end_marker in block_end_markers:
+                    if end_marker in line:
+                        in_block_comment = False
+                        current_block_marker = None
+                        break
+                continue
+            
+            # Check for start of block comment
+            block_comment_started = False
+            for i, start_marker in enumerate(block_start_markers):
+                if stripped_line.startswith(start_marker):
+                    # Found block comment start
+                    in_block_comment = True
+                    current_block_marker = block_end_markers[i]
+                    header_lines.append(line)
+                    # Check if block comment ends on same line
+                    if current_block_marker in line[line.find(start_marker) + len(start_marker):]:
+                        in_block_comment = False
+                        current_block_marker = None
+                    block_comment_started = True
+                    break
+            
+            if block_comment_started:
+                continue
+            
+            # Check for single-line comment
+            is_comment_line = False
+            for marker in single_line_markers:
+                if stripped_line.startswith(marker):
+                    header_lines.append(line)
+                    is_comment_line = True
+                    break
+            
+            # Check for empty line (only after we've seen some comments)
+            if not is_comment_line:
+                if not stripped_line and header_lines:
+                    header_lines.append(line)
+                else:
+                    # Found non-comment, non-empty line - end of header
+                    break
+        
+        # If we found header comments, return them
+        if header_lines:
+            return "\n".join(header_lines)
         
         # If simple extraction fails, use LLM to extract header
         prompt = f"""
-        Extract the header comment from this file. A header comment appears at the very beginning of the file before any code.
+        Extract the COMPLETE header comment block from this file. A header comment appears at the very beginning of the file before any code.
         
-        File content (first 2000 chars):
+        IMPORTANT:
+        - Include ALL comments at the top of the file, not just the first block
+        - Include empty lines and lines with only whitespace that are part of the header
+        - Stop when you reach the first actual code line (non-comment, non-empty line)
+        - Preserve the exact format of all comments including indentation and empty lines
+        
+        File content (first 5000 chars):
         ```
-        {file_content[:2000]}
+        {file_content[:5000]}
         ```
         
         Comment formats for this file:
         {json.dumps(comment_formats, indent=2)}
         
-        Return only the raw header comment text without any additional formatting or explanation.
+        Return the COMPLETE raw header text including ALL comments and empty lines before the first actual code line.
         If no header comment is found, return an empty string.
         """
         
         response = self.run(prompt)
-        return response.strip() if response.strip() else None
+        return response if response else None
     
     def extract_dependencies(self, file_content: str, language: str) -> Dict[str, Any]:
         """
@@ -557,7 +606,7 @@ class FileAnalyzerAgent(Agent):
             Dict containing dependency information
         """
         # Determine how much content to analyze based on file size
-        content_to_analyze = file_content[:5000]  # First 5000 chars for dependency detection
+        content_to_analyze = file_content
         
         # Build prompt for dependency extraction
         prompt = f"""
@@ -575,21 +624,21 @@ class FileAnalyzerAgent(Agent):
         - name: The name of the dependency
         - kind: One of "codebase" (internal project file), "system" (system package), "external" (third-party library)
         - path_or_package: The import path or package name
-        - function_names: Array of specific functions/classes/methods imported from this dependency
+        - imported_names: Array of specific functions/classes/methods imported from this dependency
+        - called_names: Array of specific functions/class methods called from this dependency
         
         Return a JSON object with a "dependencies" field containing an array of these dependencies.
         Return only the JSON object with no other text.
         """
         
-        response_obj = self.run(prompt)
+        response_obj = self.run(prompt, clear_history=True)
         try:
             # Process the response object to extract text
             response_text = self._process_run_response(response_obj)
             
-            # Parse the response text as JSON
-            return json.loads(response_text)
+            return json.loads(repair_json(response_text))
             
-        except (json.JSONDecodeError, TypeError, AttributeError) as e:
+        except (TypeError, AttributeError, ValueError) as e:
             # Handle the error gracefully
             print(f"Error parsing dependency extraction response: {e}")
             return {"dependencies": []}
@@ -626,45 +675,6 @@ class FileAnalyzerAgent(Agent):
             chunks = [file_content[i:i+8000] for i in range(0, len(file_content), 8000)]
             all_definitions = []
             
-            for i, chunk in enumerate(chunks):
-                chunk_prompt = f"""
-                Analyze this chunk {i+1}/{len(chunks)} of {language} code and extract all function/method/class definitions
-                along with their associated comments.
-                {docstring_info}
-                
-                Source code chunk:
-                ```
-                {chunk}
-                ```
-                
-                For each function/method/class, provide:
-                - name: The name of the function/method/class
-                - type: "function", "method", or "class"
-                - line_number: Approximate starting line number (relative to this chunk)
-                - comments: All comments associated with this definition, including any special documentation comments
-                
-                Return a JSON object with a "definitions" field containing an array of these items.
-                Return only the JSON object with no other text.
-                """
-                
-                response_obj = self.run(chunk_prompt)
-                try:
-                    # Process the response object to extract text
-                    response_text = self._process_run_response(response_obj)
-                    
-                    # Parse the response text as JSON
-                    chunk_result = json.loads(response_text)
-                    # Adjust line numbers for chunk position
-                    for def_item in chunk_result.get("definitions", []):
-                        def_item["line_number"] = def_item.get("line_number", 0) + i * 8000 // 40  # Rough approximation of lines
-                    all_definitions.extend(chunk_result.get("definitions", []))
-                except json.JSONDecodeError:
-                    # If parsing fails, we continue with other chunks
-                    continue
-                    
-            return {"definitions": all_definitions}
-        else:
-            # For smaller files, analyze the whole file at once
             prompt = f"""
             Analyze this {language} code and extract all function/method/class definitions along with their associated comments.
             {docstring_info}
@@ -684,13 +694,34 @@ class FileAnalyzerAgent(Agent):
             Return only the JSON object with no other text.
             """
             
-            response = self.run(prompt)
+            response = self.run(prompt, clear_history=True)
             try:
                 return json.loads(response)
             except json.JSONDecodeError:
                 return {"definitions": []}
     
-    def get_file_metadata(self, file_path: str) -> Optional[Dict[str, Any]]:
+    def clear_state(self, file_path: Optional[str] = None) -> None:
+        """
+        [Function intent]
+        Clear stored metadata.
+        
+        [Design principles]
+        Supports selective or complete state reset.
+        Prevents memory leaks with long-running processes.
+        
+        [Implementation details]
+        Can clear a specific file's metadata or all metadata.
+        
+        Args:
+            file_path: Path to clear metadata for, or None to clear all
+        """
+        if file_path:
+            if file_path in self.file_metadata:
+                del self.file_metadata[file_path]
+        else:
+            self.file_metadata = {}
+    
+    def get_state_item(self, file_path: str) -> Optional[Dict[str, Any]]:
         """
         [Function intent]
         Get the stored metadata for a file.
@@ -711,7 +742,7 @@ class FileAnalyzerAgent(Agent):
         """
         return self.file_metadata.get(file_path)
 
-    def get_all_metadata(self) -> Dict[str, Dict[str, Any]]:
+    def get_all_state(self) -> Dict[str, Dict[str, Any]]:
         """
         [Function intent]
         Get all stored file metadata.
@@ -727,27 +758,6 @@ class FileAnalyzerAgent(Agent):
             Dict mapping file paths to their metadata
         """
         return self.file_metadata
-
-    def clear_metadata(self, file_path: Optional[str] = None) -> None:
-        """
-        [Function intent]
-        Clear stored metadata.
-        
-        [Design principles]
-        Supports selective or complete state reset.
-        Prevents memory leaks with long-running processes.
-        
-        [Implementation details]
-        Can clear a specific file's metadata or all metadata.
-        
-        Args:
-            file_path: Path to clear metadata for, or None to clear all
-        """
-        if file_path:
-            if file_path in self.file_metadata:
-                del self.file_metadata[file_path]
-        else:
-            self.file_metadata = {}
     
     def test_on_file(self, file_path: str, verbose: bool = False) -> bool:
         """
@@ -789,7 +799,7 @@ class FileAnalyzerAgent(Agent):
             return False
 
 
-class DocumentationGeneratorAgent(Agent):
+class DocumentationGeneratorAgent(AbstractAgnoAgent):
     """
     [Class intent]
     Agent for generating HSTC-compliant documentation using Claude 3.7.
@@ -804,7 +814,7 @@ class DocumentationGeneratorAgent(Agent):
     Applies contextual awareness of HSTC requirements and project standards.
     """
     
-    def __init__(self, model_id: str = "claude-3-5-sonnet-20241022", **kwargs):
+    def __init__(self, model_id: str = "claude-3-5-sonnet-20241022", show_prompts: bool = True, **kwargs):
         """
         [Class method intent]
         Initialize the Documentation Generator Agent with a Claude 3.7 model.
@@ -822,7 +832,6 @@ class DocumentationGeneratorAgent(Agent):
             **kwargs: Additional arguments to pass to the Agent constructor
         """
         # Add reasoning tools for step-by-step analysis
-        from agno.tools.reasoning import ReasoningTools
         reasoning_tools = ReasoningTools()
         
         # Initialize Claude model for documentation generation
@@ -836,12 +845,20 @@ class DocumentationGeneratorAgent(Agent):
                 kwargs['tools'] = [kwargs['tools'], reasoning_tools]
         else:
             kwargs['tools'] = [reasoning_tools]
-            
-        super().__init__(model=model, **kwargs)
         
         # Initialize state for storage
         self.generated_documentation = {}
+            
+        # Call parent constructor with model and agent name
+        super().__init__(
+            model=model,
+            model_id=model_id,
+            agent_name="DocumentationGeneratorAgent",
+            show_prompts=show_prompts,
+            **kwargs
+        )
         
+    
     def process_file_documentation(
         self, 
         file_path: str, 
@@ -1483,7 +1500,28 @@ class DocumentationGeneratorAgent(Agent):
         
         return validation
     
-    def get_generated_documentation(self, file_path: str) -> Optional[Dict[str, Any]]:
+    def clear_state(self, file_path: Optional[str] = None) -> None:
+        """
+        [Function intent]
+        Clear stored documentation.
+        
+        [Design principles]
+        Supports selective or complete state reset.
+        Prevents memory issues with long-running processes.
+        
+        [Implementation details]
+        Can clear a specific file's documentation or all documentation.
+        
+        Args:
+            file_path: Path to clear documentation for, or None to clear all
+        """
+        if file_path:
+            if file_path in self.generated_documentation:
+                del self.generated_documentation[file_path]
+        else:
+            self.generated_documentation = {}
+    
+    def get_state_item(self, file_path: str) -> Optional[Dict[str, Any]]:
         """
         [Function intent]
         Get generated documentation for a specific file.
@@ -1504,7 +1542,7 @@ class DocumentationGeneratorAgent(Agent):
         """
         return self.generated_documentation.get(file_path)
 
-    def get_all_documentation(self) -> Dict[str, Dict[str, Any]]:
+    def get_all_state(self) -> Dict[str, Dict[str, Any]]:
         """
         [Function intent]
         Get all generated documentation.
@@ -1520,27 +1558,6 @@ class DocumentationGeneratorAgent(Agent):
             Dict mapping file paths to documentation
         """
         return self.generated_documentation
-
-    def clear_documentation(self, file_path: Optional[str] = None) -> None:
-        """
-        [Function intent]
-        Clear stored documentation.
-        
-        [Design principles]
-        Supports selective or complete state reset.
-        Prevents memory issues with long-running processes.
-        
-        [Implementation details]
-        Can clear a specific file's documentation or all documentation.
-        
-        Args:
-            file_path: Path to clear documentation for, or None to clear all
-        """
-        if file_path:
-            if file_path in self.generated_documentation:
-                del self.generated_documentation[file_path]
-        else:
-            self.generated_documentation = {}
     
     def test_on_file(
         self, 

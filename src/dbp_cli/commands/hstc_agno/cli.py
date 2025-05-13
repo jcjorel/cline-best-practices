@@ -120,7 +120,9 @@ class ProgressBar:
               help="Process dependencies recursively")
 @click.option("--verbose/--quiet", default=False,
               help="Show detailed output")
-def update(file_path: str, output: Optional[str], recursive: bool, verbose: bool):
+@click.option("--show-prompts/--hide-prompts", default=True,
+              help="Show prompts and responses from LLM agents")
+def update(file_path: str, output: Optional[str], recursive: bool, verbose: bool, show_prompts: bool):
     """
     [Function intent]
     Update documentation for a source file using Agno-powered analysis.
@@ -143,12 +145,13 @@ def update(file_path: str, output: Optional[str], recursive: bool, verbose: bool
     options = {
         "output": output,
         "recursive": recursive,
-        "verbose": verbose
+        "verbose": verbose,
+        "show_prompts": show_prompts
     }
     
     # Create HSTC Manager and process file
     with ProgressBar("Initializing HSTC Manager..."):
-        manager = HSTCManager(base_dir=Path.cwd())
+        manager = HSTCManager(base_dir=Path.cwd(), show_prompts=options.get("show_prompts", True))
     
     with ProgressBar(f"Processing {file_path}..."):
         result = manager.process_file(file_path, options)
@@ -189,13 +192,16 @@ def update(file_path: str, output: Optional[str], recursive: bool, verbose: bool
               help="File patterns to include (e.g., '*.py', '*.js')")
 @click.option("--verbose/--quiet", default=False,
               help="Show detailed output")
+@click.option("--show-prompts/--hide-prompts", default=True,
+              help="Show prompts and responses from LLM agents")
 def update_directory(
     directory_path: str, 
     output: Optional[str], 
     recursive: bool,
     recursive_dir: bool,
     pattern: List[str],
-    verbose: bool
+    verbose: bool,
+    show_prompts: bool
 ):
     """
     [Function intent]
@@ -228,7 +234,7 @@ def update_directory(
     
     # Create HSTC Manager and process directory
     with ProgressBar("Initializing HSTC Manager..."):
-        manager = HSTCManager(base_dir=Path.cwd())
+        manager = HSTCManager(base_dir=Path.cwd(), show_prompts=show_prompts)
     
     with ProgressBar(f"Processing directory {directory_path}..."):
         result = manager.process_directory(directory_path, options)
@@ -255,7 +261,9 @@ def update_directory(
 @click.argument("file_path", type=str, shell_complete=get_file_completions)
 @click.option("--verbose/--quiet", default=False,
               help="Show detailed output")
-def status(file_path: str, verbose: bool):
+@click.option("--show-prompts/--hide-prompts", default=True,
+              help="Show prompts and responses from LLM agents")
+def status(file_path: str, verbose: bool, show_prompts: bool):
     """
     [Function intent]
     Check the status of HSTC documentation for a file or directory.
@@ -273,7 +281,7 @@ def status(file_path: str, verbose: bool):
         verbose: Whether to show detailed output
     """
     # Create HSTC Manager
-    manager = HSTCManager(base_dir=Path.cwd())
+    manager = HSTCManager(base_dir=Path.cwd(), show_prompts=show_prompts)
     
     # Check if path is a file or directory
     if os.path.isfile(file_path):
@@ -330,7 +338,9 @@ def status(file_path: str, verbose: bool):
 @click.argument("file_path", type=str, shell_complete=get_file_completions)
 @click.option("--output-format", "-f", type=click.Choice(["text", "json", "markdown"]), default="text",
               help="Output format")
-def view(file_path: str, output_format: str):
+@click.option("--show-prompts/--hide-prompts", default=True,
+              help="Show prompts and responses from LLM agents")
+def view(file_path: str, output_format: str, show_prompts: bool):
     """
     [Function intent]
     View the generated HSTC documentation for a file.
@@ -348,7 +358,7 @@ def view(file_path: str, output_format: str):
         output_format: Format for displaying the documentation
     """
     # Create HSTC Manager
-    manager = HSTCManager(base_dir=Path.cwd())
+    manager = HSTCManager(base_dir=Path.cwd(), show_prompts=show_prompts)
     
     # Process the file
     with ProgressBar(f"Analyzing {file_path}..."):
@@ -426,7 +436,9 @@ def view(file_path: str, output_format: str):
 
 
 @hstc_agno.command("clear-cache")
-def clear_cache():
+@click.option("--show-prompts/--hide-prompts", default=True,
+              help="Show prompts and responses from LLM agents")
+def clear_cache(show_prompts: bool):
     """
     [Function intent]
     Clear the HSTC cache to ensure fresh processing.
@@ -440,7 +452,7 @@ def clear_cache():
     Creates a fresh processing environment.
     """
     # Create HSTC Manager
-    manager = HSTCManager(base_dir=Path.cwd())
+    manager = HSTCManager(base_dir=Path.cwd(), show_prompts=show_prompts)
     
     # Clear cache
     manager.clear_cache()
@@ -450,7 +462,9 @@ def clear_cache():
 
 @hstc_agno.command("save-cache")
 @click.argument("cache_path", type=str)
-def save_cache(cache_path: str):
+@click.option("--show-prompts/--hide-prompts", default=True,
+              help="Show prompts and responses from LLM agents")
+def save_cache(cache_path: str, show_prompts: bool):
     """
     [Function intent]
     Save the HSTC cache to a file for persistence.
@@ -467,7 +481,7 @@ def save_cache(cache_path: str):
         cache_path: Path to save the cache file
     """
     # Create HSTC Manager
-    manager = HSTCManager(base_dir=Path.cwd())
+    manager = HSTCManager(base_dir=Path.cwd(), show_prompts=show_prompts)
     
     # Save cache
     manager.save_cache(cache_path)
@@ -477,7 +491,9 @@ def save_cache(cache_path: str):
 
 @hstc_agno.command("load-cache")
 @click.argument("cache_path", type=str, shell_complete=get_file_completions)
-def load_cache(cache_path: str):
+@click.option("--show-prompts/--hide-prompts", default=True,
+              help="Show prompts and responses from LLM agents")
+def load_cache(cache_path: str, show_prompts: bool):
     """
     [Function intent]
     Load the HSTC cache from a file for reuse.
@@ -494,7 +510,7 @@ def load_cache(cache_path: str):
         cache_path: Path to the cache file to load
     """
     # Create HSTC Manager
-    manager = HSTCManager(base_dir=Path.cwd())
+    manager = HSTCManager(base_dir=Path.cwd(), show_prompts=show_prompts)
     
     # Load cache
     success = manager.load_cache(cache_path)

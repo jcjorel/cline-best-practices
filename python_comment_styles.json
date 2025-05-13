@@ -1,0 +1,15 @@
+{
+  "language": "Python",
+  "comment_and_metadata_styles": [
+    {
+      "name": "Single-line comment",
+      "start_sequence": "#",
+      "stop_sequence": "\n"
+    },
+    {
+      "name": "Multiline docstring",
+      "start_sequence": "\"\"\"",
+      "stop_sequence": "\"\"\""
+    }
+  ]
+}

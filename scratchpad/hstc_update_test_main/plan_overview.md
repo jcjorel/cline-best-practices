@@ -2,11 +2,11 @@
 
 ## Overview
 
-This plan outlines the steps to update documentation for `src/dbp_cli/cli_click/tests/test_config.py` to comply with HSTC standards.
+This plan outlines the steps to update documentation for `src/dbp_cli/cli_click/tests/test_main.py` to comply with HSTC standards.
 
 ## File Analysis
 
-- **File Type**: markdown
+- **File Type**: unknown
 - **Language**: unknown
 - **Definitions**: 0 functions/classes/methods found
 - **Dependencies**: 0 dependencies identified

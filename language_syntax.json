@@ -1,0 +1,9 @@
+{
+  "inline_comment": "//",
+  "block_comment_start": "/*", 
+  "block_comment_end": "*/",
+  "docstring_format": null,
+  "docstring_start": null,
+  "docstring_end": null,
+  "has_documentation_comments": false
+}
