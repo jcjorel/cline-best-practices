@@ -294,7 +294,7 @@ def start_command(ctx: click.Context, host: str, port: int, foreground: bool, lo
                 return False
             
             # Start polling with progress indicator
-            ctx.with_progress("Checking server health", poll_health_status)
+            ctx.obj.with_progress("Checking server health", poll_health_status)
 
             output.success(f"MCP server started (PID: {process.pid})")
             output.info(f"Server logs available at:")
@@ -359,7 +359,7 @@ def stop_command(ctx: click.Context, timeout: int) -> None:
                 time.sleep(0.5)
         
         # Wait for process to exit with progress indicator
-        ctx.with_progress("Waiting for server to stop", wait_for_exit)
+        ctx.obj.with_progress("Waiting for server to stop", wait_for_exit)
 
         # Clean up PID file
         _clear_pid_file(ctx)
@@ -431,7 +431,7 @@ def restart_command(ctx: click.Context, host: str, port: int, foreground: bool, 
                         time.sleep(0.5)
                 
                 # Wait for process to exit with progress indicator
-                ctx.with_progress("Waiting for server to stop", wait_for_exit)
+                ctx.obj.with_progress("Waiting for server to stop", wait_for_exit)
 
                 # Clean up PID file
                 _clear_pid_file(ctx)
@@ -463,7 +463,7 @@ def restart_command(ctx: click.Context, host: str, port: int, foreground: bool, 
             time.sleep(0.5)
     
     # Check port availability with progress indicator
-    ctx.with_progress("Waiting for port to become available", wait_for_port)
+    ctx.obj.with_progress("Waiting for port to become available", wait_for_port)
 
     if not port_available:
         output.error(f"Port {port} is still in use after server stop")
@@ -605,7 +605,7 @@ def status_command(ctx: click.Context) -> None:
     output.info(f"Checking health endpoint: {health_endpoint}")
     
     try:
-        response = ctx.with_progress(
+        response = ctx.obj.with_progress(
             "Connecting to server",
             requests.get,
             health_endpoint,
