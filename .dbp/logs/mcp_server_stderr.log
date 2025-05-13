@@ -6345,3 +6345,261 @@ INFO:     Uvicorn running on http://127.0.0.1:6231 (Press CTRL+C to quit)
 2025-05-12 21:03:36,122 - dbp.mcp_server.__main__ - INFO - MCP server running...
 2025-05-12 21:03:36,123 - dbp.mcp_server - INFO - Waiting for MCP server to exit
 2025-05-12 21:03:36,123 - dbp.mcp_server.server - INFO - Waiting for MCP server to exit
+2025-05-13 16:25:34,767 - dbp.core.lifecycle - WARNING - Received signal SIGTERM (15). Shutting down...
+2025-05-13 16:25:34,770 - dbp.core.lifecycle - INFO - Initiating system shutdown...
+2025-05-13 16:25:34,771 - dbp.core.lifecycle - INFO - Shutting down 4 components
+2025-05-13 16:25:34,771 - dbp.core.lifecycle - INFO - Shutting down component 'file_access'...
+2025-05-13 16:25:34,771 - dbp.core.lifecycle.file_access.file_access - INFO - Shutting down component 'file_access'...
+2025-05-13 16:25:34,773 - dbp.core.file_access - INFO - DBPFile cache cleared
+2025-05-13 16:25:34,774 - dbp.core.lifecycle.file_access.file_access - INFO - DBPFile cache cleared
+2025-05-13 16:25:34,774 - dbp.core.lifecycle.file_access.file_access - INFO - Component 'file_access' shut down
+2025-05-13 16:25:34,774 - dbp.core.lifecycle - INFO - Shutting down component 'fs_monitor'...
+2025-05-13 16:25:34,777 - dbp.fs_monitor.component - INFO - Shutting down FSMonitorComponent
+2025-05-13 16:25:34,779 - dbp.fs_monitor.component - INFO - FSMonitorComponent shut down
+2025-05-13 16:25:34,780 - dbp.core.lifecycle - WARNING - Component 'fs_monitor' still reports as initialized after shutdown
+2025-05-13 16:25:34,781 - dbp.core.lifecycle - INFO - Shutting down component 'mcp_server'...
+2025-05-13 16:25:34,783 - dbp.mcp_server - INFO - Shutting down component 'mcp_server'...
+2025-05-13 16:25:34,787 - dbp.mcp_server.server - INFO - Stopping MCP server
+2025-05-13 16:25:34,790 - dbp.mcp_server.server - INFO - MCP server stopped
+2025-05-13 16:25:34,791 - dbp.mcp_server - INFO - Component 'mcp_server' shut down.
+2025-05-13 16:25:34,793 - dbp.core.lifecycle - INFO - Shutting down component 'config_manager'...
+2025-05-13 16:25:34,797 - dbp.config_manager - INFO - Shutting down component 'config_manager'...
+2025-05-13 16:25:34,799 - dbp.config_manager - INFO - Component 'config_manager' shut down.
+2025-05-13 16:25:34,800 - dbp.core.lifecycle - INFO - All components shut down
+2025-05-13 16:25:34,801 - dbp.core.lifecycle - INFO - System shutdown complete.
+2025-05-13 16:25:34,804 - dbp.mcp_server.__main__ - INFO - Shutting down MCP server...
+2025-05-13 16:25:34,817 - dbp.core.watchdog - WARNING - Watchdog already running, not starting another
+2025-05-13 16:25:34,817 - dbp.mcp_server.__main__ - INFO - Watchdog reactivated with 20s timeout for shutdown process
+2025-05-13 16:25:34,817 - dbp.core.lifecycle - INFO - Application not running, shutdown not needed.
+2025-05-13 16:25:34,818 - dbp.mcp_server.__main__ - INFO - Lifecycle manager shutdown complete
+2025-05-13 16:25:34,828 - dbp.mcp_server.__main__ - WARNING - Server exit detected
+2025-05-13 16:25:34,829 - dbp.mcp_server.__main__ - WARNING - Exit source: Python interpreter shutdown
+2025-05-13 16:25:34,829 - dbp.mcp_server.__main__ - WARNING - Exit reason: Process exit via atexit
+
+
+--- SERVER START ATTEMPT AT 2025-05-13 16:25:41 ---
+
+MCPTool or MCPResource base classes not found. Using placeholders.
+2025-05-13 16:25:42,541 - dbp.core.watchdog - INFO - WATCHDOG SETUP: Initializing watchdog with 20s timeout
+2025-05-13 16:25:42,542 - dbp.core.watchdog - INFO - WATCHDOG SETUP: Initial timestamp: 1747146342.541504
+2025-05-13 16:25:42,542 - dbp.core.watchdog - INFO - WATCHDOG THREAD STARTED: with 20 second timeout
+2025-05-13 16:25:42,543 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-05-13 16:25:42,543 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-05-13 16:25:42,543 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-05-13 16:25:42,544 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-05-13 16:25:42,544 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-05-13 16:25:42,544 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-05-13 16:25:42,545 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-05-13 16:25:42,545 - dbp.config.config_manager - WARNING - ConfigurationManager already initialized. Skipping re-initialization.
+2025-05-13 16:25:42,545 - dbp.core.lifecycle - INFO - Registering components with registry...
+2025-05-13 16:25:42,545 - dbp.core.lifecycle - INFO - Using component enablement configuration
+2025-05-13 16:25:42,545 - dbp.core.lifecycle - INFO - Registered component factory: 'config_manager' with dependencies: []
+2025-05-13 16:25:42,545 - dbp.core.lifecycle - INFO - Registered component class: 'file_access' with dependencies: ['config_manager']
+2025-05-13 16:25:42,545 - dbp.core.lifecycle - INFO - Component 'database' disabled by configuration - skipping registration
+2025-05-13 16:25:42,545 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-05-13 16:25:42,564 - dbp.fs_monitor.platforms.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-05-13 16:25:42,568 - dbp.fs_monitor.platforms.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-05-13 16:25:42,572 - dbp.core.lifecycle - INFO - Registered component class: 'fs_monitor' with dependencies: ['config_manager']
+2025-05-13 16:25:42,572 - dbp.core.lifecycle - INFO - Component 'llm_coordinator' disabled by configuration - skipping registration
+2025-05-13 16:25:42,572 - dbp.core.lifecycle - INFO - Registered component class: 'mcp_server' with dependencies: ['config_manager']
+2025-05-13 16:25:42,572 - dbp.core.lifecycle - INFO - Registered 4 components with registry
+2025-05-13 16:25:42,572 - dbp.core.registry - INFO - Registering 4 components with system
+2025-05-13 16:25:42,572 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-05-13 16:25:42,572 - dbp.core.lifecycle - INFO - Registering component: 'file_access' with dependencies: ['config_manager']
+2025-05-13 16:25:42,572 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager']
+2025-05-13 16:25:42,572 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['config_manager']
+2025-05-13 16:25:42,572 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-05-13 16:25:42,572 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-05-13 16:25:42,573 - dbp.core.lifecycle - INFO - Initializing 4 components
+2025-05-13 16:25:42,573 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-05-13 16:25:42,573 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, fs_monitor, file_access, mcp_server
+2025-05-13 16:25:42,573 - dbp.core.lifecycle - INFO - Using component enablement configuration: config_manager=True file_access=True database=False fs_monitor=True llm_coordinator=False mcp_server=True
+2025-05-13 16:25:42,573 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-05-13 16:25:42,573 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-05-13 16:25:42,573 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-05-13 16:25:42,573 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-05-13 16:25:42,574 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-05-13 16:25:42,575 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-05-13 16:25:42,576 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-05-13 16:25:42,576 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-05-13 16:25:42,576 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-05-13 16:25:42,576 - dbp.core.lifecycle - INFO - Initializing component 'fs_monitor'...
+2025-05-13 16:25:42,576 - dbp.core.lifecycle - INFO - Initializing component 'fs_monitor' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-05-13 16:25:42,576 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-05-13 16:25:42,576 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'fs_monitor'
+2025-05-13 16:25:42,576 - dbp.core.lifecycle.fs_monitor - INFO - Initializing FSMonitorComponent
+2025-05-13 16:25:42,576 - dbp.fs_monitor.platforms.factory - INFO - Created Linux monitor (inotify)
+2025-05-13 16:25:42,576 - dbp.fs_monitor.component - INFO - FSMonitorComponent initialized
+2025-05-13 16:25:42,576 - dbp.core.lifecycle - INFO - Component 'fs_monitor' initialized successfully
+2025-05-13 16:25:42,576 - dbp.core.lifecycle - INFO - Initializing component 'file_access'...
+2025-05-13 16:25:42,576 - dbp.core.lifecycle - INFO - Initializing component 'file_access' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-05-13 16:25:42,576 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-05-13 16:25:42,576 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'file_access'
+2025-05-13 16:25:42,576 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-05-13 16:25:42,577 - dbp.core.lifecycle.file_access.file_access - INFO - Initializing component 'file_access'...
+2025-05-13 16:25:42,577 - dbp.core.file_access - INFO - DBPFile cache configured with maxsize=100
+2025-05-13 16:25:42,577 - dbp.core.lifecycle.file_access.file_access - INFO - DBPFile cache configured with size 100
+2025-05-13 16:25:42,577 - dbp.core.lifecycle.file_access.file_access - INFO - Component 'file_access' initialized successfully
+2025-05-13 16:25:42,577 - dbp.core.lifecycle - INFO - Component 'file_access' initialized successfully
+2025-05-13 16:25:42,577 - dbp.core.lifecycle - INFO - Initializing component 'mcp_server'...
+2025-05-13 16:25:42,577 - dbp.core.lifecycle - INFO - Initializing component 'mcp_server' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-05-13 16:25:42,577 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-05-13 16:25:42,577 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'mcp_server'
+2025-05-13 16:25:42,577 - dbp.mcp_server - INFO - Initializing component 'mcp_server' with FastMCP integration
+2025-05-13 16:25:42,578 - dbp.mcp_server - INFO - Ensuring required directories exist using base directory: .dbp
+2025-05-13 16:25:42,578 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-05-13 16:25:42,587 - dbp.mcp_server - INFO - Required directories created or verified successfully
+2025-05-13 16:25:42,587 - dbp.mcp_server.server - INFO - Initializing MCPServer with name=dbp-mcp-server, host=127.0.0.1, port=6231
+2025-05-13 16:25:42,817 - fastmcp.utilities.openapi - INFO - Successfully parsed OpenAPI 3.1 schema version: 3.1.0
+2025-05-13 16:25:42,817 - fastmcp.utilities.openapi - INFO - Successfully extracted route: GET /health
+2025-05-13 16:25:42,817 - fastmcp.utilities.openapi - INFO - Finished parsing. Extracted 1 HTTP routes.
+[05/13/25 16:25:42] INFO     Created FastMCP OpenAPI server with 1 routes                                                  openapi.py:480
+2025-05-13 16:25:42,818 - FastMCP.fastmcp.server.openapi - INFO - Created FastMCP OpenAPI server with 1 routes
+2025-05-13 16:25:42,821 - dbp.mcp_server.server - INFO - MCPServer initialized successfully
+2025-05-13 16:25:42,821 - dbp.mcp_server.server - INFO - Starting MCP server on 127.0.0.1:6231
+2025-05-13 16:25:42,822 - dbp.mcp_server.server - INFO - Checking server availability with timeout=30s
+INFO:     Started server process [631898]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:6231 (Press CTRL+C to quit)
+2025-05-13 16:25:43,335 - dbp.mcp_server.server - INFO - Server availability check passed
+2025-05-13 16:25:43,336 - dbp.mcp_server.server - INFO - MCP server started successfully on 127.0.0.1:6231
+2025-05-13 16:25:43,337 - dbp.mcp_server - INFO - Component 'mcp_server' initialized successfully.
+2025-05-13 16:25:43,337 - dbp.core.lifecycle - INFO - Component 'mcp_server' initialized successfully
+2025-05-13 16:25:43,337 - dbp.core.lifecycle - INFO - All components initialized successfully
+2025-05-13 16:25:43,337 - dbp.core.lifecycle - INFO - System startup complete. Application is running.
+2025-05-13 16:25:43,338 - dbp.mcp_server.__main__ - INFO - All components started successfully
+2025-05-13 16:25:43,338 - dbp.mcp_server.__main__ - INFO - Component initialization completed successfully
+2025-05-13 16:25:43,338 - dbp.mcp_server.__main__ - INFO - Watchdog disabled after successful component initialization
+2025-05-13 16:25:43,340 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.8s (threshold: 20s)
+2025-05-13 16:25:43,341 - dbp.mcp_server.__main__ - INFO - MCP server running...
+2025-05-13 16:25:43,342 - dbp.mcp_server - INFO - Waiting for MCP server to exit
+2025-05-13 16:25:43,343 - dbp.mcp_server.server - INFO - Waiting for MCP server to exit
+2025-05-13 16:25:54,895 - dbp.core.lifecycle - WARNING - Received signal SIGTERM (15). Shutting down...
+2025-05-13 16:25:54,895 - dbp.core.lifecycle - INFO - Initiating system shutdown...
+2025-05-13 16:25:54,896 - dbp.core.lifecycle - INFO - Shutting down 4 components
+2025-05-13 16:25:54,896 - dbp.core.lifecycle - INFO - Shutting down component 'mcp_server'...
+2025-05-13 16:25:54,896 - dbp.mcp_server - INFO - Shutting down component 'mcp_server'...
+2025-05-13 16:25:54,896 - dbp.mcp_server.server - INFO - Stopping MCP server
+2025-05-13 16:25:54,896 - dbp.mcp_server.server - INFO - MCP server stopped
+2025-05-13 16:25:54,896 - dbp.mcp_server - INFO - Component 'mcp_server' shut down.
+2025-05-13 16:25:54,896 - dbp.core.lifecycle - INFO - Shutting down component 'file_access'...
+2025-05-13 16:25:54,896 - dbp.core.lifecycle.file_access.file_access - INFO - Shutting down component 'file_access'...
+2025-05-13 16:25:54,896 - dbp.core.file_access - INFO - DBPFile cache cleared
+2025-05-13 16:25:54,896 - dbp.core.lifecycle.file_access.file_access - INFO - DBPFile cache cleared
+2025-05-13 16:25:54,896 - dbp.core.lifecycle.file_access.file_access - INFO - Component 'file_access' shut down
+2025-05-13 16:25:54,896 - dbp.core.lifecycle - INFO - Shutting down component 'fs_monitor'...
+2025-05-13 16:25:54,896 - dbp.fs_monitor.component - INFO - Shutting down FSMonitorComponent
+2025-05-13 16:25:54,896 - dbp.fs_monitor.component - INFO - FSMonitorComponent shut down
+2025-05-13 16:25:54,896 - dbp.core.lifecycle - WARNING - Component 'fs_monitor' still reports as initialized after shutdown
+2025-05-13 16:25:54,896 - dbp.core.lifecycle - INFO - Shutting down component 'config_manager'...
+2025-05-13 16:25:54,896 - dbp.config_manager - INFO - Shutting down component 'config_manager'...
+2025-05-13 16:25:54,896 - dbp.config_manager - INFO - Component 'config_manager' shut down.
+2025-05-13 16:25:54,896 - dbp.core.lifecycle - INFO - All components shut down
+2025-05-13 16:25:54,896 - dbp.core.lifecycle - INFO - System shutdown complete.
+2025-05-13 16:25:54,896 - dbp.mcp_server.__main__ - INFO - Shutting down MCP server...
+2025-05-13 16:25:54,896 - dbp.core.watchdog - WARNING - Watchdog already running, not starting another
+2025-05-13 16:25:54,897 - dbp.mcp_server.__main__ - INFO - Watchdog reactivated with 20s timeout for shutdown process
+2025-05-13 16:25:54,897 - dbp.core.lifecycle - INFO - Application not running, shutdown not needed.
+2025-05-13 16:25:54,897 - dbp.mcp_server.__main__ - INFO - Lifecycle manager shutdown complete
+2025-05-13 16:25:54,897 - dbp.mcp_server.__main__ - WARNING - Server exit detected
+2025-05-13 16:25:54,898 - dbp.mcp_server.__main__ - WARNING - Exit source: Python interpreter shutdown
+2025-05-13 16:25:54,898 - dbp.mcp_server.__main__ - WARNING - Exit reason: Process exit via atexit
+
+
+--- SERVER RESTART ATTEMPT AT 2025-05-13 16:25:55 ---
+
+MCPTool or MCPResource base classes not found. Using placeholders.
+2025-05-13 16:25:56,946 - dbp.core.watchdog - INFO - WATCHDOG SETUP: Initializing watchdog with 20s timeout
+2025-05-13 16:25:56,947 - dbp.core.watchdog - INFO - WATCHDOG SETUP: Initial timestamp: 1747146356.9465911
+2025-05-13 16:25:56,947 - dbp.core.watchdog - INFO - WATCHDOG THREAD STARTED: with 20 second timeout
+2025-05-13 16:25:56,947 - dbp.mcp_server.__main__ - INFO - Starting MCP server on localhost:6231
+2025-05-13 16:25:56,948 - dbp.mcp_server.__main__ - INFO - Checking component dependencies and imports...
+2025-05-13 16:25:56,948 - dbp.mcp_server.__main__ - INFO - FastAPI version: 0.115.12
+2025-05-13 16:25:56,948 - dbp.mcp_server.__main__ - INFO - Uvicorn available: uvicorn
+2025-05-13 16:25:56,948 - dbp.mcp_server.__main__ - INFO - Starting MCP server using LifecycleManager
+2025-05-13 16:25:56,949 - dbp.core.lifecycle - INFO - Loading application configuration...
+2025-05-13 16:25:56,949 - dbp.config.config_manager - WARNING - ConfigurationManager already initialized. Skipping re-initialization.
+2025-05-13 16:25:56,949 - dbp.core.lifecycle - INFO - Registering components with registry...
+2025-05-13 16:25:56,949 - dbp.core.lifecycle - INFO - Using component enablement configuration
+2025-05-13 16:25:56,949 - dbp.core.lifecycle - INFO - Registered component factory: 'config_manager' with dependencies: []
+2025-05-13 16:25:56,949 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-05-13 16:25:56,950 - dbp.core.lifecycle - INFO - Registered component class: 'file_access' with dependencies: ['config_manager']
+2025-05-13 16:25:56,950 - dbp.core.lifecycle - INFO - Component 'database' disabled by configuration - skipping registration
+2025-05-13 16:25:56,958 - dbp.fs_monitor.platforms.macos - WARNING - The 'fsevents' library is required for MacOSFileSystemMonitor but was not found. Install it using 'pip install fsevents'.
+2025-05-13 16:25:56,961 - dbp.fs_monitor.platforms.windows - WARNING - The 'pywin32' library is required for WindowsFileSystemMonitor but was not found. Install it using 'pip install pywin32'.
+2025-05-13 16:25:56,962 - dbp.core.lifecycle - INFO - Registered component class: 'fs_monitor' with dependencies: ['config_manager']
+2025-05-13 16:25:56,962 - dbp.core.lifecycle - INFO - Component 'llm_coordinator' disabled by configuration - skipping registration
+2025-05-13 16:25:56,962 - dbp.core.lifecycle - INFO - Registered component class: 'mcp_server' with dependencies: ['config_manager']
+2025-05-13 16:25:56,962 - dbp.core.lifecycle - INFO - Registered 4 components with registry
+2025-05-13 16:25:56,962 - dbp.core.registry - INFO - Registering 4 components with system
+2025-05-13 16:25:56,962 - dbp.core.lifecycle - INFO - Registering component: 'config_manager' with dependencies: []
+2025-05-13 16:25:56,962 - dbp.core.lifecycle - INFO - Registering component: 'file_access' with dependencies: ['config_manager']
+2025-05-13 16:25:56,962 - dbp.core.lifecycle - INFO - Registering component: 'fs_monitor' with dependencies: ['config_manager']
+2025-05-13 16:25:56,962 - dbp.core.lifecycle - INFO - Registering component: 'mcp_server' with dependencies: ['config_manager']
+2025-05-13 16:25:56,962 - dbp.core.lifecycle - INFO - Starting Documentation-Based Programming system...
+2025-05-13 16:25:56,962 - dbp.core.lifecycle - INFO - Initializing 4 components
+2025-05-13 16:25:56,962 - dbp.core.lifecycle - INFO - All component dependencies validated successfully
+2025-05-13 16:25:56,962 - dbp.core.lifecycle - INFO - Component initialization order: config_manager, file_access, mcp_server, fs_monitor
+2025-05-13 16:25:56,963 - dbp.core.lifecycle - INFO - Using component enablement configuration: config_manager=True file_access=True database=False fs_monitor=True llm_coordinator=False mcp_server=True
+2025-05-13 16:25:56,963 - dbp.core.lifecycle - INFO - Initializing component 'config_manager'...
+2025-05-13 16:25:56,963 - dbp.core.lifecycle - INFO - Initializing component 'config_manager' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-05-13 16:25:56,963 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-05-13 16:25:56,963 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-05-13 16:25:56,963 - dbp.config_manager - INFO - Initializing component 'config_manager'...
+2025-05-13 16:25:56,967 - dbp.config_manager - INFO - Setting project.root_path to Git root: /home/jcjorel/cline-best-practices
+2025-05-13 16:25:56,967 - dbp.config.config_manager - INFO - Configuration value set and validated: project.root_path = /home/jcjorel/cline-best-practices
+2025-05-13 16:25:56,968 - dbp.config_manager - INFO - Component 'config_manager' initialized successfully.
+2025-05-13 16:25:56,968 - dbp.core.lifecycle - INFO - Component 'config_manager' initialized successfully
+2025-05-13 16:25:56,968 - dbp.core.lifecycle - INFO - Initializing component 'file_access'...
+2025-05-13 16:25:56,968 - dbp.core.lifecycle - INFO - Initializing component 'file_access' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-05-13 16:25:56,968 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-05-13 16:25:56,968 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'file_access'
+2025-05-13 16:25:56,968 - dbp.core.lifecycle.file_access.file_access - INFO - Initializing component 'file_access'...
+2025-05-13 16:25:56,968 - dbp.core.file_access - INFO - DBPFile cache configured with maxsize=100
+2025-05-13 16:25:56,968 - dbp.core.lifecycle.file_access.file_access - INFO - DBPFile cache configured with size 100
+2025-05-13 16:25:56,969 - dbp.core.lifecycle.file_access.file_access - INFO - Component 'file_access' initialized successfully
+2025-05-13 16:25:56,969 - dbp.core.lifecycle - INFO - Component 'file_access' initialized successfully
+2025-05-13 16:25:56,969 - dbp.core.lifecycle - INFO - Initializing component 'mcp_server'...
+2025-05-13 16:25:56,969 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-05-13 16:25:56,969 - dbp.core.lifecycle - INFO - Initializing component 'mcp_server' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-05-13 16:25:56,970 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-05-13 16:25:56,970 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'mcp_server'
+2025-05-13 16:25:56,970 - dbp.mcp_server - INFO - Initializing component 'mcp_server' with FastMCP integration
+2025-05-13 16:25:56,970 - dbp.mcp_server - INFO - Ensuring required directories exist using base directory: .dbp
+2025-05-13 16:25:56,980 - dbp.mcp_server - INFO - Required directories created or verified successfully
+2025-05-13 16:25:56,980 - dbp.mcp_server.server - INFO - Initializing MCPServer with name=dbp-mcp-server, host=127.0.0.1, port=6231
+2025-05-13 16:25:57,363 - fastmcp.utilities.openapi - INFO - Successfully parsed OpenAPI 3.1 schema version: 3.1.0
+2025-05-13 16:25:57,364 - fastmcp.utilities.openapi - INFO - Successfully extracted route: GET /health
+2025-05-13 16:25:57,364 - fastmcp.utilities.openapi - INFO - Finished parsing. Extracted 1 HTTP routes.
+[05/13/25 16:25:57] INFO     Created FastMCP OpenAPI server with 1 routes                                                  openapi.py:480
+2025-05-13 16:25:57,364 - FastMCP.fastmcp.server.openapi - INFO - Created FastMCP OpenAPI server with 1 routes
+2025-05-13 16:25:57,372 - dbp.mcp_server.server - INFO - MCPServer initialized successfully
+2025-05-13 16:25:57,372 - dbp.mcp_server.server - INFO - Starting MCP server on 127.0.0.1:6231
+2025-05-13 16:25:57,379 - dbp.mcp_server.server - INFO - Checking server availability with timeout=30s
+INFO:     Started server process [632022]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:6231 (Press CTRL+C to quit)
+2025-05-13 16:25:57,887 - dbp.mcp_server.server - INFO - Server availability check passed
+2025-05-13 16:25:57,887 - dbp.mcp_server.server - INFO - MCP server started successfully on 127.0.0.1:6231
+2025-05-13 16:25:57,888 - dbp.mcp_server - INFO - Component 'mcp_server' initialized successfully.
+2025-05-13 16:25:57,888 - dbp.core.lifecycle - INFO - Component 'mcp_server' initialized successfully
+2025-05-13 16:25:57,888 - dbp.core.lifecycle - INFO - Initializing component 'fs_monitor'...
+2025-05-13 16:25:57,888 - dbp.core.lifecycle - INFO - Initializing component 'fs_monitor' with context type: <class 'dbp.core.component.InitializationContext'>
+2025-05-13 16:25:57,888 - dbp.core.lifecycle - INFO - Context attributes: config=<class 'dbp.config.component.ConfigManagerComponent'>, logger=<class 'logging.Logger'>
+2025-05-13 16:25:57,888 - dbp.core.lifecycle - INFO - Resolved 1 dependencies for component 'fs_monitor'
+2025-05-13 16:25:57,888 - dbp.core.lifecycle.fs_monitor - INFO - Initializing FSMonitorComponent
+2025-05-13 16:25:57,889 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-05-13 16:25:57,889 - dbp.fs_monitor.platforms.factory - INFO - Created Linux monitor (inotify)
+2025-05-13 16:25:57,889 - dbp.fs_monitor.component - INFO - FSMonitorComponent initialized
+2025-05-13 16:25:57,889 - dbp.core.lifecycle - INFO - Component 'fs_monitor' initialized successfully
+2025-05-13 16:25:57,890 - dbp.core.lifecycle - INFO - All components initialized successfully
+2025-05-13 16:25:57,890 - dbp.core.lifecycle - INFO - System startup complete. Application is running.
+2025-05-13 16:25:57,890 - dbp.mcp_server.__main__ - INFO - All components started successfully
+2025-05-13 16:25:57,890 - dbp.mcp_server.__main__ - INFO - Component initialization completed successfully
+2025-05-13 16:25:57,890 - dbp.mcp_server.__main__ - INFO - Watchdog disabled after successful component initialization
+2025-05-13 16:25:57,890 - dbp.mcp_server.__main__ - INFO - MCP server running...
+2025-05-13 16:25:57,890 - dbp.mcp_server - INFO - Waiting for MCP server to exit
+2025-05-13 16:25:57,890 - dbp.core.watchdog - INFO - WATCHDOG CHECK: Time since last keepalive: 0.0s (threshold: 20s)
+2025-05-13 16:25:57,890 - dbp.mcp_server.server - INFO - Waiting for MCP server to exit
