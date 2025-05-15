@@ -4,6 +4,7 @@
 .dbp/*
 .dbp/logs/*
 coding_assistant/logs/
+*.log
 
 # Python virtual environment
 venv/
