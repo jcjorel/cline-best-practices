@@ -234,11 +234,11 @@ class FileAnalyzerAgent(AbstractAgnoAgent):
                 metadata["header_comment"] = header_comment
             
             # Extract dependencies
-            dependency_info = self.extract_dependencies(file_content, file_type_info.get("language", "unknown"))
+            dependency_info = self.extract_dependencies(file_path, file_type_info.get("language", "unknown"))
             metadata["dependencies"] = dependency_info.get("dependencies", [])
             
             # Extract function comments
-            function_info = self.extract_function_comments(file_content, file_type_info.get("language", "unknown"), comment_formats)
+            function_info = self.extract_function_comments(file_path, file_type_info.get("language", "unknown"), comment_formats)
             metadata["definitions"] = function_info.get("definitions", [])
         
         # Store results in agent state
@@ -317,13 +317,25 @@ class FileAnalyzerAgent(AbstractAgnoAgent):
         - Source code with comments at the top is still source code, not markdown
         - Files with shebang lines (#!/usr/bin/env python) are always executable source code
         
-        Return a JSON structure with:
-        - file_type: The general type of file (e.g., "source_code", "markdown", "data", "configuration")
-        - language: The programming language if it's source code (e.g., "Python", "JavaScript", "TypeScript")
-        - confidence: Your confidence level in the language detection (0-100 integer)
-        - file_extension: The typical file extension for this language (e.g., ".py", ".js")
-        - is_binary: Whether the file appears to be binary (should be false for all text files)
-        - confirmed_mime_type: Your assessment of the correct MIME type for this file
+Return a JSON structure with:
+- file_type: The general type of file (e.g., "source_code", "markdown", "data", "configuration")
+- language: The programming language if it's source code (e.g., "Python", "JavaScript", "TypeScript")
+- confidence: Your confidence level in the language detection (0-100 integer)
+- file_extension: The typical file extension for this language (e.g., ".py", ".js")
+- is_binary: Whether the file appears to be binary (should be false for all text files)
+- confirmed_mime_type: Your assessment of the correct MIME type for this file
+
+Example JSON response:
+```json
+{{
+  "file_type": "source_code",
+  "language": "Python",
+  "confidence": 95,
+  "file_extension": ".py",
+  "is_binary": false,
+  "confirmed_mime_type": "text/x-python"
+}}
+```
         
 File content (first 4000 chars):
 ```
@@ -419,7 +431,7 @@ File content (first 4000 chars):
           ]
         }}
         
-        **CRITICAL**: Add no explanation, no commentary, dump just the JSON object.
+        **CRITICAL**: Add no explanation, no commentary, dump just the requested JSON object.
         """
         
         # Run with clear_history=True to ensure previous conversation doesn't affect the result
@@ -580,12 +592,14 @@ File content (first 4000 chars):
         
         Return the COMPLETE raw header text including ALL comments and empty lines before the first actual code line.
         If no header comment is found, return an empty string.
+        
+        **CRITICAL**: Add no explanation, no commentary, dump just the JSON object.
         """
         
         response = self.run(prompt)
         return response if response else None
     
-    def extract_dependencies(self, file_content: str, language: str) -> Dict[str, Any]:
+    def extract_dependencies(self, file_path: str, language: str) -> Dict[str, Any]:
         """
         [Function intent]
         Extract dependencies from the source file.
@@ -605,8 +619,6 @@ File content (first 4000 chars):
         Returns:
             Dict containing dependency information
         """
-        # Determine how much content to analyze based on file size
-        content_to_analyze = file_content
         
         # Build prompt for dependency extraction
         prompt = f"""
@@ -615,10 +627,7 @@ File content (first 4000 chars):
         2. External libraries or packages
         3. System dependencies
         
-        Source code:
-        ```
-        {content_to_analyze}
-        ```
+        Source code to analyze: {file_path}
         
         For each dependency, identify:
         - name: The name of the dependency
@@ -628,7 +637,39 @@ File content (first 4000 chars):
         - called_names: Array of specific functions/class methods called from this dependency
         
         Return a JSON object with a "dependencies" field containing an array of these dependencies.
-        Return only the JSON object with no other text.
+        
+        Project root: "."
+        
+        Example JSON response:
+        ```json
+        {{
+          "dependencies": [
+            {{
+              "name": "os",
+              "kind": "system",
+              "path_or_package": "os",
+              "imported_names": ["path", "environ"],
+              "called_names": ["path.join", "environ.get"]
+            }},
+            {{
+              "name": "utils",
+              "kind": "codebase",
+              "path_or_package": "<project_root>/core/utils.py", <!-- MUST be a filepath relative to the project root -->
+              "imported_names": ["load_config", "format_data"],
+              "called_names": ["load_config"]
+            }},
+            {{
+              "name": "requests",
+              "kind": "external",
+              "path_or_package": "requests",
+              "imported_names": [],
+              "called_names": ["get", "post"]
+            }}
+          ]
+        }}
+        ```
+        
+        **CRITICAL**: Add no explanation, no commentary, dump just the JSON object.
         """
         
         response_obj = self.run(prompt, clear_history=True)
@@ -643,7 +684,7 @@ File content (first 4000 chars):
             print(f"Error parsing dependency extraction response: {e}")
             return {"dependencies": []}
     
-    def extract_function_comments(self, file_content: str, language: str, comment_formats: Dict[str, Any]) -> Dict[str, Any]:
+    def extract_function_comments(self, file_path: str, language: str, comment_formats: Dict[str, Any]) -> Dict[str, Any]:
         """
         [Function intent]
         Extract comments associated with functions and classes.
@@ -657,48 +698,64 @@ File content (first 4000 chars):
         Reconstructs line numbers for accurate source mapping.
         
         Args:
-            file_content: Content of the file
+            file_path: Content of the file
             language: The detected programming language
             comment_formats: Comment format information
             
         Returns:
             Dict containing function comment information
         """
-        # Build prompt for function comment extraction
-        docstring_info = ""
-        if comment_formats.get("docstring_format"):
-            docstring_info = f"Docstrings in this language are denoted by {comment_formats.get('docstring_format')}."
         
         # For large files, analyze in smaller chunks to stay within token limits
-        if len(file_content) > 8000:
-            # Split into chunks of approximately 8000 chars
-            chunks = [file_content[i:i+8000] for i in range(0, len(file_content), 8000)]
-            all_definitions = []
-            
-            prompt = f"""
-            Analyze this {language} code and extract all function/method/class definitions along with their associated comments.
-            {docstring_info}
-            
-            Source code:
-            ```
-            {file_content}
-            ```
-            
-            For each function/method/class, provide:
-            - name: The name of the function/method/class
-            - type: "function", "method", or "class"
-            - line_number: Approximate starting line number
-            - comments: All comments associated with this definition, including any special documentation comments
-            
-            Return a JSON object with a "definitions" field containing an array of these items.
-            Return only the JSON object with no other text.
-            """
-            
-            response = self.run(prompt, clear_history=True)
-            try:
-                return json.loads(response)
-            except json.JSONDecodeError:
-                return {"definitions": []}
+        all_definitions = []
+        
+        prompt = f"""
+        Analyze this {language} code and extract all function/method/class definitions along with their associated comments.
+        
+        Source code file path: {file_path}
+        
+        For each function/method/class, provide:
+        - name: The name of the function/method/class
+        - type: "function", "method", or "class"
+        - line_number: Starting line number of the function/method/class signature definition
+        - comments: All comments associated with this definition, including any special documentation comments
+        
+        Return a JSON object with a "definitions" field containing an array of these items.
+        
+        Example JSON response:
+        ```json
+        {{
+            "definitions": [
+            {{
+                "name": "calculate_total",
+                "type": "function",
+                "line_number": 42,
+                "comments": "/**\n * Calculates the sum of all items in the cart\n * @param {{Array}} items - List of cart items\n * @returns {{number}} - Total sum\n */"
+            }},
+            {{
+                "name": "UserAccount",
+                "type": "class",
+                "line_number": 87,
+                "comments": "# UserAccount class for managing user profiles\n# Handles authentication and preferences"
+            }},
+            {{
+                "name": "processPayment",
+                "type": "method",
+                "line_number": 134,
+                "comments": "\"\"\"\n[Function intent]\nProcess payment using the payment gateway.\n\n[Design principles]\nValidates input before sending to gateway.\nHandles errors gracefully.\n\n[Implementation details]\nUses async/await pattern to handle API responses.\n\nArgs:\n    amount: Payment amount\n    method: Payment method\n\nReturns:\n    Transaction ID or error code\n\"\"\""
+            }}
+            ]
+        }}
+        ```
+        
+        **CRITICAL**: Add no explanation, no commentary, dump just the JSON object.
+        """
+        
+        response = self.run(prompt, clear_history=True)
+        try:
+            return json.loads(response)
+        except json.JSONDecodeError:
+            return {"definitions": []}
     
     def clear_state(self, file_path: Optional[str] = None) -> None:
         """

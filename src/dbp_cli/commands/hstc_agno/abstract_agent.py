@@ -36,6 +36,10 @@
 # codebase:src/dbp_cli/commands/hstc_agno/utils.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-15T13:00:00Z : Added exponential backoff retry mechanism by CodeAssistant
+# * Implemented retry logic with exponential backoff for ThrottlingException errors
+# * Added jitter to retry delays to prevent thundering herd problem
+# * Set retry parameters: 10s initial delay, 3min max delay, 10 max attempts
 # 2025-05-13T17:37:00Z : Initial implementation by CodeAssistant
 # * Created abstract base agent class
 # * Extracted common functionality from existing agents
@@ -44,10 +48,13 @@
 
 import json
 import os
+import time
+import random
 from typing import Dict, List, Optional, Any, Union
 from pathlib import Path
 
 from agno.agent import Agent
+from agno.exceptions import ModelProviderError
 
 from .utils import log_prompt_to_file
 
@@ -103,17 +110,19 @@ class AbstractAgnoAgent(Agent):
     def run(self, prompt: str, **kwargs):
         """
         [Function intent]
-        Override the run method to add prompt and response display functionality.
+        Override the run method to add prompt and response display functionality
+        with exponential backoff retry mechanism for throttling exceptions.
         
         [Design principles]
         Maintains the original Agent.run behavior while adding display capability.
+        Implements resilient error handling for rate limiting scenarios.
         Standardizes prompt and response logging across all agents.
         
         [Implementation details]
         Displays prompts and responses when show_prompts is enabled.
+        Implements exponential backoff retry for ThrottlingException errors.
         Logs prompts and responses to file for visibility and debugging.
         Uses multiple output methods to ensure visibility in different environments.
-        Passes the call to the parent class's run method.
         
         Args:
             prompt: The prompt to send to the LLM
@@ -125,22 +134,47 @@ class AbstractAgnoAgent(Agent):
         # Display the prompt before calling the model if show_prompts is enabled
         if self.show_prompts:
             self._display_prompt(prompt)
-                
-        # Call the parent class's run method
-        response = super().run(prompt, **kwargs)
         
-        # Display and log the response if show_prompts is enabled
-        if self.show_prompts:
-            self._display_response(response)
-            
-            # Log to file for persistent storage
+        # Retry parameters for exponential backoff
+        max_retries = 10
+        base_delay = 10  # 10 seconds initial delay
+        max_delay = 180  # 3 minutes maximum delay
+        attempt = 0
+        
+        while True:
             try:
-                log_path = log_prompt_to_file(self.model_id, self.agent_name, prompt, str(response))
-                print(f"📝 Prompt and response logged to: {log_path}")
-            except Exception as e:
-                print(f"⚠️ Warning: Failed to log prompt to file: {e}")
-        
-        return response
+                # Call the parent class's run method
+                response = super().run(prompt, **kwargs)
+                
+                # If successful, display and log the response
+                if self.show_prompts:
+                    self._display_response(response)
+                    
+                    # Log to file for persistent storage
+                    log_path = log_prompt_to_file(self.model_id, self.agent_name, prompt, str(response))
+                    print(f"📝 Prompt and response logged to: {log_path}")
+                
+                return response
+                
+            except ModelProviderError as e:
+                attempt += 1
+                error_str = str(e)
+                
+                # Check if this is a ThrottlingException
+                if "ThrottlingException" in error_str and attempt < max_retries:
+                    # Calculate delay with exponential backoff and jitter
+                    delay = min(base_delay * (2 ** (attempt - 1)), max_delay)
+                    # Add some randomness (jitter) to avoid thundering herd problem
+                    jitter = random.uniform(0.8, 1.2)
+                    delay = delay * jitter
+                    
+                    self.log(f"Throttling exception detected. Retrying in {delay:.1f} seconds (attempt {attempt}/{max_retries})...", "WARNING")
+                    time.sleep(delay)
+                else:
+                    # If not a throttling exception or max retries reached, raise the exception
+                    if attempt >= max_retries:
+                        self.log(f"Maximum retry attempts ({max_retries}) reached. Giving up.", "ERROR")
+                    raise e
         
     def log(self, message: str, level: str = "INFO"):
         """
