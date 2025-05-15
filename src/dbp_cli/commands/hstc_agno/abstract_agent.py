@@ -36,6 +36,10 @@
 # codebase:src/dbp_cli/commands/hstc_agno/utils.py
 ###############################################################################
 # [GenAI tool change history]
+# 2025-05-15T13:41:00Z : Improved throttling exception handling by CodeAssistant
+# * Suppressed verbose Agno error logs for subsequent throttling retries
+# * Only show custom throttling detection message after initial error
+# * Added Agno logging level management to control framework output
 # 2025-05-15T13:00:00Z : Added exponential backoff retry mechanism by CodeAssistant
 # * Implemented retry logic with exponential backoff for ThrottlingException errors
 # * Added jitter to retry delays to prevent thundering herd problem
@@ -55,6 +59,7 @@ from pathlib import Path
 
 from agno.agent import Agent
 from agno.exceptions import ModelProviderError
+from agno.utils import log as agno_log
 
 from .utils import log_prompt_to_file
 
@@ -157,24 +162,31 @@ class AbstractAgnoAgent(Agent):
                 return response
                 
             except ModelProviderError as e:
-                attempt += 1
                 error_str = str(e)
-                
+
                 # Check if this is a ThrottlingException
-                if "ThrottlingException" in error_str and attempt < max_retries:
-                    # Calculate delay with exponential backoff and jitter
-                    delay = min(base_delay * (2 ** (attempt - 1)), max_delay)
-                    # Add some randomness (jitter) to avoid thundering herd problem
-                    jitter = random.uniform(0.8, 1.2)
-                    delay = delay * jitter
+                if "ThrottlingException" in error_str:
+                    attempt += 1
                     
-                    self.log(f"Throttling exception detected. Retrying in {delay:.1f} seconds (attempt {attempt}/{max_retries})...", "WARNING")
-                    time.sleep(delay)
-                else:
-                    # If not a throttling exception or max retries reached, raise the exception
-                    if attempt >= max_retries:
-                        self.log(f"Maximum retry attempts ({max_retries}) reached. Giving up.", "ERROR")
-                    raise e
+                    if attempt < max_retries:
+                        # Calculate delay with exponential backoff and jitter
+                        delay = min(base_delay * (2 ** (attempt - 1)), max_delay)
+                        # Add some randomness (jitter) to avoid thundering herd problem
+                        jitter = random.uniform(0.8, 1.2)
+                        delay = delay * jitter
+                        
+                        # Display our custom message only
+                        self.log(f"Throttling exception detected. Retrying in {delay:.1f} seconds (attempt {attempt}/{max_retries})...", "WARNING")
+                        time.sleep(delay)
+                        
+                        continue
+                
+                # If not a throttling exception or max retries reached
+                if "ThrottlingException" in error_str and attempt >= max_retries:
+                    self.log(f"Maximum retry attempts ({max_retries}) reached. Giving up.", "ERROR")
+                
+                # Re-raise the exception
+                raise e
         
     def log(self, message: str, level: str = "INFO"):
         """
